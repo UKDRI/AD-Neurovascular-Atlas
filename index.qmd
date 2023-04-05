@@ -1,0 +1,38 @@
+---
+title: "BBB in AD"
+# set freeze to false so setup script is always updated
+execute: 
+  freeze: false
+---
+
+This is a Quarto website that outlines the scripts used to analyse single cell sequencing data from the iCell8 platform.
+
+```{r}
+#| label: purl setup
+#| include: false
+# purl setup script
+knitr::purl(here::here("04_data_analysis/990_code_libraries/01_r-packages-used.qmd"), 
+            here::here("04_data_analysis/990_code_libraries/01_r-packages-used.R"))
+```
+
+# Notes on project structure
+
+This project uses the [Gin-Tonic](https://gin-tonic.netlify.app/) template structure. 
+In this structure, each experiment gets it's own sub-folder for both the actual data and the scripts used to process them.
+
+The project is developed on an internal GitLab instance, and for final publication will be mirrored to a public GitHub repository.
+
+## renv
+
+Note that the project used `renv` to manage the R packages used.
+When you first clone the repo to your local machine, you'll need to run `renv::restore()` in R for it to establish all the packages needed.
+
+## Website execution caching
+
+Note that the website uses caching to save the results of the scripts to the `_freeze` directory.
+
+This is helpful as it allows the website to be built quickly after the first build, but it can be tricky as it will only rerun a given script if it sees a change in that script.
+So, if you change an earlier script that would alter the inputs of later scripts, it wouldn't rerun those script as the code hadn't changed, and so they wouldn't change on the website.
+
+If you run into any issues with this, just delete the `_freeze` directory and build the website again.
+
