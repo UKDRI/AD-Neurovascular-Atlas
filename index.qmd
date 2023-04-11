@@ -15,6 +15,14 @@ knitr::purl(here::here("04_data_analysis/990_code_libraries/01_r-packages-used.q
             here::here("04_data_analysis/990_code_libraries/01_r-packages-used.R"))
 ```
 
+```{r}
+#| label: purl scripts
+#| include: false
+# purl scripts
+knitr::purl(here::here("04_data_analysis/001_snrnaseq_analysis/01_fastqc.qmd"), 
+            here::here("04_data_analysis/001_snrnaseq_analysis/01_fastqc.sh"))
+```
+
 # Notes on project structure
 
 This project uses the [Gin-Tonic](https://gin-tonic.netlify.app/) template structure. 
