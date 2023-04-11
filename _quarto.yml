@@ -1,6 +1,9 @@
 project:
   title: "Example quarto project"
   output-dir: public
+  render: 
+    - "*.qmd"
+    - "!04_data_analysis/992_scripts_from_frank"
 
 #toc: true
 #number-sections: true
