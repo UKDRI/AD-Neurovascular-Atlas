@@ -1,7 +1,3 @@
-
-Here is we install/load all the packages we use in this project.
-
-```{r}
 #| label: load libraries
 #| include: false
 
@@ -39,15 +35,10 @@ sort_packages <- function(packages, bioconductor = FALSE) {
 ## use function
 sort_packages(pkg)
 sort_packages(pkg_bioconductor, bioconductor = TRUE)
-```
 
-```{r}
-#| purl: false
-# create library calls for renv
-library_calls <- paste0("library(", c(pkg, pkg_bioconductor), ")")
-write_lines(library_calls, here("04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"))
-```
 
-```{r}
+
+
+
 rm(pkg, pkg_bioconductor, sort_packages)
-```
+
