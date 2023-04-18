@@ -53,48 +53,11 @@ module load FastQC
 #-----------------------------------------------------------------------
 
 mkdir -p $OUTPUT_DIR
-#mkdir -p $OUTPUT_DIR_1
-#mkdir -p $OUTPUT_DIR_2
-#mkdir -p $OUTPUT_DIR_3
-#mkdir -p $OUTPUT_DIR_4
 
 N=${SLURM_ARRAY_TASK_ID}
 
-## 20 missing
-## EXTRA=(P_5_S3_R1_001 P_5_S3_R2_001 P_6_S4_I1_001 P_6_S4_R1_001 P_6_S4_R2_001 P_7_S6_I1_001 P_7_S6_R1_001 P_7_S6_R2_001 P_8_S8_I1_001 P_8_S8_R1_001 P_8_S8_R2_001 P_9_S10_I1_001 P_9_S10_R1_001 P_9_S10_R2_001 Undetermined_S0_I1_001 Undetermined_S0_R1_001 Undetermined_S0_R2_001 V_10_S11_I1_001 V_10_S11_R1_001 V_10_S11_R2_001)
-## FASTQ_FILE=$INPUT_DIR""${EXTRA[N]}".fastq.gz"
-
-## run 1
-## FASTQ_FILE=$(find $INPUT_DIR_1 -mindepth 1 -maxdepth 1 -name '*_001.fastq.gz' | sort | tail -n+${N} | head -1)
-## $FASTQC -o $OUTPUT_DIR_1 -f fastq --noextract --quiet -t 1 $FASTQ_FILE
-
-
-## run 2
-#FASTQ_FILE=$(find $INPUT_DIR_2 -mindepth 1 -maxdepth 1 -name '*_001.fastq.gz' | sort | tail -n+${N} | head -1)
-
-#if [ -n "${FASTQ_FILE}" ]; then
-
-	#$FASTQC -o $OUTPUT_DIR_2 -f fastq --noextract --quiet -t 1 $FASTQ_FILE
-#fi
-
-## run 3
-#FASTQ_FILE=$(find $INPUT_DIR_3 -mindepth 1 -maxdepth 1 -name '*_001.fastq.gz' | sort | tail -n+${N} | head -1)
-
-#if [ -n "${FASTQ_FILE}" ]; then
-
-	#$FASTQC -o $OUTPUT_DIR_3 -f fastq --noextract --quiet -t 1 $FASTQ_FILE
-#fi
-
-## run 4
-#FASTQ_FILE=$(find $INPUT_DIR_4 -mindepth 1 -maxdepth 1 -name '*_001.fastq.gz' | sort | tail -n+${N} | head -1)
-
-#if [ -n "${FASTQ_FILE}" ]; then
-
-	#$FASTQC -o $OUTPUT_DIR_4 -f fastq --noextract --quiet -t 1 $FASTQ_FILE
-#fi
-
 FASTQ_FILE=$(find $INPUT_DIR -mindepth 1 -maxdepth 1 -name '*_001.fastq.gz' | sort | tail -n+${N} | head -1)
-$FASTQC -o $OUTPUT_DIR -f fastq --noextract --quiet -t 1 $FASTQ_FILE
+fastqc -o $OUTPUT_DIR -f fastq --noextract --quiet -t 1 $FASTQ_FILE
 
 
 echo -e "\n*****************************************************************"
