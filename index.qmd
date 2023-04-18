@@ -5,7 +5,7 @@ execute:
   freeze: false
 ---
 
-This is a Quarto website that outlines the scripts used to analyse single cell sequencing data from the iCell8 platform.
+This is a Quarto website that outlines the analysis pipeline of this project.
 
 ```{r}
 #| label: purl setup
@@ -21,6 +21,10 @@ knitr::purl(here::here("04_data_analysis/990_code_libraries/01_r-packages-used.q
 # purl scripts
 knitr::purl(here::here("04_data_analysis/001_snrnaseq_analysis/01_fastqc.qmd"), 
             here::here("04_data_analysis/001_snrnaseq_analysis/01_fastqc.sh"))
+knitr::purl(here::here("04_data_analysis/001_snrnaseq_analysis/02_multiqc.qmd"), 
+            here::here("04_data_analysis/001_snrnaseq_analysis/02_multiqc.sh"))
+knitr::purl(here::here("04_data_analysis/001_snrnaseq_analysis/03_generate_cellranger_reference.qmd"), 
+            here::here("04_data_analysis/001_snrnaseq_analysis/03_generate_cellranger_reference.sh"))
 ```
 
 # Notes on project structure

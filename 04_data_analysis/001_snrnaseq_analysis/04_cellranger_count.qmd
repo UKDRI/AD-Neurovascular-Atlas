@@ -7,6 +7,15 @@ execute:
 In order to run the [`cellranger`](https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/what-is-cell-ranger) pipeline one needs a reference genome for it to align to.
 10X do provide a human reference, but it's rather old at time of writing, so here we'll generate a more recent one.
 
+Set 1 contains the first 12 donors, 24 samples (12x P - parenchymal and 12x V - vascular fraction), which are independently sequenced of Set_2 (the remaining 16 samples from 8 donors).
+The sequencing was performed for Set_1 initially in Oxford, but there were some issues with index hopping and cleaning the data did not seem to work too well.
+So Set_2 was re-sequenced in Cardiff and the folder is: 211008_A00748_0157_AHT7TJDSX2_fastq_L2_3_4
+
+For Set_2 the data was sequenced initially on one Illumina lane, but then more lanes were added for better coverage.
+So the FASTQ files across the 4 subdirs need to be combined as input for one sample.
+I think there were a couple of corner cases for those samples, one sample was of lower quality and not sequenced again, and one extra run of another sample basically had just one read.
+I think the script to run CellRanger for Set_2 should mention this and deal with it.
+
 ```{r}
 #!/bin/bash
 
