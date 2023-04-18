@@ -5,7 +5,7 @@
 #SBATCH --ntasks=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --time=1-00:00 # maximum job time in D-HH:MM
-#SBATCH --account=scw1751
+#SBATCH --account=scw1329
 #SBATCH -o /scratch/c.mpmgb/hawk_output/%x_out_%A_%a_%J.txt
 #SBATCH -e /scratch/c.mpmgb/hawk_output/%x_err_%A_%a_%J.txt
 #SBATCH --mail-user Bernardo-HarringtonG@cardiff.ac.uk # email on fail
