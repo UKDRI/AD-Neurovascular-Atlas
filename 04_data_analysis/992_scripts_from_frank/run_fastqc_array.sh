@@ -1,0 +1,111 @@
+#!/bin/bash
+
+#SBATCH -p c_highmem_dri1
+#SBATCH --job-name=FQ
+#SBATCH --ntasks=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --array=1-144%144
+#SBATCH --mem-per-cpu=5000 # memory limit per core
+#####  #SBATCH --mem=96000 # memory limit per compute node for the job
+#SBATCH --time=1-00:00 # maximum job time in D-HH:MM
+#SBATCH --account=scw1329
+#SBATCH -o /scratch/c.mpmfw/Hawk_output/%x_out_%A_%a_%J.txt
+#SBATCH -e /scratch/c.mpmfw/Hawk_output/%x_err_%A_%a_%J.txt
+
+echo "*****************************************************************"
+echo "All jobs in this array have:"
+echo "- SLURM_ARRAY_JOB_ID: ${SLURM_ARRAY_JOB_ID}"
+echo "- SLURM_ARRAY_TASK_COUNT: ${SLURM_ARRAY_TASK_COUNT}"
+echo "- SLURM_ARRAY_TASK_MIN: ${SLURM_ARRAY_TASK_MIN}"
+echo "- SLURM_ARRAY_TASK_MAX: ${SLURM_ARRAY_TASK_MAX}"
+echo "This job in the array has:"
+echo "- SLURM_JOB_ID: ${SLURM_JOB_ID}"
+echo "- SLURM_ARRAY_TASK_ID: ${SLURM_ARRAY_TASK_ID}"
+echo "Run on host: "`hostname`
+echo "Number of threads (nproc): "`nproc`
+echo "Total memory in GB: "`free -g | grep -oP '\d+' | sed -n 1p`
+echo "Used memory in GB: "`free -g | grep -oP '\d+' | sed -n 2p`
+echo "Free memory in GB: "`free -g | grep -oP '\d+' | sed -n 3p`
+echo "Username: "`whoami`
+echo "Started at: "`date`
+echo -e "*****************************************************************\n"
+
+## FASTQ files
+## NOTE: will be moved to another directory in the future
+## INPUT_DIR="/gluster/dri02/rdscw/shared/webber/SNatlas_icell8_Novaseq/210426_A00748_0097_AH57HLDSX2_fastq/"
+
+## 3 sequencing runs, INPUT DIR 2 and 3 have one fewer sample 
+#INPUT_DIR_1="/gluster/dri02/rdscw/users/frankw/projects/Endo_10X/data/Fastq/bsg-ftp.well.ox.ac.uk/210707_A00711_0393_BHCLTKDSX2/FASTQ"
+##INPUT_DIR_2="/gluster/dri02/rdscw/users/frankw/projects/Endo_10X/data/Fastq/bsg-ftp.well.ox.ac.uk/210721_A00711_0400_BHF2YWDSX2/FASTQ"
+#INPUT_DIR_3="/gluster/dri02/rdscw/users/frankw/projects/Endo_10X/data/Fastq/bsg-ftp.well.ox.ac.uk/210728_A00711_0405_BHF5JLDSX2/FASTQ"
+#INPUT_DIR_4="/gluster/dri02/rdscw/users/frankw/projects/Endo_10X/data/Fastq/bsg-ftp.well.ox.ac.uk/210901_A00711_0420_AHGJJLDSX2/FASTQ"
+
+
+## MiSeq test run
+## INPUT_DIR="/scratch/c.mpmfw/Endo_10X_main/MiSeq_set_1/FASTQ/"
+
+## Set 1, 24 samples, re-run Cardiff, 3 lanes
+INPUT_DIR="/gluster/dri02/rdscw/shared/webber/Endo_10X/211008_A00748_0157_AHT7TJDSX2_fastq_L2_3_4/"
+
+## OUTPUT_DIR="/scratch/c.mpmfw/Endo_10X_main/Analysis/FastQC/FastQC_main_set1"
+#OUTPUT_DIR_1="/scratch/c.mpmfw/Endo_10X_main/Analysis/FastQC/FastQC_main_set2_r1"
+#OUTPUT_DIR_2="/scratch/c.mpmfw/Endo_10X_main/Analysis/FastQC/FastQC_main_set2_r2"
+#OUTPUT_DIR_3="/scratch/c.mpmfw/Endo_10X_main/Analysis/FastQC/FastQC_main_set2_r3"
+#OUTPUT_DIR_4="/scratch/c.mpmfw/Endo_10X_main/Analysis/FastQC/FastQC_main_set2_r4"
+
+# OUTPUT_DIR="/scratch/c.mpmfw/Endo_10X_main/Analysis/FastQC/FastQC_main_set1_miseq"
+
+OUTPUT_DIR="/scratch/c.mpmfw/Endo_10X_main/Analysis/FastQC/FastQC_main_set1_v2"
+
+FASTQC="/scratch/c.mpmfw/Tools/FastQC/fastqc"
+
+#-----------------------------------------------------------------------
+
+mkdir -p $OUTPUT_DIR
+#mkdir -p $OUTPUT_DIR_1
+#mkdir -p $OUTPUT_DIR_2
+#mkdir -p $OUTPUT_DIR_3
+#mkdir -p $OUTPUT_DIR_4
+
+N=${SLURM_ARRAY_TASK_ID}
+
+## 20 missing
+## EXTRA=(P_5_S3_R1_001 P_5_S3_R2_001 P_6_S4_I1_001 P_6_S4_R1_001 P_6_S4_R2_001 P_7_S6_I1_001 P_7_S6_R1_001 P_7_S6_R2_001 P_8_S8_I1_001 P_8_S8_R1_001 P_8_S8_R2_001 P_9_S10_I1_001 P_9_S10_R1_001 P_9_S10_R2_001 Undetermined_S0_I1_001 Undetermined_S0_R1_001 Undetermined_S0_R2_001 V_10_S11_I1_001 V_10_S11_R1_001 V_10_S11_R2_001)
+## FASTQ_FILE=$INPUT_DIR""${EXTRA[N]}".fastq.gz"
+
+## run 1
+## FASTQ_FILE=$(find $INPUT_DIR_1 -mindepth 1 -maxdepth 1 -name '*_001.fastq.gz' | sort | tail -n+${N} | head -1)
+## $FASTQC -o $OUTPUT_DIR_1 -f fastq --noextract --quiet -t 1 $FASTQ_FILE
+
+
+## run 2
+#FASTQ_FILE=$(find $INPUT_DIR_2 -mindepth 1 -maxdepth 1 -name '*_001.fastq.gz' | sort | tail -n+${N} | head -1)
+
+#if [ -n "${FASTQ_FILE}" ]; then
+
+	#$FASTQC -o $OUTPUT_DIR_2 -f fastq --noextract --quiet -t 1 $FASTQ_FILE
+#fi
+
+## run 3
+#FASTQ_FILE=$(find $INPUT_DIR_3 -mindepth 1 -maxdepth 1 -name '*_001.fastq.gz' | sort | tail -n+${N} | head -1)
+
+#if [ -n "${FASTQ_FILE}" ]; then
+
+	#$FASTQC -o $OUTPUT_DIR_3 -f fastq --noextract --quiet -t 1 $FASTQ_FILE
+#fi
+
+## run 4
+#FASTQ_FILE=$(find $INPUT_DIR_4 -mindepth 1 -maxdepth 1 -name '*_001.fastq.gz' | sort | tail -n+${N} | head -1)
+
+#if [ -n "${FASTQ_FILE}" ]; then
+
+	#$FASTQC -o $OUTPUT_DIR_4 -f fastq --noextract --quiet -t 1 $FASTQ_FILE
+#fi
+
+FASTQ_FILE=$(find $INPUT_DIR -mindepth 1 -maxdepth 1 -name '*_001.fastq.gz' | sort | tail -n+${N} | head -1)
+$FASTQC -o $OUTPUT_DIR -f fastq --noextract --quiet -t 1 $FASTQ_FILE
+
+
+echo -e "\n*****************************************************************"
+echo "Finished at: "`date`
+echo "*****************************************************************"

@@ -1,0 +1,417 @@
+---
+title: "Cell Ranger metrics set 1 and 2"
+author: "Frank Wessely"
+output:
+  html_document:
+    code_folding: hide
+    number_sections: yes
+    toc: yes
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+---
+
+# Notes
+
+* raw metrics from Cell Ranger (CR) count runs
+* CR 6.1.1 (Gencode 40, ensembl v106)
+
+
+```{r setup, include=FALSE}
+
+library(knitr)
+library(data.table)
+library(scater)   ## scater:::.get_palette
+library(DT)
+library(ggpubr)
+
+knitr::opts_chunk$set(cache=TRUE,echo=FALSE,message=FALSE,warning=FALSE,cache.lazy=FALSE)
+
+## white background theme for all plots
+theme_set(theme_bw())
+```
+
+
+```{r files, include=F}
+
+input_folder_1 <- "/Users/frankwessely/Desktop/Documents/Projects/BBB/Endo_10X_Main/Analysis/CellRanger_count/CellRanger_count_v611_ensembl_106_set_1_R2_full/"
+input_folder_2 <- "/Users/frankwessely/Desktop/Documents/Projects/BBB/Endo_10X_Main/Analysis/CellRanger_count/CellRanger_count_v611_ensembl_106_set_2_R2_full/"
+
+samples_meta_file <- "/Users/frankwessely/Desktop/Documents/Projects/BBB/Endo_10X_Main/Analysis/Samples_info/samples_meta_merged_final.txt"
+```
+
+***
+
+# Samples table
+
+* include percentage of swapped counts from swappedDrops() with different min.frac values
+
+```{r samples_table, cache=F}
+
+samples_meta <- fread(samples_meta_file, colClasses = c(donor = "character"))
+
+samples_meta %>% DT::datatable(caption="Samples overview", escape=F, rownames = F, extensions = 'Buttons', options = list(dom = 'Blfrtip', buttons = list('colvis', list(extend = 'copy', exportOptions = list(columns=':visible')), list(extend = 'csv', exportOptions = list(columns=':visible')), list(extend = 'excel', exportOptions = list(columns=':visible')))))
+```
+
+***
+
+# Metrics table
+
+* compare some metrics from CR counts output stored in `metrics_summary.csv` of each sample
+
+***
+
+```{r read_10X_metrics}
+
+## all samples
+samples <- samples_meta$sample
+batch_info <- samples_meta$batch
+
+metrics_all <- data.table()
+for (i in 1:length(samples)){
+  
+  if (batch_info[i] == "set_1"){
+    metrics <- fread(paste0(input_folder_1, samples[i], "/outs/metrics_summary.csv"))
+  } else {
+    metrics <- fread(paste0(input_folder_2, samples[i], "/outs/metrics_summary.csv"))
+  }
+  ## create numeric columns
+  metrics[,1:ncol(metrics)] <- lapply(metrics[,1:ncol(metrics)], function(x){as.numeric(gsub(",|%", "", x))})
+  metrics <- metrics[, sample := samples[i]]
+  setcolorder(metrics, c("sample", setdiff(colnames(metrics), "sample"))) 
+  metrics_all <- rbind(metrics_all, metrics)
+}
+
+metrics_all <- merge(samples_meta, metrics_all, by = "sample", all.y = T)
+```
+
+```{r metrics_table, cache=F}
+
+metrics_all %>% DT::datatable(caption="CR metrics overview", escape=F, rownames = F, extensions = 'Buttons', options = list(dom = 'Blfrtip', buttons = list('colvis', list(extend = 'copy', exportOptions = list(columns=':visible')), list(extend = 'csv', exportOptions = list(columns=':visible')), list(extend = 'excel', exportOptions = list(columns=':visible'))))) %>% formatCurrency(c("Estimated Number of Cells", "Mean Reads per Cell", "Median Genes per Cell", "Number of Reads"), digits=0, currency='')
+```
+
+***
+
+# Cells: P vs V per donor
+
+```{r P_vs_V_differences, cache=F}
+
+metrics_P <- metrics_all[prep == "P", ][order(donor)]
+metrics_V <- metrics_all[prep == "V", ][order(donor)]
+
+metrics_P_V <- copy(metrics_P[, .(donor, type, prep, sex, age, batch, APOE)])
+metrics_P_V <- metrics_P_V[, n_cells_P_minus_V := metrics_P$`Estimated Number of Cells` - metrics_V$`Estimated Number of Cells`]
+
+metrics_P_V %>% DT::datatable(caption="CR metrics P vs. V", escape=F, rownames = F, extensions = 'Buttons', options = list(dom = 'Blfrtip', buttons = list('colvis', list(extend = 'copy', exportOptions = list(columns=':visible')), list(extend = 'csv', exportOptions = list(columns=':visible')), list(extend = 'excel', exportOptions = list(columns=':visible'))))) %>% formatCurrency(c("n_cells_P_minus_V"), digits=0, currency='')
+```
+
+***
+
+# Metrics totals
+
+
+```{r metrics_totals}
+
+sum_all <- metrics_all[, lapply(.SD, sum), .SDcols=c("Estimated Number of Cells", "Number of Reads")]
+sum_all <- sum_all[, sum_by := "all"]
+
+sum_prep <- metrics_all[, lapply(.SD, sum), by = "prep", .SDcols=c("Estimated Number of Cells", "Number of Reads")]
+setnames(sum_prep, "prep", "sum_by")
+
+sum_type <- metrics_all[, lapply(.SD, sum), by = "type", .SDcols=c("Estimated Number of Cells", "Number of Reads")]
+setnames(sum_type, "type", "sum_by")
+
+sum_sex <- metrics_all[, lapply(.SD, sum), by = "sex", .SDcols=c("Estimated Number of Cells", "Number of Reads")]
+setnames(sum_sex, "sex", "sum_by")
+
+sum_batch <- metrics_all[, lapply(.SD, sum), by = "batch", .SDcols=c("Estimated Number of Cells", "Number of Reads")]
+setnames(sum_batch, "batch", "sum_by")
+
+sum_merged <- rbind(sum_prep, sum_type, sum_sex, sum_batch, sum_all)
+```
+
+```{r metrics_totals_table, cache=F}
+
+sum_merged %>% DT::datatable(caption="CR metrics totals", escape=F, rownames = F, extensions = 'Buttons', options = list(dom = 'Blfrtip', buttons = list('colvis', list(extend = 'copy', exportOptions = list(columns=':visible')), list(extend = 'csv', exportOptions = list(columns=':visible')), list(extend = 'excel', exportOptions = list(columns=':visible'))))) %>% formatCurrency(c("Estimated Number of Cells", "Number of Reads"), digits=0, currency='')
+```
+
+***
+
+# Metrics averages
+
+```{r metrics_avg}
+
+check_cols <- c("Estimated Number of Cells",
+                "Mean Reads per Cell",
+                "Median Genes per Cell",                         
+                "Number of Reads",
+                "Sequencing Saturation",
+                "Fraction Reads in Cells",
+                "Total Genes Detected",
+                "Median UMI Counts per Cell")
+
+avg_all <- metrics_all[, lapply(.SD, mean), .SDcols = check_cols]
+avg_all <- avg_all[, avg_by := "all"]
+
+avg_prep <- metrics_all[, lapply(.SD, mean),  by = "prep", .SDcols = check_cols]
+setnames(avg_prep, "prep", "avg_by")
+
+avg_type <- metrics_all[, lapply(.SD, mean),  by = "type", .SDcols = check_cols]
+setnames(avg_type, "type", "avg_by")
+
+avg_sex <- metrics_all[, lapply(.SD, mean),  by = "sex", .SDcols = check_cols]
+setnames(avg_sex, "sex", "avg_by")
+
+avg_batch <- metrics_all[, lapply(.SD, mean),  by = "batch", .SDcols = check_cols]
+setnames(avg_batch, "batch", "avg_by")
+
+avg_merged <- rbind(avg_prep, avg_type, avg_sex, avg_batch, avg_all)
+```
+
+
+```{r metrics_avg_table, cache=F}
+
+avg_merged %>% DT::datatable(caption="CR metrics averages", escape=F, rownames = F, extensions = 'Buttons', options = list(dom = 'Blfrtip', buttons = list('colvis', list(extend = 'copy', exportOptions = list(columns=':visible')), list(extend = 'csv', exportOptions = list(columns=':visible')), list(extend = 'excel', exportOptions = list(columns=':visible'))))) %>% 
+  formatRound(c("Estimated Number of Cells",
+                "Mean Reads per Cell",
+                "Median Genes per Cell",                         
+                "Number of Reads",
+                "Sequencing Saturation",
+                "Fraction Reads in Cells",
+                "Total Genes Detected",
+                "Median UMI Counts per Cell"), digits=1)
+```
+
+
+***
+
+# Metrics plots
+
+```{r metrics_cells, fig.width=9, fig.height=4}
+
+### metrics_all <- metrics_all[sample != "UND", ]
+
+p <- ggplot(metrics_all, aes(x=donor, y=`Estimated Number of Cells`, fill=prep))
+p <- p + geom_bar(stat = "identity", position=position_dodge())
+p <- p + scale_fill_manual(values = scater:::.get_palette("tableau20")[c(1,3)])
+p <- p + geom_text(aes(label=`Estimated Number of Cells`), vjust=1.6, color="white", position = position_dodge(0.9), size=2)
+p
+
+p <- ggplot(metrics_all, aes(x=donor, y=`Mean Reads per Cell`, fill=prep))
+p <- p + geom_bar(stat = "identity", position=position_dodge())
+p <- p + scale_fill_manual(values = scater:::.get_palette("tableau20")[c(1,3)])
+p <- p + geom_text(aes(label=`Mean Reads per Cell`), vjust=1.6, color="white", position = position_dodge(0.9), size=2)
+p
+
+p <- ggplot(metrics_all, aes(x=donor, y=`Number of Reads`, fill=prep))
+p <- p + geom_bar(stat = "identity", position=position_dodge())
+p <- p + scale_fill_manual(values = scater:::.get_palette("tableau20")[c(1,3)])
+p <- p + geom_text(aes(label=round(`Number of Reads`/1000000,1)), vjust=1.6, color="white", position = position_dodge(0.9), size=2)
+p
+
+p <- ggplot(metrics_all, aes(x=donor, y=`Sequencing Saturation`, fill=prep))
+p <- p + geom_bar(stat = "identity", position=position_dodge())
+p <- p + scale_fill_manual(values = scater:::.get_palette("tableau20")[c(1,3)])
+p <- p + geom_text(aes(label=`Sequencing Saturation`), vjust=1.6, color="white", position = position_dodge(0.9), size=2)
+p
+
+p <- ggplot(metrics_all, aes(x=donor, y=`Median UMI Counts per Cell`, fill=prep))
+p <- p + geom_bar(stat = "identity", position=position_dodge())
+p <- p + scale_fill_manual(values = scater:::.get_palette("tableau20")[c(1,3)])
+p <- p + geom_text(aes(label=`Median UMI Counts per Cell`), vjust=1.6, color="white", position = position_dodge(0.9), size=2)
+p
+
+p <- ggplot(metrics_all, aes(x=donor, y=`Median Genes per Cell`, fill=prep))
+p <- p + geom_bar(stat = "identity", position=position_dodge())
+p <- p + scale_fill_manual(values = scater:::.get_palette("tableau20")[c(1,3)])
+p <- p + geom_text(aes(label=`Median Genes per Cell`), vjust=1.6, color="white", position = position_dodge(0.9), size=2)
+p
+
+p <- ggplot(metrics_all, aes(x=donor, y=`Total Genes Detected`, fill=prep))
+p <- p + geom_bar(stat = "identity", position=position_dodge())
+p <- p + scale_fill_manual(values = scater:::.get_palette("tableau20")[c(1,3)])
+p <- p + geom_text(aes(label=`Total Genes Detected`), vjust=1.6, color="white", position = position_dodge(0.9), size=2)
+p
+
+p <- ggplot(metrics_all, aes(x=donor, y=`Fraction Reads in Cells`, fill=prep))
+p <- p + geom_bar(stat = "identity", position=position_dodge())
+p <- p + scale_fill_manual(values = scater:::.get_palette("tableau20")[c(1,3)])
+p <- p + geom_text(aes(label=`Fraction Reads in Cells`), vjust=1.6, color="white", position = position_dodge(0.9), size=2)
+p
+
+p <- ggplot(metrics_all, aes(x=donor, y=`Valid Barcodes`, fill=prep))
+p <- p + geom_bar(stat = "identity", position=position_dodge())
+p <- p + scale_fill_manual(values = scater:::.get_palette("tableau20")[c(1,3)])
+p <- p + geom_text(aes(label=`Valid Barcodes`), vjust=1.6, color="white", position = position_dodge(0.9), size=2)
+p
+
+p <- ggplot(metrics_all, aes(x=donor, y=`Reads Mapped Confidently to Genome`, fill=prep))
+p <- p + geom_bar(stat = "identity", position=position_dodge())
+p <- p + scale_fill_manual(values = scater:::.get_palette("tableau20")[c(1,3)])
+p <- p + geom_text(aes(label=`Reads Mapped Confidently to Genome`), vjust=1.6, color="white", position = position_dodge(0.9), size=2)
+p
+
+p <- ggplot(metrics_all, aes(x=donor, y=`Reads Mapped Confidently to Transcriptome`, fill=prep))
+p <- p + geom_bar(stat = "identity", position=position_dodge())
+p <- p + scale_fill_manual(values = scater:::.get_palette("tableau20")[c(1,3)])
+p <- p + geom_text(aes(label=`Reads Mapped Confidently to Transcriptome`), vjust=1.6, color="white", position = position_dodge(0.9), size=2)
+p
+
+p <- ggplot(metrics_all, aes(x=donor, y=`Reads Mapped Confidently to Intronic Regions`, fill=prep))
+p <- p + geom_bar(stat = "identity", position=position_dodge())
+p <- p + scale_fill_manual(values = scater:::.get_palette("tableau20")[c(1,3)])
+p <- p + geom_text(aes(label=`Reads Mapped Confidently to Intronic Regions`), vjust=1.6, color="white", position = position_dodge(0.9), size=2)
+p
+
+p <- ggplot(metrics_all, aes(x=donor, y=`Reads Mapped Confidently to Intergenic Regions`, fill=prep))
+p <- p + geom_bar(stat = "identity", position=position_dodge())
+p <- p + scale_fill_manual(values = scater:::.get_palette("tableau20")[c(1,3)])
+p <- p + geom_text(aes(label=`Reads Mapped Confidently to Intergenic Regions`), vjust=1.6, color="white", position = position_dodge(0.9), size=2)
+p
+
+p <- ggplot(metrics_all, aes(x=donor, y=`Reads Mapped Antisense to Gene`, fill=prep))
+p <- p + geom_bar(stat = "identity", position=position_dodge())
+p <- p + scale_fill_manual(values = scater:::.get_palette("tableau20")[c(1,3)])
+p <- p + geom_text(aes(label=`Reads Mapped Antisense to Gene`), vjust=1.6, color="white", position = position_dodge(0.9), size=2)
+p
+```
+
+***
+
+# Metrics comparison
+
+## Preparation
+
+```{r metrics_compare_prep, results='asis', fig.width=3, fig.height=3.5}
+
+check_cols <- c("Estimated Number of Cells",
+                "Mean Reads per Cell",
+                "Median Genes per Cell",                         
+                "Number of Reads",
+                "Sequencing Saturation",
+                "Fraction Reads in Cells",
+                "Total Genes Detected",
+                "Median UMI Counts per Cell")
+
+for (var in check_cols){
+  p <- ggpaired(metrics_all, id = "donor", x = "prep", y = var, color = "prep", palette = "jco", 
+                 add = "point", line.color = "gray", line.size = 0.4, point.size = 1)
+  p <- p + stat_compare_means()
+  p <- p + ylab(var)
+  print(p)
+}
+```
+
+***
+
+## Type
+
+```{r metrics_compare_type, results='asis', fig.width=3, fig.height=3.5}
+
+for (var in check_cols){
+  p <- ggboxplot(metrics_all, x = "type", y = var, color = "prep", palette = "jco", 
+                 add = "point", line.color = "gray", line.size = 0.4, point.size = 1)
+  p <- p + stat_compare_means()
+  p <- p + ylab(var)
+  print(p)
+}
+```
+
+***
+
+## Sex
+
+```{r metrics_compare_sex, results='asis', fig.width=3, fig.height=3.5}
+
+for (var in check_cols){
+  p <- ggboxplot(metrics_all, x = "sex", y = var, color = "prep", palette = "jco", 
+                 add = "point", line.color = "gray", line.size = 0.4, point.size = 1)
+  p <- p + stat_compare_means()
+  p <- p + ylab(var)
+  print(p)
+}
+```
+
+***
+
+## Batch
+
+```{r metrics_compare_batch, results='asis', fig.width=3, fig.height=3.5}
+
+for (var in check_cols){
+  p <- ggboxplot(metrics_all, x = "batch", y = var, color = "batch", palette = "jco", 
+                 add = "point", line.color = "gray", line.size = 0.4, point.size = 1)
+  p <- p + stat_compare_means()
+  p <- p + ylab(var)
+  print(p)
+}
+```
+
+
+***
+
+## APOE
+
+```{r metrics_compare_APOE, results='asis', fig.width=4.2, fig.height=3.5}
+
+for (var in check_cols){
+  p <- ggboxplot(metrics_all, x = "APOE", y = var, color = "APOE", palette = "jco", 
+                 add = "point", line.color = "gray", line.size = 0.4, point.size = 1)
+  p <- p + stat_compare_means()
+  p <- p + ylab(var)
+  print(p)
+}
+```
+
+
+***
+
+# scFlow
+
+* use cells called from Cell Ranger
+
+```{r scFlow_qc}
+
+qc_scflow <- fread("/Users/frankwessely/Desktop/Documents/Projects/BBB/Endo_10X_Main/Analysis/Results_scFlow/qc_summary_scflow_CRv611_ensembl_106.txt")
+qc_scflow <- merge(samples_meta, qc_scflow, by = "sample")
+```
+
+```{r scFlow_qc_print, cache=F}
+
+qc_scflow_print <- qc_scflow[, .(sample, donor, type, prep, sex, batch, APOE, qc_cells_n_cells, qc_cells_n_cells_passed, qc_cells_n_cells_failed, doubletfinder_singlets_found, doubletfinder_multiplets_found, doubletfinder_doublet_rate = 100 * doubletfinder_doublet_rate)]
+
+qc_scflow_print[, n_keep := qc_cells_n_cells_passed - doubletfinder_multiplets_found]
+
+qc_scflow_print %>% DT::datatable(caption="scFlow QC metrics", escape=F, rownames = F, extensions = 'Buttons', options = list(dom = 'Blfrtip', buttons = list('colvis', list(extend = 'copy', exportOptions = list(columns=':visible')), list(extend = 'csv', exportOptions = list(columns=':visible')), list(extend = 'excel', exportOptions = list(columns=':visible'))))) %>% formatCurrency(c("qc_cells_n_cells", "qc_cells_n_cells_passed", "qc_cells_n_cells_failed", "doubletfinder_singlets_found", "doubletfinder_multiplets_found", "n_keep"), digits=0, currency='') %>% 
+  formatRound(c("doubletfinder_doublet_rate"), digits = 1)
+```
+
+****
+
+```{r scFlow_qc_v0}
+
+qc_scflow <- fread("/Users/frankwessely/Desktop/Documents/Projects/BBB/Endo_10X_Main/Analysis/Results_scFlow/qc_summary_scflow_CRv611_ensembl_98.txt")
+qc_scflow <- merge(samples_meta, qc_scflow, by = "sample")
+```
+
+```{r scFlow_qc_print_v0, cache=F}
+
+qc_scflow_print <- qc_scflow[, .(sample, donor, type, prep, sex, batch, APOE, qc_cells_n_cells, qc_cells_n_cells_passed, qc_cells_n_cells_failed, doubletfinder_singlets_found, doubletfinder_multiplets_found, doubletfinder_doublet_rate = 100 * doubletfinder_doublet_rate)]
+
+qc_scflow_print[, n_keep := qc_cells_n_cells_passed - doubletfinder_multiplets_found]
+
+qc_scflow_print %>% DT::datatable(caption="scFlow QC metrics", escape=F, rownames = F, extensions = 'Buttons', options = list(dom = 'Blfrtip', buttons = list('colvis', list(extend = 'copy', exportOptions = list(columns=':visible')), list(extend = 'csv', exportOptions = list(columns=':visible')), list(extend = 'excel', exportOptions = list(columns=':visible'))))) %>% formatCurrency(c("qc_cells_n_cells", "qc_cells_n_cells_passed", "qc_cells_n_cells_failed", "doubletfinder_singlets_found", "doubletfinder_multiplets_found", "n_keep"), digits=0, currency='') %>% 
+  formatRound(c("doubletfinder_doublet_rate"), digits = 1)
+```
+
+
+
+***
+
+# SessionInfo
+
+```{r session_info, cache=F}
+
+devtools::session_info()
+```
+

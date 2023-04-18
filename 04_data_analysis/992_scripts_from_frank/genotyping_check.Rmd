@@ -1,0 +1,219 @@
+---
+title: "Genotyping checks"
+author: "Frank Wessely"
+output:
+  html_document:
+    code_folding: hide
+    number_sections: yes
+    toc: yes
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+---
+
+```{r setup, include=FALSE}
+
+library(knitr)
+library(data.table)
+### library(scater)   ## scater:::.get_palette
+library(DT)
+library(ggpubr)
+
+knitr::opts_chunk$set(cache=TRUE,echo=FALSE,message=FALSE,warning=FALSE,cache.lazy=FALSE)
+
+## white background theme for all plots
+theme_set(theme_bw())
+```
+
+
+```{r files, include=F}
+
+samples_meta_file <- "/Users/frankwessely/Desktop/Documents/Projects/BBB/Endo_10X_Main/Analysis/Samples_info/samples_meta_merged_final.txt"
+
+GT_RNA_RNA_file <- "/Users/frankwessely/Desktop/Documents/Projects/BBB/Endo_10X_Main/Analysis/Genotyping/Comparisons/Compare_40_samples_RNA_RNA_raw/gtcheck_RNA_RNA_raw.txt"
+
+GT_RNA_RNA_filtered_file <- "/Users/frankwessely/Desktop/Documents/Projects/BBB/Endo_10X_Main/Analysis/Genotyping/Comparisons/Compare_40_samples_RNA_RNA_filtered/gtcheck_RNA_RNA_DP_20_800_qual_20.txt"
+
+GT_DNA_RNA_file <- "/Users/frankwessely/Desktop/Documents/Projects/BBB/Endo_10X_Main/Analysis/Genotyping/Comparisons/Compare_40_samples_DNA_RNA_filtered/gtcheck_40_samples_DP_20_800_qual_20.txt"
+```
+
+***
+
+# Samples table
+
+```{r samples_table, cache=F}
+
+samples_meta <- fread(samples_meta_file, colClasses = c(donor = "character"))
+
+samples_meta_print <- copy(samples_meta)
+setnames(samples_meta_print, "Diagnosis", "______________________________Diagnosis______________________________")
+
+samples_meta_print %>% DT::datatable(caption="Samples overview", escape=F, rownames = F, extensions = 'Buttons', options = list(dom = 'Blfrtip', buttons = list('colvis', list(extend = 'copy', exportOptions = list(columns=':visible')), list(extend = 'csv', exportOptions = list(columns=':visible')), list(extend = 'excel', exportOptions = list(columns=':visible')))))
+```
+
+
+***
+
+# Genotyping: raw RNA vs RNA
+
+* compare SNPs from 40 RNA BAM files to each other
+* percentage values indicate the percentage of SNPs matched based on gtcheck
+* here, unfiltered/raw VCFs were used
+
+***
+
+```{r genotyping_RNA_RNA_raw, fig.width=9, fig.height=7}
+
+GT <- fread(GT_RNA_RNA_file)
+setnames(GT, c("S1", "S2", "n_1", "n_2", "n_different", "n_compared"))
+GT <- GT[, pct_identity := 100 * (n_compared - n_different) / n_compared]
+
+GT <- GT[, S1 := gsub("_var_raw", "", S1)]
+GT <- GT[, S2 := gsub("_var_raw", "", S2)]
+
+samples_P <- c("P_01","P_02","P_03","P_04", "P_05","P_06","P_07","P_08","P_09","P_10","P_11","P_12","P_13","P_14","P_15","P_16","P_17","P_18","P_19","P_20")
+samples_V <- c("V_01","V_02","V_03","V_04","V_05","V_06","V_07","V_08","V_09","V_10","V_11","V_12","V_13","V_14","V_15","V_16","V_17","V_18","V_19","V_20")
+## P,V,P,V,...
+samples_order <- c(rbind(samples_P, samples_V))
+
+GT <- GT[, S1 := factor(S1, levels = samples_order)]
+GT <- GT[, S2 := factor(S2, levels = samples_order)]
+
+p <- ggplot(GT, aes(S1, S2))
+p <- p + geom_tile(aes(fill = pct_identity))
+p <- p + geom_text(aes(label = round(pct_identity)), colour="grey", size = 2.5)
+p <- p + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 0))
+p <- p + xlab(NULL) + ylab(NULL)
+p <- p + theme(legend.position="top")
+p
+```
+
+***
+
+```{r genotyping_RNA_RNA_raw_table, cache=F}
+
+GT %>% DT::datatable(caption="Genotyping, pairwise comparison, RNA vs RNA", escape=F, rownames = F, extensions = 'Buttons', options = list(dom = 'Blfrtip', buttons = list('colvis', list(extend = 'copy', exportOptions = list(columns=':visible')), list(extend = 'csv', exportOptions = list(columns=':visible')), list(extend = 'excel', exportOptions = list(columns=':visible')))))
+```
+
+
+***
+
+# Genotyping: filtered RNA vs RNA
+
+* here, use QC-filtered VCFs
+
+***
+
+```{r genotyping_RNA_RNA_filter, fig.width=9, fig.height=7}
+
+GT <- fread(GT_RNA_RNA_filtered_file)
+setnames(GT, c("S1", "S2", "n_1", "n_2", "n_different", "n_compared"))
+GT <- GT[, pct_identity := 100 * (n_compared - n_different) / n_compared]
+
+GT <- GT[, S1 := gsub("_var_raw", "", S1)]
+GT <- GT[, S2 := gsub("_var_raw", "", S2)]
+
+GT <- GT[, S1 := factor(S1, levels = samples_order)]
+GT <- GT[, S2 := factor(S2, levels = samples_order)]
+
+p <- ggplot(GT, aes(S1, S2))
+p <- p + geom_tile(aes(fill = pct_identity))
+p <- p + geom_text(aes(label = round(pct_identity)), colour="grey", size = 2.5)
+p <- p + theme(axis.text.x = element_text(angle = -90, hjust = 1))
+p <- p + xlab(NULL) + ylab(NULL)
+p <- p + theme(legend.position="top")
+p
+```
+
+***
+
+```{r genotyping_RNA_RNA_filter_table, cache=F}
+
+GT %>% DT::datatable(caption="Genotyping, pairwise comparison, RNA vs RNA", escape=F, rownames = F, extensions = 'Buttons', options = list(dom = 'Blfrtip', buttons = list('colvis', list(extend = 'copy', exportOptions = list(columns=':visible')), list(extend = 'csv', exportOptions = list(columns=':visible')), list(extend = 'excel', exportOptions = list(columns=':visible')))))
+```
+
+***
+
+# Genotyping: DNA vs RNA
+
+* compare SNPs from 40 RNA BAM files to SNPs from donor Neurochip data
+* percentage values indicate the percentage of SNPs matched based on gtcheck
+
+***
+
+```{r genotyping_DNA_RNA, fig.width=9, fig.height=7}
+
+GT <- fread(GT_DNA_RNA_file)
+setnames(GT, c("S1", "S2", "n_1", "n_2", "n_different", "n_compared"))
+GT <- GT[, pct_identity := 100 * (n_compared - n_different) / n_compared]
+
+GT <- GT[, S1 := gsub("_var_raw", "", S1)]
+GT <- GT[, S2 := gsub("_var_raw", "", S2)]
+
+samples_P <- c("P_01","P_02","P_03","P_04", "P_05","P_06","P_07","P_08","P_09","P_10","P_11","P_12","P_13","P_14","P_15","P_16","P_17","P_18","P_19","P_20")
+samples_V <- c("V_01","V_02","V_03","V_04","V_05","V_06","V_07","V_08","V_09","V_10","V_11","V_12","V_13","V_14","V_15","V_16","V_17","V_18","V_19","V_20")
+## P,V,P,V,...
+samples_order <- c(rbind(samples_P, samples_V))
+
+samples_DNA <- c("1_NP002_2019","2_NP032_2018","3_NP070_2019","4_NP177_2013","5_NP003_2019","6_NP034_2014","7_NP076_2014","8_NP150_2014","9_NP008_2015","10_NP041_2019","11_NP077_2018","12_NP002_2019_R","13_NP011_2019","14_NP058_2019","15_NP080_2014","16_NP003_2019_R","17_NP016_2017","18_NP063_2019","19_NP128_2017","20_NP008_2015_R","21_NP018_2019","22_NP067_2019","23_NP142_2014","24_NP011_2019_R")
+
+GT <- GT[, S1 := factor(S1, levels = samples_DNA)]
+GT <- GT[, S2 := factor(S2, levels = samples_order)]
+
+p <- ggplot(GT, aes(S1, S2))
+p <- p + geom_tile(aes(fill = pct_identity))
+p <- p + geom_text(aes(label = round(pct_identity)), colour="grey", size = 2.5)
+p <- p + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 0))
+p <- p + xlab(NULL) + ylab(NULL)
+p <- p + theme(legend.position="top")
+p
+```
+
+
+***
+
+* same as above, reorder DNA donor samples on x-axis
+
+***
+
+```{r genotyping_DNA_RNA_2, fig.width=9, fig.height=7}
+
+samples_DNA_reorder <- c("2_NP032_2018", "10_NP041_2019", "11_NP077_2018", "22_NP067_2019",
+  "9_NP008_2015", "20_NP008_2015_R",
+  "6_NP034_2014", "3_NP070_2019", "23_NP142_2014", "17_NP016_2017", "15_NP080_2014", 
+  "19_NP128_2017", "21_NP018_2019", "18_NP063_2019", "4_NP177_2013", "14_NP058_2019",
+  "1_NP002_2019", "12_NP002_2019_R",
+  "8_NP150_2014", "7_NP076_2014", 
+  "13_NP011_2019", "24_NP011_2019_R",
+  "5_NP003_2019", "16_NP003_2019_R")
+
+GT <- GT[, S1 := factor(S1, levels = samples_DNA_reorder)]
+
+p <- ggplot(GT, aes(S1, S2))
+p <- p + geom_tile(aes(fill = pct_identity))
+p <- p + geom_text(aes(label = round(pct_identity)), colour="grey", size = 2.5)
+p <- p + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 0))
+p <- p + xlab(NULL) + ylab(NULL)
+p <- p + theme(legend.position="top")
+p
+```
+
+
+***
+
+```{r genotyping_DNA_RNA_table, cache=F}
+
+GT %>% DT::datatable(caption="Genotyping, pairwise comparison, donor DNA (NeuroChip) vs RNA", escape=F, rownames = F, extensions = 'Buttons', options = list(dom = 'Blfrtip', buttons = list('colvis', list(extend = 'copy', exportOptions = list(columns=':visible')), list(extend = 'csv', exportOptions = list(columns=':visible')), list(extend = 'excel', exportOptions = list(columns=':visible')))))
+```
+
+
+
+***
+
+# SessionInfo
+
+```{r session_info, cache=F}
+
+devtools::session_info()
+```
+
