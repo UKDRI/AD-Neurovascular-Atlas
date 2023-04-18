@@ -1,4 +1,3 @@
-
 #!/bin/bash
 
 #SBATCH -p c_highmem_dri1
@@ -66,4 +65,3 @@ fastqc -o $OUTPUT_DIR3 -f fastq --noextract --quiet -t 1 $FASTQ_FILE
 echo -e "\n*****************************************************************"
 echo "Finished at: "`date`
 echo "*****************************************************************"
-

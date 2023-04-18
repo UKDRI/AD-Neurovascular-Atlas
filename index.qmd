@@ -11,20 +11,35 @@ This is a Quarto website that outlines the analysis pipeline of this project.
 #| label: purl setup
 #| include: false
 # purl setup script
-knitr::purl(here::here("04_data_analysis/990_code_libraries/01_r-packages-used.qmd"), 
-            here::here("04_data_analysis/990_code_libraries/01_r-packages-used.R"))
+knitr::purl(
+  here::here("04_data_analysis/990_code_libraries/01_r-packages-used.qmd"),
+  here::here("04_data_analysis/990_code_libraries/01_r-packages-used.R")
+)
 ```
 
 ```{r}
 #| label: purl scripts
 #| include: false
 # purl scripts
-knitr::purl(here::here("04_data_analysis/001_snrnaseq_analysis/01_fastqc.qmd"), 
-            here::here("04_data_analysis/001_snrnaseq_analysis/01_fastqc.sh"))
-knitr::purl(here::here("04_data_analysis/001_snrnaseq_analysis/02_multiqc.qmd"), 
-            here::here("04_data_analysis/001_snrnaseq_analysis/02_multiqc.sh"))
-knitr::purl(here::here("04_data_analysis/001_snrnaseq_analysis/03_generate_cellranger_reference.qmd"), 
-            here::here("04_data_analysis/001_snrnaseq_analysis/03_generate_cellranger_reference.sh"))
+knitr::purl(
+  here::here("04_data_analysis/001_snrnaseq_analysis/01_fastqc.qmd"),
+  here::here("04_data_analysis/001_snrnaseq_analysis/01_fastqc.sh"),
+  documentation = 0
+)
+knitr::purl(
+  here::here("04_data_analysis/001_snrnaseq_analysis/02_multiqc.qmd"),
+  here::here("04_data_analysis/001_snrnaseq_analysis/02_multiqc.sh"),
+  documentation = 0
+)
+knitr::purl(
+  here::here(
+    "04_data_analysis/001_snrnaseq_analysis/03_generate_cellranger_reference.qmd"
+  ),
+  here::here(
+    "04_data_analysis/001_snrnaseq_analysis/03_generate_cellranger_reference.sh"
+  ),
+  documentation = 0
+)
 ```
 
 # Notes on project structure

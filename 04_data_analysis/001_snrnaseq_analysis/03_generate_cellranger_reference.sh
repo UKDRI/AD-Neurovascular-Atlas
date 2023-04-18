@@ -1,4 +1,3 @@
-
 #!/bin/bash
 
 #SBATCH -p c_highmem_dri1 	###c_highmem_dri1 ## dev, compute, htc, highmem
@@ -187,4 +186,3 @@ $CELL_RANGER mkref \
 --genes="$gtf_filtered" \
 --memgb=250 \
 --nthreads=40
-
