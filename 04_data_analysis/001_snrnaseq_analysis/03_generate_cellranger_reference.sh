@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH -p c_highmem_dri1 	###c_highmem_dri1 ## dev, compute, htc, highmem
-#SBATCH --job-name=cellranger_ref_gen
+#SBATCH --job-name=cellranger_ref_gen_bbb
 #SBATCH --ntasks=40
 #SBATCH --ntasks-per-node=40
 #### SBATCH --mem-per-cpu=30000 # memory limit per core

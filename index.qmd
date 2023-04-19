@@ -23,7 +23,7 @@ knitr::purl(
 # purl scripts
 knitr::purl(
   here::here("04_data_analysis/001_snrnaseq_analysis/01_fastqc.qmd"),
-  here::here("04_data_analysis/001_snrnaseq_analysis/01_fastqc.sh"),
+  here::here("04_data_analysis/001_snrnaseq_analysis/01_fastqc_set1.sh"),
   documentation = 0
 )
 knitr::purl(
