@@ -1,23 +1,3 @@
----
-title: Run FastQC on sample
-execute: 
-  eval: false
----
-
-We can start by checking some QC metrics of the fasta files.
-
-To count the number of fastq files we can use the following:
-
-```{r}
-#| purl: false
-ls -lR /gluster/dri02/rdscw/shared/webber/Endo_10X/FASTQ/Set_2/ | grep --count \.fastq.gz$ 
-```
-
-There's 144 in set 1, 244 in set 2, and 656 in set 3.
-
-It's a little graceless, but I'll purl this script for set 1 and then manually create copies and change the array number and directory.
-
-```{r}
 #!/bin/bash
 
 #SBATCH -p c_highmem_dri1
@@ -85,4 +65,3 @@ fastqc -o $OUTPUT_DIR2 -f fastq --noextract --quiet -t 1 $FASTQ_FILE
 echo -e "\n*****************************************************************"
 echo "Finished at: "`date`
 echo "*****************************************************************"
-```

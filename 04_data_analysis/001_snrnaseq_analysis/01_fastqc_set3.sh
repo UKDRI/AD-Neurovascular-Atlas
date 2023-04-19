@@ -1,30 +1,10 @@
----
-title: Run FastQC on sample
-execute: 
-  eval: false
----
-
-We can start by checking some QC metrics of the fasta files.
-
-To count the number of fastq files we can use the following:
-
-```{r}
-#| purl: false
-ls -lR /gluster/dri02/rdscw/shared/webber/Endo_10X/FASTQ/Set_2/ | grep --count \.fastq.gz$ 
-```
-
-There's 144 in set 1, 244 in set 2, and 656 in set 3.
-
-It's a little graceless, but I'll purl this script for set 1 and then manually create copies and change the array number and directory.
-
-```{r}
 #!/bin/bash
 
 #SBATCH -p c_highmem_dri1
 #SBATCH --job-name=fastqc_bbb
 #SBATCH --ntasks=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --array=1-144%144
+#SBATCH --array=1-656%656
 #SBATCH --mem-per-cpu=5000 # memory limit per core
 #####  #SBATCH --mem=96000 # memory limit per compute node for the job
 #SBATCH --time=1-00:00 # maximum job time in D-HH:MM
@@ -73,16 +53,15 @@ mkdir -p $OUTPUT_DIR
 
 N=${SLURM_ARRAY_TASK_ID}
 
-# FASTQ_FILE=$(find $INPUT_DIR -mindepth 1 -maxdepth 1 -name '*_001.fastq.gz' | sort | tail -n+${N} | head -1)
-# fastqc -o $OUTPUT_DIR -f fastq --noextract --quiet -t 1 $FASTQ_FILE
+FASTQ_FILE=$(find $INPUT_DIR -mindepth 1 -maxdepth 1 -name '*_001.fastq.gz' | sort | tail -n+${N} | head -1)
+fastqc -o $OUTPUT_DIR -f fastq --noextract --quiet -t 1 $FASTQ_FILE
 
-FASTQ_FILE=$(find $INPUT_DIR_b1s1 -mindepth 1 -maxdepth 1 -name '*_001.fastq.gz' | sort | tail -n+${N} | head -1)
-fastqc -o $OUTPUT_DIR2 -f fastq --noextract --quiet -t 1 $FASTQ_FILE
- 
+# FASTQ_FILE=$(find $INPUT_DIR_b1s1 -mindepth 1 -maxdepth 1 -name '*_001.fastq.gz' | sort | tail -n+${N} | head -1)
+# fastqc -o $OUTPUT_DIR2 -f fastq --noextract --quiet -t 1 $FASTQ_FILE
+
 # FASTQ_FILE=$(find $INPUT_DIR_b1s2 -mindepth 1 -maxdepth 3 -name '*_001.fastq.gz' | sort | tail -n+${N} | head -1)
 # fastqc -o $OUTPUT_DIR3 -f fastq --noextract --quiet -t 1 $FASTQ_FILE
 
 echo -e "\n*****************************************************************"
 echo "Finished at: "`date`
 echo "*****************************************************************"
-```
