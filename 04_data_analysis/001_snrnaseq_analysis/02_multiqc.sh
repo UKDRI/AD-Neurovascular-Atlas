@@ -52,7 +52,7 @@ multiqc -o $OUTPUT_DIR"01_set1_L2_3_4" \
 --module fastqc \
 --force \
 --interactive \
-$INPUT_DIR""*_L2_3_4_*_fastqc.zip
+$INPUT_DIR""*_fastqc.zip
 
 
 multiqc -o $OUTPUT_DIR"02_set2" \
@@ -62,7 +62,7 @@ multiqc -o $OUTPUT_DIR"02_set2" \
 --module fastqc \
 --force \
 --interactive \
-$INPUT_DIR2""*_all_lanes_*_fastqc.zip
+$INPUT_DIR2""*_fastqc.zip
 
 multiqc -o $OUTPUT_DIR"03_set3" \
 --filename "fastqc_endo_10X_set3" \
@@ -71,7 +71,7 @@ multiqc -o $OUTPUT_DIR"03_set3" \
 --module fastqc \
 --force \
 --interactive \
-$INPUT_DIR3""*_set3_*_fastqc.zip
+$INPUT_DIR3""_fastqc.zip
 
 echo -e "\n*****************************************************************"
 echo "Finished at: "`date`
