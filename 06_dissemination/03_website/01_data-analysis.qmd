@@ -1,0 +1,7 @@
+---
+title: "Data Analysis Pipeline"
+execute: 
+  freeze: false
+---
+
+This section of the site houses the data analysis performed.
