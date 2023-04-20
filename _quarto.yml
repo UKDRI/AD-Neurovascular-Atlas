@@ -52,7 +52,7 @@ format:
     css: styles.css
     toc: true
     number-sections: true
-    code-fold: true
+    code-fold: show
     code-tools: true
     code-link: true
     embed-resources: false
