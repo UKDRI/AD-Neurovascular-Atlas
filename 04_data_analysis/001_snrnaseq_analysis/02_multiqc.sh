@@ -71,7 +71,7 @@ multiqc -o $OUTPUT_DIR"03_set3" \
 --module fastqc \
 --force \
 --interactive \
-$INPUT_DIR3""_fastqc.zip
+$INPUT_DIR3""*_fastqc.zip
 
 echo -e "\n*****************************************************************"
 echo "Finished at: "`date`

@@ -2,6 +2,9 @@
 title: Run MultiQC
 execute: 
   eval: false
+# add multiqc reports to website
+resources:
+  - "/scratch/c.mpmgb/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/02_multiqc/"
 ---
 
 MultiQC combines the fastqc reports together for us
@@ -80,7 +83,7 @@ multiqc -o $OUTPUT_DIR"03_set3" \
 --module fastqc \
 --force \
 --interactive \
-$INPUT_DIR3""_fastqc.zip
+$INPUT_DIR3""*_fastqc.zip
 
 echo -e "\n*****************************************************************"
 echo "Finished at: "`date`
