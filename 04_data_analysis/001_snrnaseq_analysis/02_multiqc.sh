@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH -p c_highmem_dri1
-#SBATCH --job-name=MultiQC
+#SBATCH --job-name=multiqc_bbb
 #SBATCH --ntasks=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --time=1-00:00 # maximum job time in D-HH:MM
@@ -39,46 +39,39 @@ OUTPUT_DIR="/scratch/c.mpmgb/blood-brain-barrier-in-ad/03_data/990_processed_dat
 # FastQC runs
 
 ## Endo 10X Vascular and Parenchymal fraction set 1 - 24 samples
-INPUT_DIR="/scratch/c.mpmgb/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/01_fastqc/"
+INPUT_DIR="/scratch/c.mpmgb/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/01_fastqc/01_set1/"
+## Endo 10X Vascular and Parenchymal fraction set 2 - 16 samples
+INPUT_DIR2="/scratch/c.mpmgb/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/01_fastqc/02_set2/"
+## Endo 10X Vascular and Parenchymal fraction set 3 - 40 samples
+INPUT_DIR3="/scratch/c.mpmgb/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/01_fastqc/03_set3/"
 
-multiqc -o $OUTPUT_DIR"FastQC_endo_10X_set1_v2_I1" \
---filename "fastqc_endo_10X_set1_I1" \
---title "FastQC endo 10X set1 v2 I1" \
+multiqc -o $OUTPUT_DIR"01_set1_L2_3_4" \
+--filename "fastqc_endo_10X_set1" \
+--title "FastQC endo 10X set1" \
 --cl_config "fastqc_config: { fastqc_theoretical_gc: hg38_txome }" \
 --module fastqc \
 --force \
 --interactive \
-$INPUT_DIR""*_I1_*_fastqc.zip
+$INPUT_DIR""*_L2_3_4_*_fastqc.zip
 
 
-multiqc -o $OUTPUT_DIR"FastQC_endo_10X_set1_v2_I2" \
---filename "fastqc_endo_10X_set1_I2" \
---title "FastQC endo 10X set1 v2 I2" \
+multiqc -o $OUTPUT_DIR"02_set2" \
+--filename "fastqc_endo_10X_set2" \
+--title "FastQC endo 10X set2" \
 --cl_config "fastqc_config: { fastqc_theoretical_gc: hg38_txome }" \
 --module fastqc \
 --force \
 --interactive \
-$INPUT_DIR""*_I2_*_fastqc.zip
+$INPUT_DIR2""*_all_lanes_*_fastqc.zip
 
-multiqc -o $OUTPUT_DIR"FastQC_endo_10X_set1_v2_R1" \
---filename "fastqc_endo_10X_set1_R1" \
---title "FastQC endo 10X set1 v2 R1" \
+multiqc -o $OUTPUT_DIR"03_set3" \
+--filename "fastqc_endo_10X_set3" \
+--title "FastQC endo 10X set3" \
 --cl_config "fastqc_config: { fastqc_theoretical_gc: hg38_txome }" \
 --module fastqc \
 --force \
 --interactive \
-$INPUT_DIR""*_R1_*_fastqc.zip
-
-
-multiqc -o $OUTPUT_DIR"FastQC_endo_10X_set1_v2_R2" \
---filename "fastqc_endo_10X_set1_R2" \
---title "FastQC endo 10X set1 v2 R2" \
---cl_config "fastqc_config: { fastqc_theoretical_gc: hg38_txome }" \
---module fastqc \
---force \
---interactive \
-$INPUT_DIR""*_R2_*_fastqc.zip
-
+$INPUT_DIR3""*_set3_*_fastqc.zip
 
 echo -e "\n*****************************************************************"
 echo "Finished at: "`date`
