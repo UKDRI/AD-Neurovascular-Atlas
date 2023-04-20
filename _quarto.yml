@@ -1,5 +1,5 @@
 project:
-  title: "Example quarto project"
+  type: website
   output-dir: public
   render: 
     - "*.qmd"
@@ -13,6 +13,27 @@ execute:
   freeze: auto
   warning: false
   message: false
+    
+website:
+  title: "Blood brain barrier in AD"
+  navbar:
+    search: true
+    left:
+      - text: "Home"
+        file: index.qmd
+      - text: "Data analysis"
+        file: 06_dissemination/03_website/01_data-analysis.qmd
+        
+  sidebar:
+    - title: "Data analysis"
+      style: "docked"
+      background: light
+      contents:
+        - 06_dissemination/03_website/01_data-analysis.qmd
+        - 04_data_analysis/001_snrnaseq_analysis/01_fastqc.qmd
+        - 04_data_analysis/001_snrnaseq_analysis/02_multiqc.qmd
+        - 04_data_analysis/001_snrnaseq_analysis/03_generate_cellranger_reference.qmd
+
   
 format:
   html:
