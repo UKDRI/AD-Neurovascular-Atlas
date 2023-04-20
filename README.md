@@ -2,7 +2,7 @@
 
 This project is using single-nuclear RNA sequencing data to investigate the blood brain barrier in Alzheimer's disease.
 
-There are 20 cases and 20 controls with two cell populations sequenced for a total of 80 samples.
+There are 20 cases and 20 controls with two cell populations, from the parenchyma and vascular, sequenced for a total of 80 samples.
 
 ## Data
 
