@@ -6,7 +6,7 @@ execute:
 
 MultiQC combines the fastqc reports together for us.
 
-You can view the report for set 1 reads [here](../../03_data/990_processed_data/001_snrnaseq/02_multiqc/01_set1_reads/fastqc_endo_10x_set1_reads.html), set 2 [here](../../03_data/990_processed_data/001_snrnaseq/02_multiqc/02_set2_reads/fastqc_endo_10x_set2_reads.html) and set 3 [here](../../03_data/990_processed_data/001_snrnaseq/02_multiqc/03_set3_reads/fastqc_endo_10x_set3_reads.html).
+You can view the report for set 1 reads [here](../../03_data/990_processed_data/001_snrnaseq/02_multiqc/01_set1_reads/fastqc_endo_10X_set1_reads.html), set 2 [here](../../03_data/990_processed_data/001_snrnaseq/02_multiqc/02_set2_reads/fastqc_endo_10X_set2_reads.html) and set 3 [here](../../03_data/990_processed_data/001_snrnaseq/02_multiqc/03_set3_reads/fastqc_endo_10X_set3_reads.html).
 
 Note that the files containing a string like `_I1_` are the indexes while strings like `_R1_` are the reads.
 There's a separate MultiQC report for each set and for the indexes and reads.
