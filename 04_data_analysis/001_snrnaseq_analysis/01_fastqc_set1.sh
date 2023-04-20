@@ -33,12 +33,12 @@ echo "Started at: "`date`
 echo -e "*****************************************************************\n"
 
 ## FASTQ files
-## This is the directory for batch 2
-INPUT_DIR="/gluster/dri02/rdsmbh/shared/rdsmbh/230327_A00748_0368_AH5CTMDSX5_fastq/"
 ## This if for batch 1 set 1
 INPUT_DIR_b1s1="/gluster/dri02/rdscw/shared/webber/Endo_10X/FASTQ/Set_1/211008_A00748_0157_AHT7TJDSX2_fastq_L2_3_4/"
 ## This is for batch 1 set 2
 INPUT_DIR_b1s2="/gluster/dri02/rdscw/shared/webber/Endo_10X/FASTQ/Set_2/"
+## This is the directory for batch 2 (set 3)
+INPUT_DIR="/gluster/dri02/rdsmbh/shared/rdsmbh/230327_A00748_0368_AH5CTMDSX5_fastq/"
 
 OUTPUT_DIR="/scratch/c.mpmgb/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/01_fastqc/01_set1"
 OUTPUT_DIR2="/scratch/c.mpmgb/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/01_fastqc/02_set2"
@@ -53,14 +53,15 @@ mkdir -p $OUTPUT_DIR
 
 N=${SLURM_ARRAY_TASK_ID}
 
-# FASTQ_FILE=$(find $INPUT_DIR -mindepth 1 -maxdepth 1 -name '*_001.fastq.gz' | sort | tail -n+${N} | head -1)
-# fastqc -o $OUTPUT_DIR -f fastq --noextract --quiet -t 1 $FASTQ_FILE
-
 FASTQ_FILE=$(find $INPUT_DIR_b1s1 -mindepth 1 -maxdepth 1 -name '*_001.fastq.gz' | sort | tail -n+${N} | head -1)
-fastqc -o $OUTPUT_DIR2 -f fastq --noextract --quiet -t 1 $FASTQ_FILE
+fastqc -o $OUTPUT_DIR1 -f fastq --noextract --quiet -t 1 $FASTQ_FILE
  
 # FASTQ_FILE=$(find $INPUT_DIR_b1s2 -mindepth 1 -maxdepth 3 -name '*_001.fastq.gz' | sort | tail -n+${N} | head -1)
+# fastqc -o $OUTPUT_DIR2 -f fastq --noextract --quiet -t 1 $FASTQ_FILE
+
+# FASTQ_FILE=$(find $INPUT_DIR -mindepth 1 -maxdepth 1 -name '*_001.fastq.gz' | sort | tail -n+${N} | head -1)
 # fastqc -o $OUTPUT_DIR3 -f fastq --noextract --quiet -t 1 $FASTQ_FILE
+
 
 echo -e "\n*****************************************************************"
 echo "Finished at: "`date`

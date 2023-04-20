@@ -53,14 +53,14 @@ mkdir -p $OUTPUT_DIR
 
 N=${SLURM_ARRAY_TASK_ID}
 
-FASTQ_FILE=$(find $INPUT_DIR -mindepth 1 -maxdepth 1 -name '*_001.fastq.gz' | sort | tail -n+${N} | head -1)
-fastqc -o $OUTPUT_DIR -f fastq --noextract --quiet -t 1 $FASTQ_FILE
-
 # FASTQ_FILE=$(find $INPUT_DIR_b1s1 -mindepth 1 -maxdepth 1 -name '*_001.fastq.gz' | sort | tail -n+${N} | head -1)
+# fastqc -o $OUTPUT_DIR1 -f fastq --noextract --quiet -t 1 $FASTQ_FILE
+ 
+# FASTQ_FILE=$(find $INPUT_DIR_b1s2 -mindepth 1 -maxdepth 3 -name '*_001.fastq.gz' | sort | tail -n+${N} | head -1)
 # fastqc -o $OUTPUT_DIR2 -f fastq --noextract --quiet -t 1 $FASTQ_FILE
 
-# FASTQ_FILE=$(find $INPUT_DIR_b1s2 -mindepth 1 -maxdepth 3 -name '*_001.fastq.gz' | sort | tail -n+${N} | head -1)
-# fastqc -o $OUTPUT_DIR3 -f fastq --noextract --quiet -t 1 $FASTQ_FILE
+FASTQ_FILE=$(find $INPUT_DIR -mindepth 1 -maxdepth 1 -name '*_001.fastq.gz' | sort | tail -n+${N} | head -1)
+fastqc -o $OUTPUT_DIR3 -f fastq --noextract --quiet -t 1 $FASTQ_FILE
 
 echo -e "\n*****************************************************************"
 echo "Finished at: "`date`
