@@ -17,11 +17,8 @@ execute:
 # add multiqc reports to website
 resources:
   - "03_data/990_processed_data/001_snrnaseq/02_multiqc/01_set1_reads/fastqc_endo_10x_set1_reads.html"
-  - "03_data/990_processed_data/001_snrnaseq/02_multiqc/01_set1_reads/fastqc_endo_10x_set1_reads_data"
   - "03_data/990_processed_data/001_snrnaseq/02_multiqc/02_set2_reads/fastqc_endo_10x_set2_reads.html"
-  - "03_data/990_processed_data/001_snrnaseq/02_multiqc/02_set2_reads/fastqc_endo_10x_set2_reads_data"
   - "03_data/990_processed_data/001_snrnaseq/02_multiqc/03_set3_reads/fastqc_endo_10x_set3_reads.html"
-  - "03_data/990_processed_data/001_snrnaseq/02_multiqc/02_set2_reads/fastqc_endo_10x_set3_reads_data"
   
 website:
   title: "Blood brain barrier in AD"
