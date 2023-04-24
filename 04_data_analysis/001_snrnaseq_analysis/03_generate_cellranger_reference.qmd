@@ -66,12 +66,11 @@ genome="GRCh38"
 version="2023_"${ENSEMBL_VER}
 
 # Set up source and build directories
-## need to update build dir!
-build="GRCh38_2023_ensembl"${ENSEMBL_VER}
+build="GRCh38_2023_"${ENSEMBL_VER}"_ensembl"
 mkdir -p "$build"
 
 # Download source files if they do not exist in reference_sources/ folder
-source="reference_sources_ensembl"${ENSEMBL_VER}
+source="reference_sources_ensembl_"${ENSEMBL_VER}
 mkdir -p "$source"
 
 fasta_url="http://ftp.ensembl.org/pub/release-"${ENSEMBL_VER}"/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz"
