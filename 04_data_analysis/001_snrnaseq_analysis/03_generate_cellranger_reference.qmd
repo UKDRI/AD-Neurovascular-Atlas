@@ -79,6 +79,9 @@ fasta_in="${source}/Homo_sapiens.GRCh38.dna.primary_assembly.fa"
 gtf_url="http://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_"${GENCODE_VER}"/gencode.v"${GENCODE_VER}".primary_assembly.annotation.gtf.gz"
 gtf_in="${source}/gencode.v"${GENCODE_VER}".primary_assembly.annotation.gtf"
 
+## compute node dir
+COM_DIR="/scratch/c.mpmgb/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/03_cellranger_reference"
+
 #-----------------------------------------------------------------------
 ## run on login node
 
@@ -90,14 +93,17 @@ gtf_in="${source}/gencode.v"${GENCODE_VER}".primary_assembly.annotation.gtf"
 # fi
 
 #-----------------------------------------------------------------------
-## run on compute node
-
-## compute node dir
-COM_DIR="/scratch/c.mpmgb/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/03_cellranger_reference"
-cd $COM_DIR
 
 ## copy the downloaded reference 
-cp $REF_DIR $COM_DIR
+# cp -r $REF_DIR $COM_DIR
+
+## run on compute node
+
+# Move to the scratch dir
+cd $COM_DIR
+
+# update build dir
+build="reference_genomes/"${build}
 
 # Modify sequence headers in the Ensembl FASTA to match the file
 # "GRCh38.primary_assembly.genome.fa" from GENCODE. Unplaced and unlocalized
