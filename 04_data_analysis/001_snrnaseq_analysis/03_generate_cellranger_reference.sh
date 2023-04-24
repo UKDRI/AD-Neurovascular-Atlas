@@ -67,21 +67,24 @@ gtf_url="http://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_"${GEN
 gtf_in="${source}/gencode.v"${GENCODE_VER}".primary_assembly.annotation.gtf"
 
 #-----------------------------------------------------------------------
-## on login node
+## run on login node
 
-if [ ! -f "$fasta_in" ]; then
-    curl -sS "$fasta_url" | zcat > "$fasta_in"
-fi
-if [ ! -f "$gtf_in" ]; then
-    curl -sS "$gtf_url" | zcat > "$gtf_in"
-fi
+# if [ ! -f "$fasta_in" ]; then
+#     curl -sS "$fasta_url" | zcat > "$fasta_in"
+# fi
+# if [ ! -f "$gtf_in" ]; then
+#     curl -sS "$gtf_url" | zcat > "$gtf_in"
+# fi
 
 #-----------------------------------------------------------------------
-## on compute node
+## run on compute node
 
 ## compute node dir
 COM_DIR="/scratch/c.mpmgb/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/03_cellranger_reference"
 cd $COM_DIR
+
+## copy the downloaded reference 
+cp $REF_DIR $COM_DIR
 
 # Modify sequence headers in the Ensembl FASTA to match the file
 # "GRCh38.primary_assembly.genome.fa" from GENCODE. Unplaced and unlocalized

@@ -96,6 +96,9 @@ gtf_in="${source}/gencode.v"${GENCODE_VER}".primary_assembly.annotation.gtf"
 COM_DIR="/scratch/c.mpmgb/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/03_cellranger_reference"
 cd $COM_DIR
 
+## copy the downloaded reference 
+cp $REF_DIR $COM_DIR
+
 # Modify sequence headers in the Ensembl FASTA to match the file
 # "GRCh38.primary_assembly.genome.fa" from GENCODE. Unplaced and unlocalized
 # sequences such as "KI270728.1" have the same names in both versions.
