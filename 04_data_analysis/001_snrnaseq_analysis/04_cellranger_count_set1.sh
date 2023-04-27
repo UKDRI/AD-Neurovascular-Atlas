@@ -58,7 +58,7 @@ CELL_RANGER="/scratch/c.mpmgb/tools/cellranger-7.1.0/bin/cellranger"
 ## CR_REF="/scratch/c.mpmgb/Tools/CellRanger/CellRanger_references/refdata-gex-GRCh38-2020-A"
 ## updated CR reference based on ensembl v109 (Gencode v43)
 ## from get_cellranger_reference.sh
-CR_REF="/scratch/c.mpmgb/blood-brain-barrier/03_data/990_processed_data/001_snrnaseq/03_cellranger_reference/GRCh38"
+CR_REF="/scratch/c.mpmgb/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/03_cellranger_reference/GRCh38"
 
 #-----------------------------------------------------------------------
 # Cell Ranger count
