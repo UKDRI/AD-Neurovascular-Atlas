@@ -40,6 +40,24 @@ knitr::purl(
   ),
   documentation = 0
 )
+knitr::purl(
+  here::here(
+    "04_data_analysis/001_snrnaseq_analysis/04_cellranger_count_set1.qmd"
+  ),
+  here::here(
+    "04_data_analysis/001_snrnaseq_analysis/04_cellranger_count_set1.sh"
+  ),
+  documentation = 0
+)
+knitr::purl(
+  here::here(
+    "04_data_analysis/001_snrnaseq_analysis/05_cellranger_count_set2.qmd"
+  ),
+  here::here(
+    "04_data_analysis/001_snrnaseq_analysis/05_cellranger_count_set2.sh"
+  ),
+  documentation = 0
+)
 ```
 
 # Notes on project structure
