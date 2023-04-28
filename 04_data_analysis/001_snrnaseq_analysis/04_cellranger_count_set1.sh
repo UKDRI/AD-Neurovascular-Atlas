@@ -6,7 +6,7 @@
 #SBATCH --ntasks-per-node=40
 #SBATCH --array=1-24%2
 ##### #SBATCH --mem-per-cpu=8000 # memory limit per core
-#SBATCH --mem=740G # memory limit per compute node for the job
+#SBATCH --mem=240G # memory limit per compute node for the job
 #SBATCH --time=3-00:00 # maximum job time in D-HH:MM
 #SBATCH --account=scw1329
 #SBATCH -o /scratch/c.mpmgb/hawk_output/%x_out_%A_%a_%J.txt
