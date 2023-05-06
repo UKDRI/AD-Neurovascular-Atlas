@@ -40,10 +40,10 @@ echo -e "*****************************************************************\n"
 INPUT_DIR_1="/gluster/dri02/rdsmbh/shared/rdsmbh/230327_A00748_0368_AH5CTMDSX5_fastq/"
 
 ## results
-OUTPUT_DIR="/scratch/c.mpmgb/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/04_cellranger_count/03_set3"
+OUTPUT_DIR="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/04_cellranger_count/03_set3"
 
 ## original sample IDs, correpond to FASTQ file names
-SAMPLE_ID_FILE="/scratch/c.mpmgb/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/90_sample_info/samples_set3.txt"
+SAMPLE_ID_FILE="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/90_sample_info/samples_set3.txt"
 
 ## CR executable
 CELL_RANGER="/scratch/c.mpmgb/tools/cellranger-7.1.0/bin/cellranger"
@@ -54,7 +54,7 @@ CELL_RANGER="/scratch/c.mpmgb/tools/cellranger-7.1.0/bin/cellranger"
 ## CR_REF="/scratch/c.mpmfw/Tools/CellRanger/CellRanger_references/refdata-gex-GRCh38-2020-A"
 ## updated CR reference based on ensembl v108 (Gencode v42)
 ## from get_cellranger_reference.sh
-CR_REF="/scratch/c.mpmgb/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/03_cellranger_reference/GRCh38"
+CR_REF="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/03_cellranger_reference/GRCh38"
 
 
 #-----------------------------------------------------------------------

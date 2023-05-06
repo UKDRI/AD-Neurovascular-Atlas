@@ -52,13 +52,13 @@ INPUT_DIR_3="/gluster/dri02/rdscw/shared/webber/Endo_10X/FASTQ/Set_2/210728_A007
 INPUT_DIR_4="/gluster/dri02/rdscw/shared/webber/Endo_10X/FASTQ/Set_2/210901_A00711_0420_AHGJJLDSX2/FASTQ/"
 
 ## results
-OUTPUT_DIR="/scratch/c.mpmgb/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/04_cellranger_count/02_set2"
+OUTPUT_DIR="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/04_cellranger_count/02_set2"
 
 ## original sample IDs, correpond to FASTQ file names
-SAMPLE_ID_FILE="/scratch/c.mpmgb/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/90_sample_info/samples_set2_4_runs.txt"
+SAMPLE_ID_FILE="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/90_sample_info/samples_set2_4_runs.txt"
 
 ## corresponding new sample names to be set by --id
-SAMPLE_ID_NEW_FILE="/scratch/c.mpmgb/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/90_sample_info/samples_set2_rename.txt"
+SAMPLE_ID_NEW_FILE="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/90_sample_info/samples_set2_rename.txt"
 
 ## CR executable
 CELL_RANGER="/scratch/c.mpmgb/tools/cellranger-7.1.0/bin/cellranger"
@@ -69,7 +69,7 @@ CELL_RANGER="/scratch/c.mpmgb/tools/cellranger-7.1.0/bin/cellranger"
 ## CR_REF="/scratch/c.mpmfw/Tools/CellRanger/CellRanger_references/refdata-gex-GRCh38-2020-A"
 ## updated CR reference based on ensembl v108 (Gencode v42)
 ## from get_cellranger_reference.sh
-CR_REF="/scratch/c.mpmgb/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/03_cellranger_reference/GRCh38"
+CR_REF="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/03_cellranger_reference/GRCh38"
 
 
 #-----------------------------------------------------------------------
