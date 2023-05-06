@@ -104,7 +104,7 @@ multiqc -o $OUTPUT_DIR"03_set3_reads" \
 --interactive \
 $INPUT_DIR3""*_R[1-2]_*_fastqc.zip
 
-multiqc -o $OUTPUT_DIR"02_set3_index" \
+multiqc -o $OUTPUT_DIR"03_set3_index" \
 --filename "fastqc_endo_10X_set3_index" \
 --title "FastQC endo 10X set3 index" \
 --cl_config "fastqc_config: { fastqc_theoretical_gc: hg38_txome }" \
