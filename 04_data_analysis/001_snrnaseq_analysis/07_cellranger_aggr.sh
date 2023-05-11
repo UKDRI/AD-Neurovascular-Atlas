@@ -1,9 +1,10 @@
 #!/bin/bash
 
-#SBATCH -p c_highmem_dri1
+#SBATCH -p c_vhighmem_dri1
 #SBATCH --job-name=cellranger_aggr
-#SBATCH --ntasks=1
-#SBATCH --ntasks-per-node=1
+#SBATCH --ntasks=4
+#SBATCH --ntasks-per-node=4
+#SBATCH --mem=540G # memory limit per compute node for the job
 #SBATCH --time=1-00:00 # maximum job time in D-HH:MM
 #SBATCH --account=scw1329
 #SBATCH -o /scratch/c.mpmgb/hawk_output/%x_out_%A_%a_%J.txt
