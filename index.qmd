@@ -67,6 +67,15 @@ knitr::purl(
   ),
   documentation = 0
 )
+knitr::purl(
+  here::here(
+    "04_data_analysis/001_snrnaseq_analysis/07_cellranger_aggr.qmd"
+  ),
+  here::here(
+    "04_data_analysis/001_snrnaseq_analysis/07_cellranger_aggr.sh"
+  ),
+  documentation = 0
+)
 ```
 
 # Notes on project structure

@@ -1,0 +1,89 @@
+---
+title: Aggregate cellranger count reports
+execute: 
+  eval: false
+---
+
+`cellranger count` produces a report per sample, but it's more useful to aggregate these results into one, so we have `cellranger aggr` for this.
+
+This requires a 2 column CSV file (headers of `sample_id,molecule_h5`) with samples ID and the path to the `molecule_info.h5` file.
+
+```{r}
+#| purl: false
+
+# list the cellranger count output directories
+find /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/04_cellranger_count/ -maxdepth 2 -mindepth 2 -type d > cellranger_ag.txt 
+
+# use the last directory in the path as the sample id
+awk -F'/' '{print $NF "," $0}' cellranger_ag.txt > cellranger_ag2.txt
+
+# append "outs/filtered_gene_bc_matrices" to file paths
+sed "s|$|/outs/molecule_info.h5|" cellranger_ag2.txt > cellranger_ag3.txt
+
+# add the table headers
+awk -v line="sample_id,molecule_h5" 'BEGIN{print line}{print}' cellranger_ag3.txt > cellranger_ag.csv
+
+# clean up
+rm cellranger_ag.txt cellranger_ag2.txt cellranger_ag3.txt
+```
+
+```{r}
+#!/bin/bash
+
+#SBATCH -p c_highmem_dri1
+#SBATCH --job-name=cellranger_aggr
+#SBATCH --ntasks=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --time=1-00:00 # maximum job time in D-HH:MM
+#SBATCH --account=scw1329
+#SBATCH -o /scratch/c.mpmgb/hawk_output/%x_out_%A_%a_%J.txt
+#SBATCH -e /scratch/c.mpmgb/hawk_output/%x_err_%A_%a_%J.txt
+#SBATCH --mail-user Bernardo-HarringtonG@cardiff.ac.uk # email on fail
+#SBATCH --mail-type END,FAIL
+
+echo "*****************************************************************"
+echo "All jobs in this array have:"
+echo "- SLURM_ARRAY_JOB_ID: ${SLURM_ARRAY_JOB_ID}"
+echo "- SLURM_ARRAY_TASK_COUNT: ${SLURM_ARRAY_TASK_COUNT}"
+echo "- SLURM_ARRAY_TASK_MIN: ${SLURM_ARRAY_TASK_MIN}"
+echo "- SLURM_ARRAY_TASK_MAX: ${SLURM_ARRAY_TASK_MAX}"
+echo "This job in the array has:"
+echo "- SLURM_JOB_ID: ${SLURM_JOB_ID}"
+echo "- SLURM_ARRAY_TASK_ID: ${SLURM_ARRAY_TASK_ID}"
+echo "Run on host: "`hostname`
+echo "Number of threads (nproc): "`nproc`
+echo "Total memory in GB: "`free -g | grep -oP '\d+' | sed -n 1p`
+echo "Used memory in GB: "`free -g | grep -oP '\d+' | sed -n 2p`
+echo "Free memory in GB: "`free -g | grep -oP '\d+' | sed -n 3p`
+echo "Username: "`whoami`
+echo "Started at: "`date`
+echo -e "*****************************************************************\n"
+
+
+## path to input csv with samples IDs and paths to cellranger count outputs
+INPUT_CSV="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/05_cellranger_aggr/cellranger_ag.csv"
+
+## name for directory to save output
+DIR_NAME="set_aggr"
+
+## results
+OUTPUT_DIR="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/05_cellranger_aggr"
+
+## CR executable
+CELL_RANGER="/scratch/c.mpmgb/tools/cellranger-7.1.0/bin/cellranger"
+
+
+#-----------------------------------------------------------------------
+# Cell Ranger aggr
+
+mkdir -p $OUTPUT_DIR
+
+cd $OUTPUT_DIR
+
+$CELL_RANGER aggr --id=$DIR_NAME \
+--csv=$INPUT_CSV
+
+echo -e "\n*****************************************************************"
+echo "Finished at: "`date`
+echo "*****************************************************************"
+```
