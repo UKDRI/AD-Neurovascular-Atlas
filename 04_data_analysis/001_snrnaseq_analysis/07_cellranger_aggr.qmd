@@ -22,19 +22,20 @@ awk -F'/' '{print $NF "," $0}' cellranger_ag.txt > cellranger_ag2.txt
 # append "outs/filtered_gene_bc_matrices" to file paths
 sed "s|$|/outs/molecule_info.h5|" cellranger_ag2.txt > cellranger_ag3.txt
 
-# remove the undetermined sample
+# remove the undetermined sample and P_39
 grep -v "Undetermined" cellranger_ag3.txt > cellranger_ag4.txt
+grep -v "P_39" cellranger_ag4.txt > cellranger_ag5.txt
 
 # separate out the sets
-grep "01_set1" cellranger_ag4.txt > cellranger_ag_set1.txt
-grep "02_set2" cellranger_ag4.txt > cellranger_ag_set2.txt
-grep "03_set3" cellranger_ag4.txt > cellranger_ag_set3.txt
+grep "01_set1" cellranger_ag5.txt > cellranger_ag_set1.txt
+grep "02_set2" cellranger_ag5.txt > cellranger_ag_set2.txt
+grep "03_set3" cellranger_ag5.txt > cellranger_ag_set3.txt
 
 # add the table headers
 awk -v line="sample_id,molecule_h5" 'BEGIN{print line}{print}' cellranger_ag_set1.txt > cellranger_aggr_set1.csv
 awk -v line="sample_id,molecule_h5" 'BEGIN{print line}{print}' cellranger_ag_set2.txt > cellranger_aggr_set2.csv
 awk -v line="sample_id,molecule_h5" 'BEGIN{print line}{print}' cellranger_ag_set3.txt > cellranger_aggr_set3.csv
-awk -v line="sample_id,molecule_h5" 'BEGIN{print line}{print}' cellranger_ag4.txt > cellranger_aggr_all_sets.csv
+awk -v line="sample_id,molecule_h5" 'BEGIN{print line}{print}' cellranger_ag5.txt > cellranger_aggr_all_sets.csv
 
 # make a file that has the file paths to use in the array job
 echo "/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/05_cellranger_aggr/cellranger_aggr_set1.csv" > cellranger_aggr_csvs.txt
@@ -43,7 +44,7 @@ echo "/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_data
 echo "/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/05_cellranger_aggr/cellranger_aggr_all_sets.csv" >> cellranger_aggr_csvs.txt
 
 # clean up
-rm cellranger_ag.txt cellranger_ag2.txt cellranger_ag3.txt cellranger_ag_set1.txt cellranger_ag_set2.txt cellranger_ag_set3.txt cellranger_ag4.txt
+rm cellranger_ag.txt cellranger_ag2.txt cellranger_ag3.txt cellranger_ag_set1.txt cellranger_ag_set2.txt cellranger_ag_set3.txt cellranger_ag4.txt cellranger_ag5.txt
 ```
 
 ```{r}
