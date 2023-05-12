@@ -1,12 +1,12 @@
 #!/bin/bash
 
-#SBATCH -p c_vhighmem_dri1 ## dev, compute, htc, highmem
+#SBATCH -p c_highmem_dri1 ## dev, compute, htc, highmem
 #SBATCH --job-name=cellranger_count_set2
 #SBATCH --ntasks=40
 #SBATCH --ntasks-per-node=40
 #SBATCH --array=1-16%2
 ##### #SBATCH --mem-per-cpu=8000 # memory limit per core
-#SBATCH --mem=740G # memory limit per compute node for the job
+#SBATCH --mem=340G # memory limit per compute node for the job
 #SBATCH --time=3-00:00 # maximum job time in D-HH:MM
 #SBATCH --account=scw1329
 #SBATCH -o /scratch/c.mpmgb/hawk_output/%x_out_%A_%a_%J.txt
@@ -86,7 +86,7 @@ then
 	--sample=$SAMPLE_ID \
 	--transcriptome=$CR_REF \
 	--localcores=40 \
-	--localmem=600 \
+	--localmem=330 \
 	--include-introns=true \
 	--no-bam
 elif [[ "$SAMPLE_ID_NEW" == "V_20" ]]
@@ -96,7 +96,7 @@ then
 	--sample=$SAMPLE_ID \
 	--transcriptome=$CR_REF \
 	--localcores=40 \
-	--localmem=600 \
+	--localmem=330 \
 	--include-introns=true \
 	--no-bam
 else
@@ -105,7 +105,7 @@ else
 	--sample=$SAMPLE_ID \
 	--transcriptome=$CR_REF \
 	--localcores=40 \
-	--localmem=600 \
+	--localmem=330 \
 	--include-introns=true \
 	--no-bam
 fi
