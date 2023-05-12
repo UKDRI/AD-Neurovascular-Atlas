@@ -1,13 +1,13 @@
 #!/bin/bash
 
-#SBATCH -p c_vhighmem_dri1 ## dev, compute, htc, highmem
+#SBATCH -p c_highmem_dri1 ## dev, compute, htc, highmem
 #SBATCH --job-name=cellranger_count_set3
 #SBATCH --ntasks=40
 #SBATCH --ntasks-per-node=40
 #SBATCH --array=1-40%2
 ##### #SBATCH --mem-per-cpu=8000 # memory limit per core
-#SBATCH --mem=740G # memory limit per compute node for the job
-#SBATCH --time=4-00:00 # maximum job time in D-HH:MM
+#SBATCH --mem=340G # memory limit per compute node for the job
+#SBATCH --time=2-10:00 # maximum job time in D-HH:MM
 #SBATCH --account=scw1329
 #SBATCH -o /scratch/c.mpmgb/hawk_output/%x_out_%A_%a_%J.txt
 #SBATCH -e /scratch/c.mpmgb/hawk_output/%x_err_%A_%a_%J.txt
@@ -37,7 +37,7 @@ echo -e "*****************************************************************\n"
 ## NOTE, V_19, only sequenced in 1 run (INPUT_DIR_1)
 ## NOTE, V_20, 1 run (INPUT_DIR_2) only with a single read, skip that run
 ## handled via if statement below
-INPUT_DIR_1="/gluster/dri02/rdsmbh/shared/rdsmbh/230327_A00748_0368_AH5CTMDSX5_fastq/"
+INPUT_DIR="/gluster/dri02/rdsmbh/shared/rdsmbh/230327_A00748_0368_AH5CTMDSX5_fastq/"
 
 ## results
 OUTPUT_DIR="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/04_cellranger_count/03_set3"
@@ -65,20 +65,21 @@ mkdir -p $OUTPUT_DIR
 N=${SLURM_ARRAY_TASK_ID}
 
 SAMPLE_ID=$(cat $SAMPLE_ID_FILE | tail -n+${N} | head -1)
-# SAMPLE_ID_NEW=$(cat $SAMPLE_ID_NEW_FILE | tail -n+${N} | head -1)
+# Get the sample ID string after the first "_"
+SAMPLE_ID_NEW="${SAMPLE_ID#*_}"
 
 echo "Input dir: "$INPUT_DIR
 echo "Sample: "$SAMPLE_ID
-# echo "Sample new: "$SAMPLE_ID_NEW
+echo "Sample new: "$SAMPLE_ID_NEW
 
 cd $OUTPUT_DIR
 
-$CELL_RANGER count --id=$SAMPLE_ID \
+$CELL_RANGER count --id=$SAMPLE_ID_NEW \
 --fastqs=$INPUT_DIR \
 --sample=$SAMPLE_ID \
 --transcriptome=$CR_REF \
 --localcores=40 \
---localmem=600 \
+--localmem=330 \
 --include-introns=true \
 --no-bam
 
