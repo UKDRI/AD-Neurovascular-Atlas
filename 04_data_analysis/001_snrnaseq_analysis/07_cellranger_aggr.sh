@@ -1,11 +1,13 @@
 #!/bin/bash
 
-#SBATCH -p c_vhighmem_dri1
+#SBATCH -p c_vhighmem_dri1 ## dev, compute, htc, highmem
 #SBATCH --job-name=cellranger_aggr
-#SBATCH --ntasks=4
-#SBATCH --ntasks-per-node=4
-#SBATCH --mem=540G # memory limit per compute node for the job
-#SBATCH --time=1-00:00 # maximum job time in D-HH:MM
+#SBATCH --ntasks=40
+#SBATCH --ntasks-per-node=40
+#SBATCH --array=1-4%2
+##### #SBATCH --mem-per-cpu=8000 # memory limit per core
+#SBATCH --mem=640G # memory limit per compute node for the job
+#SBATCH --time=2-10:00 # maximum job time in D-HH:MM
 #SBATCH --account=scw1329
 #SBATCH -o /scratch/c.mpmgb/hawk_output/%x_out_%A_%a_%J.txt
 #SBATCH -e /scratch/c.mpmgb/hawk_output/%x_err_%A_%a_%J.txt
@@ -32,10 +34,8 @@ echo -e "*****************************************************************\n"
 
 
 ## path to input csv with samples IDs and paths to cellranger count outputs
-INPUT_CSV="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/05_cellranger_aggr/cellranger_ag.csv"
+INPUT_CSVS="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/05_cellranger_aggr/cellranger_aggr_csvs.txt"
 
-## name for directory to save output
-DIR_NAME="set_aggr"
 
 ## results
 OUTPUT_DIR="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/05_cellranger_aggr"
@@ -49,9 +49,20 @@ CELL_RANGER="/scratch/c.mpmgb/tools/cellranger-7.1.0/bin/cellranger"
 
 mkdir -p $OUTPUT_DIR
 
+N=${SLURM_ARRAY_TASK_ID}
+
+INPUT_CSV=$(cat $INPUT_CSVS | tail -n+${N} | head -1)
+# Subset to last part of the file path
+INPUT_CSV_NAME="${INPUT_CSV##*/}"
+# Subset string to first "."
+SAVE_DIR="${INPUT_CSV_NAME%%.*}"
+
+echo "Input CSV: "$INPUT_CSV
+echo "Save dir: "$SAVE_DIR
+
 cd $OUTPUT_DIR
 
-$CELL_RANGER aggr --id=$DIR_NAME \
+$CELL_RANGER aggr --id=$SAVE_DIR \
 --csv=$INPUT_CSV
 
 echo -e "\n*****************************************************************"
