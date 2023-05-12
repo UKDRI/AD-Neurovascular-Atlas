@@ -19,6 +19,10 @@ resources:
   - "03_data/990_processed_data/001_snrnaseq/02_multiqc/01_set1_reads/fastqc_endo_10x_set1_reads.html"
   - "03_data/990_processed_data/001_snrnaseq/02_multiqc/02_set2_reads/fastqc_endo_10x_set2_reads.html"
   - "03_data/990_processed_data/001_snrnaseq/02_multiqc/03_set3_reads/fastqc_endo_10x_set3_reads.html"
+  - "03_data/990_processed_data/001_snrnaseq/05_cellranger_aggr/cellranger_aggr_all_sets/outs/web_summary.html"
+  - "03_data/990_processed_data/001_snrnaseq/05_cellranger_aggr/cellranger_aggr_set1/outs/web_summary.html"
+  - "03_data/990_processed_data/001_snrnaseq/05_cellranger_aggr/cellranger_aggr_set2/outs/web_summary.html"
+  - "03_data/990_processed_data/001_snrnaseq/05_cellranger_aggr/cellranger_aggr_set3/outs/web_summary.html"
   
 website:
   title: "Blood brain barrier in AD"
@@ -39,7 +43,10 @@ website:
         - 04_data_analysis/001_snrnaseq_analysis/01_fastqc.qmd
         - 04_data_analysis/001_snrnaseq_analysis/02_multiqc.qmd
         - 04_data_analysis/001_snrnaseq_analysis/03_generate_cellranger_reference.qmd
-
+        - 04_data_analysis/001_snrnaseq_analysis/04_cellranger_count_set1.qmd
+        - 04_data_analysis/001_snrnaseq_analysis/05_cellranger_count_set2.qmd
+        - 04_data_analysis/001_snrnaseq_analysis/06_cellranger_count_set3.qmd
+        - 04_data_analysis/001_snrnaseq_analysis/07_cellranger_aggr.qmd
   
 format:
   html:
