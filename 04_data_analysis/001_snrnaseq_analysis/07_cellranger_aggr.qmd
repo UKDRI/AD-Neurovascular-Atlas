@@ -10,6 +10,8 @@ This requires a 2 column CSV file (headers of `sample_id,molecule_h5`) with samp
 
 From the MultiQC reports, it seems the lastest batch if of better quality than the first two, so I'll try using `aggr` on each set separately, and all data combined.
 
+You can find these combined report for all samples [here](../../03_data/990_processed_data/001_snrnaseq/05_cellranger_aggr/cellranger_aggr_all_sets/outs/web_summary.html), set 1 [here](../../03_data/990_processed_data/001_snrnaseq/05_cellranger_aggr/cellranger_aggr_set1/outs/web_summary.html), set 2 [here](../../03_data/990_processed_data/001_snrnaseq/05_cellranger_aggr/cellranger_aggr_set2/outs/web_summary.html), and set 3 [here](../../03_data/990_processed_data/001_snrnaseq/05_cellranger_aggr/cellranger_aggr_set3/outs/web_summary.html).
+
 ```{r}
 #| purl: false
 
@@ -83,9 +85,8 @@ echo "Started at: "`date`
 echo -e "*****************************************************************\n"
 
 
-## path to input csv with samples IDs and paths to cellranger count outputs
+## path to input csvs with samples IDs and paths to cellranger count outputs
 INPUT_CSVS="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/05_cellranger_aggr/cellranger_aggr_csvs.txt"
-
 
 ## results
 OUTPUT_DIR="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/05_cellranger_aggr"

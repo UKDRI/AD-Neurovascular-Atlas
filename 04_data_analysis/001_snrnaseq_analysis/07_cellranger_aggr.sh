@@ -33,9 +33,8 @@ echo "Started at: "`date`
 echo -e "*****************************************************************\n"
 
 
-## path to input csv with samples IDs and paths to cellranger count outputs
+## path to input csvs with samples IDs and paths to cellranger count outputs
 INPUT_CSVS="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/05_cellranger_aggr/cellranger_aggr_csvs.txt"
-
 
 ## results
 OUTPUT_DIR="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/05_cellranger_aggr"
