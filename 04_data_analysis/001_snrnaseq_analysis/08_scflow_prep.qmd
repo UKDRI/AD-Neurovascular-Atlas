@@ -1,0 +1,168 @@
+---
+title: Run scflow
+execute: 
+  eval: false
+bibliography: references.bib
+---
+
+To run scflow we need a manifest tsv file where the first column is a unique sample ID and the second column is the file path to the directory that has the `barcodes.tsv`, `genes.tsv` and `matrix.mtx` files.
+
+I'm assuming we want to use the filtered gene-barcode matrices in MEX format as opposed to the raw files.
+
+Note that this page has a mix of bash (run on Hawk) and R code (run locally), I've just run these bits manually and recorded the code here for now.
+
+# Manifest file
+
+First let's sort the manifest for our samples.
+
+Here's how I generated it:
+
+```{r}
+#| purl: false
+# list the cellranger count output directories
+find /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/04_cellranger_count/ -maxdepth 2 -mindepth 2 -type d > scflow_manifest.txt
+
+# use the last directory in the path as the sample id
+awk -F'/' '{print $NF "\t" $0}' scflow_manifest.txt > scflow_manifest2.txt
+
+# append "outs/filtered_gene_bc_matrices" to file paths
+sed "s|$|/outs/filtered_feature_bc_matrix|" scflow_manifest2.txt > scflow_manifest3.txt
+
+# remove the undetermined sample and P_39
+grep -v "Undetermined" scflow_manifest3.txt > scflow_manifest4.txt
+grep -v "P_39" scflow_manifest4.txt > scflow_manifest5.txt
+
+# add the table headers
+awk -v line="key\tfilepath" 'BEGIN{print line}{print}' scflow_manifest5.txt > scflow_manifest.tsv
+
+# clean up
+rm scflow_manifest.txt scflow_manifest2.txt scflow_manifest3.txt scflow_manifest4.txt scflow_manifest5.txt
+```
+
+We would also like to include the brain atlas from Yang et al. 2022.[@yang2022]
+Their data is on GEO so I've downloaded and extracted that to gluster.
+
+```{r}
+#| include: false
+# having extracted the RAW tar file and moved them to their own dir, I'll get 
+# the full path to these directories
+find $(pwd) -mindepth 1 -type d > file_paths.txt
+
+# use the last directory in the path as the sample id
+awk -F'/' '{print $NF "\t" $0}' file_paths.txt > yang_manifest.tsv 
+
+# remove the ugly string on the sample IDs
+awk -F'\t' -v OFS='\t' '{sub("_filtered_feature_bc_matrix", "", $1); print}' yang_manifest.tsv > yang_manifest2.tsv
+
+# add yang sample manifest to main samples
+cat yang_manifest2.tsv >> scflow_manifest.tsv
+
+# clean up 
+rm yang_manifest*
+```
+
+# Sample metadata
+
+We also need to sort out the sample metadata for the Yang data.
+
+```{r}
+library(purrr)
+pkg <- c("readr", "dplyr", "here", "GEOquery", "magrittr")
+map(pkg, library, character.only = TRUE)
+
+# current metadata structure for first 2 sample batches
+metadata <- read_tsv(here("03_data/990_processed_data/001_snrnaseq/90_sample_info/samples_meta_merged_final.txt"))
+names(metadata)
+# add a column for the technique - don't know much about it so I'll just call
+# it Oxford for now
+metadata$technique <- "oxford"
+# also don't know brain region
+metadata$brain_region <- "dunno"
+
+# get yang data
+gsm <- getGEO("GSE163577")
+# get phenotype data
+phenodata <- gsm$GSE163577_series_matrix.txt.gz@phenoData@data
+# select useful cols
+phenodata <- phenodata %>%
+  dplyr::select(
+    title,
+    geo_accession,
+    extract_protocol_ch1,
+    data_processing,
+    platform_id,
+    instrument_model,
+    supplementary_file_1,
+    `brain region:ch1`,
+    `disease:ch1`
+  )
+
+# load scflow test sample sheet
+example_samplesheet <- read_tsv(here("03_data/990_processed_data/001_snrnaseq/90_sample_info/scflowSampleSheet_example.tsv"))
+```
+
+There are nice geo accessions that would be handy to use as unique sample IDs for the yang manifest file
+
+```{r}
+# save id and path for manifest file
+yang_manifest <- phenodata %>%
+  dplyr::select(geo_accession, supplementary_file_1)
+
+# get the last part of path
+last_path <- sub(".*/", "", yang_manifest$supplementary_file_1)
+# get after first _
+last_path <- sub("^[^_]*_", "", last_path)
+# remove file extension
+last_path <- gsub("\\.tar\\.gz$", "", last_path)
+
+# update path to yang data on gluster
+yang_manifest$supplementary_file_1 <-
+  paste0(
+    "/gluster/dri02/rdsmbh/shared/rdsmbh/paper_datasets/yang_2022_vascular_atlas/matrix_series/",
+    last_path
+  )
+# update names to be in line with scflow manifest file
+names(yang_manifest) <- c("key", "filepath")
+# save to tsv
+write_tsv(yang_manifest, here("03_data/990_processed_data/001_snrnaseq/06_scflow/yang_manifest.tsv"))
+```
+
+Then we just need to merge the two manifest files together.
+
+```{r}
+
+```
+
+We need to get the phenotype data from the yang GEO data in line with our phenotype data to join them.
+My understanding from the Yang paper is that they only looked at the vascular/perivascular component, so I'll label the `prep` as `V` for now.
+
+```{r}
+# sort yang phenotype data and join to ours
+merged_meta <- phenodata %>%
+  dplyr::rename(sample = geo_accession,
+                brain_region = `brain region:ch1`,
+                type = `disease:ch1`) %>%
+  # add cell subsetting technique and cell population
+  dplyr::mutate(technique = "VINE-seq", prep = "V") %>%
+  # select cols of interest
+  dplyr::select(sample, brain_region, type, technique, prep) %>%
+  # merge datasets
+  dplyr::bind_rows(metadata, .) %>%
+  # make control label consistent
+  dplyr::mutate(type = ifelse(type == "CT", "Control", type)) %>%
+  # add final group column for differential expression
+  dplyr::mutate(group = paste(type, prep, technique, brain_region, sep = "_")) %>%
+  # rename to sample sheet style
+  dplyr::rename(manifest = sample,
+                diagnosis = type)
+```
+
+```{r}
+# save metadata
+write_tsv(merged_meta, file = here("03_data/990_processed_data/001_snrnaseq/90_sample_info/sample_metadata.tsv"))
+```
+
+
+```{r}
+nextflow run combiz/nf-core-scflow -r dev-nf -profile test,docker
+```
