@@ -26,11 +26,15 @@ tower {
   accessToken = keyring::key_get("hawk_nextflow_tower")
   enabled = true
 }
+process {
+    clusterOptions = '--account=scw1329'
+}
 ```
 
+Note that I'm using the `dev-nf` branch to run.
 
 ```{r}
 #| eval: false
 #| purl: false
-nextflow run combiz/nf-core-scflow -r dev-nf -profile scw -c 03_data/990_processed_data/001_snrnaseq/06_scflow/pipeline.config --manifest 03_data/990_processed_data/001_snrnaseq/06_scflow/scflow_manifest_both.tsv --input 03_data/990_processed_data/001_snrnaseq/90_sample_info/sample_metadata.tsv -resume -bg > 03_data/990_processed_data/001_snrnaseq/06_scflow/scflow.log
+nextflow run combiz-nf-core-scflow-dev-nf/workflow/ -profile scw -c 03_data/990_processed_data/001_snrnaseq/06_scflow/pipeline.config --manifest 03_data/990_processed_data/001_snrnaseq/06_scflow/scflow_manifest_both.tsv --input 03_data/990_processed_data/001_snrnaseq/90_sample_info/sample_metadata.tsv --reddim_genes_yml reddim_genes.yml -resume -bg > 03_data/990_processed_data/001_snrnaseq/06_scflow/scflow.log
 ```
