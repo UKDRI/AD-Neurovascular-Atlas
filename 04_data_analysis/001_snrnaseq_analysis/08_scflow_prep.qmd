@@ -118,7 +118,7 @@ last_path <- gsub("\\.tar\\.gz$", "", last_path)
 # update path to yang data on gluster
 yang_manifest$supplementary_file_1 <-
   paste0(
-    "/gluster/dri02/rdsmbh/shared/rdsmbh/paper_datasets/yang_2022_vascular_atlas/matrix_series/",
+    "/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/06_scflow/yang_2022_data/",
     last_path
   )
 # update names to be in line with scflow manifest file
