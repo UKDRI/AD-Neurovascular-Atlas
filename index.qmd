@@ -76,6 +76,15 @@ knitr::purl(
   ),
   documentation = 0
 )
+knitr::purl(
+  here::here(
+    "04_data_analysis/001_snrnaseq_analysis/08_scflow_prep.qmd"
+  ),
+  here::here(
+    "03_data/990_processed_data/001_snrnaseq/06_scflow/pipeline.config"
+  ),
+  documentation = 0
+)
 ```
 
 # Notes on project structure

@@ -2,6 +2,7 @@
 title: Run scflow
 execute: 
   eval: false
+  purl: false
 bibliography: references.bib
 ---
 
@@ -18,7 +19,6 @@ First let's sort the manifest for our samples.
 Here's how I generated it:
 
 ```{r}
-#| purl: false
 # list the cellranger count output directories
 find /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/04_cellranger_count/ -maxdepth 2 -mindepth 2 -type d > scflow_manifest.txt
 
@@ -130,7 +130,7 @@ write_tsv(yang_manifest, here("03_data/990_processed_data/001_snrnaseq/06_scflow
 Then we just need to merge the two manifest files together.
 
 ```{r}
-
+(cat scflow_manifest.tsv && tail -n +2 yang_manifest.tsv) > scflow_manifest_both.tsv
 ```
 
 We need to get the phenotype data from the yang GEO data in line with our phenotype data to join them.
@@ -162,7 +162,28 @@ merged_meta <- phenodata %>%
 write_tsv(merged_meta, file = here("03_data/990_processed_data/001_snrnaseq/90_sample_info/sample_metadata.tsv"))
 ```
 
+# Custom config file
+
+There is a SCW config file for nf-core with some nice [documentation](https://github.com/nf-core/configs/blob/master/docs/scw.md), so we'll use that.
+Note that by default the scw config uses the htc queue and we'd rather use our DRI nodes, so I'll overwrite that.
+
+We can also use a config file with the parameters we want to use with scflow
 
 ```{r}
-nextflow run combiz/nf-core-scflow -r dev-nf -profile test,docker
+#| purl: true
+executor {
+  name = 'slurm'
+  queueSize = 10
+  queue = 'c_compute_dri1'
+}
+
+tower {
+  accessToken = keyring::key_get("hawk_nextflow_tower")
+  enabled = true
+}
+```
+
+
+```{r}
+nextflow run combiz/nf-core-scflow -r dev-nf -profile scw -c 03_data/990_processed_data/001_snrnaseq/06_scflow/pipeline.config --manifest 03_data/990_processed_data/001_snrnaseq/06_scflow/scflow_manifest_both.tsv --input 03_data/990_processed_data/001_snrnaseq/90_sample_info/sample_metadata.tsv -resume -bg > 03_data/990_processed_data/001_snrnaseq/06_scflow/scflow.log
 ```
