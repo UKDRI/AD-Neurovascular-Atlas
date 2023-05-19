@@ -1,5 +1,5 @@
 ---
-title: Run scflow
+title: scflow prep
 execute: 
   eval: false
   purl: false
@@ -162,28 +162,3 @@ merged_meta <- phenodata %>%
 write_tsv(merged_meta, file = here("03_data/990_processed_data/001_snrnaseq/90_sample_info/sample_metadata.tsv"))
 ```
 
-# Custom config file
-
-There is a SCW config file for nf-core with some nice [documentation](https://github.com/nf-core/configs/blob/master/docs/scw.md), so we'll use that.
-Note that by default the scw config uses the htc queue and we'd rather use our DRI nodes, so I'll overwrite that.
-
-We can also use a config file with the parameters we want to use with scflow
-
-```{r}
-#| purl: true
-executor {
-  name = 'slurm'
-  queueSize = 10
-  queue = 'c_compute_dri1'
-}
-
-tower {
-  accessToken = keyring::key_get("hawk_nextflow_tower")
-  enabled = true
-}
-```
-
-
-```{r}
-nextflow run combiz/nf-core-scflow -r dev-nf -profile scw -c 03_data/990_processed_data/001_snrnaseq/06_scflow/pipeline.config --manifest 03_data/990_processed_data/001_snrnaseq/06_scflow/scflow_manifest_both.tsv --input 03_data/990_processed_data/001_snrnaseq/90_sample_info/sample_metadata.tsv -resume -bg > 03_data/990_processed_data/001_snrnaseq/06_scflow/scflow.log
-```

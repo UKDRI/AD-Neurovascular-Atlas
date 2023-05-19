@@ -78,10 +78,10 @@ knitr::purl(
 )
 knitr::purl(
   here::here(
-    "04_data_analysis/001_snrnaseq_analysis/08_scflow_prep.qmd"
+    "04_data_analysis/001_snrnaseq_analysis/09_scflow_run.qmd"
   ),
   here::here(
-    "03_data/990_processed_data/001_snrnaseq/06_scflow/pipeline.config"
+    "03_data/990_processed_data/001_snrnaseq/06_scflow/pipeline_temp.config"
   ),
   documentation = 0
 )
