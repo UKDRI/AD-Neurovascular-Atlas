@@ -1,0 +1,131 @@
+astrocyte:
+- SPARCL1
+- ATP1A2
+- CPE
+- NTRK2
+- SLC1A2
+astrocyte-of-the-cerebra:
+- CLU
+- PTGDS
+- SLC1A2
+- SLC1A3
+- MT2A
+b-cell:
+- RPS19
+- RPL36
+- RPS28
+- RPLP1
+- ENSG00000223532
+cerebral-cortex-endothel:
+- CLDN5
+- IFITM3
+- TMSB10
+- MT2A
+- RPS28
+cerebral-cortex-glial-ce:
+- PLP1
+- MBP
+- DST
+- PTGDS
+- PCDH9
+cortical-interneurontop:
+- TCF4
+- GAD1
+- ATP1B1
+- ERBB4
+- SLC6A1
+cortical-layer-2-3-excit:
+- PPFIA2
+- ENC1
+- R3HDM1
+- CAMK2A
+- GRIA2
+cortical-layer-4-excitat:
+- MEF2C
+- RORB
+- SYT1
+- IPCEF1
+- NRGN
+cortical-layer-5-6-excit:
+- NPTX1
+- CADPS
+- CELF2
+- SLC17A7
+- ARPP21
+excitatory-neuron:
+- CHN1
+- NRGN
+- PPP3CA
+- SYT1
+- MT-ND3
+immune-cell:
+- CD74
+- TYROBP
+- FCER1G
+- SRGN
+- LAPTM5
+microglial-cell:
+- FTL
+- CD74
+- TMSB4X
+- SPP1
+- RPL28
+neoplastic-cell:
+- EGFR
+- CLU
+- CNN3
+- SEC61G
+- TUBA1A
+neuron:
+- GAD1
+- TMEM130
+- SNAP25
+- TUBA4A
+- GAD2
+oligodendrocyte:
+- DBNDD2
+- QDPR
+- CRYAB
+- GPM6B
+- TMEM144
+- MBP
+- TF
+- PLP1
+oligodendrocyte-precurso:
+- SCD5
+- PLLP
+- VCAN
+- PTPRZ1
+- APOD
+- TNR
+- OLIG1
+phagocyte:
+- SPP1
+- PLP1
+- MBP
+- SLC1A3
+- FTL
+pyramidal-neuron:
+- MAP1B
+- CALM2
+- TUBA1B
+- CALM1
+- CHN1
+stromal-cell:
+- IFITM3
+- SPARC
+- PDGFRB
+- IFITM1
+- DCN
+t-cell:
+- RPS28
+- RPS8
+- RPL41
+- ENSG00000223367
+- RPLP2
+vascular-cell:
+- IGFBP7
+- IFITM1
+- IFITM3
+- SPARC
+- GNG11

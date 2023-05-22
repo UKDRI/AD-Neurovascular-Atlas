@@ -66,10 +66,15 @@ rm yang_manifest*
 We also need to sort out the sample metadata for the Yang data.
 
 ```{r}
+#| label: load packages
+#| eval: true
 library(purrr)
-pkg <- c("readr", "dplyr", "here", "GEOquery", "magrittr")
+pkg <- c("readr", "dplyr", "here", "GEOquery", "magrittr", "tidyr", "yaml")
 map(pkg, library, character.only = TRUE)
 
+```
+
+```{r}
 # current metadata structure for first 2 sample batches
 metadata <- read_tsv(here("03_data/990_processed_data/001_snrnaseq/90_sample_info/samples_meta_merged_final.txt"))
 names(metadata)
@@ -160,5 +165,77 @@ merged_meta <- phenodata %>%
 ```{r}
 # save metadata
 write_tsv(merged_meta, file = here("03_data/990_processed_data/001_snrnaseq/90_sample_info/sample_metadata.tsv"))
+```
+
+# Getting marker genes
+
+The EBI has the [Single cell expression atlas](https://www.ebi.ac.uk/gxa/sc/home) so I'll use that for our gene annotation markers.
+There is an R package on Bioconductor for querying it, but it doesn't seem to have an easy way of querying by tissues/organ, so I'll just manually download them (there aren't that many)
+
+```{r}
+#| eval: true
+# list gene marker csvs
+gene_markers_files <-
+  list.files(
+    here(
+      "03_data/990_processed_data/001_snrnaseq/06_scflow/2023-05-22_gene-markers"
+    ),
+    full.names = TRUE
+  )
+
+# Extract the final part of the path after the last "/"
+file_names <- basename(gene_markers_files)
+# Remove the file extension
+file_names <- tools::file_path_sans_ext(file_names)
+
+gene_markers <- map(gene_markers_files, read_csv) %>%
+  set_names(file_names)
+
+# add annotation name
+gene_markers <-
+  map2(gene_markers, file_names, ~ dplyr::mutate(.x, annotation = .y)) %>%
+  # bind rows
+  dplyr::bind_rows()
+
+# the odd column headers are the experiment ID and the values are expression
+# pivot long
+gene_markers <- gene_markers %>%
+  pivot_longer(!c(Category, annotation),
+               names_to = "experiment_id",
+               values_to = "expression") %>%
+  # remove cases where expression is 0
+  dplyr::filter(!is.na(expression)) %>%
+  dplyr::rename(gene = Category)
+
+# Filter out duplicate genes within each annotation
+gene_markers_clean <- gene_markers %>%
+  group_by(annotation) %>%
+  filter(!duplicated(gene)) %>%
+  # remove the "top-genes" part of the string
+  dplyr::mutate(annotation = gsub("top-.*", "", annotation))
+
+gt(gene_markers_clean)
+```
+
+Now we can generate the yaml file we need from this dataframe
+
+```{r}
+#| eval: true
+# Group the dataframe by 'annotation' and aggregate genes as a list
+result <- gene_markers_clean %>%
+  group_by(annotation) %>%
+  summarise(genes = list(unique(gene))) %>%
+  ungroup()
+
+# Convert the result to a nested list using map()
+result_list <- map(set_names(result$genes, result$annotation), as.list)
+
+# Write the YAML to a file
+yaml_output <- write_yaml(
+  result_list,
+  here(
+    "03_data/990_processed_data/001_snrnaseq/06_scflow/reddim_genes.yml"
+  )
+)
 ```
 
