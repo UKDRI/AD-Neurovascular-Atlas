@@ -16,10 +16,16 @@ Note that after I purl this config I'll manually update the Nextflow Tower token
 
 ```{r}
 #| purl: true
-executor {
-  name = 'slurm'
+executor { 
+  name = 'slurm' 
   queueSize = 10
-  queue = 'c_compute_dri1'
+  queue = 'c_vhighmem_dri1'
+}
+
+params {
+  max_memory = 700.GB
+  max_cpus = 30
+  max_time = 82.h
 }
 
 tower {
