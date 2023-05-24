@@ -138,6 +138,13 @@ Then we just need to merge the two manifest files together.
 (cat scflow_manifest.tsv && tail -n +2 yang_manifest.tsv) > scflow_manifest_both.tsv
 ```
 
+It turns out that you can't have delimiters in the key for the mainfest/sample files, so I need to remove the underscores too
+
+```{r}
+awk 'BEGIN{FS=OFS="\t"} {gsub("_", "", $1)} 1'  scflow_manifest_both.tsv > scflow_manifest_final.tsv
+```
+
+
 We need to get the phenotype data from the yang GEO data in line with our phenotype data to join them.
 My understanding from the Yang paper is that they only looked at the vascular/perivascular component, so I'll label the `prep` as `V` for now.
 
@@ -156,7 +163,8 @@ merged_meta <- phenodata %>%
   # make control label consistent
   dplyr::mutate(type = ifelse(type == "CT", "Control", type)) %>%
   # add final group column for differential expression
-  dplyr::mutate(group = paste(type, prep, technique, brain_region, sep = "_")) %>%
+  dplyr::mutate(group = paste(type, prep, technique, brain_region, sep = "_"),
+                sample = gsub("_", "", sample)) %>%
   # rename to sample sheet style
   dplyr::rename(manifest = sample,
                 diagnosis = type)
