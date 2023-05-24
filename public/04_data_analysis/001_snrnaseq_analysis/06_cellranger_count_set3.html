@@ -179,6 +179,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">Aggregate cellranger count reports</span></a>
   </div>
 </li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../04_data_analysis/001_snrnaseq_analysis/08_scflow_prep.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">scflow prep</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../04_data_analysis/001_snrnaseq_analysis/09_scflow_run.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Run scflow</span></a>
+  </div>
+</li>
     </ul>
 </div>
 </nav><div id="quarto-sidebar-glass" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass"></div>
@@ -208,10 +220,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header><p>This is for set 3</p>
 <p>Note that the sample IDs are in the fastq file names. The following command was used to extract them:</p>
 <p><code>find 230327_A00748_0368_AH5CTMDSX5_fastq/ -name '*.fastq.gz' | grep -oP '(?&lt;=/)\w{20}' | cut -c4-7 | sort | uniq  &gt; samples_set3.txt</code></p>
-<p>There are also some <code>Undeterimed</code> files that I’m unsure of, but I manually added the missing bit of the string for that one.</p>
+<p>There are also some <code>Undeterimed</code> files that contain the reads that didn’t match to any barcodes, but I manually added the missing bit of the string for that one.</p>
 <section id="note" class="level2" data-number="1"><h2 data-number="1" class="anchored" data-anchor-id="note">
 <span class="header-section-number">1</span> Note</h2>
-<p>Sample P_39 gave an error, it seems the fastq files are all empty. Spoke to Jo and she can’t see anything obviously wrong on her end, so it may be that the sample was just not present due to a pipetting error perhaps</p>
+<p>Sample P_39 gave an error, it seems the fastq files are all empty. Spoke to Jo and she can’t see anything obviously wrong on her end, so it may be that the sample was just not present due to a pipetting error perhaps. Could also be a index error which resulted in the sample data getting dumped in the “Undetermined” sample.</p>
 <div class="cell">
 <details open=""><summary>Code</summary><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">#!/bin/bash</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
@@ -742,130 +754,131 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 <span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="in">`find 230327_A00748_0368_AH5CTMDSX5_fastq/ -name '*.fastq.gz' | grep -oP '(?&lt;=/)\w{20}' | cut -c4-7 | sort | uniq  &gt; samples_set3.txt`</span></span>
 <span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>There are also some <span class="in">`Undeterimed`</span> files that I'm unsure of, but I manually added the missing bit of the string for that one.</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>There are also some <span class="in">`Undeterimed`</span> files that contain the reads that didn't match to any barcodes, but I manually added the missing bit of the string for that one.</span>
 <span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="fu">## Note </span></span>
 <span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>Sample P_39 gave an error, it seems the fastq files are all empty.</span>
-<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>Spoke to Jo and she can't see anything obviously wrong on her end, so it may be that the sample was just not present due to a pipetting error perhaps</span>
-<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a><span class="co">#!/bin/bash</span></span>
-<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a><span class="co">#SBATCH -p c_highmem_dri1 ## dev, compute, htc, highmem</span></span>
-<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a><span class="co">#SBATCH --job-name=cellranger_count_set3</span></span>
-<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a><span class="co">#SBATCH --ntasks=40</span></span>
-<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a><span class="co">#SBATCH --ntasks-per-node=40</span></span>
-<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a><span class="co">#SBATCH --array=1-40%2</span></span>
-<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a><span class="do">##### #SBATCH --mem-per-cpu=8000 # memory limit per core</span></span>
-<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a><span class="co">#SBATCH --mem=340G # memory limit per compute node for the job</span></span>
-<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a><span class="co">#SBATCH --time=2-10:00 # maximum job time in D-HH:MM</span></span>
-<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a><span class="co">#SBATCH --account=scw1329</span></span>
-<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a><span class="co">#SBATCH -o /scratch/c.mpmgb/hawk_output/%x_out_%A_%a_%J.txt</span></span>
-<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a><span class="co">#SBATCH -e /scratch/c.mpmgb/hawk_output/%x_err_%A_%a_%J.txt</span></span>
-<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a><span class="co">#SBATCH --mail-user Bernardo-HarringtonG@cardiff.ac.uk # email on fail</span></span>
-<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a><span class="co">#SBATCH --mail-type </span><span class="re">END</span><span class="co">,FAIL</span></span>
-<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a>echo <span class="st">"*****************************************************************"</span></span>
-<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a>echo <span class="st">"All jobs in this array have:"</span></span>
-<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>echo <span class="st">"- SLURM_ARRAY_JOB_ID: ${SLURM_ARRAY_JOB_ID}"</span></span>
-<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a>echo <span class="st">"- SLURM_ARRAY_TASK_COUNT: ${SLURM_ARRAY_TASK_COUNT}"</span></span>
-<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a>echo <span class="st">"- SLURM_ARRAY_TASK_MIN: ${SLURM_ARRAY_TASK_MIN}"</span></span>
-<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a>echo <span class="st">"- SLURM_ARRAY_TASK_MAX: ${SLURM_ARRAY_TASK_MAX}"</span></span>
-<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a>echo <span class="st">"This job in the array has:"</span></span>
-<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a>echo <span class="st">"- SLURM_JOB_ID: ${SLURM_JOB_ID}"</span></span>
-<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a>echo <span class="st">"- SLURM_ARRAY_TASK_ID: ${SLURM_ARRAY_TASK_ID}"</span></span>
-<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a>echo <span class="st">"Run on host: "`</span><span class="at">hostname</span><span class="st">`</span></span>
-<span id="cb3-50"><a href="#cb3-50" aria-hidden="true" tabindex="-1"></a>echo <span class="st">"Number of threads (nproc): "`</span><span class="at">nproc</span><span class="st">`</span></span>
-<span id="cb3-51"><a href="#cb3-51" aria-hidden="true" tabindex="-1"></a>echo <span class="st">"Total memory in GB: "`</span><span class="at">free -g | grep -oP '\d+' | sed -n 1p</span><span class="st">`</span></span>
-<span id="cb3-52"><a href="#cb3-52" aria-hidden="true" tabindex="-1"></a>echo <span class="st">"Used memory in GB: "`</span><span class="at">free -g | grep -oP '\d+' | sed -n 2p</span><span class="st">`</span></span>
-<span id="cb3-53"><a href="#cb3-53" aria-hidden="true" tabindex="-1"></a>echo <span class="st">"Free memory in GB: "`</span><span class="at">free -g | grep -oP '\d+' | sed -n 3p</span><span class="st">`</span></span>
-<span id="cb3-54"><a href="#cb3-54" aria-hidden="true" tabindex="-1"></a>echo <span class="st">"Username: "`</span><span class="at">whoami</span><span class="st">`</span></span>
-<span id="cb3-55"><a href="#cb3-55" aria-hidden="true" tabindex="-1"></a>echo <span class="st">"Started at: "`</span><span class="at">date</span><span class="st">`</span></span>
-<span id="cb3-56"><a href="#cb3-56" aria-hidden="true" tabindex="-1"></a>echo <span class="sc">-</span>e <span class="st">"*****************************************************************</span><span class="sc">\n</span><span class="st">"</span></span>
-<span id="cb3-57"><a href="#cb3-57" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>Spoke to Jo and she can't see anything obviously wrong on her end, so it may be that the sample was just not present due to a pipetting error perhaps.</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>Could also be a index error which resulted in the sample data getting dumped in the "Undetermined" sample.</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a><span class="co">#!/bin/bash</span></span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a><span class="co">#SBATCH -p c_highmem_dri1 ## dev, compute, htc, highmem</span></span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a><span class="co">#SBATCH --job-name=cellranger_count_set3</span></span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a><span class="co">#SBATCH --ntasks=40</span></span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a><span class="co">#SBATCH --ntasks-per-node=40</span></span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a><span class="co">#SBATCH --array=1-40%2</span></span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a><span class="do">##### #SBATCH --mem-per-cpu=8000 # memory limit per core</span></span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a><span class="co">#SBATCH --mem=340G # memory limit per compute node for the job</span></span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a><span class="co">#SBATCH --time=2-10:00 # maximum job time in D-HH:MM</span></span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a><span class="co">#SBATCH --account=scw1329</span></span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a><span class="co">#SBATCH -o /scratch/c.mpmgb/hawk_output/%x_out_%A_%a_%J.txt</span></span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a><span class="co">#SBATCH -e /scratch/c.mpmgb/hawk_output/%x_err_%A_%a_%J.txt</span></span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a><span class="co">#SBATCH --mail-user Bernardo-HarringtonG@cardiff.ac.uk # email on fail</span></span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a><span class="co">#SBATCH --mail-type </span><span class="re">END</span><span class="co">,FAIL</span></span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a>echo <span class="st">"*****************************************************************"</span></span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>echo <span class="st">"All jobs in this array have:"</span></span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a>echo <span class="st">"- SLURM_ARRAY_JOB_ID: ${SLURM_ARRAY_JOB_ID}"</span></span>
+<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a>echo <span class="st">"- SLURM_ARRAY_TASK_COUNT: ${SLURM_ARRAY_TASK_COUNT}"</span></span>
+<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a>echo <span class="st">"- SLURM_ARRAY_TASK_MIN: ${SLURM_ARRAY_TASK_MIN}"</span></span>
+<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a>echo <span class="st">"- SLURM_ARRAY_TASK_MAX: ${SLURM_ARRAY_TASK_MAX}"</span></span>
+<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a>echo <span class="st">"This job in the array has:"</span></span>
+<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a>echo <span class="st">"- SLURM_JOB_ID: ${SLURM_JOB_ID}"</span></span>
+<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a>echo <span class="st">"- SLURM_ARRAY_TASK_ID: ${SLURM_ARRAY_TASK_ID}"</span></span>
+<span id="cb3-50"><a href="#cb3-50" aria-hidden="true" tabindex="-1"></a>echo <span class="st">"Run on host: "`</span><span class="at">hostname</span><span class="st">`</span></span>
+<span id="cb3-51"><a href="#cb3-51" aria-hidden="true" tabindex="-1"></a>echo <span class="st">"Number of threads (nproc): "`</span><span class="at">nproc</span><span class="st">`</span></span>
+<span id="cb3-52"><a href="#cb3-52" aria-hidden="true" tabindex="-1"></a>echo <span class="st">"Total memory in GB: "`</span><span class="at">free -g | grep -oP '\d+' | sed -n 1p</span><span class="st">`</span></span>
+<span id="cb3-53"><a href="#cb3-53" aria-hidden="true" tabindex="-1"></a>echo <span class="st">"Used memory in GB: "`</span><span class="at">free -g | grep -oP '\d+' | sed -n 2p</span><span class="st">`</span></span>
+<span id="cb3-54"><a href="#cb3-54" aria-hidden="true" tabindex="-1"></a>echo <span class="st">"Free memory in GB: "`</span><span class="at">free -g | grep -oP '\d+' | sed -n 3p</span><span class="st">`</span></span>
+<span id="cb3-55"><a href="#cb3-55" aria-hidden="true" tabindex="-1"></a>echo <span class="st">"Username: "`</span><span class="at">whoami</span><span class="st">`</span></span>
+<span id="cb3-56"><a href="#cb3-56" aria-hidden="true" tabindex="-1"></a>echo <span class="st">"Started at: "`</span><span class="at">date</span><span class="st">`</span></span>
+<span id="cb3-57"><a href="#cb3-57" aria-hidden="true" tabindex="-1"></a>echo <span class="sc">-</span>e <span class="st">"*****************************************************************</span><span class="sc">\n</span><span class="st">"</span></span>
 <span id="cb3-58"><a href="#cb3-58" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-59"><a href="#cb3-59" aria-hidden="true" tabindex="-1"></a><span class="do">## FASTQ files, set 2 with 16 samples, data from 4 runs, sequenced in Oxford</span></span>
-<span id="cb3-60"><a href="#cb3-60" aria-hidden="true" tabindex="-1"></a><span class="do">## </span><span class="al">NOTE</span><span class="do">, V_19, only sequenced in 1 run (INPUT_DIR_1)</span></span>
-<span id="cb3-61"><a href="#cb3-61" aria-hidden="true" tabindex="-1"></a><span class="do">## </span><span class="al">NOTE</span><span class="do">, V_20, 1 run (INPUT_DIR_2) only with a single read, skip that run</span></span>
-<span id="cb3-62"><a href="#cb3-62" aria-hidden="true" tabindex="-1"></a><span class="do">## handled via if statement below</span></span>
-<span id="cb3-63"><a href="#cb3-63" aria-hidden="true" tabindex="-1"></a>INPUT_DIR<span class="ot">=</span><span class="st">"/gluster/dri02/rdsmbh/shared/rdsmbh/230327_A00748_0368_AH5CTMDSX5_fastq/"</span></span>
-<span id="cb3-64"><a href="#cb3-64" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-65"><a href="#cb3-65" aria-hidden="true" tabindex="-1"></a><span class="do">## results</span></span>
-<span id="cb3-66"><a href="#cb3-66" aria-hidden="true" tabindex="-1"></a>OUTPUT_DIR<span class="ot">=</span><span class="st">"/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/04_cellranger_count/03_set3"</span></span>
-<span id="cb3-67"><a href="#cb3-67" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-68"><a href="#cb3-68" aria-hidden="true" tabindex="-1"></a><span class="do">## original sample IDs, correpond to FASTQ file names</span></span>
-<span id="cb3-69"><a href="#cb3-69" aria-hidden="true" tabindex="-1"></a>SAMPLE_ID_FILE<span class="ot">=</span><span class="st">"/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/90_sample_info/samples_set3.txt"</span></span>
-<span id="cb3-70"><a href="#cb3-70" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-71"><a href="#cb3-71" aria-hidden="true" tabindex="-1"></a><span class="do">## CR executable</span></span>
-<span id="cb3-72"><a href="#cb3-72" aria-hidden="true" tabindex="-1"></a>CELL_RANGER<span class="ot">=</span><span class="st">"/scratch/c.mpmgb/tools/cellranger-7.1.0/bin/cellranger"</span></span>
-<span id="cb3-73"><a href="#cb3-73" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-74"><a href="#cb3-74" aria-hidden="true" tabindex="-1"></a><span class="do">## CR reference</span></span>
-<span id="cb3-75"><a href="#cb3-75" aria-hidden="true" tabindex="-1"></a><span class="do">## pre-computed and downloaded from CR website as is (refdata-gex-GRCh38-2020-A.tar.gz)</span></span>
-<span id="cb3-76"><a href="#cb3-76" aria-hidden="true" tabindex="-1"></a><span class="do">## based on ensembl v98/gencode v32</span></span>
-<span id="cb3-77"><a href="#cb3-77" aria-hidden="true" tabindex="-1"></a><span class="do">## CR_REF="/scratch/c.mpmfw/Tools/CellRanger/CellRanger_references/refdata-gex-GRCh38-2020-A"</span></span>
-<span id="cb3-78"><a href="#cb3-78" aria-hidden="true" tabindex="-1"></a><span class="do">## updated CR reference based on ensembl v108 (Gencode v42)</span></span>
-<span id="cb3-79"><a href="#cb3-79" aria-hidden="true" tabindex="-1"></a><span class="do">## from get_cellranger_reference.sh</span></span>
-<span id="cb3-80"><a href="#cb3-80" aria-hidden="true" tabindex="-1"></a>CR_REF<span class="ot">=</span><span class="st">"/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/03_cellranger_reference/GRCh38"</span></span>
-<span id="cb3-81"><a href="#cb3-81" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-59"><a href="#cb3-59" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-60"><a href="#cb3-60" aria-hidden="true" tabindex="-1"></a><span class="do">## FASTQ files, set 2 with 16 samples, data from 4 runs, sequenced in Oxford</span></span>
+<span id="cb3-61"><a href="#cb3-61" aria-hidden="true" tabindex="-1"></a><span class="do">## </span><span class="al">NOTE</span><span class="do">, V_19, only sequenced in 1 run (INPUT_DIR_1)</span></span>
+<span id="cb3-62"><a href="#cb3-62" aria-hidden="true" tabindex="-1"></a><span class="do">## </span><span class="al">NOTE</span><span class="do">, V_20, 1 run (INPUT_DIR_2) only with a single read, skip that run</span></span>
+<span id="cb3-63"><a href="#cb3-63" aria-hidden="true" tabindex="-1"></a><span class="do">## handled via if statement below</span></span>
+<span id="cb3-64"><a href="#cb3-64" aria-hidden="true" tabindex="-1"></a>INPUT_DIR<span class="ot">=</span><span class="st">"/gluster/dri02/rdsmbh/shared/rdsmbh/230327_A00748_0368_AH5CTMDSX5_fastq/"</span></span>
+<span id="cb3-65"><a href="#cb3-65" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-66"><a href="#cb3-66" aria-hidden="true" tabindex="-1"></a><span class="do">## results</span></span>
+<span id="cb3-67"><a href="#cb3-67" aria-hidden="true" tabindex="-1"></a>OUTPUT_DIR<span class="ot">=</span><span class="st">"/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/04_cellranger_count/03_set3"</span></span>
+<span id="cb3-68"><a href="#cb3-68" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-69"><a href="#cb3-69" aria-hidden="true" tabindex="-1"></a><span class="do">## original sample IDs, correpond to FASTQ file names</span></span>
+<span id="cb3-70"><a href="#cb3-70" aria-hidden="true" tabindex="-1"></a>SAMPLE_ID_FILE<span class="ot">=</span><span class="st">"/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/90_sample_info/samples_set3.txt"</span></span>
+<span id="cb3-71"><a href="#cb3-71" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-72"><a href="#cb3-72" aria-hidden="true" tabindex="-1"></a><span class="do">## CR executable</span></span>
+<span id="cb3-73"><a href="#cb3-73" aria-hidden="true" tabindex="-1"></a>CELL_RANGER<span class="ot">=</span><span class="st">"/scratch/c.mpmgb/tools/cellranger-7.1.0/bin/cellranger"</span></span>
+<span id="cb3-74"><a href="#cb3-74" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-75"><a href="#cb3-75" aria-hidden="true" tabindex="-1"></a><span class="do">## CR reference</span></span>
+<span id="cb3-76"><a href="#cb3-76" aria-hidden="true" tabindex="-1"></a><span class="do">## pre-computed and downloaded from CR website as is (refdata-gex-GRCh38-2020-A.tar.gz)</span></span>
+<span id="cb3-77"><a href="#cb3-77" aria-hidden="true" tabindex="-1"></a><span class="do">## based on ensembl v98/gencode v32</span></span>
+<span id="cb3-78"><a href="#cb3-78" aria-hidden="true" tabindex="-1"></a><span class="do">## CR_REF="/scratch/c.mpmfw/Tools/CellRanger/CellRanger_references/refdata-gex-GRCh38-2020-A"</span></span>
+<span id="cb3-79"><a href="#cb3-79" aria-hidden="true" tabindex="-1"></a><span class="do">## updated CR reference based on ensembl v108 (Gencode v42)</span></span>
+<span id="cb3-80"><a href="#cb3-80" aria-hidden="true" tabindex="-1"></a><span class="do">## from get_cellranger_reference.sh</span></span>
+<span id="cb3-81"><a href="#cb3-81" aria-hidden="true" tabindex="-1"></a>CR_REF<span class="ot">=</span><span class="st">"/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/03_cellranger_reference/GRCh38"</span></span>
 <span id="cb3-82"><a href="#cb3-82" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-83"><a href="#cb3-83" aria-hidden="true" tabindex="-1"></a><span class="co">#-----------------------------------------------------------------------</span></span>
-<span id="cb3-84"><a href="#cb3-84" aria-hidden="true" tabindex="-1"></a><span class="co"># Cell Ranger count</span></span>
-<span id="cb3-85"><a href="#cb3-85" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-86"><a href="#cb3-86" aria-hidden="true" tabindex="-1"></a>mkdir <span class="sc">-</span>p <span class="sc">$</span>OUTPUT_DIR</span>
-<span id="cb3-87"><a href="#cb3-87" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-88"><a href="#cb3-88" aria-hidden="true" tabindex="-1"></a>N<span class="ot">=</span><span class="er">$</span>{SLURM_ARRAY_TASK_ID}</span>
-<span id="cb3-89"><a href="#cb3-89" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-90"><a href="#cb3-90" aria-hidden="true" tabindex="-1"></a>SAMPLE_ID<span class="ot">=</span><span class="er">$</span>(cat <span class="sc">$</span>SAMPLE_ID_FILE <span class="sc">|</span> tail <span class="sc">-</span>n<span class="sc">+</span><span class="er">$</span>{N} <span class="sc">|</span> head <span class="sc">-</span><span class="dv">1</span>)</span>
-<span id="cb3-91"><a href="#cb3-91" aria-hidden="true" tabindex="-1"></a><span class="co"># Get the sample ID string after the first "_"</span></span>
-<span id="cb3-92"><a href="#cb3-92" aria-hidden="true" tabindex="-1"></a>SAMPLE_ID_NEW<span class="ot">=</span><span class="st">"${SAMPLE_ID#*_}"</span></span>
-<span id="cb3-93"><a href="#cb3-93" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-94"><a href="#cb3-94" aria-hidden="true" tabindex="-1"></a>echo <span class="st">"Input dir: "</span><span class="sc">$</span>INPUT_DIR</span>
-<span id="cb3-95"><a href="#cb3-95" aria-hidden="true" tabindex="-1"></a>echo <span class="st">"Sample: "</span><span class="sc">$</span>SAMPLE_ID</span>
-<span id="cb3-96"><a href="#cb3-96" aria-hidden="true" tabindex="-1"></a>echo <span class="st">"Sample new: "</span><span class="sc">$</span>SAMPLE_ID_NEW</span>
-<span id="cb3-97"><a href="#cb3-97" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-98"><a href="#cb3-98" aria-hidden="true" tabindex="-1"></a>cd <span class="sc">$</span>OUTPUT_DIR</span>
-<span id="cb3-99"><a href="#cb3-99" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-100"><a href="#cb3-100" aria-hidden="true" tabindex="-1"></a><span class="sc">$</span>CELL_RANGER count <span class="sc">--</span>id<span class="ot">=</span><span class="er">$</span>SAMPLE_ID_NEW \</span>
-<span id="cb3-101"><a href="#cb3-101" aria-hidden="true" tabindex="-1"></a><span class="sc">--</span>fastqs<span class="ot">=</span><span class="er">$</span>INPUT_DIR \</span>
-<span id="cb3-102"><a href="#cb3-102" aria-hidden="true" tabindex="-1"></a><span class="sc">--</span>sample<span class="ot">=</span><span class="er">$</span>SAMPLE_ID \</span>
-<span id="cb3-103"><a href="#cb3-103" aria-hidden="true" tabindex="-1"></a><span class="sc">--</span>transcriptome<span class="ot">=</span><span class="er">$</span>CR_REF \</span>
-<span id="cb3-104"><a href="#cb3-104" aria-hidden="true" tabindex="-1"></a><span class="sc">--</span>localcores<span class="ot">=</span><span class="dv">40</span> \</span>
-<span id="cb3-105"><a href="#cb3-105" aria-hidden="true" tabindex="-1"></a><span class="sc">--</span>localmem<span class="ot">=</span><span class="dv">330</span> \</span>
-<span id="cb3-106"><a href="#cb3-106" aria-hidden="true" tabindex="-1"></a><span class="sc">--</span>include<span class="sc">-</span>introns<span class="ot">=</span>true \</span>
-<span id="cb3-107"><a href="#cb3-107" aria-hidden="true" tabindex="-1"></a><span class="sc">--</span>no<span class="sc">-</span>bam</span>
-<span id="cb3-108"><a href="#cb3-108" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-109"><a href="#cb3-109" aria-hidden="true" tabindex="-1"></a><span class="do">## optional:</span></span>
-<span id="cb3-110"><a href="#cb3-110" aria-hidden="true" tabindex="-1"></a><span class="do">## R2 length is longer (151bp) than usually recommended/required (90bp)</span></span>
-<span id="cb3-111"><a href="#cb3-111" aria-hidden="true" tabindex="-1"></a><span class="do">## --r2-length=90</span></span>
-<span id="cb3-112"><a href="#cb3-112" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-113"><a href="#cb3-113" aria-hidden="true" tabindex="-1"></a>echo <span class="sc">-</span>e <span class="st">"</span><span class="sc">\n</span><span class="st">*****************************************************************"</span></span>
-<span id="cb3-114"><a href="#cb3-114" aria-hidden="true" tabindex="-1"></a>echo <span class="st">"Finished at: "`</span><span class="at">date</span><span class="st">`</span></span>
-<span id="cb3-115"><a href="#cb3-115" aria-hidden="true" tabindex="-1"></a>echo <span class="st">"*****************************************************************"</span></span>
-<span id="cb3-116"><a href="#cb3-116" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb3-117"><a href="#cb3-117" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-118"><a href="#cb3-118" aria-hidden="true" tabindex="-1"></a>One of the many outputs of interest is the <span class="in">`web_summary.html`</span> report files that have include various metrics worth checking.</span>
-<span id="cb3-119"><a href="#cb3-119" aria-hidden="true" tabindex="-1"></a>I'm not keen to add the whole output to the Git repo due to the file size, so I'll just add these files for now.</span>
-<span id="cb3-120"><a href="#cb3-120" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-121"><a href="#cb3-121" aria-hidden="true" tabindex="-1"></a>Note that there's a also a <span class="in">`web_summary.html`</span> in the <span class="in">`SC_RNA_COUNTER_CS`</span> folder, but I don't want that one here so I'll also remove those.</span>
-<span id="cb3-122"><a href="#cb3-122" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-125"><a href="#cb3-125" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb3-126"><a href="#cb3-126" aria-hidden="true" tabindex="-1"></a><span class="co">#| purl: false</span></span>
-<span id="cb3-127"><a href="#cb3-127" aria-hidden="true" tabindex="-1"></a><span class="co"># get the file paths for all the "web_summary.html" files and save them to a file</span></span>
-<span id="cb3-128"><a href="#cb3-128" aria-hidden="true" tabindex="-1"></a>find 03_data<span class="sc">/</span>990_processed_data<span class="sc">/</span>001_snrnaseq<span class="sc">/</span>04_cellranger_count<span class="sc">/</span> <span class="sc">-</span>name <span class="st">"web_summary.html"</span> <span class="sc">&gt;</span> web_summary_files.txt</span>
-<span id="cb3-129"><a href="#cb3-129" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-130"><a href="#cb3-130" aria-hidden="true" tabindex="-1"></a><span class="co"># the line length for the summary in the SC_RNA_COUNTER_CS dir is longer:</span></span>
-<span id="cb3-131"><a href="#cb3-131" aria-hidden="true" tabindex="-1"></a>awk <span class="st">'{print length}'</span> web_summary_files.txt <span class="sc">|</span> sort <span class="sc">-</span>n <span class="sc">|</span> uniq <span class="sc">-</span>c</span>
-<span id="cb3-132"><a href="#cb3-132" aria-hidden="true" tabindex="-1"></a><span class="co"># so we'll remove lines based on their length</span></span>
-<span id="cb3-133"><a href="#cb3-133" aria-hidden="true" tabindex="-1"></a>awk <span class="st">'length &lt;= max_length'</span> max_length<span class="ot">=</span><span class="st">"140"</span> web_summary_files.txt <span class="sc">&gt;</span> web_summary_files.txt</span>
-<span id="cb3-134"><a href="#cb3-134" aria-hidden="true" tabindex="-1"></a><span class="co"># prepend "git add " to the file lines</span></span>
-<span id="cb3-135"><a href="#cb3-135" aria-hidden="true" tabindex="-1"></a>sed <span class="st">'s/^/git add /'</span> web_summary_files_clean.txt <span class="sc">&gt;</span> web_summary_files_git.sh</span>
-<span id="cb3-136"><a href="#cb3-136" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-137"><a href="#cb3-137" aria-hidden="true" tabindex="-1"></a><span class="co"># run the file</span></span>
-<span id="cb3-138"><a href="#cb3-138" aria-hidden="true" tabindex="-1"></a>sh web_summary_files_git.sh</span>
-<span id="cb3-139"><a href="#cb3-139" aria-hidden="true" tabindex="-1"></a><span class="co"># clean up</span></span>
-<span id="cb3-140"><a href="#cb3-140" aria-hidden="true" tabindex="-1"></a>rm web_summary_files.txt web_summary_files_clean.txt web_summary_files_git.sh</span>
-<span id="cb3-141"><a href="#cb3-141" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb3-83"><a href="#cb3-83" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-84"><a href="#cb3-84" aria-hidden="true" tabindex="-1"></a><span class="co">#-----------------------------------------------------------------------</span></span>
+<span id="cb3-85"><a href="#cb3-85" aria-hidden="true" tabindex="-1"></a><span class="co"># Cell Ranger count</span></span>
+<span id="cb3-86"><a href="#cb3-86" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-87"><a href="#cb3-87" aria-hidden="true" tabindex="-1"></a>mkdir <span class="sc">-</span>p <span class="sc">$</span>OUTPUT_DIR</span>
+<span id="cb3-88"><a href="#cb3-88" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-89"><a href="#cb3-89" aria-hidden="true" tabindex="-1"></a>N<span class="ot">=</span><span class="er">$</span>{SLURM_ARRAY_TASK_ID}</span>
+<span id="cb3-90"><a href="#cb3-90" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-91"><a href="#cb3-91" aria-hidden="true" tabindex="-1"></a>SAMPLE_ID<span class="ot">=</span><span class="er">$</span>(cat <span class="sc">$</span>SAMPLE_ID_FILE <span class="sc">|</span> tail <span class="sc">-</span>n<span class="sc">+</span><span class="er">$</span>{N} <span class="sc">|</span> head <span class="sc">-</span><span class="dv">1</span>)</span>
+<span id="cb3-92"><a href="#cb3-92" aria-hidden="true" tabindex="-1"></a><span class="co"># Get the sample ID string after the first "_"</span></span>
+<span id="cb3-93"><a href="#cb3-93" aria-hidden="true" tabindex="-1"></a>SAMPLE_ID_NEW<span class="ot">=</span><span class="st">"${SAMPLE_ID#*_}"</span></span>
+<span id="cb3-94"><a href="#cb3-94" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-95"><a href="#cb3-95" aria-hidden="true" tabindex="-1"></a>echo <span class="st">"Input dir: "</span><span class="sc">$</span>INPUT_DIR</span>
+<span id="cb3-96"><a href="#cb3-96" aria-hidden="true" tabindex="-1"></a>echo <span class="st">"Sample: "</span><span class="sc">$</span>SAMPLE_ID</span>
+<span id="cb3-97"><a href="#cb3-97" aria-hidden="true" tabindex="-1"></a>echo <span class="st">"Sample new: "</span><span class="sc">$</span>SAMPLE_ID_NEW</span>
+<span id="cb3-98"><a href="#cb3-98" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-99"><a href="#cb3-99" aria-hidden="true" tabindex="-1"></a>cd <span class="sc">$</span>OUTPUT_DIR</span>
+<span id="cb3-100"><a href="#cb3-100" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-101"><a href="#cb3-101" aria-hidden="true" tabindex="-1"></a><span class="sc">$</span>CELL_RANGER count <span class="sc">--</span>id<span class="ot">=</span><span class="er">$</span>SAMPLE_ID_NEW \</span>
+<span id="cb3-102"><a href="#cb3-102" aria-hidden="true" tabindex="-1"></a><span class="sc">--</span>fastqs<span class="ot">=</span><span class="er">$</span>INPUT_DIR \</span>
+<span id="cb3-103"><a href="#cb3-103" aria-hidden="true" tabindex="-1"></a><span class="sc">--</span>sample<span class="ot">=</span><span class="er">$</span>SAMPLE_ID \</span>
+<span id="cb3-104"><a href="#cb3-104" aria-hidden="true" tabindex="-1"></a><span class="sc">--</span>transcriptome<span class="ot">=</span><span class="er">$</span>CR_REF \</span>
+<span id="cb3-105"><a href="#cb3-105" aria-hidden="true" tabindex="-1"></a><span class="sc">--</span>localcores<span class="ot">=</span><span class="dv">40</span> \</span>
+<span id="cb3-106"><a href="#cb3-106" aria-hidden="true" tabindex="-1"></a><span class="sc">--</span>localmem<span class="ot">=</span><span class="dv">330</span> \</span>
+<span id="cb3-107"><a href="#cb3-107" aria-hidden="true" tabindex="-1"></a><span class="sc">--</span>include<span class="sc">-</span>introns<span class="ot">=</span>true \</span>
+<span id="cb3-108"><a href="#cb3-108" aria-hidden="true" tabindex="-1"></a><span class="sc">--</span>no<span class="sc">-</span>bam</span>
+<span id="cb3-109"><a href="#cb3-109" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-110"><a href="#cb3-110" aria-hidden="true" tabindex="-1"></a><span class="do">## optional:</span></span>
+<span id="cb3-111"><a href="#cb3-111" aria-hidden="true" tabindex="-1"></a><span class="do">## R2 length is longer (151bp) than usually recommended/required (90bp)</span></span>
+<span id="cb3-112"><a href="#cb3-112" aria-hidden="true" tabindex="-1"></a><span class="do">## --r2-length=90</span></span>
+<span id="cb3-113"><a href="#cb3-113" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-114"><a href="#cb3-114" aria-hidden="true" tabindex="-1"></a>echo <span class="sc">-</span>e <span class="st">"</span><span class="sc">\n</span><span class="st">*****************************************************************"</span></span>
+<span id="cb3-115"><a href="#cb3-115" aria-hidden="true" tabindex="-1"></a>echo <span class="st">"Finished at: "`</span><span class="at">date</span><span class="st">`</span></span>
+<span id="cb3-116"><a href="#cb3-116" aria-hidden="true" tabindex="-1"></a>echo <span class="st">"*****************************************************************"</span></span>
+<span id="cb3-117"><a href="#cb3-117" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb3-118"><a href="#cb3-118" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-119"><a href="#cb3-119" aria-hidden="true" tabindex="-1"></a>One of the many outputs of interest is the <span class="in">`web_summary.html`</span> report files that have include various metrics worth checking.</span>
+<span id="cb3-120"><a href="#cb3-120" aria-hidden="true" tabindex="-1"></a>I'm not keen to add the whole output to the Git repo due to the file size, so I'll just add these files for now.</span>
+<span id="cb3-121"><a href="#cb3-121" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-122"><a href="#cb3-122" aria-hidden="true" tabindex="-1"></a>Note that there's a also a <span class="in">`web_summary.html`</span> in the <span class="in">`SC_RNA_COUNTER_CS`</span> folder, but I don't want that one here so I'll also remove those.</span>
+<span id="cb3-123"><a href="#cb3-123" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-126"><a href="#cb3-126" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb3-127"><a href="#cb3-127" aria-hidden="true" tabindex="-1"></a><span class="co">#| purl: false</span></span>
+<span id="cb3-128"><a href="#cb3-128" aria-hidden="true" tabindex="-1"></a><span class="co"># get the file paths for all the "web_summary.html" files and save them to a file</span></span>
+<span id="cb3-129"><a href="#cb3-129" aria-hidden="true" tabindex="-1"></a>find 03_data<span class="sc">/</span>990_processed_data<span class="sc">/</span>001_snrnaseq<span class="sc">/</span>04_cellranger_count<span class="sc">/</span> <span class="sc">-</span>name <span class="st">"web_summary.html"</span> <span class="sc">&gt;</span> web_summary_files.txt</span>
+<span id="cb3-130"><a href="#cb3-130" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-131"><a href="#cb3-131" aria-hidden="true" tabindex="-1"></a><span class="co"># the line length for the summary in the SC_RNA_COUNTER_CS dir is longer:</span></span>
+<span id="cb3-132"><a href="#cb3-132" aria-hidden="true" tabindex="-1"></a>awk <span class="st">'{print length}'</span> web_summary_files.txt <span class="sc">|</span> sort <span class="sc">-</span>n <span class="sc">|</span> uniq <span class="sc">-</span>c</span>
+<span id="cb3-133"><a href="#cb3-133" aria-hidden="true" tabindex="-1"></a><span class="co"># so we'll remove lines based on their length</span></span>
+<span id="cb3-134"><a href="#cb3-134" aria-hidden="true" tabindex="-1"></a>awk <span class="st">'length &lt;= max_length'</span> max_length<span class="ot">=</span><span class="st">"140"</span> web_summary_files.txt <span class="sc">&gt;</span> web_summary_files.txt</span>
+<span id="cb3-135"><a href="#cb3-135" aria-hidden="true" tabindex="-1"></a><span class="co"># prepend "git add " to the file lines</span></span>
+<span id="cb3-136"><a href="#cb3-136" aria-hidden="true" tabindex="-1"></a>sed <span class="st">'s/^/git add /'</span> web_summary_files_clean.txt <span class="sc">&gt;</span> web_summary_files_git.sh</span>
+<span id="cb3-137"><a href="#cb3-137" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-138"><a href="#cb3-138" aria-hidden="true" tabindex="-1"></a><span class="co"># run the file</span></span>
+<span id="cb3-139"><a href="#cb3-139" aria-hidden="true" tabindex="-1"></a>sh web_summary_files_git.sh</span>
+<span id="cb3-140"><a href="#cb3-140" aria-hidden="true" tabindex="-1"></a><span class="co"># clean up</span></span>
+<span id="cb3-141"><a href="#cb3-141" aria-hidden="true" tabindex="-1"></a>rm web_summary_files.txt web_summary_files_clean.txt web_summary_files_git.sh</span>
+<span id="cb3-142"><a href="#cb3-142" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 </code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div></div></div></div></div>
 </div> <!-- /content -->

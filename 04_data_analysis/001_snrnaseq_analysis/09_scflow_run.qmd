@@ -1,17 +1,15 @@
 ---
 title: Run scflow
-# execute: 
-#   eval: false
+execute:
+  eval: false
 bibliography: references.bib
 ---
 
 # Custom config file
 
-There is a SCW config file for nf-core with some nice [documentation](https://github.com/nf-core/configs/blob/master/docs/scw.md), so we'll use that.
 Note that by default the scw config uses the htc queue and we'd rather use our DRI nodes, so I'll overwrite that.
 
-We can also use a config file with the parameters we want to use with scflow.
-
+I'm also trying out Nextflow Tower for the first time, it should be nice for keeping an eye on runs, seeing resource usage and troubleshooting any issues.
 Note that after I purl this config I'll manually update the Nextflow Tower token on hawk.
 
 ```{r}
@@ -32,6 +30,7 @@ tower {
   accessToken = keyring::key_get("hawk_nextflow_tower")
   enabled = true
 }
+
 process {
     clusterOptions = '--account=scw1329'
     beforeScript = 'module load singularity'
@@ -47,7 +46,8 @@ process {
 
 Note that I'm using the `dev-nf` branch to run.
 
-Also note that I've created empty `reddim_genes.yml` and `celltyep_mappings.tsv` files to start with
+There's two `nextflow run` calls, the first is with both our data and the Yang data, and the latter with just our data in case something goes wrong with that.
+[@yang_human_2022]
 
 ```{r}
 #| eval: false

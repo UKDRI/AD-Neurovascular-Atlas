@@ -6,13 +6,21 @@ execute:
 bibliography: references.bib
 ---
 
+# Getting scflow on hawk
+
+So someone in Super Computing Wales added a handy nf-core profile config we can use, and this also includes a nice guide to getting set up for using nf-core pipelines: [https://github.com/nf-core/configs/blob/master/docs/scw.md](https://github.com/nf-core/configs/blob/master/docs/scw.md)
+
+I've followed the guide for offline use, which I won't rehash here, check the above link if curious.
+
+# Input files
+
 To run scflow we need a manifest tsv file where the first column is a unique sample ID and the second column is the file path to the directory that has the `barcodes.tsv`, `genes.tsv` and `matrix.mtx` files.
 
 I'm assuming we want to use the filtered gene-barcode matrices in MEX format as opposed to the raw files.
 
 Note that this page has a mix of bash (run on Hawk) and R code (run locally), I've just run these bits manually and recorded the code here for now.
 
-# Manifest file
+## Manifest file
 
 First let's sort the manifest for our samples.
 
@@ -61,7 +69,7 @@ cat yang_manifest2.tsv >> scflow_manifest.tsv
 rm yang_manifest*
 ```
 
-# Sample metadata
+## Sample metadata
 
 We also need to sort out the sample metadata for the Yang data.
 
@@ -69,7 +77,8 @@ We also need to sort out the sample metadata for the Yang data.
 #| label: load packages
 #| eval: true
 library(purrr)
-pkg <- c("readr", "dplyr", "here", "GEOquery", "magrittr", "tidyr", "yaml")
+pkg <- c("readr", "dplyr", "here", "GEOquery", "magrittr", "tidyr", "yaml", 
+         "gt")
 map(pkg, library, character.only = TRUE)
 
 ```
@@ -175,10 +184,10 @@ merged_meta <- phenodata %>%
 write_tsv(merged_meta, file = here("03_data/990_processed_data/001_snrnaseq/90_sample_info/sample_metadata.tsv"))
 ```
 
-# Getting marker genes
+## Getting marker genes
 
 The EBI has the [Single cell expression atlas](https://www.ebi.ac.uk/gxa/sc/home) so I'll use that for our gene annotation markers.
-There is an R package on Bioconductor for querying it, but it doesn't seem to have an easy way of querying by tissues/organ, so I'll just manually download them (there aren't that many)
+There is an R package on Bioconductor for querying it, but it doesn't seem to have an easy way of querying by tissues/organ, so I'll just manually download them (there aren't that many).
 
 ```{r}
 #| eval: true

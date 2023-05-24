@@ -47,6 +47,8 @@ website:
         - 04_data_analysis/001_snrnaseq_analysis/05_cellranger_count_set2.qmd
         - 04_data_analysis/001_snrnaseq_analysis/06_cellranger_count_set3.qmd
         - 04_data_analysis/001_snrnaseq_analysis/07_cellranger_aggr.qmd
+        - 04_data_analysis/001_snrnaseq_analysis/08_scflow_prep.qmd
+        - 04_data_analysis/001_snrnaseq_analysis/09_scflow_run.qmd
   
 format:
   html:
