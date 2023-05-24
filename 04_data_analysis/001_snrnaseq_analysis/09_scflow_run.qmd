@@ -34,13 +34,25 @@ tower {
 }
 process {
     clusterOptions = '--account=scw1329'
+    beforeScript = 'module load singularity'
+    withName: SCFLOW_MERGE {
+      memory = 300.GB
+    }
+    withName: SCFLOW_INTEGRATE {
+      memory = 500.GB
+      queue = 'c_vhighmem_dri1'
+    }
 }
 ```
 
 Note that I'm using the `dev-nf` branch to run.
 
+Also note that I've created empty `reddim_genes.yml` and `celltyep_mappings.tsv` files to start with
+
 ```{r}
 #| eval: false
 #| purl: false
-nextflow run combiz-nf-core-scflow-dev-nf/workflow/ -profile scw -c 03_data/990_processed_data/001_snrnaseq/06_scflow/pipeline.config --manifest 03_data/990_processed_data/001_snrnaseq/06_scflow/scflow_manifest_both.tsv --input 03_data/990_processed_data/001_snrnaseq/90_sample_info/sample_metadata.tsv --reddim_genes_yml reddim_genes.yml -resume -bg > 03_data/990_processed_data/001_snrnaseq/06_scflow/scflow.log
+nextflow run combiz-nf-core-scflow-dev-nf/workflow/ -profile scw -c 03_data/990_processed_data/001_snrnaseq/06_scflow/pipeline.config --manifest 03_data/990_processed_data/001_snrnaseq/06_scflow/scflow_manifest_final.tsv --input 03_data/990_processed_data/001_snrnaseq/90_sample_info/sample_metadata.tsv --reddim_genes_yml 03_data/990_processed_data/001_snrnaseq/06_scflow/reddim_genes.yml --ensembl_mappings 03_data/990_processed_data/001_snrnaseq/06_scflow/ensembl_mappings.tsv --email Bernardo-HarringtonG@cardiff.ac.uk -resume -bg > 03_data/990_processed_data/001_snrnaseq/06_scflow/scflow.log
+# version with our samples alone
+nextflow run combiz-nf-core-scflow-dev-nf/workflow/ -profile scw -c 03_data/990_processed_data/001_snrnaseq/06_scflow/pipeline.config --manifest 03_data/990_processed_data/001_snrnaseq/06_scflow/scflow_manifest.tsv --input 03_data/990_processed_data/001_snrnaseq/90_sample_info/sample_metadata_ours.tsv --reddim_genes_yml 03_data/990_processed_data/001_snrnaseq/06_scflow/reddim_genes.yml --ensembl_mappings 03_data/990_processed_data/001_snrnaseq/06_scflow/ensembl_mappings.tsv --email Bernardo-HarringtonG@cardiff.ac.uk -resume -bg > 03_data/990_processed_data/001_snrnaseq/06_scflow/scflow.log
 ```
