@@ -21,9 +21,9 @@ executor {
 }
 
 params {
-  max_memory = 700.GB
+  max_memory = 710.GB
   max_cpus = 30
-  max_time = 82.h
+  max_time = 102.h
 }
 
 tower {
@@ -38,7 +38,7 @@ process {
       memory = 300.GB
     }
     withName: SCFLOW_INTEGRATE {
-      memory = 500.GB
+      memory = 700.GB
       queue = 'c_vhighmem_dri1'
     }
 }
