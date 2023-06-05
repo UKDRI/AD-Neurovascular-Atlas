@@ -127,7 +127,7 @@ find 03_data/990_processed_data/001_snrnaseq/04_cellranger_count/ -name "web_sum
 # the line length for the summary in the SC_RNA_COUNTER_CS dir is longer:
 awk '{print length}' web_summary_files.txt | sort -n | uniq -c
 # so we'll remove lines based on their length
-awk 'length <= max_length' max_length="140" web_summary_files.txt > web_summary_files.txt
+awk 'length <= max_length' max_length="140" web_summary_files.txt > web_summary_files_clean.txt
 # prepend "git add " to the file lines
 sed 's/^/git add /' web_summary_files_clean.txt > web_summary_files_git.sh
 
