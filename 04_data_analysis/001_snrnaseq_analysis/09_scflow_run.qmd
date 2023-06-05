@@ -21,9 +21,9 @@ executor {
 }
 
 params {
-  max_memory = 700.GB
-  max_cpus = 30
-  max_time = 82.h
+  max_memory = 715.GB
+  max_cpus = 35
+  max_time = 112.h
 }
 
 tower {
@@ -38,10 +38,48 @@ process {
       memory = 300.GB
     }
     withName: SCFLOW_INTEGRATE {
-      memory = 500.GB
+      memory = 710.GB
+      time = 20.h
+      queue = 'c_vhighmem_dri1'
+    }
+    withName: SCFLOW_REDUCEDIMS {
+      memory = 710.GB
+      queue = 'c_vhighmem_dri1'
+    }
+    withName: SCFLOW_CLUSTER {
+      memory = 710.GB
+      queue = 'c_vhighmem_dri1'
+    }
+    withName: SCFLOW_REPORTINTEGRATED {
+      cpus = 35
+      memory = 710.GB
+      queue = 'c_vhighmem_dri1'
+    }
+    withName: SCFLOW_FINALIZE {
+      memory = 710.GB
+      queue = 'c_vhighmem_dri1'
+    }
+    withName: SCFLOW_DIRICHLET {
+      memory = 710.GB
+      queue = 'c_vhighmem_dri1'
+    }
+    withName: SCFLOW_DGE {
+      memory = 710.GB
+      queue = 'c_vhighmem_dri1'
+    }
+    withName: SCFLOW_PLOTREDDIMGENES {
+      memory = 710.GB
+      cpus = 35
+      time = 20.h
       queue = 'c_vhighmem_dri1'
     }
 }
+```
+
+There is a module one could load on hawk, but it isn't the most recent version of nextflow, so I'm using mamba as per the scw docs
+
+```{r}
+mamba activate nf-core
 ```
 
 Note that I'm using the `dev-nf` branch to run.
@@ -52,7 +90,16 @@ There's two `nextflow run` calls, the first is with both our data and the Yang d
 ```{r}
 #| eval: false
 #| purl: false
-nextflow run combiz-nf-core-scflow-dev-nf/workflow/ -profile scw -c 03_data/990_processed_data/001_snrnaseq/06_scflow/pipeline.config --manifest 03_data/990_processed_data/001_snrnaseq/06_scflow/scflow_manifest_final.tsv --input 03_data/990_processed_data/001_snrnaseq/90_sample_info/sample_metadata.tsv --reddim_genes_yml 03_data/990_processed_data/001_snrnaseq/06_scflow/reddim_genes.yml --ensembl_mappings 03_data/990_processed_data/001_snrnaseq/06_scflow/ensembl_mappings.tsv --email Bernardo-HarringtonG@cardiff.ac.uk -resume -bg > 03_data/990_processed_data/001_snrnaseq/06_scflow/scflow.log
+nextflow run combiz-nf-core-scflow-dev-nf/workflow/ -profile scw -c 03_data/990_processed_data/001_snrnaseq/06_scflow/pipeline.config --manifest 03_data/990_processed_data/001_snrnaseq/06_scflow/scflow_manifest_final.tsv --input 03_data/990_processed_data/001_snrnaseq/90_sample_info/sample_metadata.tsv --reddim_genes_yml 03_data/990_processed_data/001_snrnaseq/06_scflow/reddim_genes.yml --ensembl_mappings 03_data/990_processed_data/001_snrnaseq/06_scflow/ensembl_mappings.tsv -N Bernardo-HarringtonG@cardiff.ac.uk -resume -bg > 03_data/990_processed_data/001_snrnaseq/06_scflow/scflow.log
 # version with our samples alone
-nextflow run combiz-nf-core-scflow-dev-nf/workflow/ -profile scw -c 03_data/990_processed_data/001_snrnaseq/06_scflow/pipeline.config --manifest 03_data/990_processed_data/001_snrnaseq/06_scflow/scflow_manifest.tsv --input 03_data/990_processed_data/001_snrnaseq/90_sample_info/sample_metadata_ours.tsv --reddim_genes_yml 03_data/990_processed_data/001_snrnaseq/06_scflow/reddim_genes.yml --ensembl_mappings 03_data/990_processed_data/001_snrnaseq/06_scflow/ensembl_mappings.tsv --email Bernardo-HarringtonG@cardiff.ac.uk -resume -bg > 03_data/990_processed_data/001_snrnaseq/06_scflow/scflow.log
+nextflow run combiz-nf-core-scflow-dev-nf/workflow/ -profile scw -c 03_data/990_processed_data/001_snrnaseq/06_scflow/pipeline.config --manifest 03_data/990_processed_data/001_snrnaseq/06_scflow/scflow_manifest.tsv --input 03_data/990_processed_data/001_snrnaseq/90_sample_info/sample_metadata_ours.tsv --reddim_genes_yml 03_data/990_processed_data/001_snrnaseq/06_scflow/reddim_genes.yml --ensembl_mappings 03_data/990_processed_data/001_snrnaseq/06_scflow/ensembl_mappings.tsv -N Bernardo-HarringtonG@cardiff.ac.uk -resume -bg > 03_data/990_processed_data/001_snrnaseq/06_scflow/scflow.log
 ```
+
+```{r}
+#| eval: false
+library(readr)
+temp <- read_tsv(here::here("03_data/990_processed_data/001_snrnaseq/90_sample_info/sample_metadata.tsv"))
+temp$donor_ID <- NULL
+write_tsv(temp, here::here("03_data/990_processed_data/001_snrnaseq/90_sample_info/sample_metadata_temp.tsv"))
+```
+
