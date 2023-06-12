@@ -1,80 +1,80 @@
-manifest	donor_ID	individual	diagnosis	prep	sex	age	batch	Braak_Tangle	APOE	PMI	pH_cerebellum	Brain_weight	Ethnicity	Diagnosis	technique	brain_region	group
+manifest	donor_ID	individual	diagnosis	prep	sex	age	batch	Braak_Tangle	APOE	PMI	pH_cerebellum	Brain_weight	Ethnicity	diagnosis_details	technique	brain_region	group
 P01	NP032/2018	1	Control	P	F	86	set_2	III	2/3	98	5.62	1330	unknown	Abnormal deposition of tau protein	oxford	dunno	Control_P_oxford_dunno
-P02	NP041/2019	2	AD	P	F	87	set_2	V	3/4	25	5.57	1034	Black Caribbean	AD, LATE	oxford	dunno	AD_P_oxford_dunno
+P02	NP041/2019	2	Case	P	F	87	set_2	V	3/4	25	5.57	1034	Black Caribbean	AD, LATE	oxford	dunno	AD_P_oxford_dunno
 P03	NP077/2018	3	Control	P	M	82	set_2	II	3/4	45	5.9	1400	unknown	Normal aged control, low level AD change	oxford	dunno	Control_P_oxford_dunno
-P04	NP067/2018	4	AD	P	M	81	set_2	VI	4/4	26	6.43	1172	unknown	AD, LBD, CVD, Hippocampal sclerosis	oxford	dunno	AD_P_oxford_dunno
+P04	NP067/2018	4	Case	P	M	81	set_2	VI	4/4	26	6.43	1172	unknown	AD, LBD, CVD, Hippocampal sclerosis	oxford	dunno	AD_P_oxford_dunno
 P05	NP008/2015	5	Control	P	F	87	set_1	II	3/3	24	6.86	1101	unknown	Normal aged brain	oxford	dunno	Control_P_oxford_dunno
-P06	NP034/2014	6	AD	P	F	87	set_1	VI	2/4	72	5.95	1060	unknown	AD	oxford	dunno	AD_P_oxford_dunno
+P06	NP034/2014	6	Case	P	F	87	set_1	VI	2/4	72	5.95	1060	unknown	AD	oxford	dunno	AD_P_oxford_dunno
 P07	NP070/2019	7	Control	P	M	85	set_1	II	3/3	22	6.03	1367	unknown	Control with low level AD change Braak II	oxford	dunno	Control_P_oxford_dunno
-P08	NP142/2014	8	AD	P	M	85	set_1	VI	3/3	69	6.22	1372	unknown	AD Braak VI	oxford	dunno	AD_P_oxford_dunno
+P08	NP142/2014	8	Case	P	M	85	set_1	VI	3/3	69	6.22	1372	unknown	AD Braak VI	oxford	dunno	AD_P_oxford_dunno
 P09	NP016/2017	9	Control	P	F	89	set_1	II	3/3	48	5.67	1366	unknown	Aged brain, CVD	oxford	dunno	Control_P_oxford_dunno
-P10	NP080/2014	10	AD	P	F	89	set_1	V	3/3	24	6.67	1101	unknown	AD, LBD, CVD	oxford	dunno	AD_P_oxford_dunno
+P10	NP080/2014	10	Case	P	F	89	set_1	V	3/3	24	6.67	1101	unknown	AD, LBD, CVD	oxford	dunno	AD_P_oxford_dunno
 P11	NP128/2017	11	Control	P	M	87	set_1	I	3/3	27	6.1	1368	unknown	Control, CVD	oxford	dunno	Control_P_oxford_dunno
-P12	NP018/2019	12	AD	P	M	87	set_1	V	3/4	33	5.93	1154	unknown	AD Braak V	oxford	dunno	AD_P_oxford_dunno
+P12	NP018/2019	12	Case	P	M	87	set_1	V	3/4	33	5.93	1154	unknown	AD Braak V	oxford	dunno	AD_P_oxford_dunno
 P13	NP063/2019	13	Control	P	F	89	set_1	II	3/3	42	5.69	1280	White (European)	Aged brainLow level AD	oxford	dunno	Control_P_oxford_dunno
-P14	NP177/2013	14	AD	P	F	90	set_1	V	3/3	48	5.58	1153	unknown	AD, LBD	oxford	dunno	AD_P_oxford_dunno
+P14	NP177/2013	14	Case	P	F	90	set_1	V	3/3	48	5.58	1153	unknown	AD, LBD	oxford	dunno	AD_P_oxford_dunno
 P15	NP058/2019	15	Control	P	M	89	set_1	II	3/3	36	5.58	1141	unknown	Low level AD	oxford	dunno	Control_P_oxford_dunno
-P16	NP002/2019	16	AD	P	M	88	set_1	VI	4/4	33	5.63	1151	unknown	AD, CVD	oxford	dunno	AD_P_oxford_dunno
+P16	NP002/2019	16	Case	P	M	88	set_1	VI	4/4	33	5.63	1151	unknown	AD, CVD	oxford	dunno	AD_P_oxford_dunno
 P17	NP150/2014	17	Control	P	F	95	set_2	II	3/3	54	5.17	1317	unknown	Normal aged brain	oxford	dunno	Control_P_oxford_dunno
-P18	NP076/2014	18	AD	P	F	95	set_2	V	3/4	27	5.94	934	unknown	AD	oxford	dunno	AD_P_oxford_dunno
+P18	NP076/2014	18	Case	P	F	95	set_2	V	3/4	27	5.94	934	unknown	AD	oxford	dunno	AD_P_oxford_dunno
 P19	NP011/2019	19	Control	P	M	94	set_2	II	2/4	27	6.04	1386	White (European)	Low level AD Braak II, Abnormal deposition of pTDP-43 in medial temporal lobe	oxford	dunno	Control_P_oxford_dunno
-P20	NP003/2019	20	AD	P	M	95	set_2	V	3/4	25	6.09	1137	unknown	AD Braak V	oxford	dunno	AD_P_oxford_dunno
+P20	NP003/2019	20	Case	P	M	95	set_2	V	3/4	25	6.09	1137	unknown	AD Braak V	oxford	dunno	AD_P_oxford_dunno
 V01	NP032/2018	1	Control	V	F	86	set_2	III	2/3	98	5.62	1330	unknown	Abnormal deposition of tau protein	oxford	dunno	Control_V_oxford_dunno
-V02	NP041/2019	2	AD	V	F	87	set_2	V	3/4	25	5.57	1034	Black Caribbean	AD, LATE	oxford	dunno	AD_V_oxford_dunno
+V02	NP041/2019	2	Case	V	F	87	set_2	V	3/4	25	5.57	1034	Black Caribbean	AD, LATE	oxford	dunno	AD_V_oxford_dunno
 V03	NP077/2018	3	Control	V	M	82	set_2	II	3/4	45	5.9	1400	unknown	Normal aged control, low level AD change	oxford	dunno	Control_V_oxford_dunno
-V04	NP067/2018	4	AD	V	M	81	set_2	VI	4/4	26	6.43	1172	unknown	AD, LBD, CVD, Hippocampal sclerosis	oxford	dunno	AD_V_oxford_dunno
+V04	NP067/2018	4	Case	V	M	81	set_2	VI	4/4	26	6.43	1172	unknown	AD, LBD, CVD, Hippocampal sclerosis	oxford	dunno	AD_V_oxford_dunno
 V05	NP008/2015	5	Control	V	F	87	set_1	II	3/3	24	6.86	1101	unknown	Normal aged brain	oxford	dunno	Control_V_oxford_dunno
-V06	NP034/2014	6	AD	V	F	87	set_1	VI	2/4	72	5.95	1060	unknown	AD	oxford	dunno	AD_V_oxford_dunno
+V06	NP034/2014	6	Case	V	F	87	set_1	VI	2/4	72	5.95	1060	unknown	AD	oxford	dunno	AD_V_oxford_dunno
 V07	NP070/2019	7	Control	V	M	85	set_1	II	3/3	22	6.03	1367	unknown	Control with low level AD change Braak II	oxford	dunno	Control_V_oxford_dunno
-V08	NP142/2014	8	AD	V	M	85	set_1	VI	3/3	69	6.22	1372	unknown	AD Braak VI	oxford	dunno	AD_V_oxford_dunno
+V08	NP142/2014	8	Case	V	M	85	set_1	VI	3/3	69	6.22	1372	unknown	AD Braak VI	oxford	dunno	AD_V_oxford_dunno
 V09	NP016/2017	9	Control	V	F	89	set_1	II	3/3	48	5.67	1366	unknown	Aged brain, CVD	oxford	dunno	Control_V_oxford_dunno
-V10	NP080/2014	10	AD	V	F	89	set_1	V	3/3	24	6.67	1101	unknown	AD, LBD, CVD	oxford	dunno	AD_V_oxford_dunno
+V10	NP080/2014	10	Case	V	F	89	set_1	V	3/3	24	6.67	1101	unknown	AD, LBD, CVD	oxford	dunno	AD_V_oxford_dunno
 V11	NP128/2017	11	Control	V	M	87	set_1	I	3/3	27	6.1	1368	unknown	Control, CVD	oxford	dunno	Control_V_oxford_dunno
-V12	NP018/2019	12	AD	V	M	87	set_1	V	3/4	33	5.93	1154	unknown	AD Braak V	oxford	dunno	AD_V_oxford_dunno
+V12	NP018/2019	12	Case	V	M	87	set_1	V	3/4	33	5.93	1154	unknown	AD Braak V	oxford	dunno	AD_V_oxford_dunno
 V13	NP063/2019	13	Control	V	F	89	set_1	II	3/3	42	5.69	1280	White (European)	Aged brainLow level AD	oxford	dunno	Control_V_oxford_dunno
-V14	NP177/2013	14	AD	V	F	90	set_1	V	3/3	48	5.58	1153	unknown	AD, LBD	oxford	dunno	AD_V_oxford_dunno
+V14	NP177/2013	14	Case	V	F	90	set_1	V	3/3	48	5.58	1153	unknown	AD, LBD	oxford	dunno	AD_V_oxford_dunno
 V15	NP058/2019	15	Control	V	M	89	set_1	II	3/3	36	5.58	1141	unknown	Low level AD	oxford	dunno	Control_V_oxford_dunno
-V16	NP002/2019	16	AD	V	M	88	set_1	VI	4/4	33	5.63	1151	unknown	AD, CVD	oxford	dunno	AD_V_oxford_dunno
+V16	NP002/2019	16	Case	V	M	88	set_1	VI	4/4	33	5.63	1151	unknown	AD, CVD	oxford	dunno	AD_V_oxford_dunno
 V17	NP150/2014	17	Control	V	F	95	set_2	II	3/3	54	5.17	1317	unknown	Normal aged brain	oxford	dunno	Control_V_oxford_dunno
-V18	NP076/2014	18	AD	V	F	95	set_2	V	3/4	27	5.94	934	unknown	AD	oxford	dunno	AD_V_oxford_dunno
+V18	NP076/2014	18	Case	V	F	95	set_2	V	3/4	27	5.94	934	unknown	AD	oxford	dunno	AD_V_oxford_dunno
 V19	NP011/2019	19	Control	V	M	94	set_2	II	2/4	27	6.04	1386	White (European)	Low level AD Braak II, Abnormal deposition of pTDP-43 in medial temporal lobe	oxford	dunno	Control_V_oxford_dunno
-V20	NP003/2019	20	AD	V	M	95	set_2	V	3/4	25	6.09	1137	unknown	AD Braak V	oxford	dunno	AD_V_oxford_dunno
+V20	NP003/2019	20	Case	V	M	95	set_2	V	3/4	25	6.09	1137	unknown	AD Braak V	oxford	dunno	AD_V_oxford_dunno
 P21	NP048/19	21	Control	P	M	71	set_3	I	NA	NA	NA	NA	NA	Aged brain  Braak I	oxford	dunno	Control_P_oxford_dunno
-P22	NP093/13	22	AD	P	F	90	set_3	V	NA	NA	NA	NA	NA	Alzheimer's disease, Braak V, CVD	oxford	dunno	AD_P_oxford_dunno
+P22	NP093/13	22	Case	P	F	90	set_3	V	NA	NA	NA	NA	NA	Alzheimer's disease, Braak V, CVD	oxford	dunno	AD_P_oxford_dunno
 P23	NP024/17	23	Control	P	M	74	set_3	II	NA	NA	NA	NA	NA	Control with low level AD Braak II	oxford	dunno	Control_P_oxford_dunno
-P24	NP127/14	24	AD	P	F	89	set_3	IV	NA	NA	NA	NA	NA	AD Braak IV	oxford	dunno	AD_P_oxford_dunno
+P24	NP127/14	24	Case	P	F	89	set_3	IV	NA	NA	NA	NA	NA	AD Braak IV	oxford	dunno	AD_P_oxford_dunno
 P25	NP103/13	25	Control	P	F	48	set_3	NA	NA	NA	NA	NA	NA	Control	oxford	dunno	Control_P_oxford_dunno
-P26	NP092/19	26	AD	P	M	98	set_3	IV	NA	NA	NA	NA	NA	AD, LATE, CVD Braak IV	oxford	dunno	AD_P_oxford_dunno
-P27	NP406/16	27	AD	P	F	81	set_3	VI	NA	NA	NA	NA	NA	AD Braak VI	oxford	dunno	AD_P_oxford_dunno
-P28	NP160/13	28	AD	P	F	88	set_3	IV	NA	NA	NA	NA	NA	AD Braak IV, CVD	oxford	dunno	AD_P_oxford_dunno
+P26	NP092/19	26	Case	P	M	98	set_3	IV	NA	NA	NA	NA	NA	AD, LATE, CVD Braak IV	oxford	dunno	AD_P_oxford_dunno
+P27	NP406/16	27	Case	P	F	81	set_3	VI	NA	NA	NA	NA	NA	AD Braak VI	oxford	dunno	AD_P_oxford_dunno
+P28	NP160/13	28	Case	P	F	88	set_3	IV	NA	NA	NA	NA	NA	AD Braak IV, CVD	oxford	dunno	AD_P_oxford_dunno
 P29	NP408/16	29	Control	P	M	70	set_3	I	NA	NA	NA	NA	NA	Normal aged brain Braak I	oxford	dunno	Control_P_oxford_dunno
 P30	NP096/13	30	Control	P	F	92	set_3	II	NA	NA	NA	NA	NA	Normal aged brain  Braak II	oxford	dunno	Control_P_oxford_dunno
 P31	NP090/17	31	Control	P	M	70	set_3	II	NA	NA	NA	NA	NA	Aged brain Braak II	oxford	dunno	Control_P_oxford_dunno
-P32	NP054/17	32	AD	P	F	73	set_3	VI	NA	NA	NA	NA	NA	AD Braak VI	oxford	dunno	AD_P_oxford_dunno
-P33	NP163/13	33	AD	P	F	89	set_3	IV	NA	NA	NA	NA	NA	AD Braak IV, CVD	oxford	dunno	AD_P_oxford_dunno
+P32	NP054/17	32	Case	P	F	73	set_3	VI	NA	NA	NA	NA	NA	AD Braak VI	oxford	dunno	AD_P_oxford_dunno
+P33	NP163/13	33	Case	P	F	89	set_3	IV	NA	NA	NA	NA	NA	AD Braak IV, CVD	oxford	dunno	AD_P_oxford_dunno
 P34	NP080/15	34	Control	P	M	71	set_3	I	NA	NA	NA	NA	NA	Normal aged brain Braak I	oxford	dunno	Control_P_oxford_dunno
 P35	NP109/17	35	Control	P	F	77	set_3	I	NA	NA	NA	NA	NA	Normal aged brain Braak I	oxford	dunno	Control_P_oxford_dunno
 P36	NP102/17	36	Control	P	F	81	set_3	II	NA	NA	NA	NA	NA	Normal aged Brain Braak II	oxford	dunno	Control_P_oxford_dunno
-P37	NP018/14	37	AD	P	F	85	set_3	VI	NA	NA	NA	NA	NA	AD Braak VI	oxford	dunno	AD_P_oxford_dunno
+P37	NP018/14	37	Case	P	F	85	set_3	VI	NA	NA	NA	NA	NA	AD Braak VI	oxford	dunno	AD_P_oxford_dunno
 P38	NP011/14	38	Control	P	F	93	set_3	III	NA	NA	NA	NA	NA	Normal aged brain . Braak III	oxford	dunno	Control_P_oxford_dunno
-P40	NP037/18	40	AD	P	F	101	set_3	V	NA	NA	NA	NA	NA	AD, CVD Braak V	oxford	dunno	AD_P_oxford_dunno
+P40	NP037/18	40	Case	P	F	101	set_3	V	NA	NA	NA	NA	NA	AD, CVD Braak V	oxford	dunno	AD_P_oxford_dunno
 V21	NP048/19	21	Control	V	M	71	set_3	I	NA	NA	NA	NA	NA	Aged brain  Braak I	oxford	dunno	Control_V_oxford_dunno
-V22	NP093/13	22	AD	V	F	90	set_3	V	NA	NA	NA	NA	NA	Alzheimer's disease, Braak V, CVD	oxford	dunno	AD_V_oxford_dunno
+V22	NP093/13	22	Case	V	F	90	set_3	V	NA	NA	NA	NA	NA	Alzheimer's disease, Braak V, CVD	oxford	dunno	AD_V_oxford_dunno
 V23	NP024/17	23	Control	V	M	74	set_3	II	NA	NA	NA	NA	NA	Control with low level AD Braak II	oxford	dunno	Control_V_oxford_dunno
-V24	NP127/14	24	AD	V	F	89	set_3	IV	NA	NA	NA	NA	NA	AD Braak IV	oxford	dunno	AD_V_oxford_dunno
+V24	NP127/14	24	Case	V	F	89	set_3	IV	NA	NA	NA	NA	NA	AD Braak IV	oxford	dunno	AD_V_oxford_dunno
 V25	NP103/13	25	Control	V	F	48	set_3	NA	NA	NA	NA	NA	NA	Control	oxford	dunno	Control_V_oxford_dunno
-V26	NP092/19	26	AD	V	M	98	set_3	IV	NA	NA	NA	NA	NA	AD, LATE, CVD Braak IV	oxford	dunno	AD_V_oxford_dunno
-V27	NP406/16	27	AD	V	F	81	set_3	VI	NA	NA	NA	NA	NA	AD Braak VI	oxford	dunno	AD_V_oxford_dunno
-V28	NP160/13	28	AD	V	F	88	set_3	IV	NA	NA	NA	NA	NA	AD Braak IV, CVD	oxford	dunno	AD_V_oxford_dunno
+V26	NP092/19	26	Case	V	M	98	set_3	IV	NA	NA	NA	NA	NA	AD, LATE, CVD Braak IV	oxford	dunno	AD_V_oxford_dunno
+V27	NP406/16	27	Case	V	F	81	set_3	VI	NA	NA	NA	NA	NA	AD Braak VI	oxford	dunno	AD_V_oxford_dunno
+V28	NP160/13	28	Case	V	F	88	set_3	IV	NA	NA	NA	NA	NA	AD Braak IV, CVD	oxford	dunno	AD_V_oxford_dunno
 V29	NP408/16	29	Control	V	M	70	set_3	I	NA	NA	NA	NA	NA	Normal aged brain Braak I	oxford	dunno	Control_V_oxford_dunno
 V30	NP096/13	30	Control	V	F	92	set_3	II	NA	NA	NA	NA	NA	Normal aged brain  Braak II	oxford	dunno	Control_V_oxford_dunno
 V31	NP090/17	31	Control	V	M	70	set_3	II	NA	NA	NA	NA	NA	Aged brain Braak II	oxford	dunno	Control_V_oxford_dunno
-V32	NP054/17	32	AD	V	F	73	set_3	VI	NA	NA	NA	NA	NA	AD Braak VI	oxford	dunno	AD_V_oxford_dunno
-V33	NP163/13	33	AD	V	F	89	set_3	IV	NA	NA	NA	NA	NA	AD Braak IV, CVD	oxford	dunno	AD_V_oxford_dunno
+V32	NP054/17	32	Case	V	F	73	set_3	VI	NA	NA	NA	NA	NA	AD Braak VI	oxford	dunno	AD_V_oxford_dunno
+V33	NP163/13	33	Case	V	F	89	set_3	IV	NA	NA	NA	NA	NA	AD Braak IV, CVD	oxford	dunno	AD_V_oxford_dunno
 V34	NP080/15	34	Control	V	M	71	set_3	I	NA	NA	NA	NA	NA	Normal aged brain Braak I	oxford	dunno	Control_V_oxford_dunno
 V35	NP109/17	35	Control	V	F	77	set_3	I	NA	NA	NA	NA	NA	Normal aged brain Braak I	oxford	dunno	Control_V_oxford_dunno
 V36	NP102/17	36	Control	V	F	81	set_3	II	NA	NA	NA	NA	NA	Normal aged Brain Braak II	oxford	dunno	Control_V_oxford_dunno
-V37	NP018/14	37	AD	V	F	85	set_3	VI	NA	NA	NA	NA	NA	AD Braak VI	oxford	dunno	AD_V_oxford_dunno
+V37	NP018/14	37	Case	V	F	85	set_3	VI	NA	NA	NA	NA	NA	AD Braak VI	oxford	dunno	AD_V_oxford_dunno
 V38	NP011/14	38	Control	V	F	93	set_3	III	NA	NA	NA	NA	NA	Normal aged brain . Braak III	oxford	dunno	Control_V_oxford_dunno
-V39	NP421/16	39	AD	V	F	92	set_3	IV	NA	NA	NA	NA	NA	AD, CVD Braak IV	oxford	dunno	AD_V_oxford_dunno
-V40	NP037/18	40	AD	V	F	101	set_3	V	NA	NA	NA	NA	NA	AD, CVD Braak V	oxford	dunno	AD_V_oxford_dunno
+V39	NP421/16	39	Case	V	F	92	set_3	IV	NA	NA	NA	NA	NA	AD, CVD Braak IV	oxford	dunno	AD_V_oxford_dunno
+V40	NP037/18	40	Case	V	F	101	set_3	V	NA	NA	NA	NA	NA	AD, CVD Braak V	oxford	dunno	AD_V_oxford_dunno
