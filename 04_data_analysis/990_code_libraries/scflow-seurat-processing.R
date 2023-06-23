@@ -1,6 +1,12 @@
 # load packages
-library(Seurat)
-library(future)
+if (!require("Seurat", character.only = TRUE)) {
+  install.packages("Seurat")
+  library(Seurat)
+}
+if (!require("future", character.only = TRUE)) {
+  install.packages("future")
+  library(future)
+}
 
 # read data
 seurat <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-seurat-preprocessing.rds"))
