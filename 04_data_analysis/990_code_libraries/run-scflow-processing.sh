@@ -3,7 +3,8 @@
 #SBATCH -p c_highmem_dri1
 #SBATCH --job-name=scflow-seurat-processing
 #SBATCH --ntasks=1
-#SBATCH --ncpus-per-node=30
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=30
 #SBATCH --mem=210G # memory limit per compute node for the job
 #SBATCH --time=1-00:00 # maximum job time in D-HH:MM
 #SBATCH --account=scw1329
