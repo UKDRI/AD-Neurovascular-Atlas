@@ -9,7 +9,7 @@ if (!require("future", character.only = TRUE)) {
 }
 
 # read data
-seurat <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-seurat-preprocessing.rds/scflow-seurat-preprocessing.rds"))
+seurat <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-seurat-preprocessing.rds"))
 
 ## number of cores
 #n_workers <- 2
