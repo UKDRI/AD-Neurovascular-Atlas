@@ -40,3 +40,6 @@ vignettes/*.pdf
 
 /.quarto/
 .DS_Store
+/other-dropbox-from-frank/
+/dropbox-folder-from-frank/
+/_freeze/
