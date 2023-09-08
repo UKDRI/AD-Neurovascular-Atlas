@@ -4,8 +4,8 @@
 #SBATCH --job-name=scflow-seurat-processing
 #SBATCH --ntasks=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=2
-#SBATCH --mem=370G # memory limit per compute node for the job
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=400G # memory limit per compute node for the job
 #SBATCH --time=1-00:00 # maximum job time in D-HH:MM
 #SBATCH --account=scw1329
 #SBATCH -o /scratch/c.mpmgb/hawk_output/%x_out_%A_%a_%J.txt
