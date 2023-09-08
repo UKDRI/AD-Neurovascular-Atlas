@@ -53,10 +53,10 @@ ggplot2::ggsave(
 rm(pca_plot, elbow_plot)
 
 # find clusters/neighbors
-n_dims <- 20
-## n_dims <- 30
-## resolution_value <- 0.5
-resolution_value <- 0.3
+#n_dims <- 20
+n_dims <- 35
+## resolution_value <- 0.3
+resolution_value <- 0.6
 
 cat("Dimensions of reduction used: ", n_dims, fill=T)
 cat("Resolution: ", resolution_value, fill=T)
