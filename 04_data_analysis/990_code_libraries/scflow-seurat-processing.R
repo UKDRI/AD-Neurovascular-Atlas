@@ -12,7 +12,7 @@ if (!require("future", character.only = TRUE)) {
 seurat <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-seurat-preprocessing.rds"))
 
 ## number of cores
-#n_workers <- 2
+n_workers <- 4
 ### 365 GB
 #options(future.globals.maxSize = 369000 * 1024^2)
 #plan(strategy = "multicore", workers = n_workers)
@@ -71,13 +71,30 @@ print("Running UMAP")
 seurat <- RunUMAP(seurat, dims = 1:n_dims)
 
 # The scale data slot is huge, too much to read in on my laptop
-# It's only needed to compute dimensional reductions (PCA/UMAP) so 
+# It's only needed to compute dimensional reductions (PCA/UMAP) so
 # we can remove it now
 print("Remove scaled data")
 
-seurat <- DietSeurat(seurat)
+#seurat@assays$RNA@scale.data <- NULL
+# keep reductions and graphs
+reductions <- names(seurat@reductions)
+graphs <- names(seurat@graphs)
+
+seurat <- DietSeurat(seurat, dimreducs = reductions, graphs = graphs)
+
+rm(reductions, graphs)
+
+# Since the find markers takes a while I'll compute this here too
+print("Find markers")
+
+## options(future.globals.maxSize = 4000 * 1024^2) ## 4 GB
+options(future.globals.maxSize = 400000 * 1024^2) ## 400 GB
+plan(strategy = "multicore", workers = n_workers)
+
+cluster_markers <- FindAllMarkers(seurat, only.pos = TRUE, min.pct = 0.2, logfc.threshold = 0.5)
 
 print("Saving data")
 
 # Save
 readr::write_rds(seurat, here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-seurat-postprocessing_35-dims.rds"))
+readr::write_rds(cluster_markers, here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/cluter_markers_35-dims.rds"))
