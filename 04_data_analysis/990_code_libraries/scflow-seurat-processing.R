@@ -12,7 +12,7 @@ if (!require("future", character.only = TRUE)) {
 seurat <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-seurat-preprocessing.rds"))
 
 ## number of cores
-n_workers <- 4
+n_workers <- 2
 ### 365 GB
 #options(future.globals.maxSize = 369000 * 1024^2)
 #plan(strategy = "multicore", workers = n_workers)
@@ -88,7 +88,7 @@ rm(reductions, graphs)
 print("Find markers")
 
 ## options(future.globals.maxSize = 4000 * 1024^2) ## 4 GB
-options(future.globals.maxSize = 400000 * 1024^2) ## 400 GB
+options(future.globals.maxSize = 360000 * 1024^2) ## 360 GB
 plan(strategy = "multicore", workers = n_workers)
 
 cluster_markers <- FindAllMarkers(seurat, only.pos = TRUE, min.pct = 0.2, logfc.threshold = 0.5)
