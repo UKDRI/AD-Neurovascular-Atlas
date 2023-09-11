@@ -80,4 +80,4 @@ seurat <- DietSeurat(seurat)
 print("Saving data")
 
 # Save
-readr::write_rds(seurat, here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-seurat-postprocessing.rds"))
+readr::write_rds(seurat, here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-seurat-postprocessing_35-dims.rds"))
