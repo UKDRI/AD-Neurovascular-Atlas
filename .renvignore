@@ -1,0 +1,4 @@
+# Set renv to ignore some scripts when looking for dependancies
+/04_data_analysis/992_scripts_from_frank/
+*.qmd
+*.Rmd
