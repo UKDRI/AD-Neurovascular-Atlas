@@ -1,0 +1,1308 @@
+---
+title: Perform Pseudobulk
+execute:
+  eval: true
+#self-contained: true
+code-fold: true
+bibliography: references.bib
+---
+
+Note that I'll use the higher level annotations to start with.
+This only involved aggregating the venous/capillary/arterial subtypes to a larger "Endothelial" category.
+
+```{r}
+here::i_am("04_data_analysis/001_snrnaseq_analysis/11_pseudobulk.qmd")
+```
+
+# Load packages
+
+```{r}
+source(here::here("04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"))
+```
+
+```{r}
+path <- here::here("04_data_analysis/990_code_libraries/pseudobulk")
+#source necessary functions from other scripts
+#source(here::here(path, "validate_input_parameters_de.R"))
+source(here::here(path, "make_pseudobulk.R"))
+source(here::here(path, "de_analysis.R"))
+source(here::here(path, "plot_de_analysis.R"))
+```
+
+# Read in data
+
+First we'll read in the scFlow output to a sce
+
+```{r}
+#| eval: true
+# read data
+#sce <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-sce-annotated.rds"))
+sce <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-sce-annotated-highlevel.rds"))
+#sce <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-sce-updated_dim-35.rds"))
+```
+
+```{r}
+# make count rownames match data rownames
+rownames(sce@assays$RNA@counts) <- rownames(sce@assays$RNA@data)
+sce$doner <- paste0("doner-", sce$individual)
+```
+
+# Average expression
+
+```{r}
+avg_exp <- AverageExpression(sce, group.by = c("ident", "doner"))
+avg_exp <- avg_exp$RNA
+ 
+avg_exp <- data.table(avg_exp, keep.rownames = TRUE)
+setnames(avg_exp, "rn", "gene")
+
+# pivot longer such that celltypes are separated out
+avg_exp <- avg_exp %>%
+  pivot_longer(
+    cols = !gene,
+    names_to = c("celltype", ".value"),
+    names_pattern = "(.*)_(.*)"
+  )
+ 
+file_out <- here::here("03_data/990_processed_data/001_snrnaseq/08_pseudobulk/avg-expression-per-celltype-per-doner.csv")
+#file_out <- here::here("03_data/990_processed_data/001_snrnaseq/08_pseudobulk/avg-expression-per-celltype-per-doner_35-dims.csv")
+readr::write_csv(avg_exp, file_out)
+ 
+## split AD and CT samples
+# 
+# avg_exp <- AverageExpression(sdata_endo, group.by = c("ident", "type"))
+# avg_exp <- avg_exp$RNA
+# 
+# avg_exp <- data.table(avg_exp, keep.rownames = T)
+# setnames(avg_exp, "rn", "gene")
+# 
+# file_out <- "/scratch/c.mpmfw/Endo_10X_main/Analysis/Expression_matrix/avg_expr_main_cell_type_40_samples_AD_vs_CT_v3.txt"
+# write.table(avg_exp, file = file_out, sep = "\t", quote = F, row.names = F, col.names = T)
+```
+
+```{r}
+# Make column with cluster and annotation combined
+sce$cluster_annoated <- paste0("cluster_", sce$seurat_clusters, "_", Idents(sce))
+
+avg_exp <- AverageExpression(sce, group.by = c("cluster_annoated", "doner"))
+avg_exp <- avg_exp$RNA
+ 
+avg_exp <- data.table(avg_exp, keep.rownames = TRUE)
+setnames(avg_exp, "rn", "gene")
+
+# pivot longer such that celltypes are separated out
+avg_exp <- avg_exp %>%
+  pivot_longer(
+    cols = !gene,
+    names_to = c("celltype", ".value"),
+    names_pattern = "(.*)_(.*)"
+  )
+ 
+file_out <- here::here("03_data/990_processed_data/001_snrnaseq/08_pseudobulk/avg-expression-per-cluster-per-doner.csv")
+readr::write_csv(avg_exp, file_out)
+```
+
+# Pseudobulk
+
+Now we can subset to variables we want to aggregate across for the pseudobulk
+
+```{r}
+# aggregate read counts 
+aggr_counts <- Seurat2PB(sce, sample="group", cluster="cluster_celltype")
+dim(aggr_counts)
+head(aggr_counts$samples, n=10L)
+```
+
+Convert back to single cell experiment
+
+```{r}
+sce <- Seurat::as.SingleCellExperiment(sce)
+```
+
+# Code from Alan
+
+There's an interest in incorporating pseudobuilk into scflow itself, and a member of Nathan's lab (Alan) has written some code for performing pseudobulk on scflow outputs.
+
+Here I'll play with his code and start thinking about how this could be incorporated into scflow
+
+```{r}
+#| eval: false
+#| include: false
+
+#Ran on R 4.3
+
+#Get package dependencies
+
+if (!require("BiocManager")) install.packages("BiocManager")
+if (!require("RcppParallel")) install.packages("RcppParallel")
+if (!require("pacman")) install.packages("pacman")
+if (!require("qs")) install.packages("qs")
+if (!require("SingleCellExperiment"))
+  BiocManager::install("SingleCellExperiment")
+if (!require("biomaRt")) BiocManager::install("biomaRt")
+if (!require("ggplot2")) install.packages("ggplot2")
+if (!require("cowplot")) install.packages("cowplot")
+if (!require("viridis")) install.packages("viridis")
+if (!require("ggrepel")) install.packages("ggrepel")
+if (!require("Hmisc")) install.packages("Hmisc")
+if (!require("edgeR")) BiocManager::install("edgeR")
+if (!require("stats")) install.packages("stats")
+if (!require("data.table")) install.packages("data.table")
+if (!require("reshape2")) install.packages("reshape2")
+if (!require("wesanderson")) install.packages("wesanderson")
+if (!require("EnsDb.Hsapiens.v79")){
+
+  #This package uses dependencies which are large so increase time for download
+  options(timeout=2000)
+  BiocManager::install("EnsDb.Hsapiens.v79")
+}
+
+#source the necessary function to run pb DE
+source(here::here("04_data_analysis/990_code_libraries/pseudobulk/sc_cell_type_de.R"))
+
+#library necessary packages
+library(ggplot2)
+library(data.table)
+```
+
+```{r}
+#| eval: false
+#| include: false
+
+#load dataset and exclude endothelial cells to match Tsai group analysis
+
+# Mathys_SCE <-
+#   qs::qread("../data/sce.qs")
+
+#remove endothelial cells to match Mathys 2019's approach
+#Mathys_SCE <- Mathys_SCE[,!Mathys_SCE$allan_celltype=="Endo"]
+
+# load data
+sce <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-sce.rds"))
+
+#run DE analysis
+sc_cell_type_de_return <-
+  sc_cell_type_de(sce, design = ~ group,
+                  pseudobulk_ID="manifest", celltype_ID="cluster_celltype",
+                  folder = here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/graphs/"),
+                  verbose=TRUE)
+
+#TO DO - add gene name to DEGs in results.......
+
+#save results
+
+#Cell Counts
+data.table::fwrite(data.table(cell=names(
+  sc_cell_type_de_return$celltype_counts),
+  count=sc_cell_type_de_return$celltype_counts),
+  "../results/cell_counts.csv")
+
+#DEGs
+data.table::fwrite(
+  data.table::rbindlist(sc_cell_type_de_return$celltype_DEGs,idcol='Cell'),
+  "../results/DEGs.csv")
+
+#All Genes
+data.table::fwrite(
+  data.table::rbindlist(sc_cell_type_de_return$celltype_all_genes,idcol='Cell'),
+  "../results/all_genes.csv")
+
+#R object
+save(sc_cell_type_de_return,file="../results/Mathys_pb_res.RData")
+```
+
+<!-- ## A more manual approach -->
+
+<!-- Try extracting just the parts of `sc_cell_type_de.R` -->
+
+```{r}
+#| eval: false
+#| include: false
+# inputs
+SCE <- sce
+celltype_ID <- "ident"
+design <- ~ group
+pseudobulk_ID = "manifest"
+y = NULL
+pb_columns <- c("group", "manifest")
+verbose = TRUE
+control = "Control_V_oxford_dunno"
+pval_adjust_method = "BH"
+adj_pval=0.05
+coef = NULL
+folder = here::here("05_figures/001_snrnaseq_analysis_figures/01_pseudobulk/control_v_oxford")
+```
+
+```{r}
+#| eval: false
+#| include: false
+#first format formula
+design_txt <- paste0(deparse(design,width.cutoff = 500),collapse=',')
+
+#make design formula minus anything before ~
+formula <- as.formula(gsub(".*~","~",design_txt))
+
+#if y not specified take last value in design matrix
+if(is.null(y))
+  y <- design_txt[[length(design_txt)]]
+
+#Check if continuous or categorical variable to be modeled
+y_contin <- FALSE
+if(is.numeric(SCE[[y]]))
+    y_contin <- TRUE
+```
+
+<!-- Get cell type counts -->
+
+```{r}
+#| eval: false
+#| include: false
+#get counts of each cell type
+#counts(SCE) <- as.matrix(counts(SCE))
+
+counts_celltypes <- SCE[[celltype_ID]]
+counts_celltypes <-as.vector(table(counts_celltypes))
+names(counts_celltypes) <- names(table(SCE[[celltype_ID]]))
+
+# Get pseudobulk values
+celltypes <- unique(SCE[[celltype_ID]])
+```
+
+```{r}
+#| include: false
+# counts by sample population
+# cluster_count_by_sample <- table(sce$cluster_celltype, sce$prep) %>%
+#  as.data.frame() %>%
+#   pivot_wider(names_from = Var2, values_from = Freq) %>%
+#   dplyr::rename(cell_type = Var1)
+# 
+# gt::gt(cluster_count_by_sample)
+# 
+# # Save data
+# readr::write_csv(cluster_count_by_sample, here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/celltype_counts_by_cellpop.csv"))
+```
+
+```{r}
+#| eval: false
+#| include: false
+pb_dat <-
+    lapply(celltypes,function(x)
+        make_pseudobulk(SCE[,SCE[[celltype_ID]]==x],
+                        pseudobulk_ID=pseudobulk_ID,
+                        pb_columns=pb_columns))
+
+names(pb_dat) <- celltypes
+```
+
+<!-- One can set the comparison here via the `control` argument. -->
+
+```{r}
+#| eval: false
+#| include: false
+#run edgeR LRT DE analysis
+celltype_de <-
+    de_analysis(pb_dat,formula,y_name=y,y_contin,coef,control,
+                    pval_adjust_method, adj_pval, verbose)
+```
+
+```{r}
+#| eval: false
+#| include: false
+#get sig DEGs for each
+celltype_DEGs <- lapply(celltype_de, function(x) x[x$adj_pval<adj_pval,])
+unique_genes <-lapply(celltype_DEGs, function(x) x$name)
+unique_degs <- unique(unlist(unique_genes))
+
+#if no DEGs found break but return the DE analysis scores still
+if(length(unique_degs)==0)
+    return(list("celltype_DEGs"=celltype_DEGs,
+                "celltype_all_genes"=celltype_de,
+                "celltype_counts"=counts_celltypes))
+
+if(isTRUE(verbose))
+    message(length(unique_degs)," unique DEGs foundacross all cell types")
+
+celltype_all_genes_dt <- data.table::rbindlist(celltype_de,idcol = T)
+setnames(celltype_all_genes_dt,".id","celltype")
+
+celltype_DEGs_dt <- data.table::rbindlist(celltype_DEGs,idcol = T)
+setnames(celltype_DEGs_dt,".id","celltype")
+```
+
+<!-- Changed palette arg in code to make this work -->
+
+```{r}
+#| eval: false
+#| include: false
+    if(!isFALSE(folder)){
+        if(isTRUE(verbose))
+            message("Plotting the results of differential expression analysis")
+
+        #make plots for DE analysis
+        plot_de_analysis(pb_dat,y,celltype_DEGs_dt,celltype_all_genes_dt,
+                         counts_celltypes,folder)
+    }
+```
+
+```{r}
+#| eval: false
+#| include: false
+#get gene names for DEGs
+genes <- unique(data.table::rbindlist(celltype_DEGs)$name)
+
+gene_IDs <- ensembldb::select(EnsDb.Hsapiens.v79, keys= genes,
+                              keytype = "GENEID",
+                              columns = c("GENEID","SYMBOL"))
+
+colnames(gene_IDs) <- c("ensembl_gene_id","hgnc_symbol")
+
+gene_IDs <- data.table::as.data.table(gene_IDs)
+
+data.table::setnames(gene_IDs,"ensembl_gene_id","name")
+
+#remove any dups in the reference set - two names for one ENSEMBL ID
+gene_IDs <- unique(gene_IDs,by="name")
+
+celltype_DEGs <-
+  lapply(celltype_DEGs,
+         function(i){setDT(i);setkey(i,name);
+           i[,gene_name:=gene_IDs[i, on=.(name),x.hgnc_symbol]];
+           setnames(i,"name","ensembl_id");setnames(i,"gene_name","HGNC")})
+
+#get gene names for all genes
+genes <- unique(data.table::rbindlist(celltype_de)$name)
+
+gene_IDs <- ensembldb::select(EnsDb.Hsapiens.v79, keys= genes,
+                              keytype = "GENEID",
+                              columns = c("GENEID","SYMBOL"))
+
+colnames(gene_IDs) <- c("ensembl_gene_id","hgnc_symbol")
+
+gene_IDs <- data.table::as.data.table(gene_IDs)
+
+data.table::setnames(gene_IDs,"ensembl_gene_id","name")
+
+#remove any dups in the reference set - two names for one ENSEMBL ID
+gene_IDs <- unique(gene_IDs,by="name")
+
+celltype_de <-
+  lapply(celltype_de,
+         function(i){setDT(i);setkey(i,name);
+           i[,gene_name:=gene_IDs[i, on=.(name),x.hgnc_symbol]];
+           setnames(i,"name","ensembl_id");setnames(i,"gene_name","HGNC")})
+
+pseudobulk_results <- (list("celltype_DEGs"=celltype_DEGs,
+            "celltype_all_genes"=celltype_de,
+            "celltype_counts"=counts_celltypes))
+```
+
+<!-- Save pseudobulk results -->
+
+```{r}
+#| eval: false
+#| include: false
+readr::write_rds(pseudobulk_results, here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/pseudobulk_results.rds"))
+```
+
+<!-- # try 2 -->
+
+<!-- Try using `region` arg in `make_pseudobulk` -->
+
+
+```{r}
+#| eval: false
+#| include: false
+
+# inputs
+
+SCE <- sce
+
+celltype_ID <- "ident"
+
+design <- ~ diagnosis
+
+pseudobulk_ID = "manifest"
+
+y = "diagnosis"
+
+region = "prep"
+
+pb_columns <- c("prep", "diagnosis", "manifest")
+
+verbose = TRUE
+
+control = "Control"
+
+pval_adjust_method = "BH"
+
+adj_pval=0.05
+
+coef = "Case"
+
+folder = here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/graphs/")
+
+```
+
+```{r}
+#| eval: false
+#| include: false
+
+#first format formula
+
+design_txt <- paste0(deparse(design,width.cutoff = 500),collapse=',')
+
+#make design formula minus anything before ~
+
+formula <- as.formula(gsub(".*~","~",design_txt))
+
+#if y not specified take last value in design matrix
+
+if(is.null(y))
+
+  y <- design_txt[[length(design_txt)]]
+
+#Check if continuous or categorical variable to be modeled
+
+y_contin <- FALSE
+
+if(is.numeric(SCE[[y]]))
+
+    y_contin <- TRUE
+
+```
+
+```{r}
+#| eval: false
+#| include: false
+#get counts of each cell type
+
+#counts(SCE) <- as.matrix(counts(SCE))
+
+counts_celltypes <- SCE[[celltype_ID]]
+
+counts_celltypes <-as.vector(table(counts_celltypes))
+
+names(counts_celltypes) <- names(table(SCE[[celltype_ID]]))
+
+# Get pseudobulk values
+
+celltypes <- unique(SCE[[celltype_ID]])
+
+pb_dat <-
+
+    lapply(celltypes,function(x)
+
+        make_pseudobulk(SCE[,SCE[[celltype_ID]]==x],
+
+                        pseudobulk_ID=pseudobulk_ID,
+
+                        pb_columns=pb_columns))
+
+names(pb_dat) <- celltypes
+```
+
+```{r}
+#| eval: false
+#| include: false
+
+
+#run edgeR LRT DE analysis
+
+celltype_de <-
+
+    de_analysis(pb_dat,formula,y_name=y,y_contin,coef,control,
+
+                    pval_adjust_method, adj_pval, verbose)
+
+#get sig DEGs for each
+
+celltype_DEGs <- lapply(celltype_de, function(x) x[x$adj_pval<adj_pval,])
+
+unique_genes <-lapply(celltype_DEGs, function(x) x$name)
+
+unique_degs <- unique(unlist(unique_genes))
+
+#if no DEGs found break but return the DE analysis scores still
+
+if(length(unique_degs)==0)
+
+    return(list("celltype_DEGs"=celltype_DEGs,
+
+                "celltype_all_genes"=celltype_de,
+
+                "celltype_counts"=counts_celltypes))
+
+if(isTRUE(verbose))
+
+    message(length(unique_degs)," unique DEGs foundacross all cell types")
+
+celltype_all_genes_dt <- data.table::rbindlist(celltype_de,idcol = T)
+
+setnames(celltype_all_genes_dt,".id","celltype")
+
+celltype_DEGs_dt <- data.table::rbindlist(celltype_DEGs,idcol = T)
+
+setnames(celltype_DEGs_dt,".id","celltype")
+
+```
+
+<!-- Changed palette arg in code to make this work -->
+
+```{r}
+#| eval: false
+#| include: false
+
+    if(!isFALSE(folder)){
+
+        if(isTRUE(verbose))
+
+            message("Plotting the results of differential expression analysis")
+
+        #make plots for DE analysis
+
+        plot_de_analysis(pb_dat,y,celltype_DEGs_dt,celltype_all_genes_dt,
+
+                         counts_celltypes,folder)
+
+    }
+
+```
+
+```{r}
+#| eval: false
+#| include: false
+
+#get gene names for DEGs
+
+genes <- unique(data.table::rbindlist(celltype_DEGs)$name)
+
+gene_IDs <- ensembldb::select(EnsDb.Hsapiens.v79, keys= genes,
+
+                              keytype = "GENEID",
+
+                              columns = c("GENEID","SYMBOL"))
+
+colnames(gene_IDs) <- c("ensembl_gene_id","hgnc_symbol")
+
+gene_IDs <- data.table::as.data.table(gene_IDs)
+
+data.table::setnames(gene_IDs,"ensembl_gene_id","name")
+
+#remove any dups in the reference set - two names for one ENSEMBL ID
+
+gene_IDs <- unique(gene_IDs,by="name")
+
+celltype_DEGs <-
+
+  lapply(celltype_DEGs,
+
+         function(i){setDT(i);setkey(i,name);
+
+           i[,gene_name:=gene_IDs[i, on=.(name),x.hgnc_symbol]];
+
+           setnames(i,"name","ensembl_id");setnames(i,"gene_name","HGNC")})
+
+#get gene names for all genes
+
+genes <- unique(data.table::rbindlist(celltype_de)$name)
+
+gene_IDs <- ensembldb::select(EnsDb.Hsapiens.v79, keys= genes,
+
+                              keytype = "GENEID",
+
+                              columns = c("GENEID","SYMBOL"))
+
+colnames(gene_IDs) <- c("ensembl_gene_id","hgnc_symbol")
+
+gene_IDs <- data.table::as.data.table(gene_IDs)
+
+data.table::setnames(gene_IDs,"ensembl_gene_id","name")
+
+#remove any dups in the reference set - two names for one ENSEMBL ID
+
+gene_IDs <- unique(gene_IDs,by="name")
+
+celltype_de <-
+
+  lapply(celltype_de,
+
+         function(i){setDT(i);setkey(i,name);
+
+           i[,gene_name:=gene_IDs[i, on=.(name),x.hgnc_symbol]];
+
+           setnames(i,"name","ensembl_id");setnames(i,"gene_name","HGNC")})
+
+pseudobulk_results <- (list("celltype_DEGs"=celltype_DEGs,
+
+            "celltype_all_genes"=celltype_de,
+
+            "celltype_counts"=counts_celltypes))
+
+```
+
+<!-- Save pseudobulk results -->
+
+```{r}
+#| eval: false
+#| include: false
+readr::write_rds(pseudobulk_results, here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/pseudobulk_results.rds"))
+```
+
+# Write from scratch
+
+Here I'll try writing my own version of `de_analysis()`
+
+I'll base it off the `edgeR` doc [here](https://www.bioconductor.org/packages/release/bioc/vignettes/edgeR/inst/doc/edgeRUsersGuide.pdf)
+
+```{r}
+sce$donor <- paste0("donor-", sce$individual)
+levels(sce$diagnosis) <- c("AD", "Control")
+```
+
+```{r}
+# inputs
+SCE <- sce
+celltype_ID <- "ident"
+design <- ~ diagnosis
+pseudobulk_ID = "manifest"
+y = "diagnosis"
+region = "prep"
+#pb_columns <- c("prep", "diagnosis", "manifest")
+pb_columns <- c("group", "manifest")
+verbose = TRUE
+control = "Control"
+pval_adjust_method = "BH"
+adj_pval=0.05
+coef = "Case"
+folder = here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/graphs/")
+```
+
+```{r}
+#first format formula
+design_txt <- paste0(deparse(design,width.cutoff = 500),collapse=',')
+
+#make design formula minus anything before ~
+formula <- as.formula(gsub(".*~","~",design_txt))
+
+#if y not specified take last value in design matrix
+if(is.null(y))
+  y <- design_txt[[length(design_txt)]]
+
+#Check if continuous or categorical variable to be modeled
+y_contin <- FALSE
+if(is.numeric(SCE[[y]]))
+    y_contin <- TRUE
+```
+
+Note that the pseudobulk compute takes a few minutes to run, so I'll disable eval on compilation.
+
+```{r}
+#| eval: false
+#get counts of each cell type
+#counts(SCE) <- as.matrix(counts(SCE))
+counts_celltypes <- SCE[[celltype_ID]]
+counts_celltypes <-as.vector(table(counts_celltypes))
+names(counts_celltypes) <- names(table(SCE[[celltype_ID]]))
+
+# Get pseudobulk values
+celltypes <- unique(SCE[[celltype_ID]])
+pb_dat <-
+    lapply(celltypes,function(x)
+        make_pseudobulk(SCE[,SCE[[celltype_ID]]==x],
+                        pseudobulk_ID=pseudobulk_ID,
+                        pb_columns=pb_columns))
+
+names(pb_dat) <- celltypes
+
+# the pseudobulk values take a while to compute, so I'll save the output
+readr::write_rds(pb_dat, here::here("03_data/990_processed_data/001_snrnaseq/08_pseudobulk/pseudobulk_values.rds"))
+```
+
+```{r}
+# load values
+pb_dat <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/08_pseudobulk/pseudobulk_values.rds"))
+```
+
+Hannah is after the pseudobulk values themselves, so I'll add the celltypes and save that data
+
+```{r}
+#| eval: false
+pb_dat_per_individual <-
+    lapply(celltypes,function(x)
+        make_pseudobulk(SCE[,SCE[[celltype_ID]]==x],
+                        pseudobulk_ID="individual"))
+
+names(pb_dat_per_individual) <- celltypes
+
+pseudo_vals <- map2(pb_dat_per_individual, names(pb_dat_per_individual), ~ .x$sumDat %>%
+              as.data.frame() %>%
+              dplyr::mutate(celltype = .y) %>%
+              rownames_to_column("gene")) %>%
+  purrr::list_rbind()
+
+readr::write_csv(pseudo_vals, here::here("03_data/990_processed_data/001_snrnaseq/08_pseudobulk/pseudobulk_values_per_individual.csv"))
+```
+
+First part is prep for LRT, this is done per cell type via `purrr`
+
+```{r}
+# Get DGE list per celltype
+y <- purrr::map(pb_dat, ~ edgeR::DGEList(counts = .x$sumDat,
+                    group = .x$annot_pb$group))
+
+# Calculate normalization factors to scale the raw library sizes.
+y <- purrr::map(y, ~ edgeR::calcNormFactors(.x, method = 'TMM'))
+
+# Build design matrix
+design <- purrr::map(pb_dat, ~ model.matrix(~ group, data = .x$annot_pb))
+
+# Maximizes the negative binomial likelihood to give the estimate of the
+# common,trended and tagwise dispersions across all tags.
+y <- purrr::map2(y, design, ~ edgeR::estimateDisp(.x, .y))
+
+# LRT
+fit <- purrr::map2(y, design, ~ edgeR::glmFit(.x, design = .y))
+```
+
+Now there's a need to think about what comparisons to run.
+
+For now I think I'll write a more complex approach to run all possible comparisons from a arbitrarily long list
+
+First I'll make a contrast matrix of all combinations
+
+```{r}
+# Get number group levels
+ncls <- nlevels(sce$group)
+
+get_contrasts <- function(design_matrix, group_vector) {
+  
+  num_groups <- nlevels(group_vector)
+  contr <- rbind(matrix(1 / (1 - num_groups), num_groups, num_groups),
+                 matrix(0, ncol(design_matrix) - num_groups, num_groups))
+
+  diag(contr) <- 1
+  contr[1,] <- 0
+
+  rownames(contr) <- colnames(design_matrix)
+  colnames(contr) <- paste0("cluster", levels(group_vector))
+
+  return(contr)
+}
+
+contr <- purrr::map(design, ~ get_contrasts(.x, sce$group))
+```
+
+Then apply the LRT model per celltype
+
+```{r}
+apply_lrt_to_groups <-
+  function(glmfit_object,
+           contrast_matrix,
+           group_levels) {
+    lrt <-
+      purrr::map(1:nrow(contrast_matrix), ~ {
+
+        # Apply LRT per comparison
+        lrt <-
+          edgeR::glmLRT(glmfit_object, contrast = contrast_matrix[, .x])
+
+        # Set name of comparison
+        lrt$comparison <-
+          paste0("group", group_levels[.x], "_vs_others")
+        lrt
+      })
+
+    # Set names of comparison to list
+    lrt <-
+      purrr::set_names(lrt, map_chr(group_levels, ~ paste0("group", .x, "_vs_others")))
+    
+    return(lrt)
+  }
+
+lrt <- purrr::map2(fit, contr, ~ apply_lrt_to_groups(.x, .y, levels(sce$group)))
+```
+
+```{r}
+# Check results
+topTags(lrt$Endothelial$groupAD_P_oxford_dunno_vs_others)
+
+# Get number of DE genes
+dt <- purrr::map(lrt, ~ lapply(lapply(.x, decideTestsDGE), summary) %>%
+                   do.call("cbind", .))
+dt$Endothelial
+```
+
+Clean and extract results from lrt, including getting adjusted pvals
+
+```{r}
+clean_lrt_results <-
+  function(lrt_results,
+           pval_adjust_method = "BH",
+           verbose = TRUE) {
+    # Get results table
+    pvals <- lrt_results$table
+    
+    # Add adj p-values
+    pvals$adj_pval <- stats::p.adjust(pvals$PValue,
+                                      method = pval_adjust_method)
+    
+    # Make rownames a column
+    pvals$name <- rownames(pvals)
+    rownames(pvals) <- NULL
+    
+    # Print number of DEGs found if verbose
+    if (verbose) {
+      numDEGs <- nrow(pvals[pvals$adj_pval < adj_pval, ])
+      message(numDEGs, " DEGs found")
+    }
+    
+    return(pvals)
+}
+
+lrt_clean <- map(lrt, ~ map(.x, ~clean_lrt_results(.x)))
+```
+
+Get significant genes and generate plots
+
+- NOTE: plotting function needs to be updated - not currently working
+
+```{r}
+#| eval: false
+#| include: false
+celltype_de = lrt_clean$Endothelial
+```
+
+```{r}
+get_sig_genes_and_plots <-
+  function(celltype_de,
+           pval_adjustment = 0.05,
+           celltype_counts,
+           plot_folder = FALSE,
+           verbose = TRUE) {
+
+    # get sig DEGs for each
+    celltype_DEGs <-
+      lapply(celltype_de, function(x)
+        x[x$adj_pval < pval_adjustment, ])
+
+    unique_genes <- lapply(celltype_DEGs, function(x)
+      x$name)
+
+    unique_degs <- unique(unlist(unique_genes))
+
+    # if no DEGs found break but return the DE analysis scores still
+    if (length(unique_degs) == 0)
+      return(
+        list(
+          "celltype_DEGs" = celltype_DEGs,
+          "celltype_all_genes" = celltype_de,
+          "celltype_counts" = counts_celltypes
+        )
+      )
+
+    if (isTRUE(verbose))
+      message(length(unique_degs), " unique DEGs foundacross all cell types")
+
+    celltype_all_genes_dt <-
+      data.table::rbindlist(celltype_de, idcol = T)
+
+    setnames(celltype_all_genes_dt, ".id", "celltype")
+
+    celltype_DEGs_dt <-
+      data.table::rbindlist(celltype_DEGs, idcol = T)
+
+    setnames(celltype_DEGs_dt, ".id", "celltype")
+
+    if(!isFALSE(plot_folder)){
+        if(isTRUE(verbose))
+            message("Plotting the results of differential expression analysis")
+
+        #make plots for DE analysis
+        # plot_de_analysis(pb_dat,y,celltype_DEGs_dt,celltype_all_genes_dt,
+        #                  counts_celltypes,plot_folder)
+    }
+
+    return(celltype_DEGs)
+
+}
+
+lrt_sig <- map(
+  lrt_clean,
+  ~ get_sig_genes_and_plots(
+    .x,
+    celltype_counts = counts_celltypes,
+    plot_folder = here::here("temp")
+  )
+)
+```
+
+The results are in a list of lists.
+The first level is the celltypes and the next is the comparisons.
+
+```{r}
+# the top level is the celltypes
+names(lrt_sig)
+# the next level is the comparisons
+names(lrt_sig$Endothelial)
+head(lrt_sig$Endothelial$groupAD_P_oxford_dunno_vs_others)
+
+# save results
+readr::write_rds(lrt_sig, here::here("03_data/990_processed_data/001_snrnaseq/08_pseudobulk/pseudobulk_sig-genes_ad-vs-control-and-prep.rds"))
+```
+
+## Plots
+
+Let's have a look at the results with some plots.
+
+First I'll merge the different contrasts into a single dataframe.
+
+```{r}
+# merge contrasts
+lrt_merged <- map(lrt_sig,
+                  # add the contrast name as a column
+                  ~ map2(
+                    .x,
+                    names(.x),
+                    ~ .x %>%
+                      dplyr::mutate(
+                        contrast = .y,
+                        # add direction of expression
+                        deg_direction = ifelse(logFC > 0, "Up", "Down")
+                      )
+                  ) %>%
+                    purrr::list_rbind())
+```
+
+```{r}
+# set colour palette 
+pal=c(wesanderson::wes_palette("Royal2"),
+      wesanderson::wes_palette("Moonrise3"))
+```
+
+```{r}
+#| eval: false
+#| include: false
+
+# this is supposed to use pb_dat I think
+lrt_merged$Endothelial %>%
+  dplyr::group_by(contrast) %>%
+  # get top 3 genes by significance
+  dplyr::slice_min(adj_pval, n = 3) %>%
+  dplyr::ungroup() %>%
+  dplyr::filter(name != "" & !is.na(deg_direction)) %>%
+ggplot(aes(x = contrast, y = logFC,colour=deg_direction)) +
+  geom_jitter(height=0) +
+  stat_summary(fun.data = "mean_cl_normal",
+               #aes(shape="mean"), 
+               colour = "grey",
+               geom = "crossbar",
+               show.legend = T)+
+  scale_shape_manual("", values=c("mean"="x"))+
+  labs(y= "Sum pseudobulk expression counts (unnormalised)", 
+          x = "Phenotype",
+       colour="DEG direction") +
+  facet_wrap(~ name, scales = "free_y")+
+  theme_cowplot()+
+  theme(axis.text = element_text(size=6),
+       axis.text.x = element_text(angle = 45, hjust = 1, size = 6)) +
+  #scale_colour_viridis(discrete = T)
+  scale_colour_manual(values=pal)
+```
+
+```{r}
+lrt_merged <- map2(lrt_merged, names(lrt_merged), ~ .x %>%
+                     dplyr::mutate(celltype = .y)) %>%
+  purrr::list_rbind()
+```
+
+### Counts of DEGs
+
+```{r}
+#| warning: false
+lrt_merged %>%
+  ggplot(aes(x = factor(deg_direction), fill = factor(celltype))) +
+  geom_histogram(stat = "count") +
+  facet_wrap(~factor(celltype)) +
+  ggtitle("Cell type counts of DEGs")+
+  labs(y= "Log2 Fold Change", x = "DEG direction", fill="Cell Type") +
+  theme_cowplot()+
+  theme(axis.text = element_text(size=9)) +
+  scale_fill_viridis(discrete = T)
+  #scale_fill_manual(values=pal)
+```
+
+```{r}
+lrt_merged %>%
+  ggplot(aes(x = contrast, y = logFC, fill = factor(contrast))) +
+  geom_boxplot() +
+  facet_wrap(~factor(celltype)) +
+  ggtitle("Cell type Log2 Fold Change of DEGs") +#,
+          # subtitle = paste0("Median LFC of Down and Up regulated DEGs: ",
+          #                   round(degs_median_lfc$V1[[2]]*-1,2),", ",
+          #                   round(degs_median_lfc$V1[[1]],2)))+
+  labs(y= "Log2 Fold Change", x = "DEG direction", fill="Cell Type") +
+  theme_cowplot()+
+  theme(axis.text = element_text(size=6),
+       axis.text.x = element_text(angle = 45, hjust = 1, size = 6)) +
+  scale_fill_viridis(discrete = T, labels = c("AD P vs others", "AD V vs others", "Control P vs others", "Control V vs others"))
+```
+
+### Volcano plots
+
+```{r}
+# add colour identifier
+cols <- c("Up" = "#FDE725FF", "Down" = "#440154FF")
+
+lrt_merged %>%
+    # scale FDR by log10
+    ggplot(aes(x = logFC, y = -log10(adj_pval))) +
+    geom_point(aes(colour = deg_direction), stat = "identity", size = .2) +
+    facet_wrap(~ factor(celltype), scales = "free") +
+    geom_hline(
+        yintercept = -log10(0.05), colour = "#990000",
+        linetype = "dashed", linewidth = .3
+    ) +
+    # geom_vline(xintercept = 0, colour="black", size=.3) +
+    labs(y = "-log10(FDR)", x = "Log2 Fold Change", colour = "") +
+    theme_cowplot() +
+    theme(
+        axis.text = element_text(size = 9), axis.text.x = element_blank(),
+        legend.text = element_text(size = 10)
+    ) +
+    scale_colour_manual(values = cols) +
+    geom_text_repel( # give top three genes per cell type by adjusted p value
+        data = lrt_merged %>%
+            dplyr::group_by(celltype) %>%
+            dplyr::slice_min(adj_pval, n = 3),
+        aes(label = name),
+        size = 3,
+        box.padding = unit(0.35, "lines"),
+        point.padding = unit(0.3, "lines")
+    )
+```
+
+# DESeq 2
+
+```{r}
+#| eval: true
+# read data
+#sce <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-sce-annotated.rds"))
+sce <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-sce-annotated-highlevel.rds"))
+```
+
+```{r}
+# make count rownames match data rownames
+rownames(sce@assays$RNA@counts) <- rownames(sce@assays$RNA@data)
+sce$doner <- paste0("doner-", sce$individual)
+```
+
+Let's first try doing pseudobulk by disease status
+
+```{r}
+# setup columns to aggregate by
+sce$celltype <- Idents(sce)
+# remove the "_" in the celltype names and replace with "-"
+sce$celltype <- gsub("_", "-", sce$celltype)
+sce$donor <- paste0("donor-", sce$individual)
+levels(sce$diagnosis) <- c("AD", "Control")
+
+# counts matrix individual level
+cts <- AggregateExpression(sce, group.by = c("celltype", "donor", "diagnosis"),
+                    assays = "RNA",
+                    slot = "counts",
+                    return.seurat = FALSE)
+cts <- cts$RNA
+cts[1:5,1:10]
+```
+
+Now we need to do some data manipulation to get the count and column data in the format DESeq2 requires
+
+```{r}
+# transpose
+cts_t <- t(cts) %>%
+  as.data.frame()
+
+split_rows <- gsub('_.*', '', rownames(cts_t))
+
+cts_split <- split.data.frame(cts_t,
+                              f = factor(split_rows))
+
+cts_split_m <- lapply(cts_split, function(x) {
+  t(x)
+})
+
+# Function to modify column names
+modify_column_names <- function(df, number_of_groups = 2) {
+  df <- as.data.frame(df)
+  # get the number of "_" seperations in the names
+  number_of_splits <- length(strsplit(as.character(names(df)), "_")[[1]])
+  # get the last n - 1 groups
+  cols <-
+    map((number_of_splits - (number_of_groups - 1)):number_of_splits,
+        ~ sapply(strsplit(as.character(names(
+          df
+        )), "_"), "[", .x))
+  names(df) <- do.call(paste, c(cols, sep = "_"))
+  
+  return(df)
+}
+cts_split_m <- map(cts_split_m, modify_column_names)
+```
+
+```{r}
+cts_split_m$`Neuron-ex`[1:10,1:2]
+```
+
+```{r}
+# get the col data
+colData <- map(
+  cts_split_m,
+  ~ data.frame(
+    samples = colnames(.x),
+    condition = ifelse(grepl("Control", colnames(.x)), "Control", "AD")
+  ) %>%
+    column_to_rownames(var = "samples")
+)
+```
+
+```{r}
+# check that count and col data cols/rows match
+map2_lgl(cts_split_m, colData, ~ ncol(.x) == nrow(.y))
+```
+
+```{r}
+# get DESeq2 object
+dds <- map2(cts_split_m, colData, ~ DESeqDataSetFromMatrix(countData = .x,
+                                                           colData = .y,
+                                                           design = ~ condition))
+```
+
+```{r}
+# run DESeq2
+dds <- map(dds, DESeq)
+```
+
+We can see the result names
+
+```{r}
+resultsNames(dds$Astro)
+```
+
+And then extract these results
+
+```{r}
+res <- map(dds, ~results(.x, name = "condition_Control_vs_AD"))
+head(res$Astro)
+```
+
+```{r}
+# merge celltype dataframes
+res_merged <- map2(res, names(res), ~ as.data.frame(.x) %>%
+                     rownames_to_column("gene") %>%
+                     dplyr::mutate(celltype = .y, deg_direction = ifelse(log2FoldChange > 0, "Up", "Down"))) %>%
+  purrr::list_rbind()
+```
+
+```{r}
+# save results
+readr::write_rds(res_merged, here::here("03_data/990_processed_data/001_snrnaseq/08_pseudobulk/pseudobulk_ad-vs-control_deseq2.rds"))
+```
+
+## Plots
+
+```{r}
+#| warning: false
+res_merged %>%
+  ggplot(aes(x = factor(deg_direction), fill = factor(celltype))) +
+  geom_histogram(stat = "count") +
+  facet_wrap(~factor(celltype)) +
+  ggtitle("Cell type counts of DEGs - Control VS AD")+
+  labs(y= "Log2 Fold Change", x = "DEG direction", fill="Cell Type") +
+  theme_cowplot()+
+  theme(axis.text = element_text(size=9)) +
+  scale_fill_viridis(discrete = T)
+  #scale_fill_manual(values=pal)
+```
+
+### Volcano plots
+
+```{r}
+# add colour identifier
+cols <- c("Up" = "#FDE725FF", "Down" = "#440154FF")
+
+res_merged %>%
+  # filter to significant hits
+  dplyr::filter(padj < 0.05) %>%
+  # scale FDR by log10
+  ggplot(aes(x = log2FoldChange, y = -log10(padj))) +
+  geom_point(aes(colour = deg_direction), stat = "identity", size = .2) +
+  facet_wrap( ~ factor(celltype), scales = "free") +
+  geom_hline(
+    yintercept = -log10(0.05),
+    colour = "#990000",
+    linetype = "dashed",
+    linewidth = .3
+  ) +
+  # geom_vline(xintercept = 0, colour="black", size=.3) +
+  labs(y = "-log10(FDR)", x = "Log2 Fold Change", colour = "") +
+  theme_cowplot() +
+  theme(
+    axis.text = element_text(size = 9),
+    axis.text.x = element_blank(),
+    legend.text = element_text(size = 10)
+  ) +
+  scale_colour_manual(values = cols) +
+  geom_text_repel(
+    # give top three genes per cell type by adjusted p value
+    data = res_merged %>%
+      dplyr::group_by(celltype) %>%
+      dplyr::slice_min(padj, n = 3),
+    aes(label = gene),
+    size = 3,
+    box.padding = unit(0.35, "lines"),
+    point.padding = unit(0.3, "lines")
+  )
+```
+
+
+```{r}
+#| eval: false
+#| include: false
+        #slight diff approach for contin or cat
+        if(y_contin){#need to specify coefficient target as not done in design
+            test <- edgeR::glmLRT(fit,coef=y_name)
+        }
+        else{#categorical i.e. case/control, no need
+            if(!is.null(coef)){#if user inputted value for case samples
+                test <- edgeR::glmLRT(fit,coef=length(new_levels))
+            }
+            else{#they didn't direction may not be as they expect
+                message(paste0("WARNING: No coefficient passed so direction ma",
+                               "y not relate to desired variable"))
+                test <- edgeR::glmLRT(fit)
+            }
+        }
+
+        pvals <- test$table
+
+        #add adj p-values
+
+        pvals$adj_pval <- stats::p.adjust(pvals$PValue,
+
+                                          method = pval_adjust_method)
+
+        pvals$name <- rownames(pvals)
+
+        rownames(pvals) <- NULL
+
+        if(verbose){
+
+            numDEGs <- nrow(pvals[pvals$adj_pval<adj_pval,])
+
+            message(numDEGs," DEGs found")
+
+        }
+
+        DE_ct_rtrn[[ct_i]] <- pvals
+
+```

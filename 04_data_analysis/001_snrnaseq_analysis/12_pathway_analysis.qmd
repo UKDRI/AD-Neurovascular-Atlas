@@ -1,0 +1,255 @@
+---
+title: Perform pathway analysis
+execute:
+  eval: true
+#self-contained: true
+code-fold: true
+bibliography: references.bib
+---
+
+```{r}
+here::i_am("04_data_analysis/001_snrnaseq_analysis/12_pathway_analysis.qmd")
+```
+
+# Load packages
+
+```{r}
+source(here::here("04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"))
+```
+
+# Read in data
+
+First we'll read in the DESeq2 results.
+Note that all the DESeq2 fold changes were done per celltype and across controls and cases (AD).
+
+```{r}
+res <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/08_pseudobulk/pseudobulk_ad-vs-control_deseq2.rds")) %>%
+  na.omit()
+```
+
+# Data prep
+
+I'll start by grabbing the to significant genes per celltype
+
+```{r}
+# filter to sig genes
+res_sig <- dplyr::filter(res, padj < 0.05)
+
+# get gene names per celltype
+genes <- res_sig %>%
+  dplyr::group_by(celltype) %>%
+  dplyr::summarise(list_of_columns = list(gene)) %>%
+  dplyr::pull(list_of_columns)
+names(genes) <- unique(res_sig$celltype)
+```
+
+# Hypergeometric enrichment
+
+```{r}
+go_results <- map(genes, ~ enrichGO(gene = .x, OrgDb = "org.Hs.eg.db", 
+                                    keyType = "SYMBOL", ont = "BP"))
+```
+
+```{r}
+# exclude cases where no pathways were found
+go_results_filtered <- go_results %>%
+  purrr::keep(~ nrow(.) > 0)
+
+# barplot
+fit <- map(go_results_filtered, ~ plot(barplot(.x, showCategory = 20)))
+fit
+```
+
+# Gene set enrichment analysis (GSEA)
+
+```{r}
+# get log2 FC as a vector with the respective gene names, sorted in decreasing 
+# order
+named_vectors <- res %>%
+  dplyr::group_by(celltype) %>%
+  tidyr::nest() %>%
+  dplyr::mutate(gene_list = map(data, ~setNames(.x$log2FoldChange, .x$gene) %>%
+                                  sort(decreasing = TRUE)))
+```
+
+## Gene Ontology
+
+```{r}
+# Define the file path to save the resulting object
+result_file <-
+  here::here(
+    "03_data/990_processed_data/001_snrnaseq/09_pathway_analysis/gene-set-enrichment_go.rds"
+  )
+
+# Check if the file exists
+if (!file.exists(result_file)) {
+  # Code for your time-consuming analysis
+  gse <-
+    map(
+      named_vectors$gene_list,
+      ~ gseGO(
+        .x,
+        OrgDb = "org.Hs.eg.db",
+        ont = "ALL",
+        keyType = "SYMBOL"
+      )
+    )
+  
+  # Save the resulting object
+  readr::write_rds(gse, result_file)
+} else {
+  # Load the existing resulting object
+  gse <- readr::read_rds(result_file)
+}
+
+names(gse) <- named_vectors$celltype
+```
+
+```{r}
+# remove any with no pathways found
+gse <- gse %>%
+  purrr::keep(~ nrow(.) > 0)
+```
+
+### Plots
+
+```{r}
+dotplots <-
+  map2(
+    gse,
+    names(gse),
+    ~ dotplot(.x, showCategory = 10, split = ".sign") + facet_grid(. ~ .sign) +
+      ggtitle(.y)
+  )
+
+dotplots
+```
+
+```{r}
+#| eval: false
+#| include: false
+map2(gse,
+     names(gse),
+     ~ emapplot(.x, showCategory = 10) +
+                  ggtitle(.y))
+```
+
+```{r}
+map2(gse,
+     names(gse),
+     ~ ridgeplot(.x) +
+       labs(x = "enrichment distribution") +
+                  ggtitle(.y))
+```
+
+Note, one can change which pathway is plotted here by setting the title and `geneSetID` accordingly
+
+```{r}
+map2(gse,
+     names(gse),
+     ~ gseaplot(.x, by = "all", title = .x$Description[1], geneSetID = 1))
+```
+
+#### PubMed trend of enriched terms
+
+```{r}
+#| cache: true
+#| eval: false
+terms <- gse$`Neuron-ex`$Description[1:10]
+pmcplot(terms, 2010:2022, proportion = FALSE)
+```
+
+## KEGG
+
+```{r}
+# Convert gene IDs for gseKEGG function
+# We will lose some genes here because not all IDs will be converted
+ids <-
+  map(
+    named_vectors$gene_list,
+    ~ bitr(
+      names(.x),
+      fromType = "SYMBOL",
+      toType = "ENTREZID",
+      OrgDb = "org.Hs.eg.db"
+    )
+  ) %>%
+  purrr::list_rbind()
+ # remove duplicate IDS 
+dedup_ids = ids[!duplicated(ids[c("SYMBOL")]),]
+
+# join entrezids to dataframe
+res_entrez <- res %>%
+  dplyr::left_join(dedup_ids, by = join_by(gene == SYMBOL)) %>%
+  # remove cases that couldn't be matched
+  dplyr::filter(!is.na(ENTREZID))
+
+# get log2 FC as a vector with the respective gene names, sorted in decreasing 
+# order
+named_vectors <- res_entrez %>%
+  dplyr::group_by(celltype) %>%
+  tidyr::nest() %>%
+  dplyr::mutate(gene_list = map(
+    data,
+    ~ setNames(.x$log2FoldChange, .x$ENTREZID) %>%
+      sort(decreasing = TRUE)
+  ))
+```
+
+```{r}
+kegg_organism = "hsa"
+
+# Define the file path to save the resulting object
+result_file <-
+  here::here(
+    "03_data/990_processed_data/001_snrnaseq/09_pathway_analysis/gene-set-enrichment_kegg.rds"
+  )
+
+# Check if the file exists
+if (!file.exists(result_file)) {
+  # Code for your time-consuming analysis
+kk2 <-
+  map(
+    named_vectors$gene_list,
+    ~ gseKEGG(.x, organism = kegg_organism, keyType = "ncbi-geneid")
+  )
+  
+  # Save the resulting object
+  readr::write_rds(kk2, result_file)
+} else {
+  # Load the existing resulting object
+  kk2 <- readr::read_rds(result_file)
+}
+
+names(kk2) <- named_vectors$celltype
+```
+
+### Plots
+
+```{r}
+map2(
+  kk2,
+  names(kk2),
+  ~ dotplot(
+    .x,
+    showCategory = 10,
+    title = .y,
+    split = ".sign"
+  ) +
+    facet_grid(. ~ .sign)
+)
+```
+
+```{r}
+#| eval: false
+#| include: false
+map2(kk2, names(kk2),  ~ emapplot(.x) + ggtitle(.y))
+```
+
+```{r}
+map2(kk2,
+     names(kk2),
+     ~ ridgeplot(.x) + labs(x = "enrichment distribution") + ggtitle(.y))
+```
+
+#### Pathview
