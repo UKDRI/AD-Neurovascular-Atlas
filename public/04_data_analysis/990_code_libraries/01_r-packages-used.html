@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.3.336">
+<meta name="generator" content="quarto-1.3.433">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 <title>Blood brain barrier in AD – r-packages-used</title>
 <style>
@@ -86,7 +86,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     "search-more-matches-text": "more matches in this document",
     "search-clear-button-title": "Clear",
     "search-detached-cancel-button-title": "Cancel",
-    "search-submit-button-title": "Submit"
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
   }
 }</script><link rel="stylesheet" href="styles.css">
 </head>
@@ -188,9 +189,21 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../04_data_analysis/001_snrnaseq_analysis/09_scflow_run.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Run scflow</span></a>
+ <span class="menu-text">Run SCflow</span></a>
   </div>
 </li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../04_data_analysis/001_snrnaseq_analysis/10_scflow_results.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Analysis scFlow results</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+ <span class="menu-text">04_data_analysis/001_snrnaseq_analysis/11_qseudobulk.qmd</span>
+  </li>
+        <li class="sidebar-item">
+ <span class="menu-text">04_data_analysis/001_snrnaseq_analysis/12_pathway-analysis.qmd</span>
+  </li>
     </ul>
 </div>
 </nav><div id="quarto-sidebar-glass" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass"></div>
@@ -623,49 +636,54 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 <span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="do">## create vector of packages used</span></span>
 <span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>pkg <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"helpers"</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="st">"stringr"</span>, <span class="st">"DT"</span>, <span class="st">"reshape"</span>, <span class="st">"dplyr"</span>, <span class="st">"tidyr"</span>,</span>
 <span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>                       <span class="st">"tibble"</span>, <span class="st">"purrr"</span>, <span class="st">"here"</span>, <span class="st">"readr"</span>, <span class="st">"kableExtra"</span>, </span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>                       <span class="st">"janitor"</span>, <span class="st">"labelled"</span>, <span class="st">"BiocManager"</span>),</span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>         <span class="st">"website"</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="st">"downlit"</span>, <span class="st">"xml2"</span>),</span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>         <span class="st">"plots"</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="st">"corrgram"</span>, <span class="st">"RColorBrewer"</span>, <span class="st">"pheatmap"</span>, <span class="st">"ggplot2"</span>,</span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"ggsci"</span>, <span class="st">"cowplot"</span>, <span class="st">"scales"</span>, <span class="st">"ggvenn"</span>, <span class="st">"ggpubr"</span>, </span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"gridExtra"</span>, <span class="st">"tidytext"</span>))</span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>pkg_bioconductor <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"cellity"</span>, <span class="st">"scater"</span>, <span class="st">"Seurat"</span>, <span class="st">"SC3"</span>, <span class="st">"DESeq2"</span>, <span class="st">"edgeR"</span>,</span>
-<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>                      <span class="st">"BiocParallel"</span>, <span class="st">"org.Mm.eg.db"</span>, <span class="st">"pathview"</span>, <span class="st">"gage"</span>,</span>
-<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>                      <span class="st">"gageData"</span>, <span class="st">"glmGamPoi"</span>, <span class="st">"DropletUtils"</span>, <span class="st">"ensembldb"</span>, </span>
-<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>                      <span class="st">"AnnotationHub"</span>, <span class="st">"patchwork"</span>, <span class="st">"scran"</span>, <span class="st">"scuttle"</span>,  </span>
-<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>                      <span class="st">"PCAtools"</span>, <span class="st">"batchelor"</span>, <span class="st">"bluster"</span>, <span class="st">"igraph"</span>)</span>
-<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a><span class="do">## create function to installing any missing packages and then load them all</span></span>
-<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>sort_packages <span class="ot">&lt;-</span> <span class="cf">function</span>(packages, <span class="at">bioconductor =</span> <span class="cn">FALSE</span>) {</span>
-<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>    <span class="do">## Check if packages are not installed and assign the</span></span>
-<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>    <span class="do">## names of the packages not installed to the variable new.pkg</span></span>
-<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>    new_pkg <span class="ot">&lt;-</span> packages[<span class="sc">!</span>(packages <span class="sc">%in%</span> <span class="fu">installed.packages</span>())]</span>
-<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>    <span class="do">## If the packages are bioconductor, install via biocmanager</span></span>
-<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>    <span class="do">## If there are any packages in the list that aren't installed,</span></span>
-<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>    <span class="do">## install them</span></span>
-<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">length</span>(new_pkg) <span class="sc">&amp;</span> <span class="sc">!</span>bioconductor) {</span>
-<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>        <span class="fu">install.packages</span>(new_pkg, <span class="at">repos =</span> <span class="st">"https://cran.rstudio.com"</span>)</span>
-<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span> <span class="cf">if</span> (<span class="fu">length</span>(new_pkg) <span class="sc">&amp;</span> bioconductor) {</span>
-<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>        BiocManager<span class="sc">::</span><span class="fu">install</span>(new_pkg)</span>
-<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>    <span class="do">## load packages</span></span>
-<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>    <span class="fu">lapply</span>(packages, require, <span class="at">character.only =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a><span class="do">## use function</span></span>
-<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a><span class="fu">sort_packages</span>(pkg)</span>
-<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a><span class="fu">sort_packages</span>(pkg_bioconductor, <span class="at">bioconductor =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a><span class="co">#| purl: false</span></span>
-<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a><span class="co"># create library calls for renv</span></span>
-<span id="cb3-50"><a href="#cb3-50" aria-hidden="true" tabindex="-1"></a>library_calls <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"library("</span>, <span class="fu">c</span>(pkg, pkg_bioconductor), <span class="st">")"</span>)</span>
-<span id="cb3-51"><a href="#cb3-51" aria-hidden="true" tabindex="-1"></a><span class="fu">write_lines</span>(library_calls, <span class="fu">here</span>(<span class="st">"04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"</span>))</span>
-<span id="cb3-52"><a href="#cb3-52" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb3-53"><a href="#cb3-53" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-56"><a href="#cb3-56" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb3-57"><a href="#cb3-57" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span>(pkg, pkg_bioconductor, sort_packages)</span>
-<span id="cb3-58"><a href="#cb3-58" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>                       <span class="st">"janitor"</span>, <span class="st">"labelled"</span>, <span class="st">"BiocManager"</span>, <span class="st">"data.table"</span>,</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>                       <span class="st">"gt"</span>, <span class="st">"fgsea"</span>, <span class="st">"europepmc"</span>, <span class="st">"readxl"</span>),</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>         <span class="st">"website"</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="st">"downlit"</span>, <span class="st">"xml2"</span>),</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>         <span class="st">"plots"</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="st">"corrgram"</span>, <span class="st">"RColorBrewer"</span>, <span class="st">"pheatmap"</span>, <span class="st">"ggplot2"</span>,</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"ggsci"</span>, <span class="st">"cowplot"</span>, <span class="st">"scales"</span>, <span class="st">"ggvenn"</span>, <span class="st">"ggpubr"</span>, </span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"gridExtra"</span>, <span class="st">"tidytext"</span>, <span class="st">"viridis"</span>, <span class="st">"wesanderson"</span>,</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"pals"</span>))</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>pkg_bioconductor <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"cellity"</span>, <span class="st">"scater"</span>, <span class="st">"Seurat"</span>, <span class="st">"SC3"</span>, <span class="st">"DESeq2"</span>, <span class="st">"edgeR"</span>,</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>                      <span class="st">"BiocParallel"</span>, <span class="st">"org.Hs.eg.db"</span>, <span class="st">"pathview"</span>, <span class="st">"gage"</span>,</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>                      <span class="st">"gageData"</span>, <span class="st">"DropletUtils"</span>, <span class="st">"ensembldb"</span>, </span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>                      <span class="st">"AnnotationHub"</span>, <span class="st">"patchwork"</span>, <span class="st">"scran"</span>, <span class="st">"scuttle"</span>,  </span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>                      <span class="st">"PCAtools"</span>, <span class="st">"batchelor"</span>, <span class="st">"bluster"</span>, <span class="st">"igraph"</span>, </span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>                      <span class="st">"SingleCellExperiment"</span>, <span class="st">"scRNAseq"</span>, <span class="st">"biomaRt"</span>,</span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>                      <span class="st">"GEOquery"</span>, <span class="st">"AnnotationDbi"</span>, <span class="st">"clusterProfiler"</span>,</span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>                      <span class="st">"DOSE"</span>, <span class="st">"enrichplot"</span>, <span class="st">"EnsDb.Hsapiens.v79"</span>)</span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a><span class="do">## create function to installing any missing packages and then load them all</span></span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>sort_packages <span class="ot">&lt;-</span> <span class="cf">function</span>(packages, <span class="at">bioconductor =</span> <span class="cn">FALSE</span>) {</span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>    <span class="do">## Check if packages are not installed and assign the</span></span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>    <span class="do">## names of the packages not installed to the variable new.pkg</span></span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>    new_pkg <span class="ot">&lt;-</span> packages[<span class="sc">!</span>(packages <span class="sc">%in%</span> <span class="fu">installed.packages</span>())]</span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>    <span class="do">## If the packages are bioconductor, install via biocmanager</span></span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>    <span class="do">## If there are any packages in the list that aren't installed,</span></span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>    <span class="do">## install them</span></span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">length</span>(new_pkg) <span class="sc">&amp;</span> <span class="sc">!</span>bioconductor) {</span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>        <span class="fu">install.packages</span>(new_pkg, <span class="at">repos =</span> <span class="st">"https://cran.rstudio.com"</span>)</span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span> <span class="cf">if</span> (<span class="fu">length</span>(new_pkg) <span class="sc">&amp;</span> bioconductor) {</span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a>        BiocManager<span class="sc">::</span><span class="fu">install</span>(new_pkg)</span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>    <span class="do">## load packages</span></span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a>    <span class="fu">lapply</span>(packages, require, <span class="at">character.only =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a><span class="do">## use function</span></span>
+<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a><span class="fu">sort_packages</span>(pkg)</span>
+<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a><span class="fu">sort_packages</span>(pkg_bioconductor, <span class="at">bioconductor =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-52"><a href="#cb3-52" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb3-53"><a href="#cb3-53" aria-hidden="true" tabindex="-1"></a><span class="co">#| purl: false</span></span>
+<span id="cb3-54"><a href="#cb3-54" aria-hidden="true" tabindex="-1"></a><span class="co"># create library calls for renv</span></span>
+<span id="cb3-55"><a href="#cb3-55" aria-hidden="true" tabindex="-1"></a>library_calls <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"library("</span>, <span class="fu">c</span>(pkg, pkg_bioconductor), <span class="st">")"</span>)</span>
+<span id="cb3-56"><a href="#cb3-56" aria-hidden="true" tabindex="-1"></a><span class="fu">write_lines</span>(library_calls, <span class="fu">here</span>(<span class="st">"04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"</span>))</span>
+<span id="cb3-57"><a href="#cb3-57" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb3-58"><a href="#cb3-58" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-61"><a href="#cb3-61" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb3-62"><a href="#cb3-62" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span>(pkg, pkg_bioconductor, sort_packages)</span>
+<span id="cb3-63"><a href="#cb3-63" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 </code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div></div></div></div></div>
 </div> <!-- /content -->
