@@ -4,17 +4,22 @@
 ## create vector of packages used
 pkg <- c("helpers" = c("stringr", "DT", "reshape", "dplyr", "tidyr",
                        "tibble", "purrr", "here", "readr", "kableExtra", 
-                       "janitor", "labelled", "BiocManager"),
+                       "janitor", "labelled", "BiocManager", "data.table",
+                       "gt", "fgsea", "europepmc", "readxl"),
          "website" = c("downlit", "xml2"),
          "plots" = c("corrgram", "RColorBrewer", "pheatmap", "ggplot2",
                      "ggsci", "cowplot", "scales", "ggvenn", "ggpubr", 
-                     "gridExtra", "tidytext"))
+                     "gridExtra", "tidytext", "viridis", "wesanderson",
+                     "pals"))
 
 pkg_bioconductor <- c("cellity", "scater", "Seurat", "SC3", "DESeq2", "edgeR",
-                      "BiocParallel", "org.Mm.eg.db", "pathview", "gage",
-                      "gageData", "glmGamPoi", "DropletUtils", "ensembldb", 
+                      "BiocParallel", "org.Hs.eg.db", "pathview", "gage",
+                      "gageData", "DropletUtils", "ensembldb", 
                       "AnnotationHub", "patchwork", "scran", "scuttle",  
-                      "PCAtools", "batchelor", "bluster", "igraph")
+                      "PCAtools", "batchelor", "bluster", "igraph", 
+                      "SingleCellExperiment", "scRNAseq", "biomaRt",
+                      "GEOquery", "AnnotationDbi", "clusterProfiler",
+                      "DOSE", "enrichplot", "EnsDb.Hsapiens.v79")
 
 ## create function to installing any missing packages and then load them all
 sort_packages <- function(packages, bioconductor = FALSE) {
