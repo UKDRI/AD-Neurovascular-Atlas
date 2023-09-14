@@ -47,7 +47,7 @@ awk -v line="key\tfilepath" 'BEGIN{print line}{print}' scflow_manifest5.txt > sc
 rm scflow_manifest.txt scflow_manifest2.txt scflow_manifest3.txt scflow_manifest4.txt scflow_manifest5.txt
 ```
 
-We would also like to include the brain atlas from Yang et al. 2022.[@yang2022]
+We would also like to include the brain atlas from @yang_human_2022.
 Their data is on GEO so I've downloaded and extracted that to gluster.
 
 ```{r}
