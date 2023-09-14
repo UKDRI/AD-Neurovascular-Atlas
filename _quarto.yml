@@ -50,8 +50,8 @@ website:
         - 04_data_analysis/001_snrnaseq_analysis/08_scflow_prep.qmd
         - 04_data_analysis/001_snrnaseq_analysis/09_scflow_run.qmd
         - 04_data_analysis/001_snrnaseq_analysis/10_scflow_results.qmd
-        - 04_data_analysis/001_snrnaseq_analysis/11_qseudobulk.qmd
-        - 04_data_analysis/001_snrnaseq_analysis/12_pathway-analysis.qmd
+        - 04_data_analysis/001_snrnaseq_analysis/11_pseudobulk.qmd
+        - 04_data_analysis/001_snrnaseq_analysis/12_pathway_analysis.qmd
   
 format:
   html:
