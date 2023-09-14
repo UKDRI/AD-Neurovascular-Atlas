@@ -1,5 +1,5 @@
 ---
-title: Run scflow
+title: Run SCflow
 execute:
   eval: false
 bibliography: references.bib
@@ -51,8 +51,8 @@ process {
       queue = 'c_vhighmem_dri1'
     }
     withName: SCFLOW_REPORTINTEGRATED {
-      cpus = 35
       memory = 710.GB
+      time = 20.h
       queue = 'c_vhighmem_dri1'
     }
     withName: SCFLOW_FINALIZE {
@@ -69,7 +69,7 @@ process {
     }
     withName: SCFLOW_PLOTREDDIMGENES {
       memory = 710.GB
-      cpus = 35
+      cpus = 10
       time = 20.h
       queue = 'c_vhighmem_dri1'
     }
@@ -92,7 +92,7 @@ There's two `nextflow run` calls, the first is with both our data and the Yang d
 #| purl: false
 nextflow run combiz-nf-core-scflow-dev-nf/workflow/ -profile scw -c 03_data/990_processed_data/001_snrnaseq/06_scflow/pipeline.config --manifest 03_data/990_processed_data/001_snrnaseq/06_scflow/scflow_manifest_final.tsv --input 03_data/990_processed_data/001_snrnaseq/90_sample_info/sample_metadata.tsv --reddim_genes_yml 03_data/990_processed_data/001_snrnaseq/06_scflow/reddim_genes.yml --ensembl_mappings 03_data/990_processed_data/001_snrnaseq/06_scflow/ensembl_mappings.tsv -N Bernardo-HarringtonG@cardiff.ac.uk -resume -bg > 03_data/990_processed_data/001_snrnaseq/06_scflow/scflow.log
 # version with our samples alone
-nextflow run combiz-nf-core-scflow-dev-nf/workflow/ -profile scw -c 03_data/990_processed_data/001_snrnaseq/06_scflow/pipeline.config --manifest 03_data/990_processed_data/001_snrnaseq/06_scflow/scflow_manifest.tsv --input 03_data/990_processed_data/001_snrnaseq/90_sample_info/sample_metadata_ours.tsv --reddim_genes_yml 03_data/990_processed_data/001_snrnaseq/06_scflow/reddim_genes.yml --ensembl_mappings 03_data/990_processed_data/001_snrnaseq/06_scflow/ensembl_mappings.tsv -N Bernardo-HarringtonG@cardiff.ac.uk -resume -bg > 03_data/990_processed_data/001_snrnaseq/06_scflow/scflow.log
+nextflow run combiz-nf-core-scflow-dev-nf/workflow/ -profile scw -c 03_data/990_processed_data/001_snrnaseq/06_scflow/pipeline.config --manifest 03_data/990_processed_data/001_snrnaseq/06_scflow/scflow_manifest.tsv --input 03_data/990_processed_data/001_snrnaseq/90_sample_info/sample_metadata_ours.tsv --reddim_genes_yml 03_data/990_processed_data/001_snrnaseq/06_scflow/reddim_genes_williams.yml --ensembl_mappings 03_data/990_processed_data/001_snrnaseq/06_scflow/ensembl_mappings.tsv -N Bernardo-HarringtonG@cardiff.ac.uk -resume -bg > 03_data/990_processed_data/001_snrnaseq/06_scflow/scflow.log
 ```
 
 ```{r}
@@ -102,4 +102,3 @@ temp <- read_tsv(here::here("03_data/990_processed_data/001_snrnaseq/90_sample_i
 temp$donor_ID <- NULL
 write_tsv(temp, here::here("03_data/990_processed_data/001_snrnaseq/90_sample_info/sample_metadata_temp.tsv"))
 ```
-
