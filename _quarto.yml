@@ -33,6 +33,8 @@ website:
         file: index.qmd
       - text: "Data analysis"
         file: 06_dissemination/03_website/01_data-analysis.qmd
+      - text: "Talks"
+        file: 06_dissemination/01_reports_conferences/2023-09-12_cardiff-connectome-talk/2023-09-12_cardiff-connectome-talk.qmd
         
   sidebar:
     - title: "Data analysis"
