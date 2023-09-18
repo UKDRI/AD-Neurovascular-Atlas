@@ -114,6 +114,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <a class="nav-link active" href="../../06_dissemination/03_website/01_data-analysis.html" rel="" target="" aria-current="page">
  <span class="menu-text">Data analysis</span></a>
   </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../06_dissemination/01_reports_conferences/2023-09-12_cardiff-connectome-talk/2023-09-12_cardiff-connectome-talk.html" rel="" target="">
+ <span class="menu-text">Talks</span></a>
+  </li>  
 </ul>
 <div class="quarto-navbar-tools ms-auto">
   <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
@@ -199,11 +203,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </div>
 </li>
         <li class="sidebar-item">
- <span class="menu-text">04_data_analysis/001_snrnaseq_analysis/11_qseudobulk.qmd</span>
-  </li>
+  <div class="sidebar-item-container"> 
+  <a href="../../04_data_analysis/001_snrnaseq_analysis/11_pseudobulk.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Perform Pseudobulk</span></a>
+  </div>
+</li>
         <li class="sidebar-item">
- <span class="menu-text">04_data_analysis/001_snrnaseq_analysis/12_pathway-analysis.qmd</span>
-  </li>
+  <div class="sidebar-item-container"> 
+  <a href="../../04_data_analysis/001_snrnaseq_analysis/12_pathway_analysis.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Perform pathway analysis</span></a>
+  </div>
+</li>
     </ul>
 </div>
 </nav><div id="quarto-sidebar-glass" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass"></div>
@@ -637,7 +647,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 <span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>pkg <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"helpers"</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="st">"stringr"</span>, <span class="st">"DT"</span>, <span class="st">"reshape"</span>, <span class="st">"dplyr"</span>, <span class="st">"tidyr"</span>,</span>
 <span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>                       <span class="st">"tibble"</span>, <span class="st">"purrr"</span>, <span class="st">"here"</span>, <span class="st">"readr"</span>, <span class="st">"kableExtra"</span>, </span>
 <span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>                       <span class="st">"janitor"</span>, <span class="st">"labelled"</span>, <span class="st">"BiocManager"</span>, <span class="st">"data.table"</span>,</span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>                       <span class="st">"gt"</span>, <span class="st">"fgsea"</span>, <span class="st">"europepmc"</span>, <span class="st">"readxl"</span>),</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>                       <span class="st">"gt"</span>, <span class="st">"europepmc"</span>, <span class="st">"readxl"</span>),</span>
 <span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>         <span class="st">"website"</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="st">"downlit"</span>, <span class="st">"xml2"</span>),</span>
 <span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>         <span class="st">"plots"</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="st">"corrgram"</span>, <span class="st">"RColorBrewer"</span>, <span class="st">"pheatmap"</span>, <span class="st">"ggplot2"</span>,</span>
 <span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"ggsci"</span>, <span class="st">"cowplot"</span>, <span class="st">"scales"</span>, <span class="st">"ggvenn"</span>, <span class="st">"ggpubr"</span>, </span>
@@ -651,7 +661,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 <span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>                      <span class="st">"PCAtools"</span>, <span class="st">"batchelor"</span>, <span class="st">"bluster"</span>, <span class="st">"igraph"</span>, </span>
 <span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>                      <span class="st">"SingleCellExperiment"</span>, <span class="st">"scRNAseq"</span>, <span class="st">"biomaRt"</span>,</span>
 <span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>                      <span class="st">"GEOquery"</span>, <span class="st">"AnnotationDbi"</span>, <span class="st">"clusterProfiler"</span>,</span>
-<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>                      <span class="st">"DOSE"</span>, <span class="st">"enrichplot"</span>, <span class="st">"EnsDb.Hsapiens.v79"</span>)</span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>                      <span class="st">"DOSE"</span>, <span class="st">"enrichplot"</span>, <span class="st">"EnsDb.Hsapiens.v79"</span>, <span class="st">"fgsea"</span>)</span>
 <span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a><span class="do">## create function to installing any missing packages and then load them all</span></span>
 <span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>sort_packages <span class="ot">&lt;-</span> <span class="cf">function</span>(packages, <span class="at">bioconductor =</span> <span class="cn">FALSE</span>) {</span>

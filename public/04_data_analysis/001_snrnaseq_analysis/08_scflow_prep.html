@@ -51,7 +51,26 @@ div.sourceCode
 @media screen {
 pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
-</style>
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
 
 <script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
 <script src="../../site_libs/quarto-nav/headroom.min.js"></script>
@@ -113,6 +132,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li class="nav-item">
     <a class="nav-link active" href="../../06_dissemination/03_website/01_data-analysis.html" rel="" target="" aria-current="page">
  <span class="menu-text">Data analysis</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../06_dissemination/01_reports_conferences/2023-09-12_cardiff-connectome-talk/2023-09-12_cardiff-connectome-talk.html" rel="" target="">
+ <span class="menu-text">Talks</span></a>
   </li>  
 </ul>
 <div class="quarto-navbar-tools ms-auto">
@@ -199,11 +222,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </div>
 </li>
         <li class="sidebar-item">
- <span class="menu-text">04_data_analysis/001_snrnaseq_analysis/11_qseudobulk.qmd</span>
-  </li>
+  <div class="sidebar-item-container"> 
+  <a href="../../04_data_analysis/001_snrnaseq_analysis/11_pseudobulk.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Perform Pseudobulk</span></a>
+  </div>
+</li>
         <li class="sidebar-item">
- <span class="menu-text">04_data_analysis/001_snrnaseq_analysis/12_pathway-analysis.qmd</span>
-  </li>
+  <div class="sidebar-item-container"> 
+  <a href="../../04_data_analysis/001_snrnaseq_analysis/12_pathway_analysis.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Perform pathway analysis</span></a>
+  </div>
+</li>
     </ul>
 </div>
 </nav><div id="quarto-sidebar-glass" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass"></div>
@@ -272,7 +301,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>rm scflow_manifest.txt scflow_manifest2.txt scflow_manifest3.txt scflow_manifest4.txt scflow_manifest5.txt</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
-<p>We would also like to include the brain atlas from Yang et al.&nbsp;2022.<span class="citation" data-cites="yang2022">(<a href="#ref-yang2022" role="doc-biblioref"><strong>yang2022?</strong></a>)</span> Their data is on GEO so I’ve downloaded and extracted that to gluster.</p>
+<p>We would also like to include the brain atlas from <span class="citation" data-cites="yang_human_2022">Yang et al. (<a href="#ref-yang_human_2022" role="doc-biblioref">2022</a>)</span>. Their data is on GEO so I’ve downloaded and extracted that to gluster.</p>
 </section><section id="sample-metadata" class="level2" data-number="2.2"><h2 data-number="2.2" class="anchored" data-anchor-id="sample-metadata">
 <span class="header-section-number">2.2</span> Sample metadata</h2>
 <p>We also need to sort out the sample metadata for the Yang data.</p>
@@ -465,23 +494,23 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span><span class="fu">gt</span><span class="op">(</span><span class="va">gene_markers_clean</span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details><div class="cell-output-display">
 
-<div id="gvbsxdriwa" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#gvbsxdriwa table {
+<div id="dklixnassv" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#dklixnassv table {
   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#gvbsxdriwa thead, #gvbsxdriwa tbody, #gvbsxdriwa tfoot, #gvbsxdriwa tr, #gvbsxdriwa td, #gvbsxdriwa th {
+#dklixnassv thead, #dklixnassv tbody, #dklixnassv tfoot, #dklixnassv tr, #dklixnassv td, #dklixnassv th {
   border-style: none;
 }
 
-#gvbsxdriwa p {
+#dklixnassv p {
   margin: 0;
   padding: 0;
 }
 
-#gvbsxdriwa .gt_table {
+#dklixnassv .gt_table {
   display: table;
   border-collapse: collapse;
   line-height: normal;
@@ -507,12 +536,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   border-left-color: #D3D3D3;
 }
 
-#gvbsxdriwa .gt_caption {
+#dklixnassv .gt_caption {
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
-#gvbsxdriwa .gt_title {
+#dklixnassv .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -524,7 +553,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   border-bottom-width: 0;
 }
 
-#gvbsxdriwa .gt_subtitle {
+#dklixnassv .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -536,7 +565,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   border-top-width: 0;
 }
 
-#gvbsxdriwa .gt_heading {
+#dklixnassv .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -548,13 +577,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   border-right-color: #D3D3D3;
 }
 
-#gvbsxdriwa .gt_bottom_border {
+#dklixnassv .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#gvbsxdriwa .gt_col_headings {
+#dklixnassv .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -569,7 +598,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   border-right-color: #D3D3D3;
 }
 
-#gvbsxdriwa .gt_col_heading {
+#dklixnassv .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -589,7 +618,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   overflow-x: hidden;
 }
 
-#gvbsxdriwa .gt_column_spanner_outer {
+#dklixnassv .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -601,15 +630,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   padding-right: 4px;
 }
 
-#gvbsxdriwa .gt_column_spanner_outer:first-child {
+#dklixnassv .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#gvbsxdriwa .gt_column_spanner_outer:last-child {
+#dklixnassv .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#gvbsxdriwa .gt_column_spanner {
+#dklixnassv .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -621,11 +650,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   width: 100%;
 }
 
-#gvbsxdriwa .gt_spanner_row {
+#dklixnassv .gt_spanner_row {
   border-bottom-style: hidden;
 }
 
-#gvbsxdriwa .gt_group_heading {
+#dklixnassv .gt_group_heading {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -651,7 +680,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   text-align: left;
 }
 
-#gvbsxdriwa .gt_empty_group_heading {
+#dklixnassv .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -666,15 +695,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   vertical-align: middle;
 }
 
-#gvbsxdriwa .gt_from_md > :first-child {
+#dklixnassv .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#gvbsxdriwa .gt_from_md > :last-child {
+#dklixnassv .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#gvbsxdriwa .gt_row {
+#dklixnassv .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -693,7 +722,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   overflow-x: hidden;
 }
 
-#gvbsxdriwa .gt_stub {
+#dklixnassv .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -706,7 +735,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   padding-right: 5px;
 }
 
-#gvbsxdriwa .gt_stub_row_group {
+#dklixnassv .gt_stub_row_group {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -720,15 +749,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   vertical-align: top;
 }
 
-#gvbsxdriwa .gt_row_group_first td {
+#dklixnassv .gt_row_group_first td {
   border-top-width: 2px;
 }
 
-#gvbsxdriwa .gt_row_group_first th {
+#dklixnassv .gt_row_group_first th {
   border-top-width: 2px;
 }
 
-#gvbsxdriwa .gt_summary_row {
+#dklixnassv .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -738,16 +767,16 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   padding-right: 5px;
 }
 
-#gvbsxdriwa .gt_first_summary_row {
+#dklixnassv .gt_first_summary_row {
   border-top-style: solid;
   border-top-color: #D3D3D3;
 }
 
-#gvbsxdriwa .gt_first_summary_row.thick {
+#dklixnassv .gt_first_summary_row.thick {
   border-top-width: 2px;
 }
 
-#gvbsxdriwa .gt_last_summary_row {
+#dklixnassv .gt_last_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -757,7 +786,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   border-bottom-color: #D3D3D3;
 }
 
-#gvbsxdriwa .gt_grand_summary_row {
+#dklixnassv .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -767,7 +796,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   padding-right: 5px;
 }
 
-#gvbsxdriwa .gt_first_grand_summary_row {
+#dklixnassv .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -777,7 +806,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   border-top-color: #D3D3D3;
 }
 
-#gvbsxdriwa .gt_last_grand_summary_row_top {
+#dklixnassv .gt_last_grand_summary_row_top {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -787,11 +816,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   border-bottom-color: #D3D3D3;
 }
 
-#gvbsxdriwa .gt_striped {
+#dklixnassv .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#gvbsxdriwa .gt_table_body {
+#dklixnassv .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -800,7 +829,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   border-bottom-color: #D3D3D3;
 }
 
-#gvbsxdriwa .gt_footnotes {
+#dklixnassv .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -814,7 +843,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   border-right-color: #D3D3D3;
 }
 
-#gvbsxdriwa .gt_footnote {
+#dklixnassv .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding-top: 4px;
@@ -823,7 +852,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   padding-right: 5px;
 }
 
-#gvbsxdriwa .gt_sourcenotes {
+#dklixnassv .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -837,7 +866,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   border-right-color: #D3D3D3;
 }
 
-#gvbsxdriwa .gt_sourcenote {
+#dklixnassv .gt_sourcenote {
   font-size: 90%;
   padding-top: 4px;
   padding-bottom: 4px;
@@ -845,63 +874,63 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   padding-right: 5px;
 }
 
-#gvbsxdriwa .gt_left {
+#dklixnassv .gt_left {
   text-align: left;
 }
 
-#gvbsxdriwa .gt_center {
+#dklixnassv .gt_center {
   text-align: center;
 }
 
-#gvbsxdriwa .gt_right {
+#dklixnassv .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#gvbsxdriwa .gt_font_normal {
+#dklixnassv .gt_font_normal {
   font-weight: normal;
 }
 
-#gvbsxdriwa .gt_font_bold {
+#dklixnassv .gt_font_bold {
   font-weight: bold;
 }
 
-#gvbsxdriwa .gt_font_italic {
+#dklixnassv .gt_font_italic {
   font-style: italic;
 }
 
-#gvbsxdriwa .gt_super {
+#dklixnassv .gt_super {
   font-size: 65%;
 }
 
-#gvbsxdriwa .gt_footnote_marks {
+#dklixnassv .gt_footnote_marks {
   font-size: 75%;
   vertical-align: 0.4em;
   position: initial;
 }
 
-#gvbsxdriwa .gt_asterisk {
+#dklixnassv .gt_asterisk {
   font-size: 100%;
   vertical-align: 0;
 }
 
-#gvbsxdriwa .gt_indent_1 {
+#dklixnassv .gt_indent_1 {
   text-indent: 5px;
 }
 
-#gvbsxdriwa .gt_indent_2 {
+#dklixnassv .gt_indent_2 {
   text-indent: 10px;
 }
 
-#gvbsxdriwa .gt_indent_3 {
+#dklixnassv .gt_indent_3 {
   text-indent: 15px;
 }
 
-#gvbsxdriwa .gt_indent_4 {
+#dklixnassv .gt_indent_4 {
   text-indent: 20px;
 }
 
-#gvbsxdriwa .gt_indent_5 {
+#dklixnassv .gt_indent_5 {
   text-indent: 25px;
 }
 </style>
@@ -1554,7 +1583,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <!-- -->
 
-</section></section></main><!-- /main --><script id="quarto-html-after-body" type="application/javascript">
+
+</section></section><div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" role="list">
+<div id="ref-yang_human_2022" class="csl-entry" role="listitem">
+Yang, Andrew C., Ryan T. Vest, Fabian Kern, Davis P. Lee, Maayan Agam, Christina A. Maat, Patricia M. Losada, et al. 2022. <span>“A Human Brain Vascular Atlas Reveals Diverse Mediators of <span>Alzheimer</span>’s Risk.”</span> <em>Nature</em> 603 (7903): 885–92. <a href="https://doi.org/10.1038/s41586-021-04369-3">https://doi.org/10.1038/s41586-021-04369-3</a>.
+</div>
+</div></section></div></main><!-- /main --><script id="quarto-html-after-body" type="application/javascript">
 window.document.addEventListener("DOMContentLoaded", function (event) {
   const toggleBodyColorMode = (bsSheetEl) => {
     const mode = bsSheetEl.getAttribute("data-mode");
@@ -2002,7 +2036,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 <span id="cb12-49"><a href="#cb12-49" aria-hidden="true" tabindex="-1"></a>rm scflow_manifest.txt scflow_manifest2.txt scflow_manifest3.txt scflow_manifest4.txt scflow_manifest5.txt</span>
 <span id="cb12-50"><a href="#cb12-50" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb12-51"><a href="#cb12-51" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-52"><a href="#cb12-52" aria-hidden="true" tabindex="-1"></a>We would also like to include the brain atlas from Yang et al. 2022.<span class="co">[</span><span class="ot">@yang2022</span><span class="co">]</span></span>
+<span id="cb12-52"><a href="#cb12-52" aria-hidden="true" tabindex="-1"></a>We would also like to include the brain atlas from @yang_human_2022.</span>
 <span id="cb12-53"><a href="#cb12-53" aria-hidden="true" tabindex="-1"></a>Their data is on GEO so I've downloaded and extracted that to gluster.</span>
 <span id="cb12-54"><a href="#cb12-54" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb12-57"><a href="#cb12-57" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
