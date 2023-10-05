@@ -128,7 +128,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../04_data_analysis/001_snrnaseq_analysis/07_cellranger_aggr.html">Aggregate cellranger count reports</a></li></ol></nav>
+      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../04_data_analysis/001_snrnaseq_analysis/01_fastqc.html">Post-seq QC and Prep</a></li><li class="breadcrumb-item"><a href="../../04_data_analysis/001_snrnaseq_analysis/07_cellranger_aggr.html">Aggregate cellranger count reports</a></li></ol></nav>
       <a class="flex-grow-1" role="button" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
       </a>
     </div>
@@ -142,77 +142,145 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">Data Analysis Pipeline</span></a>
   </div>
 </li>
-        <li class="sidebar-item">
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="true">
+ <span class="menu-text">Post-seq QC and Prep</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">
+<li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../04_data_analysis/001_snrnaseq_analysis/01_fastqc.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Run FastQC on sample</span></a>
   </div>
 </li>
-        <li class="sidebar-item">
+          <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../04_data_analysis/001_snrnaseq_analysis/02_multiqc.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Run MultiQC</span></a>
   </div>
 </li>
-        <li class="sidebar-item">
+          <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../04_data_analysis/001_snrnaseq_analysis/03_generate_cellranger_reference.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Generate cellranger reference</span></a>
   </div>
 </li>
-        <li class="sidebar-item">
+          <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../04_data_analysis/001_snrnaseq_analysis/04_cellranger_count_set1.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Generate cellranger reference for set 1</span></a>
   </div>
 </li>
-        <li class="sidebar-item">
+          <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../04_data_analysis/001_snrnaseq_analysis/05_cellranger_count_set2.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Generate cellranger reference for set 2</span></a>
   </div>
 </li>
-        <li class="sidebar-item">
+          <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../04_data_analysis/001_snrnaseq_analysis/06_cellranger_count_set3.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Generate cellranger reference for set 3</span></a>
   </div>
 </li>
-        <li class="sidebar-item">
+          <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../04_data_analysis/001_snrnaseq_analysis/07_cellranger_aggr.html" class="sidebar-item-text sidebar-link active">
  <span class="menu-text">Aggregate cellranger count reports</span></a>
   </div>
 </li>
-        <li class="sidebar-item">
+      </ul>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true">
+ <span class="menu-text">scFlow</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">
+<li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../04_data_analysis/001_snrnaseq_analysis/08_scflow_prep.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">scflow prep</span></a>
   </div>
 </li>
-        <li class="sidebar-item">
+          <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../04_data_analysis/001_snrnaseq_analysis/09_scflow_run.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Run SCflow</span></a>
   </div>
 </li>
-        <li class="sidebar-item">
+          <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../04_data_analysis/001_snrnaseq_analysis/10_scflow_results.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Analysis scFlow results</span></a>
   </div>
 </li>
-        <li class="sidebar-item">
+      </ul>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" aria-expanded="true">
+ <span class="menu-text">Initial analysis</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">
+<li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../04_data_analysis/001_snrnaseq_analysis/11_pseudobulk.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Perform Pseudobulk</span></a>
   </div>
 </li>
-        <li class="sidebar-item">
+          <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../04_data_analysis/001_snrnaseq_analysis/12_pathway_analysis.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Perform pathway analysis</span></a>
   </div>
+</li>
+      </ul>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" aria-expanded="true">
+ <span class="menu-text">Secondary analysis</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth1 show">
+<li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../04_data_analysis/001_snrnaseq_analysis/11_pseudobulk.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Perform Pseudobulk</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../04_data_analysis/001_snrnaseq_analysis/12_pathway_analysis.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Perform pathway analysis</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../04_data_analysis/001_snrnaseq_analysis/13_cell_subtypes.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Annotate cell subtypes</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../04_data_analysis/001_snrnaseq_analysis/14_cell_populations.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Cell populations</span></a>
+  </div>
+</li>
+      </ul>
 </li>
     </ul>
 </div>
