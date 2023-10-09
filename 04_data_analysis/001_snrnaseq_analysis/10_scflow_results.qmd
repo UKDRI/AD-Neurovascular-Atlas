@@ -654,10 +654,10 @@ Clusters 6 doesn't easily fall into excitatory or inhibitory neurons based on Fr
 celltypes <- c("0" = "Oligo", "1" = "Capillary", "2" = "T-Peri", "3" = "Astro", 
                "4" = "Arterial", "5" = "aSMC", "6" = "Neuron_ex", "7" = "Vas/cap", 
                "8" = "Oligo-pre", "9" = "Microglia", "10" = "Neuron_ex", 
-               "11" = "Neuron-in", "12" = "Oligo", "13" = "Neuron_in", "14" = "Neuron_ex",
+               "11" = "Neuron_in", "12" = "Oligo", "13" = "Neuron_in", "14" = "Neuron_ex",
                "15" = "Peri-Fibro", "16" = "Astro", "17" = "Capillary", 
                "18" = "ambiguous", "19" = "Neuron_ex", "20" = "Astro",
-               "21" = "T-cell", "22" = "Astro", "23" = "Neuron-ex", "24" = "T-Peri")
+               "21" = "T-cell", "22" = "Astro", "23" = "Neuron_ex", "24" = "T-Peri")
 ```
 
 ## Overview
