@@ -1199,7 +1199,10 @@ head(res$Astro)
 # merge celltype dataframes
 res_merged <- map2(res, names(res), ~ as.data.frame(.x) %>%
                      rownames_to_column("gene") %>%
-                     dplyr::mutate(celltype = .y, deg_direction = ifelse(log2FoldChange > 0, "Up", "Down"))) %>%
+                     dplyr::mutate(celltype = .y, deg_direction = case_when(
+                       log2FoldChange > 0 & padj < 0.05 ~ "Up",
+                       log2FoldChange < 0 & padj < 0.05 ~ "Down",
+                       .default = "Not Sig"))) %>%
   purrr::list_rbind()
 ```
 
@@ -1228,11 +1231,11 @@ res_merged %>%
 
 ```{r}
 # add colour identifier
-cols <- c("Up" = "#FDE725FF", "Down" = "#440154FF")
+cols <- c("Up" = "#FDE725FF", "Down" = "#440154FF", "Not Sig" = "#d3d3d3")
 
-res_merged %>%
+volc_plot <- res_merged %>%
   # filter to significant hits
-  dplyr::filter(padj < 0.05) %>%
+  #dplyr::filter(padj < 0.05) %>%
   # scale FDR by log10
   ggplot(aes(x = log2FoldChange, y = -log10(padj))) +
   geom_point(aes(colour = deg_direction), stat = "identity", size = .2) +
@@ -1248,7 +1251,7 @@ res_merged %>%
   theme_cowplot() +
   theme(
     axis.text = element_text(size = 9),
-    axis.text.x = element_blank(),
+    #axis.text.x = element_blank(),
     legend.text = element_text(size = 10)
   ) +
   scale_colour_manual(values = cols) +
@@ -1262,6 +1265,12 @@ res_merged %>%
     box.padding = unit(0.35, "lines"),
     point.padding = unit(0.3, "lines")
   )
+
+volc_plot
+# Save
+ggsave(here::here("05_figures/990_shared_figures/deseq2_volcano-plot.png"), volc_plot, device = "png")
+# Remove
+rm(volc_plot)
 ```
 
 
