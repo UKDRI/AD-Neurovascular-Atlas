@@ -181,27 +181,46 @@ Let's see the PCA and UMAP plots
 
 ```{r}
 ElbowPlot(seurat, ndims = 50)
-DimPlot(seurat, reduction = "pca", group.by = "diagnosis", raster = FALSE)
-DimPlot(seurat, reduction = "pca", group.by = "prep", raster = FALSE)
+pca_diag <- DimPlot(seurat, reduction = "pca", group.by = "diagnosis", raster = FALSE)
+pca_prep <- DimPlot(seurat, reduction = "pca", group.by = "prep", raster = FALSE)
+pca_diag
+pca_prep
+
+## save plots
+ggsave(here::here("05_figures/990_shared_figures/scflow_pca_diagnosis.png"), pca_diag, device = "png")
+ggsave(here::here("05_figures/990_shared_figures/scflow_pca_prep.png"), pca_prep, device = "png")
+
+rm(pca_diag, pca_prep)
 ```
 
 ### UMAP
 
 ```{r}
 # plot by diagnosis
-DimPlot(seurat, reduction = "umap", group.by = "diagnosis", raster = FALSE)
+umap_diag <- DimPlot(seurat, reduction = "umap", group.by = "diagnosis", raster = FALSE)
+umap_diag
 # plot by cell population
-DimPlot(seurat, reduction = "umap", group.by = "prep", raster = FALSE)
+umap_prep <- DimPlot(seurat, reduction = "umap", group.by = "prep", raster = FALSE)
+umap_prep
 # plot by scflow annotation
-DimPlot(seurat, reduction = "umap", group.by = "cluster_celltype", raster = FALSE)
+umap_celltype <- DimPlot(seurat, reduction = "umap", group.by = "cluster_celltype", raster = FALSE)
+umap_celltype
 # plot by sex
 DimPlot(seurat, reduction = "umap", group.by = "sex", raster = FALSE)
 # plot by sample
 DimPlot(seurat, reduction = "umap", group.by = "manifest", raster = FALSE)
 my_cols = brewer.pal(8,"Dark2")
-DimPlot(seurat, group.by = 'batch', cols = alpha(my_cols, 0.66), pt.size = 1)
+umap_batch <- DimPlot(seurat, group.by = 'batch', cols = alpha(my_cols, 0.66), pt.size = 1)
+umap_batch
 # plot umap clusters
 DimPlot(seurat, reduction = "umap", label = TRUE, raster = FALSE)
+
+ggsave(here::here("05_figures/990_shared_figures/scflow_umap_diagnosis.png"), umap_diag, device = "png")
+ggsave(here::here("05_figures/990_shared_figures/scflow_umap_prep.png"), umap_prep, device = "png")
+ggsave(here::here("05_figures/990_shared_figures/scflow_umap_celltype.png"), umap_celltype, device = "png")
+ggsave(here::here("05_figures/990_shared_figures/scflow_umap_batch.png"), umap_batch, device = "png")
+# clean up plots
+rm(umap_diag, umap_prep, umap_celltype, umap_batch)
 ```
 
 So the parenchyma and vascular components separate nicely, but case and controls less so
