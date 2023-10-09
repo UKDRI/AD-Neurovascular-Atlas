@@ -809,11 +809,21 @@ p_nuclei <- ggplot(plot_data, aes(x=type, y=nuclei, fill=prep)) +
 p_pct <- ggplot(plot_data, aes(x=type, y=pct, fill=prep)) +
   geom_bar(stat="identity") +
   theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  scale_fill_viridis(discrete = TRUE, option = "D")
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.text = element_text(size = 12)) +
+  scale_fill_viridis(discrete = TRUE, option = "D") +
+  labs(x = "", y = "%")
 
 p_nuclei
 p_pct
+
+ggsave(
+  here::here(
+    "05_figures/990_shared_figures/celltype_percent_enrichment.svg"
+  ),
+  p_pct,
+  device = "svg"
+)
 ```
 
 ```{r}
@@ -990,8 +1000,13 @@ DimPlot(sdata_endo, reduction = "umap", label = T, raster = "FALSE",
         cols = pals::cols25(n = 23))
 DimPlot(seurat, reduction = "umap", label = T, raster = "FALSE", 
         cols = pals::cols25(n = 25)) + NoLegend()
-DimPlot(sdata_endo, reduction = "umap", label = T, raster = "FALSE", 
+umap_annotated <- DimPlot(sdata_endo, reduction = "umap", label = T, raster = "FALSE", 
         cols = pals::cols25(n = 23), repel = T) +  NoLegend()
+umap_annotated
+
+ggsave(here::here("05_figures/990_shared_figures/scflow_umap_manually_annotated.png"), umap_annotated, device = "png")
+# clean up plots
+rm(umap_annotated)
 ```
 
 ------------------------------------------------------------------------
