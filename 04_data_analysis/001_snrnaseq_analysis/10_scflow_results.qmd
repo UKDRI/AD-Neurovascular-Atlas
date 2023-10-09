@@ -1512,5 +1512,100 @@ readr::write_rds(
 )
 ```
 
+```{r}
+# Empty environment
+rm(list = ls())
+```
+
 ------------------------------------------------------------------------
 
+# Hannah annotations
+
+Hannah has done her own annotations of the sce objects with 35 dimensions.
+She wants the cell counts for these cell types, and I'll plot them out of curiosity.
+
+```{r}
+# read in sce
+sce <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-sce-updated_dim-35.rds"))
+# read in hannahs annotations
+hannah_annotations <-
+  readxl::read_excel(
+    here::here(
+      "03_data/990_processed_data/001_snrnaseq/92_data_from_hannah/hannah_cluster_annotations.xlsx"
+    ),
+    sheet = "cluster_annotations"
+  )
+
+# counts per cluster
+cluster_count_by_sample <- table(Idents(sce), sce$individual) %>%
+ as.data.frame() %>%
+  dplyr::mutate(Var2 = as.numeric(Var2)) %>%
+  dplyr::arrange(Var2) %>%
+  dplyr::mutate(Var2 = paste0("sample_", Var2)) %>%
+  pivot_wider(names_from = Var2, values_from = Freq) %>%
+  dplyr::rename(cell_type = Var1)
+
+cluster_count_by_sample %>% DT::datatable(
+  escape = F,
+  rownames = F,
+  extensions = 'Buttons',
+  options = list(
+    dom = 'Blfrtip',
+    buttons = list(
+      'colvis',
+      list(
+        extend = 'copy',
+        exportOptions = list(columns = ':visible')
+      ),
+      list(
+        extend = 'csv',
+        exportOptions = list(columns = ':visible')
+      ),
+      list(
+        extend = 'excel',
+        exportOptions = list(columns = ':visible')
+      )
+    )
+  )
+)
+
+celltypes <- hannah_annotations$Cell
+names(celltypes) <- as.character(hannah_annotations$cluster)
+
+sce <- RenameIdents(sce, celltypes)
+DimPlot(sce, reduction = "umap", label = TRUE, raster = FALSE)
+
+# counts per celltype
+cluster_count_by_sample <- table(Idents(sce), sce$individual) %>%
+ as.data.frame() %>%
+  dplyr::mutate(Var2 = as.numeric(Var2)) %>%
+  dplyr::arrange(Var2) %>%
+  dplyr::mutate(Var2 = paste0("sample_", Var2)) %>%
+  pivot_wider(names_from = Var2, values_from = Freq) %>%
+  dplyr::rename(cell_type = Var1)
+
+cluster_count_by_sample %>% DT::datatable(
+  escape = F,
+  rownames = F,
+  extensions = 'Buttons',
+  options = list(
+    dom = 'Blfrtip',
+    buttons = list(
+      'colvis',
+      list(
+        extend = 'copy',
+        exportOptions = list(columns = ':visible')
+      ),
+      list(
+        extend = 'csv',
+        exportOptions = list(columns = ':visible')
+      ),
+      list(
+        extend = 'excel',
+        exportOptions = list(columns = ':visible')
+      )
+    )
+  )
+)
+
+```
