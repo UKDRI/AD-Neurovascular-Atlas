@@ -70,6 +70,38 @@ print("Running UMAP")
 
 seurat <- RunUMAP(seurat, dims = 1:n_dims)
 
+
+# doubleFinder ------------------------------------------------------------
+# Use doubletfinder package to identify doublets in data
+
+## pK Identification (no ground-truth) ---------------------------------------------------------------------------------------
+sweep_res_list <-
+  paramSweep_v3(seurat,
+                PCs = 1:35,
+                sct = TRUE,
+                num.cores = n_workers)
+sweep_stats <- summarizeSweep(sweep_res_list, GT = FALSE)
+bcmvn <- find.pK(sweep_stats)
+
+# get best pK value
+pK <- bcmvn %>%
+  dplyr::filter(BCmetric == max(BCmetric)) %>%
+  dplyr::select(pK)
+pK <- as.numeric(as.character(pK[[1]]))
+
+## Homotypic Doublet Proportion Estimate -------------------------------------------------------------------------------------
+homotypic.prop <- modelHomotypic(Idents(seurat))  
+nExp_poi <- round(0.075*nrow(seurat@meta.data))  ## Assuming 7.5% doublet formation rate - tailor for your dataset
+nExp_poi.adj <- round(nExp_poi*(1-homotypic.prop))
+
+# run doubletFinder
+seurat <- doubletFinder_v3(seurat,
+                           PCs = 1:35,
+                           pn = 0.25,
+                           pK = pK,
+                           nExp = nExp_poi.adj,
+                           reuse.pANN = FALSE, sct = FALSE)
+
 # The scale data slot is huge, too much to read in on my laptop
 # It's only needed to compute dimensional reductions (PCA/UMAP) so
 # we can remove it now
