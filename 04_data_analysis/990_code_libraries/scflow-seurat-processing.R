@@ -7,6 +7,10 @@ if (!require("future", character.only = TRUE)) {
   install.packages("future")
   library(future)
 }
+if (!require("DoubletFinder", character.only = TRUE)) {
+  remotes::install_github('chris-mcginnis-ucsf/DoubletFinder')
+  library(DoubletFinder)
+}
 
 # read data
 seurat <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-seurat-preprocessing.rds"))
