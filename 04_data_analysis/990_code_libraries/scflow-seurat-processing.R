@@ -102,7 +102,7 @@ nExp_poi.adj <- round(nExp_poi*(1-homotypic.prop))
 # run doubletFinder
 seurat <- doubletFinder_v3(seurat,
                            PCs = 1:35,
-                           pn = 0.25,
+                           pN = 0.25,
                            pK = pK,
                            nExp = nExp_poi.adj,
                            reuse.pANN = FALSE, sct = FALSE)
