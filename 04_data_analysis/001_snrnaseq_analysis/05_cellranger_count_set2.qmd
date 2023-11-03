@@ -96,8 +96,7 @@ then
 	--transcriptome=$CR_REF \
 	--localcores=40 \
 	--localmem=330 \
-	--include-introns=true \
-	--no-bam
+	--include-introns=true
 elif [[ "$SAMPLE_ID_NEW" == "V_20" ]]
 then
 	$CELL_RANGER count --id=$SAMPLE_ID_NEW \
@@ -106,8 +105,7 @@ then
 	--transcriptome=$CR_REF \
 	--localcores=40 \
 	--localmem=330 \
-	--include-introns=true \
-	--no-bam
+	--include-introns=true
 else
 	$CELL_RANGER count --id=$SAMPLE_ID_NEW \
 	--fastqs=$INPUT_DIR_1,$INPUT_DIR_2,$INPUT_DIR_3,$INPUT_DIR_4 \
@@ -115,8 +113,7 @@ else
 	--transcriptome=$CR_REF \
 	--localcores=40 \
 	--localmem=330 \
-	--include-introns=true \
-	--no-bam
+	--include-introns=true
 fi
 
 ## optional:

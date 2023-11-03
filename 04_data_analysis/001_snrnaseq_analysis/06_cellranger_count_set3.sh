@@ -80,8 +80,7 @@ $CELL_RANGER count --id=$SAMPLE_ID_NEW \
 --transcriptome=$CR_REF \
 --localcores=40 \
 --localmem=330 \
---include-introns=true \
---no-bam
+--include-introns=true
 
 ## optional:
 ## R2 length is longer (151bp) than usually recommended/required (90bp)
