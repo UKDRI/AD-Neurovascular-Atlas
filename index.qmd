@@ -85,6 +85,33 @@ knitr::purl(
   ),
   documentation = 0
 )
+knitr::purl(
+  here::here(
+    "04_data_analysis/002_genotyping_analysis/01_get_vcf_specific_pos_set1.qmd"
+  ),
+  here::here(
+    "04_data_analysis/002_genotyping_analysis/01_get_vcf_specific_pos_set1.sh"
+  ),
+  documentation = 0
+)
+knitr::purl(
+  here::here(
+    "04_data_analysis/002_genotyping_analysis/02_get_vcf_specific_pos_set2.qmd"
+  ),
+  here::here(
+    "04_data_analysis/002_genotyping_analysis/02_get_vcf_specific_pos_set2.sh"
+  ),
+  documentation = 0
+)
+knitr::purl(
+  here::here(
+    "04_data_analysis/002_genotyping_analysis/03_get_vcf_specific_pos_set3.qmd"
+  ),
+  here::here(
+    "04_data_analysis/002_genotyping_analysis/03_get_vcf_specific_pos_set3.sh"
+  ),
+  documentation = 0
+)
 ```
 
 # Notes on project structure
