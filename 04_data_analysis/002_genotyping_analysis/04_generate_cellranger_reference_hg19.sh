@@ -73,7 +73,14 @@ COM_DIR="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/992_genotyping_
 #     curl -sS "$gtf_url" | zcat > "$gtf_in"
 # fi
 
+# Generate modified gtf file
+# $CELL_RANGER mkgtf $REF_DIR"/"$gtf_in Homo_sapiens.GRCh37.87.filtered.gtf \
+#                    --attribute=gene_biotype:protein_coding \
+#                    --attribute=gene_biotype:lincRNA \
+#                    --attribute=gene_biotype:antisense
+
 #-----------------------------------------------------------------------
+
 
 ## copy the downloaded reference 
 # cp -a ${REF_DIR}"/." $COM_DIR
@@ -84,14 +91,6 @@ COM_DIR="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/992_genotyping_
 cd $COM_DIR
 
 echo "Run Cell Ranger mkref..."  
-
-$CELL_RANGER mkgtf $COM_DIR"/"$gtf_in Homo_sapiens.GRCh37.87.filtered.gtf \
-                   --attribute=gene_biotype:protein_coding \
-                   --attribute=gene_biotype:lincRNA \
-                   --attribute=gene_biotype:antisense \
-                   --memgb=250 \
-                   --nthreads=40
-
 
 $CELL_RANGER mkref --genome=hg19 \
                    --fasta=$COM_DIR"/"$fasta_in \
