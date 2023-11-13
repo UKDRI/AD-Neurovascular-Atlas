@@ -48,7 +48,7 @@ BAM_DIR="03_data/990_processed_data/001_snrnaseq/04_cellranger_count/01_set1/"
 CR_REF="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/03_cellranger_reference/GRCh38/fasta/genome.fa"
 
 ## sample IDs - correspond to names of Cell Ranger output folders
-SAMPLE_ID_FILE="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/90_sample_info/samples_set1_IDs.txt"
+SAMPLE_ID_FILE="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/90_sample_info/samples_set1_IDs_swap.txt"
 ## sample IDs - correspond to names of Cell Ranger output folders
 # case $SET_NUM in
 #   1)
@@ -93,8 +93,8 @@ N=${SLURM_ARRAY_TASK_ID}
 SAMPLE_ID=$(cat $SAMPLE_ID_FILE | tail -n+${N} | head -1)
 
 BAM_FILE=$BAM_DIR""$SAMPLE_ID"/outs/possorted_genome_bam.bam"
-OUT_TMP=$OUTPUT_DIR""$SAMPLE_ID"_vcf_filenames.tmp"
-OUT_IDX=$OUTPUT_DIR""$SAMPLE_ID
+OUT_TMP=$OUTPUT_DIR"/"$SAMPLE_ID"_vcf_filenames.tmp"
+OUT_IDX=$OUTPUT_DIR"/"$SAMPLE_ID
 	
 echo "Sample: "$SAMPLE_ID
 echo "BAM file: "$BAM_FILE
