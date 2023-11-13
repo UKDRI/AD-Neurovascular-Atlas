@@ -61,7 +61,7 @@ gtf_url="http://ftp.ensembl.org/pub/grch37/release-"${ENSEMBL_VER}"/gtf/homo_sap
 gtf_in="${source}/ensembl.v"${ENSEMBL_VER}".primary_assembly.annotation.gtf"
 
 ## compute node dir
-COM_DIR="/scratch/scw1329/gmbh/c.mpmgb/blood-brain-barrier-in-ad/03_data/992_genotyping_data/02_cellranger_reference"
+COM_DIR="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/992_genotyping_data/02_cellranger_reference"
 
 #-----------------------------------------------------------------------
 ## run on login node
