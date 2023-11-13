@@ -85,7 +85,7 @@ cd $COM_DIR
 
 echo "Run Cell Ranger mkref..."  
 
-$CELL_RANGER mkgtf $gtf_in Homo_sapiens.GRCh37.87.filtered.gtf \
+$CELL_RANGER mkgtf $COM_DIR"/"$gtf_in Homo_sapiens.GRCh37.87.filtered.gtf \
                    --attribute=gene_biotype:protein_coding \
                    --attribute=gene_biotype:lincRNA \
                    --attribute=gene_biotype:antisense \
@@ -94,7 +94,7 @@ $CELL_RANGER mkgtf $gtf_in Homo_sapiens.GRCh37.87.filtered.gtf \
 
 
 $CELL_RANGER mkref --genome=hg19 \
-                   --fasta="$fasta_in" \
+                   --fasta=$COM_DIR"/"$fasta_in \
                    --genes=Homo_sapiens.GRCh37.87.filtered.gtf \
                    --ref-version=3.0.0 \
                    --memgb=250 \
