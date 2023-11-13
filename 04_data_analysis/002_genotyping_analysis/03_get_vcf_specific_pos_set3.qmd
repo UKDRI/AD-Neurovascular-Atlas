@@ -8,7 +8,7 @@ execute:
 #!/bin/bash
 
 #SBATCH -p c_highmem_dri1 ## dev, compute, htc, highmem
-#SBATCH --job-name=geneotyping_bbb_set1
+#SBATCH --job-name=geneotyping_bbb_set3
 #SBATCH --ntasks=20
 #SBATCH --ntasks-per-node=20
 #SBATCH --array=1-40%20
@@ -86,8 +86,8 @@ N=${SLURM_ARRAY_TASK_ID}
 SAMPLE_ID=$(cat $SAMPLE_ID_FILE | tail -n+${N} | head -1)
 
 BAM_FILE=$BAM_DIR""$SAMPLE_ID"/outs/possorted_genome_bam.bam"
-OUT_TMP=$OUTPUT_DIR""$SAMPLE_ID"_vcf_filenames.tmp"
-OUT_IDX=$OUTPUT_DIR""$SAMPLE_ID
+OUT_TMP=$OUTPUT_DIR"/"$SAMPLE_ID"_vcf_filenames.tmp"
+OUT_IDX=$OUTPUT_DIR"/"$SAMPLE_ID
 	
 echo "Sample: "$SAMPLE_ID
 echo "BAM file: "$BAM_FILE
