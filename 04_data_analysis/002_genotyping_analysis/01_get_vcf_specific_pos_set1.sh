@@ -11,6 +11,8 @@
 #SBATCH --account=scw1329
 #SBATCH -o /scratch/c.mpmgb/Hawk_output/%x_out_%A_%a_%J.txt
 #SBATCH -e /scratch/c.mpmgb/Hawk_output/%x_err_%A_%a_%J.txt
+#SBATCH --mail-user Bernardo-HarringtonG@cardiff.ac.uk # email on fail
+#SBATCH --mail-type END,FAIL
 
 #### SBATCH --mem=740000 # memory limit per compute node for the job
 
