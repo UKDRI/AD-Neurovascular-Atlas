@@ -31,6 +31,16 @@ for SAMPLE in `bcftools view -h $VCF_FILE | grep "^#CHROM" | cut -f10-`; do
 done
 ```
 
+Note that the Alex on the lab side mentioned one sample having signs of being low quality, but luckly this one was repeated as there're 24 wells on the chip and only 20 samples, so 4 got repeats.
+The specific sample was NP102_17, but the repeat NP102_17R was fine.
+
+```{r}
+#| purl: false
+# remove poor quality sample
+rm /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/992_genotyping_data/PLINK_021123_0956/split_samples/4_NP102_17.vcf
+```
+
+
 We also need a liftover file to translate between hg19 and GRCh38 cellranger outputs.
 Frank already created this so I'll just reuse it.
 
