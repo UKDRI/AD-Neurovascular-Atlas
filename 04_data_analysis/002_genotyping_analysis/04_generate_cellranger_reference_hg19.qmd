@@ -51,11 +51,11 @@ echo -e "*****************************************************************\n"
 CELL_RANGER="/scratch/c.mpmgb/tools/cellranger-7.1.0/bin/cellranger"
 
 ## which ensembl and gencode version
-ENSEMBL_VER="87"
-#GENCODE_VER="43"
+ENSEMBL_VER="110"
+GENCODE_VER="44"
 
 ## store reference data
-REF_DIR="/gluster/dri02/rdscw/shared/webber/reference_genomes"
+REF_DIR="/gluster/dri02/rdscw/shared/webber/reference_genomes/GRCh37"
 cd $REF_DIR
 
 # Genome metadata
@@ -72,8 +72,8 @@ mkdir -p "$source"
 
 fasta_url="http://ftp.ensembl.org/pub/grch37/release-"${ENSEMBL_VER}"/fasta/homo_sapiens/dna/Homo_sapiens.GRCh37.dna.primary_assembly.fa.gz"
 fasta_in="${source}/Homo_sapiens.GRCh37.dna.primary_assembly.fa"
-gtf_url="http://ftp.ensembl.org/pub/grch37/release-"${ENSEMBL_VER}"/gtf/homo_sapiens/Homo_sapiens.GRCh37."${ENSEMBL_VER}".gtf.gz"
-gtf_in="${source}/ensembl.v"${ENSEMBL_VER}".primary_assembly.annotation.gtf"
+gtf_url="http://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_"${GENCODE_VER}"/gencode.v"${GENCODE_VER}".primary_assembly.annotation.gtf.gz"
+gtf_in="${source}/gencode.v"${GENCODE_VER}".primary_assembly.annotation.gtf"
 
 ## compute node dir
 COM_DIR="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/992_genotyping_data/02_cellranger_reference"
