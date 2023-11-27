@@ -71,6 +71,8 @@ fi
 
 N=${SLURM_ARRAY_TASK_ID}
 SAMPLE_ID=$(cat $SAMPLE_ID_FILE | tail -n+${N} | head -1)
+# Get the sample ID string after the first "_"
+SAMPLE_ID="${SAMPLE_ID#*_}"
 
 VCF_FILE=$VCF_DIR""$SAMPLE_ID"_var_raw.vcf"
 OUT_VCF=$OUTPUT_DIR""$SAMPLE_ID"_var_raw.vcf"

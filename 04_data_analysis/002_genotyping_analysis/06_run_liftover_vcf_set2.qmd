@@ -45,7 +45,6 @@ module load picard/2.20.2
 ## VCF files with variants at NeuroChip positions, based on hg38
 VCF_DIR="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/992_genotyping_data/01_vcf_specific_position/02_set2/"
 
-
 ## VCFs named after those
 SAMPLE_ID_FILE="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/90_sample_info/samples_set2_rename.txt"
 
