@@ -48,22 +48,51 @@ GENCODE_VER="44"
 REF_DIR="/gluster/dri02/rdscw/shared/webber/reference_genomes/GRCh37"
 cd $REF_DIR
 
+# # Genome metadata
+# genome="GRCh37"
+# version="2023_"${ENSEMBL_VER}
+# 
+# # Set up source and build directories
+# build="GRCh37_2023_"${ENSEMBL_VER}"_ensembl"
+# mkdir -p "$build"
+# 
+# # Download source files if they do not exist in reference_sources/ folder
+# source="reference_sources_ensembl_"${ENSEMBL_VER}
+# mkdir -p "$source"
+# 
+# fasta_url="http://ftp.ensembl.org/pub/grch37/release-"${ENSEMBL_VER}"/fasta/homo_sapiens/dna/Homo_sapiens.GRCh37.dna.primary_assembly.fa.gz"
+# fasta_in="${source}/Homo_sapiens.GRCh37.dna.primary_assembly.fa"
+# gtf_url="http://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_"${GENCODE_VER}"/gencode.v"${GENCODE_VER}"lift37.annotation.gtf.gz"
+# gtf_in="${source}/gencode.v"${GENCODE_VER}".primary_assembly.annotation.gtf"
+
 # Genome metadata
 genome="GRCh37"
-version="2023_"${ENSEMBL_VER}
+version="2021-B_v98"
+
 
 # Set up source and build directories
-build="GRCh37_2023_"${ENSEMBL_VER}"_ensembl"
+### build="GRCh38-2020-A_build"
+build="GRCh37-2020-A_build"
 mkdir -p "$build"
 
+
 # Download source files if they do not exist in reference_sources/ folder
-source="reference_sources_ensembl_"${ENSEMBL_VER}
+source="reference_sources"
 mkdir -p "$source"
 
-fasta_url="http://ftp.ensembl.org/pub/grch37/release-"${ENSEMBL_VER}"/fasta/homo_sapiens/dna/Homo_sapiens.GRCh37.dna.primary_assembly.fa.gz"
+
+### fasta_url="http://ftp.ensembl.org/pub/release-98/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz"
+fasta_url="http://ftp.ensembl.org/pub/grch37/release-98/fasta/homo_sapiens/dna/Homo_sapiens.GRCh37.dna.primary_assembly.fa.gz"
+
+### fasta_in="${source}/Homo_sapiens.GRCh38.dna.primary_assembly.fa"
 fasta_in="${source}/Homo_sapiens.GRCh37.dna.primary_assembly.fa"
-gtf_url="http://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_"${GENCODE_VER}"/gencode.v"${GENCODE_VER}"lift37.annotation.gtf.gz"
-gtf_in="${source}/gencode.v"${GENCODE_VER}".primary_assembly.annotation.gtf"
+
+### gtf_url="http://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_32/gencode.v32.primary_assembly.annotation.gtf.gz"
+gtf_url="http://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_32/GRCh37_mapping/gencode.v32lift37.annotation.gtf.gz"
+
+
+### gtf_in="${source}/gencode.v32.primary_assembly.annotation.gtf"
+gtf_in="${source}/gencode.v32lift37.annotation.gtf"
 
 ## compute node dir
 COM_DIR="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/992_genotyping_data/02_cellranger_reference"
@@ -71,17 +100,17 @@ COM_DIR="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/992_genotyping_
 #-----------------------------------------------------------------------
 ## run on login node
 
-# if [ ! -f "$fasta_in" ]; then
-#     curl -sS "$fasta_url" | zcat > "$fasta_in"
-# fi
-# if [ ! -f "$gtf_in" ]; then
-#     curl -sS "$gtf_url" | zcat > "$gtf_in"
-# fi
+if [ ! -f "$fasta_in" ]; then
+    curl -sS "$fasta_url" | zcat > "$fasta_in"
+fi
+if [ ! -f "$gtf_in" ]; then
+    curl -sS "$gtf_url" | zcat > "$gtf_in"
+fi
 
 #-----------------------------------------------------------------------
 
 ## copy the downloaded reference
-# cp -a ${REF_DIR}"/." $COM_DIR
+cp -a ${REF_DIR}"/." $COM_DIR
 
 ## run on compute node
 
