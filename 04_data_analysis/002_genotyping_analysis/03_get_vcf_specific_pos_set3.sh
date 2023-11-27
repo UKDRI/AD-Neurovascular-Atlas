@@ -79,6 +79,8 @@ mkdir -p $OUTPUT_DIR
 N=${SLURM_ARRAY_TASK_ID}
 
 SAMPLE_ID=$(cat $SAMPLE_ID_FILE | tail -n+${N} | head -1)
+# Get the sample ID string after the first "_"
+SAMPLE_ID="${SAMPLE_ID#*_}"
 
 BAM_FILE=$BAM_DIR""$SAMPLE_ID"/outs/possorted_genome_bam.bam"
 OUT_TMP=$OUTPUT_DIR"/"$SAMPLE_ID"_vcf_filenames.tmp"
