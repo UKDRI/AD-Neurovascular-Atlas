@@ -72,7 +72,7 @@ mkdir -p "$source"
 
 fasta_url="http://ftp.ensembl.org/pub/grch37/release-"${ENSEMBL_VER}"/fasta/homo_sapiens/dna/Homo_sapiens.GRCh37.dna.primary_assembly.fa.gz"
 fasta_in="${source}/Homo_sapiens.GRCh37.dna.primary_assembly.fa"
-gtf_url="http://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_"${GENCODE_VER}"/gencode.v"${GENCODE_VER}".primary_assembly.annotation.gtf.gz"
+gtf_url="http://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_"${GENCODE_VER}"/gencode.v"${GENCODE_VER}"lift37.annotation.gtf.gz"
 gtf_in="${source}/gencode.v"${GENCODE_VER}".primary_assembly.annotation.gtf"
 
 ## compute node dir
@@ -90,7 +90,7 @@ COM_DIR="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/992_genotyping_
 
 #-----------------------------------------------------------------------
 
-## copy the downloaded reference 
+## copy the downloaded reference
 # cp -a ${REF_DIR}"/." $COM_DIR
 
 ## run on compute node
