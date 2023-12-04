@@ -19,21 +19,9 @@ for vcf_file in "$vcf_dir"/*.vcf; do
     apoE_rs7412=$(awk '$1 == "chr19" && $3 ~ /rs7412/ && $5 != "." {print $10}' "$vcf_file")
     apoE_rs429358=$(awk '$1 == "chr19" && $3 ~ /rs429358/ && $5 != "." {print $10}' "$vcf_file")
 
-
-    # Count occurrences of each genotype
-    count_rs7412_0_0=$(echo "$apoE_rs7412" | grep -o '0/0' | wc -l)
-    count_rs7412_0_1=$(echo "$apoE_rs7412" | grep -o '0/1' | wc -l)
-    count_rs7412_1_1=$(echo "$apoE_rs7412" | grep -o '1/1' | wc -l)
-    count_rs7412_1_0=$(echo "$apoE_rs7412" | grep -o '1/0' | wc -l)
-
-    count_rs429358_0_0=$(echo "$apoE_rs429358" | grep -o '0/0' | wc -l)
-    count_rs429358_0_1=$(echo "$apoE_rs429358" | grep -o '0/1' | wc -l)
-    count_rs429358_1_1=$(echo "$apoE_rs429358" | grep -o '1/1' | wc -l)
-    count_rs429358_1_0=$(echo "$apoE_rs429358" | grep -o '1/0' | wc -l)
-
     # Determine the majority genotype
-    majority_genotype_rs7412=$(echo "$count_rs7412_0_0 $count_rs7412_0_1 $count_rs7412_1_1 $count_rs7412_1_0" | awk '{max=$1;genotype="0/0";for(i=2;i<=NF;i++)if($i>max){max=$i;genotype="0/0"};print genotype}')
-    majority_genotype_rs429358=$(echo "$count_rs429358_0_0 $count_rs429358_0_1 $count_rs429358_1_1 $count_rs429358_1_0" | awk '{max=$1;genotype="0/0";for(i=2;i<=NF;i++)if($i>max){max=$i;genotype="0/0"};print genotype}')
+    majority_genotype_rs7412=$(echo $apoE_rs7412 | tr ' ' '\n' | awk '{count[$1]++} END {for (genotype in count) if (count[genotype] > max) {max = count[genotype]; most_common = genotype}} END {print most_common}')
+    majority_genotype_rs429358=$(echo $apoE_rs429358 | tr ' ' '\n' | awk '{count[$1]++} END {for (genotype in count) if (count[genotype] > max) {max = count[genotype]; most_common = genotype}} END {print most_common}')
 
     #Translate genotypes to APOE status
     case "$majority_genotype_rs7412$majority_genotype_rs429358" in
