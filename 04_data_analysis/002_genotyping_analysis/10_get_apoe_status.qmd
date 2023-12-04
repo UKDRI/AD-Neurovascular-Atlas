@@ -43,8 +43,8 @@ for vcf_file in "$vcf_dir"/*.vcf; do
 
     # Use awk to extract APOE rs7412 and rs429358 genotypes for the sample
     # note that cases where the ALT is "." are excluded
-    apoE_rs7412=$(awk '$1 == "chr19" && $3 ~ /rs7412/ && $5 != "." {print $10}' "$vcf_file")
-    apoE_rs429358=$(awk '$1 == "chr19" && $3 ~ /rs429358/ && $5 != "." {print $10}' "$vcf_file")
+    apoE_rs7412=$(awk '$1 == "chr19" && $3 ~ /rs7412($|-)/ && $5 != "." {print $10}' "$vcf_file")
+    apoE_rs429358=$(awk '$1 == "chr19" && $3 ~ /rs429358($|-)/ && $5 != "." {print $10}' "$vcf_file")
 
     # Determine the majority genotype
     majority_genotype_rs7412=$(echo $apoE_rs7412 | tr ' ' '\n' | awk '{count[$1]++} END {for (genotype in count) if (count[genotype] > max) {max = count[genotype]; most_common = genotype}} END {print most_common}')
