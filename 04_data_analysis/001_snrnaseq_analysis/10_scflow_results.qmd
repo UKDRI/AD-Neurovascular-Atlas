@@ -1641,27 +1641,43 @@ cluster_count_by_sample %>% DT::datatable(
 )
 ```
 
+<!-- Remove the ambiguous cells - they could well be doublets and there aren't enough of them to worry about keeping them. -->
+
+```{r}
+#| include: false
+#| eval: false
+sdata_endo
+rownames(sdata_endo@assays$RNA@data) <- ensembl_to_symbol$ensembl_gene_id
+sdata_endo <- subset(sdata_endo, idents = "ambiguous", invert=TRUE)
+# paste ensembl id and gene id to keep unique rownames
+rownames(sdata_endo@assays$RNA@data) <-
+  paste0(ensembl_to_symbol$hgnc_symbol,
+         "_",
+         ensembl_to_symbol$ensembl_gene_id)
+sdata_endo
+```
+
 Now the same for the higher-level celltypes
 
 ```{r}
 current_labels <- levels(Idents(sdata_endo))
-new_labels <- str_replace_all(current_labels, "Capillary|Vas/cap|Arterial", "Endothelial") %>%
+new_labels <- str_replace_all(current_labels, "Capillary|Venous|Arterial", "Endothelial") %>%
   str_replace_all("T-Peri", "Pericyte") %>%
-  str_replace_all("aSMC", "SMC") %>%
+  str_replace_all("vascular-SMC", "SMC") %>%
   str_replace_all("Oligo-pre", "OPC") %>%
-  str_replace_all("Peri-Fibro", "Fibroblast")
-  
+  str_replace_all("arteriolar-SMC", "mystery-cluster") %>%
+  str_replace_all("Peri-Fibro|Meningeal-Fibro", "Fibroblast")
+
 names(new_labels) <- current_labels
+sdata_endo$manual_annotations <- Idents(sdata_endo)
 sce <- RenameIdents(sdata_endo, new_labels)
+sdata_endo$highlevel_manual_annotations <- Idents(sdata_endo)
 ```
 
 ```{r}
 # counts by samples
-cluster_count_by_sample <- table(Idents(sce), sce$individual) %>%
+cluster_count_by_sample <- table(Idents(sce), sce$donor) %>%
  as.data.frame() %>%
-  dplyr::mutate(Var2 = as.numeric(Var2)) %>%
-  dplyr::arrange(Var2) %>%
-  dplyr::mutate(Var2 = paste0("sample_", Var2)) %>%
   pivot_wider(names_from = Var2, values_from = Freq) %>%
   dplyr::rename(cell_type = Var1)
 
