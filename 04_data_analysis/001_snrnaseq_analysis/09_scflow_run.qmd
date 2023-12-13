@@ -82,7 +82,7 @@ There is a module one could load on hawk, but it isn't the most recent version o
 mamba activate nf-core
 ```
 
-Note that I'm using the `dev-nf` branch to run.
+Note that I'm using the `dev-nf` branch to run, which can be found [here](https://github.com/combiz/nf-core-scflow/tree/dev-nf).
 
 There's two `nextflow run` calls, the first is with both our data and the Yang data, and the latter with just our data in case something goes wrong with that.
 [@yang_human_2022]
