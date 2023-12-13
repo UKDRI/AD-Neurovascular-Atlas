@@ -69,16 +69,16 @@ Hannah isn't seeing some genes she's interested in, I'll get the average express
 I think the missing genes were resolved as they labels had changed and most were present once this was corrected for.
 
 ```{r}
-seurat$doner <- paste0("doner-", seurat$individual)
+seurat$donor <- paste0("donor-", seurat$individual)
 ```
 
 ```{r}
 sce <- NormalizeData(seurat)
-avg_exp <- AverageExpression(sce, group.by = c("clusters", "doner"))
+avg_exp <- AverageExpression(sce, group.by = c("clusters", "donor"))
 avg_exp <- avg_exp$RNA
  
-avg_exp <- data.table(avg_exp, keep.rownames = TRUE)
-setnames(avg_exp, "rn", "gene")
+avg_exp <- as.data.frame(avg_exp) |> 
+  rownames_to_column(var = "gene")
 
 # pivot longer such that celltypes are separated out
 avg_exp <- avg_exp %>%
@@ -88,7 +88,7 @@ avg_exp <- avg_exp %>%
     names_pattern = "(.*)_(.*)"
   )
  
-file_out <- here::here("03_data/990_processed_data/001_snrnaseq/08_pseudobulk/avg-expression-per-cluster-per-doner_scflow-output.csv")
+file_out <- here::here("03_data/990_processed_data/001_snrnaseq/08_pseudobulk/avg-expression-per-cluster-per-donor_scflow-output.csv")
 readr::write_csv(avg_exp, file_out)
  
 rm(sce, avg_exp)
