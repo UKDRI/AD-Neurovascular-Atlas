@@ -221,7 +221,8 @@ Let's see the PCA and UMAP plots
 
 ```{r}
 ElbowPlot(seurat, ndims = 50)
-pca_diag <- DimPlot(seurat, reduction = "pca", group.by = "diagnosis", raster = FALSE)
+pca_diag <- DimPlot(seurat, reduction = "pca", group.by = "diagnosis", 
+                    raster = FALSE)
 pca_prep <- DimPlot(seurat, reduction = "pca", group.by = "prep", raster = FALSE)
 pca_diag
 pca_prep
@@ -236,20 +237,26 @@ rm(pca_diag, pca_prep)
 ### UMAP
 
 ```{r}
+my_cols = brewer.pal(8,"Dark2")
 # plot by diagnosis
-umap_diag <- DimPlot(seurat, reduction = "umap", group.by = "diagnosis", raster = FALSE)
+umap_diag <- DimPlot(seurat, reduction = "umap", group.by = "diagnosis", 
+                     cols = ggplot2::alpha(my_cols, 0.2), raster = FALSE)
 umap_diag
+# Check there isn't a bias for diagnosis and prep
+print("Table of Diagnosis and prep:")
+table(seurat$diagnosis, seurat$prep)
 # plot by cell population
 umap_prep <- DimPlot(seurat, reduction = "umap", group.by = "prep", raster = FALSE)
 umap_prep
+FeaturePlot(seurat, features = "nFeature_RNA")
 # plot by scflow annotation
 umap_celltype <- DimPlot(seurat, reduction = "umap", group.by = "cluster_celltype", raster = FALSE)
 umap_celltype
 # plot by sex
-DimPlot(seurat, reduction = "umap", group.by = "sex", raster = FALSE)
+DimPlot(seurat, reduction = "umap", group.by = "sex", 
+                     cols = ggplot2::alpha(my_cols, 0.2), raster = FALSE)
 # plot by sample
-DimPlot(seurat, reduction = "umap", group.by = "manifest", raster = FALSE)
-my_cols = brewer.pal(8,"Dark2")
+DimPlot(seurat, reduction = "umap", group.by = "donor", raster = FALSE)
 umap_batch <- DimPlot(seurat, group.by = 'batch', cols = alpha(my_cols, 0.66), pt.size = 1)
 umap_batch
 # plot umap clusters
@@ -262,6 +269,44 @@ ggsave(here::here("05_figures/990_shared_figures/scflow_umap_batch.png"), umap_b
 # clean up plots
 rm(umap_diag, umap_prep, umap_celltype, umap_batch)
 ```
+
+```{r}
+#| include: false
+#| eval: false
+seurat$donor_1 <- ifelse(seurat$donor == "donor-1", "donor-1", "other-donors")
+seurat$donor_16 <- ifelse(seurat$donor == "donor-16", "donor-16", "other-donors")
+seurat$donor_17 <- ifelse(seurat$donor == "donor-17", "donor-17", "other-donors")
+seurat$donor_17 <- ifelse(seurat$donor == "donor-17", "donor-17", "other-donors")
+seurat$donor_18 <- ifelse(seurat$donor == "donor-18", "donor-18", "other-donors")
+seurat$donor_19 <- ifelse(seurat$donor == "donor-19", "donor-19", "other-donors")
+seurat$donor_35 <- ifelse(seurat$donor == "donor-35", "donor-35", "other-donors")
+seurat$donor_36 <- ifelse(seurat$donor == "donor-36", "donor-36", "other-donors")
+seurat$donor_31 <- ifelse(seurat$donor == "donor-31", "donor-31", "other-donors")
+# DimPlot(seurat, reduction = "umap", group.by = "donor_35")
+DimPlot(seurat, reduction = "umap", group.by = "donor_31")
+seurat$donor_31 <- ifelse(seurat$donor == "donor-9", "donor-1", "other-donors")
+# DimPlot(seurat, reduction = "umap", group.by = "donor_39")
+# DimPlot(seurat, reduction = "umap", group.by = "donor_15")
+# DimPlot(seurat, reduction = "umap", group.by = "donor")
+```
+
+```{r}
+seurat$donor_subset <- seurat$donor
+seurat$donor_subset[!seurat$donor %in% c("donor-1", "donor-16", "donor-17", 
+                                         "donor-18", "donor-19", "donor-21", 
+                                         "donor-22", "donor-25", "donor-35", 
+                                         "donor-36", "donor-31")] <- "Not Selected"
+
+unique_donors <- unique(seurat$donor_subset)
+colors <- setNames(rainbow(length(unique_donors) - 1),
+                   unique_donors[unique_donors != "Not Selected"])
+colors["Not Selected"] <- "grey"
+
+DimPlot(seurat, reduction = "umap", group.by = "donor_subset", cols = colors)
+DimPlot(seurat, reduction = "pca", group.by = "donor")
+DimPlot(seurat, reduction = "pca", group.by = "donor_subset")
+```
+
 
 So the parenchyma and vascular components separate nicely, but case and controls less so
 
@@ -339,15 +384,17 @@ cluster_size %>% DT::datatable(
 -   note, previous default in previous Seurat versions was 'bimod'
 
 ```{r}
-#| eval: false
-cluster_markers <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/cluter_markers.rds"))
+#| eval: true
+#cluster_markers <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/cluter_markers.rds"))
+#cluster_markers <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/cluter_markers_donors-excluded.rds"))
+cluster_markers <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/cluter_markers_donors-excluded_updated.rds"))
 #cluster_markers <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/cluter_markers_35-dims.rds"))
 ```
 
 We have ensembl gene IDs at the minute, let's get the hgnc symbol and descriptions for them
 
 ```{r}
-#| eval: false
+#| eval: true
 # Get the unique Ensembl IDs from your Seurat object
 ensembl_ids <- rownames(seurat@assays$RNA@counts)
 
@@ -362,7 +409,7 @@ gene_info <- getBM(attributes = attributes, filters = "ensembl_gene_id", values 
 ensembl_to_symbol <- gene_info %>% 
   dplyr::distinct(ensembl_gene_id, .keep_all = TRUE)
 
-# There are sevearl missing genes that appear to be novel transcripts
+# There are several missing genes that appear to be novel transcripts
 # as there's only a few of them, I'll just remove them for now
 missing_ids <-
   rownames(seurat@assays$RNA@data)[which(!rownames(seurat@assays$RNA@data) %in% gene_info$ensembl_gene_id)]
@@ -408,7 +455,7 @@ missing_genes <-
 ```
 
 ```{r}
-#| eval: false
+#| eval: true
 #| label: get gene ids and descriptions
 gene_info <- getBM(attributes = attributes, filters = "ensembl_gene_id", values = cluster_markers$gene, mart = dataset) 
 # add gene info back in
@@ -426,6 +473,7 @@ readr::write_rds(cluster_markers, here::here("03_data/990_processed_data/001_snr
 ```
 
 ```{r}
+#| eval: false
 # read in updated data
 seurat <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-sce-updated.rds"))
 cluster_markers <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/cluster_markers-updated.rds"))
