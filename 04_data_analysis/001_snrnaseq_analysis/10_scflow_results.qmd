@@ -108,7 +108,9 @@ seurat[["pct_ribo"]] <- PercentageFeatureSet(seurat, features = ribo_genes)
 ```{r}
 #| fig-width: 7
 #| fig-height: 12
-VlnPlot(seurat, features = c("nFeature_RNA", "nCount_RNA", "pct_mito", "pct_ribo"), ncol = 1, group.by = "manifest", pt.size = 0.1)
+VlnPlot(seurat, features = c("nFeature_RNA", "nCount_RNA", "pct_mito", "pct_ribo"), ncol = 1, group.by = "manifest", pt.size = 0)
+VlnPlot(seurat, features = c("nFeature_RNA", "nCount_RNA"), ncol = 1, group.by = "donor", pt.size = 0)
+VlnPlot(seurat, features = c("nFeature_RNA", "nCount_RNA"), ncol = 1, pt.size = 0, group.by = "manifest")
 ```
 
 Same plots as above on log scale
@@ -116,8 +118,21 @@ Same plots as above on log scale
 ```{r}
 #| fig-width: 7
 #| fig-height: 12
-VlnPlot(seurat, features = c("nFeature_RNA", "nCount_RNA", "pct_mito", "pct_ribo"), ncol = 1, group.by = "manifest", log = TRUE, pt.size = 0.1)
+plot <- VlnPlot(seurat, features = c("nFeature_RNA", "nCount_RNA"), ncol = 1, group.by = "manifest", log = TRUE, pt.size = 0)
+plot
+VlnPlot(seurat, features = c("nFeature_RNA", "nCount_RNA"), ncol = 1, group.by = "donor", log = TRUE, pt.size = 0)
+
+ggsave(here::here("05_figures/990_shared_figures/scflow_qc_metrics_manifest_no-points_log.png"), plot, device = "png")
 ```
+
+V13 looks very different, I'll check the number of cells
+
+```{r}
+table(seurat$manifest)
+```
+
+V13 has only 52 cells...
+Guess I should remove it
 
 ```{r}
 meta_data <- data.table(seurat@meta.data)
@@ -141,13 +156,38 @@ cat("Nuclei with > 5000 features: \n")
 meta_data[nFeature_RNA > 5000, .N, by = "manifest"]
 
 cat("Nuclei with > 8000 features: \n")
-meta_data[nFeature_RNA > 8000, .N, by = "manifest"]
+meta_data[nFeature_RNA > 7000, .N, by = "manifest"]
+```
+
+```{r}
+cat("Nuclei with < 1000 features: \n")
+meta_data[nCount_RNA < 1000, .N, by = "manifest"]
+```
+
+
+Donors 20, 29, and 39 look rather low in counts and are causing strange clustering.
+The parenchymal fraction of donor 39 had to be filtered out earlier as the fastq was essentially empty, so perhaps there was an issue with this donor generally.
+I'll try a somewhat aggressive subset on the nFeature_RNA to see if that resolves this without throwing out the samples.
+
+Donor 29 looks bad for the parenchymal fraction, but okay for the vascular fraction.
+
+```{r}
+before_filter <- ncol(seurat)
+seurat <- subset(seurat, subset = nFeature_RNA > 300 & nFeature_RNA < 7500 & nCount_RNA > 1000)
+
+# donors to exclude
+seurat <- subset(seurat, subset = donor %in% c("donor-20", "donor-29", "donor-39") == FALSE)
+seurat <- subset(seurat, subset = manifest %in% c("V13") == FALSE)
+after_filter <- ncol(seurat)
+
+print(paste0("Num cells removed = ", before_filter - after_filter))
+print(paste0("Total cells remaining = ", after_filter))
 ```
 
 ```{r}
 # Save data prior to processing
-readr::write_rds(seurat, here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-seurat-preprocessing.rds"))
-#seurat <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-seurat-preprocessing.rds"))
+#readr::write_rds(seurat, here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-seurat-preprocessing.rds"))
+readr::write_rds(seurat, here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-seurat-preprocessing_donors-excluded.rds"))
 ```
 
 ```{r}
