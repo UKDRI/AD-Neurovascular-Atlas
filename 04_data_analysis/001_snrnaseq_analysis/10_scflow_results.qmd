@@ -764,6 +764,101 @@ celltypes <- c("0" = "Oligo", "1" = "Capillary", "2" = "T-Peri", "3" = "Astro",
                "21" = "T-cell", "22" = "Astro", "23" = "Neuron_ex", "24" = "T-Peri")
 ```
 
+```{r}
+top_genes <- top10 |> 
+  dplyr::filter(cluster == 32)
+DotPlot(seurat, features = top_genes$hgnc_symbol) + coord_flip()
+```
+
+Cluster 9 is an odd one, `SLC38A11` is a marker that isn't expressed in endothelial cells at all in Yang 2022 but is in SMCs, but several of the other top markers are not very expressed in SMCs...
+I guess I'll label it as capillary for now since more markers are expressed in them.
+
+Cluster 14 looks like neurons, but doesn't fit super well into either of my inhibitory or excitatory neurons.
+It looks slightly more like excitatory neurons and the cluster is closer to them, so I'll apply that label for now.
+
+Cluster 29 is kinda between astrocytes and microglia curiously.
+The cluster is physically closer to the other astrocyte clusters so I'll use that label for now.
+
+```{r}
+smc_markers <- c("ACTA2", "MYH11", "TAGLN")
+endo_markers <- c("PECAM1", "CD31", "CDH5", "VWF")
+capilliary <- c("ESM1", "DLL4")
+venous <- c("NRP2", "NR2F2")
+
+FeaturePlot(seurat, smc_markers) +
+  patchwork::plot_annotation(title = "SMC markers")
+FeaturePlot(seurat, endo_markers)
+FeaturePlot(seurat, venous)
+FeaturePlot(seurat, capilliary)
+```
+
+```{r}
+celltypes <- c("0" = "Oligo", "1" = "Capillary", "2" = "T-Peri", "3" = "Astro", 
+               "4" = "Arterial", "5" = "aSMC", "6" = "Oligo", "7" = "OPC", 
+               "8" = "Micoglia", "9" = "Venous", "10" = "Neuron_ex", 
+               "11" = "Astro", "12" = "Venous", "13" = "Neuron_in", "14" = "Neuron_ex",
+               "15" = "Neuron_in", "16" = "Astro", "17" = "Peri-Fibro", 
+               "18" = "Capillary", "19" = "Neuron_ex", "20" = "Neuron_ex",
+               "21" = "Neuron_in", "22" = "Neuron_ex", "23" = "Neuron_ex", 
+               "24" = "Neuron_in", "25" = "T-cell", "26" = "Meningeal-Fibro", 
+               "27" = "OPC", "28" = "Neuron_ex", "29" = "Astro", "30" = "OPC",
+               "31" = "T-Peri", "32" = "Capillary")
+```
+
+```{r}
+top_genes <- top10 |>
+  dplyr::filter(cluster == 33)
+DotPlot(seurat, features = top_genes$hgnc_symbol) +
+  coord_flip()
+```
+
+```{r}
+tip_cell_markers <- c("HSPH1", "LAMB1", "PLAUR", "ADM", "ANGPT2", "APLN", 
+                      "COL9A3", "CTGF", "CXCR4", "LXN", "LY6H", "TIMP1")
+mitotic_endothelial_markers <- c("BIRC5", "CENPF", "HMGB2", "HMGN2", "NUSAP1", 
+                                 "TOP2A", "TUBA1B", "UBE2C")
+smc_markers <- c("ACTA2", "CTGF", "HSPA2", "IGFBP2", "MYL9", "SDC2", "TAGLN", 
+                 "TPM1", "TPM2", "VIM")
+aaSMC_markers <- c("CTNNA3", "SLIT3")
+DotPlot(seurat, features = tip_cell_markers) +
+  coord_flip()
+DotPlot(seurat, features = mitotic_endothelial_markers) +
+  coord_flip()
+DotPlot(seurat, features = smc_markers) +
+  coord_flip()
+DotPlot(seurat, features = aaSMC_markers) +
+  coord_flip()
+```
+
+Cluster 7 looks half like endothelial and half like SMC...
+Cluster 28 looks like a mix of neurons and astrocytes.
+
+```{r}
+celltypes <- c("0" = "Oligo", "1" = "Capillary", "2" = "T-Peri", "3" = "Arterial", 
+               "4" = "Astro", "5" = "vascular-SMC", "6" = "Oligo", "7" = "arteriolar-SMC", 
+               "8" = "OPC", "9" = "Neuron_ex", "10" = "Microglia", 
+               "11" = "Astro", "12" = "Venous", "13" = "Neuron_in", 
+               "14" = "Neuron_in", "15" = "Ependymal-donor31", "16" = "Astro", 
+               "17" = "Neuron_ex", "18" = "Neuron_ex", "19" = "Peri-Fibro", 
+               "20" = "Neuron_ex", "21" = "Astro-donor31", "22" = "Neuron_in", 
+               "23" = "Neuron_ex",  "24" = "Microglia", "25" = "T-cell", 
+               "26" = "Neuron_in", "27" = "Meningeal-Fibro", "28" = "Neuron_ex", 
+               "29" = "Neuron_in", "30" = "OPC", "31" = "OPC", "32" = "T-Peri", 
+               "33" = "Capillary")
+```
+
+Cluster 7 is rather odd, and Hope from Zams group also found a strange in-between cluster of mural/endothelial cells.
+Seems like it could either be an artefact of the prep, or a novel celltype assuming they're the same cells.
+I'll save the markers for that cluster to send to Hope:
+
+```{r}
+cluster_markers |>
+  dplyr::filter(cluster == 7) |>
+  write_csv(here::here(
+    "03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/cluster7_markers.csv"
+  ))
+```
+
 ## Overview
 
 -   `DEG` number of differentially expressed genes identified
@@ -1101,9 +1196,9 @@ cluster_markers_dt %>% DT::datatable(
 sdata_endo <- RenameIdents(seurat, celltypes)
 
 DimPlot(sdata_endo, reduction = "umap", label = T, raster = "FALSE", 
-        cols = pals::cols25(n = 23))
-DimPlot(seurat, reduction = "umap", label = T, raster = "FALSE", 
-        cols = pals::cols25(n = 25)) + NoLegend()
+        cols = pals::cols25(n = 25))
+DimPlot(seurat, reduction = "umap", label = T, raster = "FALSE") + 
+  NoLegend()
 umap_annotated <- DimPlot(sdata_endo, reduction = "umap", label = T, raster = "FALSE", 
         cols = pals::cols25(n = 23), repel = T) +  NoLegend()
 umap_annotated
