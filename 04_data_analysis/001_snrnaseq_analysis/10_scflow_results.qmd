@@ -1706,6 +1706,77 @@ cluster_count_by_sample %>% DT::datatable(
 )
 ```
 
+# Update APOE status
+
+I have the genotyped data now and have computed the APOE status from the probes.
+Note that the data isn't precise on which allele is which, so there is an instance of an unknown that is almost certainly due to the alleles being different for each of the two SNPs, so that will need to be corrected
+
+```{r}
+# read in apoe status table
+apoe_status <- readr::read_csv(here::here("03_data/992_genotyping_data/apoe_status.csv"))
+
+# Correct case of unknown apoe status
+apoe_status <- apoe_status |>
+  dplyr::mutate(apoe_status = ifelse(rs7412 == "0/1" & rs429358 == "0/1", "E2/E4", apoe_status))
+# check numbers
+table(apoe_status$apoe_status)
+
+# Check repeated samples
+# the unique sample ID is between the first and second _
+apoe_status$unique_id <- sapply(strsplit(as.character(apoe_status$sample_name), "_"), function(x) x[2])
+
+apoe_status %>%
+  group_by(unique_id) %>%
+  mutate(count = n()) %>%
+  #ungroup() %>%
+  filter(count > 1) %>%
+  dplyr::arrange(unique_id) |>
+  gt()
+```
+
+So it seems there's disagreement for sample NP160...
+Having checked the VCF files for each, I can see that one probe is 1/1 and the other ./. (denoting uncertainty) for `3_NP160_13`, whereas both probes from `23_NP160_13R` are 0/1.
+Given that E3 is more common, it seems more reasonable to assume this sample is E3/E4.
+
+```{r}
+apoe_status <- apoe_status |>
+  # remove inaccurate replicate
+  dplyr::filter(sample_name != "3_NP160_13") |>
+  # keep one of the remaining replicates
+  dplyr::distinct(unique_id, .keep_all = TRUE) |>
+  # remove the "E" from the apoe status to match the current meta.data format
+  dplyr::mutate(apoe_status = gsub("E", "", apoe_status))
+```
+
+Now I need the sample IDs of the neurochips to match the APOE status to the sce meta.data
+
+```{r}
+# Get sample IDs
+neurochip_ids <- readr::read_csv(here::here("03_data/990_processed_data/001_snrnaseq/90_sample_info/neurchip_sample_ids.csv")) |>
+  dplyr::mutate(donor = paste0("donor-", str_extract(fraction_donor, "(?<=_).*"))) |>
+  dplyr::select(-fraction_donor) |>
+  dplyr::distinct()
+
+apoe_status <- apoe_status |>
+  dplyr::left_join(neurochip_ids, by = c("sample_name" = "neurochip")) 
+
+apoe_status <- apoe_status |>
+  # select only the apoe_status and donor columns to merge
+  dplyr::select(apoe_status, donor)
+
+# Merge the new APOE status information with the existing meta.data
+# Use all.x = TRUE to keep all samples in the original meta.data
+updated_meta <- merge(sce@meta.data, apoe_status, by.x = "donor", by.y = "donor", all.x = TRUE)
+# merge the two apoe columns
+updated_meta$apoe_status <- ifelse(is.na(updated_meta$apoe_status), updated_meta$APOE, updated_meta$apoe_status)
+# remove old column
+updated_meta$APOE <- NULL
+
+# update meta.data
+sce@meta.data <- updated_meta
+rm(updated_meta, apoe_status, neurochip_ids)
+```
+
 # Save data
 
 ```{r}
@@ -1713,12 +1784,12 @@ cluster_count_by_sample %>% DT::datatable(
 
 ## main object with hybrid removed and super-clusters annotated
 ## what about the sub-clusters e.g. neurons!?!? - keep that info - HOW!?
-readr::write_rds(
-  sdata_endo,
-  here::here(
-    "03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-sce-annotated.rds"
-  )
-)
+# readr::write_rds(
+#   sdata_endo,
+#   here::here(
+#     "03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-sce-annotated.rds"
+#   )
+# )
 readr::write_rds(
   sce,
   here::here(
