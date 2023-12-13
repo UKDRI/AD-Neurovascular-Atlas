@@ -497,7 +497,15 @@ Dotplot of the top 5 markers per cluster
 top5 <- cluster_markers %>%
   dplyr::filter(hgnc_symbol != "") %>%
   group_by(cluster) %>% 
-  top_n(n = 5, wt = avg_log2FC)
+  slice_max(n = 5, order_by = avg_log2FC)
+top10 <- cluster_markers %>%
+  dplyr::filter(hgnc_symbol != "") %>%
+  group_by(cluster) %>% 
+  slice_max(n = 10, order_by = avg_log2FC)
+bottom10 <- cluster_markers %>%
+  dplyr::filter(hgnc_symbol != "") %>%
+  group_by(cluster) %>% 
+  slice_min(n = 10, order_by = avg_log2FC)
 
 to_plot <- unique(top5$hgnc_symbol)
 plot <- DotPlot(seurat, features = to_plot) + coord_flip()
@@ -707,9 +715,12 @@ neuro_i <- frank_annotation %>%
   # get top 10 markers by fold change
   dplyr::top_n(n = 10, wt = avg_log2FC)
 
-neuron_i_plot <- FeaturePlot(seurat, features = neuro_i$gene, raster = FALSE) +
+neuron_i_plot <- FeaturePlot(seurat, features = neuro_i$gene, raster = TRUE) +
                           patchwork::plot_annotation(title = "Inhibitory neuronal markers")
 neuron_i_plot
+DotPlot(seurat, features = neuro_i$gene) +
+  patchwork::plot_annotation(title = "Inhibitory neuronal markers") +
+  coord_flip()
 ```
 
 Clusters 11 and 13 look likes they've good expression for ERBB4 and ADARB2 in particular, so I'd say they're inhibitory neurons.
@@ -724,9 +735,12 @@ neuro_e <- frank_annotation %>%
   # get top 10 markers by fold change
   dplyr::top_n(n = 10, wt = avg_log2FC)
 
-neuron_e_plot <- FeaturePlot(seurat, features = neuro_e$gene, raster = FALSE) +
+neuron_e_plot <- FeaturePlot(seurat, features = neuro_e$gene, raster = TRUE) +
                           patchwork::plot_annotation(title = "Excitatory neuronal markers")
 neuron_e_plot
+DotPlot(seurat, features = neuro_e$gene) +
+  patchwork::plot_annotation(title = "Excitatory neuronal markers") +
+  coord_flip()
 ```
 
 Clusters 10 and 14 has pretty much all the markers expressed quite nicely and most aren't too defuse to other clusters, so they're our excitatory neurons.
@@ -739,6 +753,8 @@ We may want to exclude cluster 18 from the pseudobulk though as it still doesn't
 Clusters 6 doesn't easily fall into excitatory or inhibitory neurons based on Franks unique markers, but Hannah has labelled them as excitatory and would like them all neuronal clusters in one category or the other, so I'll update the annotations accordingly.
 
 ```{r}
+#| include: false
+# annotations for the clusters prior to donor exclution
 celltypes <- c("0" = "Oligo", "1" = "Capillary", "2" = "T-Peri", "3" = "Astro", 
                "4" = "Arterial", "5" = "aSMC", "6" = "Neuron_ex", "7" = "Vas/cap", 
                "8" = "Oligo-pre", "9" = "Microglia", "10" = "Neuron_ex", 
