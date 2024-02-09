@@ -8,6 +8,7 @@
 #SBATCH --cpus-per-task=10
 #SBATCH --array=1
 #SBATCH --mem=120G
+#SBATCH --account=scw1329
 #SBATCH --mail-type=END,FAIL
 #SBATCH --mail-user=bernardo-harringtong@cardiff.ac.uk
 
