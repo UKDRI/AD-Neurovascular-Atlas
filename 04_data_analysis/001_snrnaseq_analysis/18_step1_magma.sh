@@ -3,7 +3,7 @@
 #SBATCH -p c_highmem_dri1
 #SBATCH -o /scratch/c.mpmgb/hawk_output/%x_out_%A_%a_%J.txt
 #SBATCH -e /scratch/c.mpmgb/hawk_output/%x_err_%A_%a_%J.txt
-#SBATCH --time=0-05:00:00
+#SBATCH --time=0-01:00:00
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
 #SBATCH --array=1
@@ -39,7 +39,7 @@ cd $WORK_DIR
 SNP_Loc_File=${WORK_DIR}"g1000_eur.bim"
 # Gene location file - make sure build is correct
 Gene_Loc_File=${WORK_DIR}"NCBI37.3.gene.loc"
-Output_Prefix="NCBI37_annotated_window"
+Output_Prefix="NCBI37_annotated_window_35k10k"
 
 magma \
     --annotate window=35,10 \
