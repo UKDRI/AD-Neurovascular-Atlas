@@ -32,6 +32,7 @@ echo -e "*****************************************************************\n"
 
 module purge
 module load magma/1.10
+module load parallel
 
 WORK_DIR="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/993_magma_inputs/"
 cd $WORK_DIR
