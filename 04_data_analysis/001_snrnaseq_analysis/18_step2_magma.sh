@@ -41,8 +41,8 @@ cd $WORK_DIR
 
 # mkdir temp_annot_35k10k # make a temporary directory to host the intermediate files
 # 
-# # PLINK files from reference (.bed/.bim/.fam)
-# Data_File=${WORK_DIR}"g1000_eur"
+# PLINK files from reference (.bed/.bim/.fam)
+Data_File=${WORK_DIR}"g1000_eur"
 # # Output of step 1
 # Annot_File=${WORK_DIR}"NCBI37_annotated_window_35k10k.genes.annot"
 # # GWAS summary stats
