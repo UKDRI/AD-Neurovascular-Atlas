@@ -1,0 +1,216 @@
+---
+title: MAGMA - risk analysis prep
+execute:
+  eval: false
+#self-contained: true
+code-fold: true
+bibliography: references.bib
+---
+
+I need to prep the MAGMA inputs, first I'll subset to controls and do differential expression of the celltypes against each other to get the MAGMA input.
+I also need to subset to parenchymal and vascular fractions separately, so three control gene lists as input.
+
+My understanding is the input format should be rows per celltypes and columns as gene IDs
+
+```{r}
+here::i_am("04_data_analysis/001_snrnaseq_analysis/18_magma_risk_analysis_prep.qmd")
+```
+
+# Load packages
+
+```{r}
+source(here::here("04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"))
+```
+
+# Load data
+
+```{r}
+#| eval: true
+# read data
+sce <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-sce-annotated-highlevel.rds"))
+updated_annotations <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/10_cell_subtypes/subcluster_annotations.rds"))
+```
+
+# Data prep
+
+```{r}
+# Gene ensembl IDs
+gene_ensembl_ids <- data.frame(gene = rownames(sce@assays$RNA@data), ensembl = rownames(sce@assays$RNA@counts))
+rownames(sce@assays$RNA@data) <- gene_ensembl_ids$ensembl
+
+# Exclude the donor 31 celltypes
+sce <- subset(sce, idents = c("Ependymal-donor31", "Astro-donor31"), invert = TRUE)
+# Add annotations
+sce$subcelltype_annotations <- updated_annotations[names(Idents(sce))]
+```
+
+## Set subset
+
+- All control celltypes
+- Control vascular celltypes
+- Control parenchymal celltypes
+
+```{r}
+# Set subset
+#subset <- "all_controls"
+#subset <- "controls_parenchymal"
+subset <- "controls_vascular"
+```
+
+
+```{r}
+# Subset to controls
+sce <- subset(sce, subset = diagnosis == "Control")
+sce$highlevel_manual_annotations <- Idents(sce)
+Idents(sce) <- sce$subcelltype_annotations
+if (subset == "controls_parenchymal") {
+  # Subset to controls parenchymal
+  sce <- subset(sce, subset = prep == "P")
+} else if (subset == "controls_vascular") {
+  # Subset to controls vascular
+  sce <- subset(sce, subset = prep == "V")
+}
+```
+
+Given that some of these fraction subsets will have very few of certain celltypes, I should remove these celltypes from the downstream analysis.
+
+```{r}
+# Get celltype counts
+celltype_counts <- table(Idents(sce))
+# Get the names of cell types with counts above the threshold
+celltypes_to_keep <- names(celltype_counts[celltype_counts >= 100])
+
+# Subset the Seurat object to keep only the desired cell types
+sce <- subset(sce, idents = celltypes_to_keep)
+```
+
+# Find celltype markers
+
+- Note that I'm using MAST and adding donor as a latent variable to hopefully emulate a pseudobulk analysis
+- Also note that it probably makes sense to start this with the level 1 celltypes and then do the level two but subsetting to one level 1 celltype at a time to then check if one particular subtype is associated with the disease risk genes. It may also be the case that a highlevel type isn't associated, with the risk, but one of the level 2 types is...
+
+```{r}
+# File to save cluster markers to
+file_name <-
+  here::here("03_data/994_magma_inputs",
+             paste0("cluster_markers_", subset, ".tsv"))
+# Only run if needed
+if (!file.exists(file_name)) {
+  # Set up future to use multiple cores
+  plan("multisession", workers = 8)
+  
+  # Now run FindAllMarkers, it will use the future plan for parallel computation
+  #all_markers <- FindAllMarkers(sce, min.pct = 0.25, logfc.threshold = 0.2, test.use = "MAST", latent.vars = "donor")
+  all_markers <-
+    FindAllMarkers(sce, min.pct = 0.25, logfc.threshold = 0)
+  
+  # Save data
+  readr::write_tsv(all_markers, file_name)
+} else {
+  all_markers <- readr::read_tsv(file_name)
+}
+```
+
+Apparently, the standard way of doing this is to take the top 10% of celltype markers by pvalue.
+To my mind it makes more sense to filter to significant markers, and limit on logfc to get a smaller number of more celltype specific genes.
+
+I guess we'll try to standard way first and check with a smaller subset later.
+
+```{r}
+# Step 1: Split the dataframe by celltype
+split_df <- split(all_markers, all_markers$cluster)
+
+# Step 2: Calculate 10% of the number of genes per celltype and store the minimum size
+top_percent <- 0.10
+sizes <- sapply(split_df, function(x) ceiling(nrow(x) * top_percent))
+min_size <- min(sizes)
+
+# Step 3: Order each subset by p-value and select the top entries
+top_genes_per_celltype <- lapply(split_df, function(x) {
+  x <- x[order(x$p_val_adj), ]
+  return(head(x, min_size))
+})
+
+# Step 4: If necessary, truncate each list to have the same number of genes
+top_genes_per_celltype <- lapply(top_genes_per_celltype, function(x) head(x, min_size))
+
+# Step 5: Combine the lists back into a single dataframe
+final_df <- do.call(rbind, top_genes_per_celltype)
+
+# Check the result
+print(final_df)
+```
+
+With the minimum 25% of cells expressing a gene requierment I still have relatively few markers per celltypes (minimums or ~2K for the smallest celltypes), so I'll take the top 1000 genes by pvalue per celltype.
+
+```{r}
+top_genes_df <- all_markers |>
+  dplyr::group_by(cluster) |>
+  slice_min(order_by = p_val_adj, n = 1000, with_ties = FALSE)
+# Count the number of genes for each celltype
+counts_per_celltype <- table(top_genes_df$cluster)
+# Test if all celltypes have the same number of genes
+assertthat::assert_that(all(counts_per_celltype == counts_per_celltype[1]))
+```
+
+Then we need to get the data in a format where each row is a celltype and the columns are gene IDs.
+Examples I've seen have entrez IDs, so will probably use those.
+
+```{r}
+# Get entrez IDs for genes
+ensembl <- useMart("ensembl", dataset = "hsapiens_gene_ensembl")
+entrez_ids <- getBM(attributes = c('ensembl_gene_id', 'entrezgene_id'),
+                    filters = 'ensembl_gene_id',
+                    values = top_genes_df$gene,
+                    mart = ensembl)
+# Remove rows with NA Entrez IDs if present
+entrez_ids <- entrez_ids[!is.na(entrez_ids$entrezgene_id), ]
+
+# Get unique Ensembl-Entrez pairs by keeping the first occurrence
+entrez_ids <- entrez_ids[!duplicated(entrez_ids$ensembl_gene_id), ]
+
+top_genes_df <- top_genes_df |>
+  dplyr::left_join(unique(entrez_ids), by = join_by(gene == ensembl_gene_id))
+```
+
+# Format data for MAGMA
+
+Now I need to get the actual format for MAGMA.
+It wants a file with no column headers, a row per celltype and space separated entrez gene IDs.
+
+```{r}
+# Group by celltype and concatenate the Entrez IDs into a space-separated string
+formatted_data <- top_genes_df %>%
+  dplyr::filter(!is.na(entrezgene_id)) |>
+  dplyr::select(cluster, entrezgene_id) |>
+  group_by(cluster) |>
+  summarise(entrez_ids = paste(entrezgene_id, collapse = " "), .groups = 'drop')
+
+# Write the formatted data to a file with no headers and no row names
+readr::write_tsv(formatted_data, here::here("03_data/994_magma_inputs", paste0("magma_celltypes_", subset, ".tsv")),
+                 col_names = FALSE)
+```
+
+
+```{r}
+# Format data
+# Remove non-significant markers
+all_markers_filtered <- all_markers |>
+  dplyr::filter(p_val_adj < 0.05)
+assertthat::assert_that(sum(all_markers_filtered$p_val_adj > 0.05) == 0)
+
+# Use dplyr to group by celltype, calculate the top 5% cutoff, and then 
+# slice the top 5%
+top_genes_df <- all_markers_filtered %>%
+  dplyr::group_by(cluster) %>%
+  # Rank the p-values within each group
+  dplyr::mutate(rank = min_rank(p_val_adj)) %>%
+  # Calculate the number of rows for the top 5%
+  dplyr::mutate(top_cutoff = ceiling(0.05 * n())) %>%
+  # Filter rows that are within the top 5%
+  dplyr::filter(rank <= top_cutoff) %>% 
+  # Remove the grouping structure
+  dplyr::ungroup() %>%
+  # Optionally, remove the extra columns
+  dplyr::select(-rank, -top_cutoff)
+```
