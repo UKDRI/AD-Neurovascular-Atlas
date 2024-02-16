@@ -1,0 +1,26 @@
+# TOTAL_GENES = 18144
+# TEST_DIRECTION = one-sided, positive (set), two-sided (covar)
+# CONDITIONED_INTERNAL = gene size, gene density, sample size, inverse mac, log(gene size), log(gene density), log(sample size), log(inverse mac)
+VARIABLE                    TYPE  NGENES         BETA     BETA_STD           SE            P
+T-Pericyte                   SET     142     -0.12419    -0.010944      0.08839      0.91999
+M-Pericyte                   SET     139    -0.099217    -0.008651     0.089032      0.86744
+Pericyte                     SET     145    -0.044881   -0.0039962     0.085665      0.69983
+Pericyte-2                   SET     139     -0.12751    -0.011118     0.089619      0.92259
+Oligo-A                      SET     126     0.037692    0.0031301     0.093125      0.34284
+Vascular-SMC                 SET     144    0.0098749   0.00087625     0.087391      0.45502
+Arteriolar-SMC               SET     140     0.032228      0.00282     0.087855      0.35688
+Vascular-SMC-LINC00486       SET     145     0.036247    0.0032274     0.086306      0.33725
+Trans-Endo-to-mural          SET     141     0.043998    0.0038636     0.085182      0.30275
+Perivascular-FB-KAZN2        SET     143      0.10558    0.0093366     0.089267      0.11846
+Perivascular-FB              SET     128    -0.014196   -0.0011882     0.091693      0.56152
+Meningeal-FB                 SET     141    -0.063652   -0.0055895     0.089468      0.76159
+Artirial-FB                  SET     130     0.088068     0.007428     0.091101      0.16685
+Pericyte-FB                  SET     132   -0.0095247  -0.00080946     0.090153      0.54207
+Capillary                    SET     140    -0.064053   -0.0056049     0.089109      0.76387
+Arterial                     SET     142    -0.045637   -0.0040216     0.088532      0.69689
+Venous                       SET     138   -0.0033806  -0.00029371     0.089654      0.51504
+T-cell-mixed                 SET     143       0.1549     0.013698      0.08716     0.037775
+T-cell-vascular              SET     144      0.15411     0.013675      0.08795     0.039878
+Perivascular                 SET     144      0.31758     0.028181     0.083539    7.212e-05
+Microglia-vascular           SET     143      0.26243     0.023207     0.083118   0.00079743
+low-feature-cells            SET     139    -0.077308   -0.0067407     0.092312      0.79883
