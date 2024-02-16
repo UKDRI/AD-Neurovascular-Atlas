@@ -44,25 +44,39 @@ sce <- subset(sce, idents = c("Ependymal-donor31", "Astro-donor31"), invert = TR
 sce$subcelltype_annotations <- updated_annotations[names(Idents(sce))]
 ```
 
-## Set subset
+# Set subset
 
 - All control celltypes
 - Control vascular celltypes
 - Control parenchymal celltypes
+
+- Also set level 1 or level 2 celltypes
 
 ```{r}
 # Set subset
 #subset <- "all_controls"
 #subset <- "controls_parenchymal"
 subset <- "controls_vascular"
+
+level <- "level1"
+#level <- "level2"
 ```
 
 
 ```{r}
 # Subset to controls
 sce <- subset(sce, subset = diagnosis == "Control")
+
+# Update mystery-cluster label
+update_label <- c("mystery-cluster" = "Trans-Endo-to-mural")
+sce <- RenameIdents(sce, update_label)
 sce$highlevel_manual_annotations <- Idents(sce)
-Idents(sce) <- sce$subcelltype_annotations
+
+# Set celltype level
+if(level == "level2") {
+  Idents(sce) <- sce$subcelltype_annotations
+}
+
 if (subset == "controls_parenchymal") {
   # Subset to controls parenchymal
   sce <- subset(sce, subset = prep == "P")
@@ -84,16 +98,16 @@ celltypes_to_keep <- names(celltype_counts[celltype_counts >= 100])
 sce <- subset(sce, idents = celltypes_to_keep)
 ```
 
-# Find celltype markers
+## Find celltype markers - normal way
 
-- Note that I'm using MAST and adding donor as a latent variable to hopefully emulate a pseudobulk analysis
-- Also note that it probably makes sense to start this with the level 1 celltypes and then do the level two but subsetting to one level 1 celltype at a time to then check if one particular subtype is associated with the disease risk genes. It may also be the case that a highlevel type isn't associated, with the risk, but one of the level 2 types is...
+<!-- - Note that I'm using MAST and adding donor as a latent variable to hopefully emulate a pseudobulk analysis -->
+- Note that it probably makes sense to start this with the level 1 celltypes and then do the level two but subsetting to one level 1 celltype at a time to then check if one particular subtype is associated with the disease risk genes. It may also be the case that a highlevel type isn't associated, with the risk, but one of the level 2 types is...
 
 ```{r}
 # File to save cluster markers to
 file_name <-
   here::here("03_data/994_magma_inputs",
-             paste0("cluster_markers_", subset, ".tsv"))
+             paste0("cluster_markers_", level, "_", subset, ".tsv"))
 # Only run if needed
 if (!file.exists(file_name)) {
   # Set up future to use multiple cores
@@ -117,6 +131,8 @@ To my mind it makes more sense to filter to significant markers, and limit on lo
 I guess we'll try to standard way first and check with a smaller subset later.
 
 ```{r}
+#| eval: false
+#| include: false
 # Step 1: Split the dataframe by celltype
 split_df <- split(all_markers, all_markers$cluster)
 
@@ -136,12 +152,9 @@ top_genes_per_celltype <- lapply(top_genes_per_celltype, function(x) head(x, min
 
 # Step 5: Combine the lists back into a single dataframe
 final_df <- do.call(rbind, top_genes_per_celltype)
-
-# Check the result
-print(final_df)
 ```
 
-With the minimum 25% of cells expressing a gene requierment I still have relatively few markers per celltypes (minimums or ~2K for the smallest celltypes), so I'll take the top 1000 genes by pvalue per celltype.
+With the minimum 25% of cells expressing a gene requierment I still have relatively few markers per celltypes (minimums of ~2K for the smallest celltypes), so I'll take the top 1000 genes by pvalue per celltype.
 
 ```{r}
 top_genes_df <- all_markers |>
@@ -173,7 +186,7 @@ top_genes_df <- top_genes_df |>
   dplyr::left_join(unique(entrez_ids), by = join_by(gene == ensembl_gene_id))
 ```
 
-# Format data for MAGMA
+### Format data for MAGMA
 
 Now I need to get the actual format for MAGMA.
 It wants a file with no column headers, a row per celltype and space separated entrez gene IDs.
@@ -187,8 +200,38 @@ formatted_data <- top_genes_df %>%
   summarise(entrez_ids = paste(entrezgene_id, collapse = " "), .groups = 'drop')
 
 # Write the formatted data to a file with no headers and no row names
-readr::write_tsv(formatted_data, here::here("03_data/994_magma_inputs", paste0("magma_celltypes_", subset, ".tsv")),
+readr::write_tsv(formatted_data,
+                 here::here(
+                   "03_data/994_magma_inputs",
+                   paste0("magma_celltypes_", level, "_", subset, ".tsv")
+                 ),
                  col_names = FALSE)
+```
+
+## Find celltype markers - strict way
+
+I still think it makes more sense to my brain to be more strict about the celltype marker genes, as it seems more compelling to me that a significant association is more likely to be real and not a fluke of having a bigger list of input genes.
+
+```{r}
+rm(all_markers)
+file_name <-
+  here::here("03_data/994_magma_inputs",
+             paste0("cluster_markers_logfc_threshold_", level, "_", subset, ".tsv"))
+# Only run if needed
+if (!file.exists(file_name)) {
+  # Set up future to use multiple cores
+  plan("multisession", workers = 8)
+  
+  # Now run FindAllMarkers, it will use the future plan for parallel computation
+  #all_markers <- FindAllMarkers(sce, min.pct = 0.25, logfc.threshold = 0.2, test.use = "MAST", latent.vars = "donor")
+  all_markers <-
+    FindAllMarkers(sce, min.pct = 0.25, logfc.threshold = 0.2)
+  
+  # Save data
+  readr::write_tsv(all_markers, file_name)
+} else {
+  all_markers <- readr::read_tsv(file_name)
+}
 ```
 
 
@@ -199,18 +242,53 @@ all_markers_filtered <- all_markers |>
   dplyr::filter(p_val_adj < 0.05)
 assertthat::assert_that(sum(all_markers_filtered$p_val_adj > 0.05) == 0)
 
-# Use dplyr to group by celltype, calculate the top 5% cutoff, and then 
-# slice the top 5%
-top_genes_df <- all_markers_filtered %>%
-  dplyr::group_by(cluster) %>%
-  # Rank the p-values within each group
-  dplyr::mutate(rank = min_rank(p_val_adj)) %>%
-  # Calculate the number of rows for the top 5%
-  dplyr::mutate(top_cutoff = ceiling(0.05 * n())) %>%
-  # Filter rows that are within the top 5%
-  dplyr::filter(rank <= top_cutoff) %>% 
-  # Remove the grouping structure
-  dplyr::ungroup() %>%
-  # Optionally, remove the extra columns
-  dplyr::select(-rank, -top_cutoff)
+min_gene_number <- table(all_markers_filtered$cluster) |> min()
+
+top_genes_df <- all_markers |>
+  dplyr::group_by(cluster) |>
+  slice_min(order_by = p_val_adj, n = min_gene_number, with_ties = FALSE)
+
+# Count the number of genes for each celltype
+counts_per_celltype <- table(top_genes_df$cluster)
+# Test if all celltypes have the same number of genes
+assertthat::assert_that(all(counts_per_celltype == counts_per_celltype[1]))
+```
+
+```{r}
+# Get entrez IDs for genes
+ensembl <- useMart("ensembl", dataset = "hsapiens_gene_ensembl")
+entrez_ids <- getBM(attributes = c('ensembl_gene_id', 'entrezgene_id'),
+                    filters = 'ensembl_gene_id',
+                    values = top_genes_df$gene,
+                    mart = ensembl)
+# Remove rows with NA Entrez IDs if present
+entrez_ids <- entrez_ids[!is.na(entrez_ids$entrezgene_id), ]
+
+# Get unique Ensembl-Entrez pairs by keeping the first occurrence
+entrez_ids <- entrez_ids[!duplicated(entrez_ids$ensembl_gene_id), ]
+
+top_genes_df <- top_genes_df |>
+  dplyr::left_join(unique(entrez_ids), by = join_by(gene == ensembl_gene_id))
+```
+
+### Format data for MAGMA
+
+Now I need to get the actual format for MAGMA.
+It wants a file with no column headers, a row per celltype and space separated entrez gene IDs.
+
+```{r}
+# Group by celltype and concatenate the Entrez IDs into a space-separated string
+formatted_data <- top_genes_df %>%
+  dplyr::filter(!is.na(entrezgene_id)) |>
+  dplyr::select(cluster, entrezgene_id) |>
+  group_by(cluster) |>
+  summarise(entrez_ids = paste(entrezgene_id, collapse = " "), .groups = 'drop')
+
+# Write the formatted data to a file with no headers and no row names
+readr::write_tsv(formatted_data,
+                 here::here(
+                   "03_data/994_magma_inputs",
+                   paste0("magma_celltypes_logfc_threshold_", level, "_", subset, ".tsv")
+                 ),
+                 col_names = FALSE)
 ```
