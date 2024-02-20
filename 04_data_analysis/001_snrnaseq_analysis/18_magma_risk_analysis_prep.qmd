@@ -58,8 +58,8 @@ sce$subcelltype_annotations <- updated_annotations[names(Idents(sce))]
 #subset <- "controls_parenchymal"
 subset <- "controls_vascular"
 
-level <- "level1"
-#level <- "level2"
+#level <- "level1"
+level <- "level2"
 ```
 
 
@@ -87,12 +87,41 @@ if (subset == "controls_parenchymal") {
 ```
 
 Given that some of these fraction subsets will have very few of certain celltypes, I should remove these celltypes from the downstream analysis.
+I'll just define a list of celltypes and exclude them from the relevant fraction
 
 ```{r}
+# Level 1 vascular celltypes
+vascular_celltypes_level1 <- c("Trans-Endo-to-mural", "Endothelial", "Pericyte", 
+                               "SMC", "Fibroblast", "T-cell")
+vascular_celltypes_level2 <- c('T-Pericyte', 'M-Pericyte', 'Pericyte', 
+                               'Pericyte-2', 'Vascular-SMC', 'Arteriolar-SMC', 
+                               'Vascular-SMC-LINC00486', 'Trans-Endo-to-mural', 
+                               'Perivascular-FB-KAZN2', 'Perivascular-FB', 
+                               'Meningeal-FB', 'Artirial-FB', 'Pericyte-FB', 
+                               'Capillary', 'Arterial', 'Venous', 
+                               'T-cell-vascular')
 # Get celltype counts
 celltype_counts <- table(Idents(sce))
 # Get the names of cell types with counts above the threshold
-celltypes_to_keep <- names(celltype_counts[celltype_counts >= 100])
+if (level == "level1" & subset != "controls_vascular") {
+  celltypes_to_keep <-
+    names(celltype_counts)[!names(celltype_counts) %in% vascular_celltypes_level1]
+} else if (level == "level1" & subset == "controls_vascular") {
+  celltypes_to_keep <-
+    names(celltype_counts)[names(celltype_counts) %in% vascular_celltypes_level1]
+  # Add microglia back in
+  celltypes_to_keep <- c(celltypes_to_keep, "Microglia")
+} else if (level == "level2" & subset != "controls_vascular") {
+  celltypes_to_keep <-
+    names(celltype_counts)[!names(celltype_counts) %in% vascular_celltypes_level2]
+} else if (level == "level2" & subset == "controls_vascular") {
+  celltypes_to_keep <-
+    names(celltype_counts)[names(celltype_counts) %in% vascular_celltypes_level2]
+  celltypes_to_keep <- c(celltypes_to_keep, 'Microglia-vascular', 'T-cell-mixed')
+} else {
+  celltypes_to_keep <-
+    names(celltype_counts)[!names(celltype_counts) %in% c("ambiguous", "low-feature-cells")]
+}
 
 # Subset the Seurat object to keep only the desired cell types
 sce <- subset(sce, idents = celltypes_to_keep)
@@ -225,7 +254,7 @@ if (!file.exists(file_name)) {
   # Now run FindAllMarkers, it will use the future plan for parallel computation
   #all_markers <- FindAllMarkers(sce, min.pct = 0.25, logfc.threshold = 0.2, test.use = "MAST", latent.vars = "donor")
   all_markers <-
-    FindAllMarkers(sce, min.pct = 0.25, logfc.threshold = 0.2)
+    FindAllMarkers(sce, min.pct = 0.25, logfc.threshold = 0.01)
   
   # Save data
   readr::write_tsv(all_markers, file_name)
@@ -242,6 +271,13 @@ all_markers_filtered <- all_markers |>
   dplyr::filter(p_val_adj < 0.05)
 assertthat::assert_that(sum(all_markers_filtered$p_val_adj > 0.05) == 0)
 
+top_genes_df <- all_markers_filtered
+```
+
+I'm not sure I understand the logic of requiring all the celltypes to have the same number of genes as input for MAGMA, so I'll not evaluate this code for now.
+
+```{r}
+#| eval: false
 min_gene_number <- table(all_markers_filtered$cluster) |> min()
 
 top_genes_df <- all_markers |>
@@ -253,6 +289,7 @@ counts_per_celltype <- table(top_genes_df$cluster)
 # Test if all celltypes have the same number of genes
 assertthat::assert_that(all(counts_per_celltype == counts_per_celltype[1]))
 ```
+
 
 ```{r}
 # Get entrez IDs for genes
