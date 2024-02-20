@@ -4,18 +4,18 @@ Using flags:
 	--set-annot /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/994_magma_inputs//magma_celltypes_logfc_threshold_level1_controls_parenchymal.tsv
 	--out ./results/level2_celltypes_magma_celltypes_logfc_threshold_level1_controls_parenchymal_EUROPEUKBB_35k10k
 
-Start time is 16:37:53, Friday 16 Feb 2024
+Start time is 12:56:51, Tuesday 20 Feb 2024
 
 Reading file /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/994_magma_inputs//EUROPEUKBB_35k10k.genes.raw... 
 	18423 genes read from file
 Loading gene-set annotation...
 Reading file /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/994_magma_inputs//magma_celltypes_logfc_threshold_level1_controls_parenchymal.tsv... 
-	11 gene-set definitions read from file
-	found 11 gene sets containing genes defined in genotype data (containing a total of 5816 unique genes)
+	6 gene-set definitions read from file
+	found 6 gene sets containing genes defined in genotype data (containing a total of 6617 unique genes)
 Preparing variables for analysis...
 	truncating Z-scores 3 points below zero or 6 standard deviations above the mean
 	truncating covariate values more than 5 standard deviations from the mean
-	total variables available for analysis: 11 gene sets
+	total variables available for analysis: 6 gene sets
 
 Parsing model specifications...
 Inverting gene-gene correlation matrix...
@@ -28,9 +28,9 @@ Performing regression analysis...
 		inverse mac, log(inverse mac)
 	analysing individual variables
 
-	analysing single-variable models (number of models: 11)
+	analysing single-variable models (number of models: 6)
 	writing results to file ./results/level2_celltypes_magma_celltypes_logfc_threshold_level1_controls_parenchymal_EUROPEUKBB_35k10k.gsa.out
 	writing gene information to file ./results/level2_celltypes_magma_celltypes_logfc_threshold_level1_controls_parenchymal_EUROPEUKBB_35k10k.gsa.genes.out
 	writing gene analysis results per significant result (after multiple testing correction, at alpha = 0.05) to file ./results/level2_celltypes_magma_celltypes_logfc_threshold_level1_controls_parenchymal_EUROPEUKBB_35k10k.gsa.sets.genes.out
 
-End time is 16:38:12, Friday 16 Feb 2024 (elapsed: 00:00:19)
+End time is 12:57:10, Tuesday 20 Feb 2024 (elapsed: 00:00:19)

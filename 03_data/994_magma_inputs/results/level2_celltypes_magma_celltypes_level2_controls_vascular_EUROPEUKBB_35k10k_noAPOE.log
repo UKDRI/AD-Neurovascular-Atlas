@@ -4,18 +4,18 @@ Using flags:
 	--set-annot /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/994_magma_inputs//magma_celltypes_level2_controls_vascular.tsv
 	--out ./results/level2_celltypes_magma_celltypes_level2_controls_vascular_EUROPEUKBB_35k10k_noAPOE
 
-Start time is 16:37:50, Friday 16 Feb 2024
+Start time is 12:56:45, Tuesday 20 Feb 2024
 
 Reading file /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/994_magma_inputs//EUROPEUKBB_35k10k_noAPOE.genes.raw... 
 	18353 genes read from file
 Loading gene-set annotation...
 Reading file /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/994_magma_inputs//magma_celltypes_level2_controls_vascular.tsv... 
-	22 gene-set definitions read from file
-	found 22 gene sets containing genes defined in genotype data (containing a total of 4459 unique genes)
+	19 gene-set definitions read from file
+	found 19 gene sets containing genes defined in genotype data (containing a total of 4003 unique genes)
 Preparing variables for analysis...
 	truncating Z-scores 3 points below zero or 6 standard deviations above the mean
 	truncating covariate values more than 5 standard deviations from the mean
-	total variables available for analysis: 22 gene sets
+	total variables available for analysis: 19 gene sets
 
 Parsing model specifications...
 Inverting gene-gene correlation matrix...
@@ -28,7 +28,7 @@ Performing regression analysis...
 		inverse mac, log(inverse mac)
 	analysing individual variables
 
-	analysing single-variable models (number of models: 22)
+	analysing single-variable models (number of models: 19)
 	writing results to file ./results/level2_celltypes_magma_celltypes_level2_controls_vascular_EUROPEUKBB_35k10k_noAPOE.gsa.out
 
-End time is 16:38:07, Friday 16 Feb 2024 (elapsed: 00:00:17)
+End time is 12:57:03, Tuesday 20 Feb 2024 (elapsed: 00:00:18)
