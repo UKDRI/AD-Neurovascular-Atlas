@@ -2,9 +2,9 @@
 # TEST_DIRECTION = one-sided, positive (set), two-sided (covar)
 # CONDITIONED_INTERNAL = gene size, gene density, sample size, inverse mac, log(gene size), log(gene density), log(sample size), log(inverse mac)
 VARIABLE       TYPE  NGENES         BETA     BETA_STD           SE            P
-Oligo           SET    4514      0.03948     0.017068     0.017676     0.012762
-Astro           SET    4053     0.052165     0.021728     0.018294    0.0021781
-OPC             SET    3562     0.058898     0.023396      0.01934    0.0011636
-Neuron_ex       SET    5316     0.040756      0.01855     0.016393    0.0064613
-Microglia       SET    3745     0.075915     0.030726     0.018691   2.4482e-05
-Neuron_in       SET    4233     0.051033     0.021584     0.018019    0.0023148
+Astro           SET     265    -0.046787    -0.005613     0.064294       0.7666
+Microglia       SET     269       0.1097     0.013258     0.065959     0.048151
+Neuron_ex       SET     259      0.10654     0.012639     0.067743     0.057898
+Neuron_in       SET     276     0.062745    0.0076799     0.066076      0.17116
+OPC             SET     274      -0.0549   -0.0066956     0.066126      0.79679
+Oligo           SET     269    -0.053169   -0.0064259     0.064067      0.79669

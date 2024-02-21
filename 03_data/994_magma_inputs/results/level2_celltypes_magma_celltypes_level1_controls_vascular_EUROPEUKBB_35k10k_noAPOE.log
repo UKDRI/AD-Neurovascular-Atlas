@@ -4,7 +4,7 @@ Using flags:
 	--set-annot /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/994_magma_inputs//magma_celltypes_level1_controls_vascular.tsv
 	--out ./results/level2_celltypes_magma_celltypes_level1_controls_vascular_EUROPEUKBB_35k10k_noAPOE
 
-Start time is 12:56:10, Tuesday 20 Feb 2024
+Start time is 12:05:33, Wednesday 21 Feb 2024
 
 Reading file /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/994_magma_inputs//EUROPEUKBB_35k10k_noAPOE.genes.raw... 
 	18353 genes read from file
@@ -31,4 +31,4 @@ Performing regression analysis...
 	analysing single-variable models (number of models: 7)
 	writing results to file ./results/level2_celltypes_magma_celltypes_level1_controls_vascular_EUROPEUKBB_35k10k_noAPOE.gsa.out
 
-End time is 12:56:32, Tuesday 20 Feb 2024 (elapsed: 00:00:22)
+End time is 12:05:55, Wednesday 21 Feb 2024 (elapsed: 00:00:22)

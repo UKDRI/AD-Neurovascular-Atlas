@@ -4,14 +4,14 @@ Using flags:
 	--set-annot /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/994_magma_inputs//magma_celltypes_logfc_threshold_level2_controls_vascular.tsv
 	--out ./results/level2_celltypes_magma_celltypes_logfc_threshold_level2_controls_vascular_EUROPEUKBB_nowindow
 
-Start time is 12:57:28, Tuesday 20 Feb 2024
+Start time is 12:06:48, Wednesday 21 Feb 2024
 
 Reading file /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/994_magma_inputs//EUROPEUKBB_nowindow.genes.raw... 
 	18215 genes read from file
 Loading gene-set annotation...
 Reading file /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/994_magma_inputs//magma_celltypes_logfc_threshold_level2_controls_vascular.tsv... 
 	19 gene-set definitions read from file
-	found 19 gene sets containing genes defined in genotype data (containing a total of 5242 unique genes)
+	found 19 gene sets containing genes defined in genotype data (containing a total of 1673 unique genes)
 Preparing variables for analysis...
 	truncating Z-scores 3 points below zero or 6 standard deviations above the mean
 	truncating covariate values more than 5 standard deviations from the mean
@@ -31,4 +31,4 @@ Performing regression analysis...
 	analysing single-variable models (number of models: 19)
 	writing results to file ./results/level2_celltypes_magma_celltypes_logfc_threshold_level2_controls_vascular_EUROPEUKBB_nowindow.gsa.out
 
-End time is 12:57:43, Tuesday 20 Feb 2024 (elapsed: 00:00:15)
+End time is 12:07:03, Wednesday 21 Feb 2024 (elapsed: 00:00:15)

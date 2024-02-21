@@ -4,14 +4,14 @@ Using flags:
 	--set-annot /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/994_magma_inputs//magma_celltypes_logfc_threshold_level1_controls_parenchymal.tsv
 	--out ./results/level2_celltypes_magma_celltypes_logfc_threshold_level1_controls_parenchymal_EUROPEUKBB_nowindow_noAPOE
 
-Start time is 12:57:03, Tuesday 20 Feb 2024
+Start time is 12:06:27, Wednesday 21 Feb 2024
 
 Reading file /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/994_magma_inputs//EUROPEUKBB_nowindow_noAPOE.genes.raw... 
 	18144 genes read from file
 Loading gene-set annotation...
 Reading file /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/994_magma_inputs//magma_celltypes_logfc_threshold_level1_controls_parenchymal.tsv... 
 	6 gene-set definitions read from file
-	found 6 gene sets containing genes defined in genotype data (containing a total of 6601 unique genes)
+	found 6 gene sets containing genes defined in genotype data (containing a total of 1104 unique genes)
 Preparing variables for analysis...
 	truncating Z-scores 3 points below zero or 6 standard deviations above the mean
 	truncating covariate values more than 5 standard deviations from the mean
@@ -30,7 +30,5 @@ Performing regression analysis...
 
 	analysing single-variable models (number of models: 6)
 	writing results to file ./results/level2_celltypes_magma_celltypes_logfc_threshold_level1_controls_parenchymal_EUROPEUKBB_nowindow_noAPOE.gsa.out
-	writing gene information to file ./results/level2_celltypes_magma_celltypes_logfc_threshold_level1_controls_parenchymal_EUROPEUKBB_nowindow_noAPOE.gsa.genes.out
-	writing gene analysis results per significant result (after multiple testing correction, at alpha = 0.05) to file ./results/level2_celltypes_magma_celltypes_logfc_threshold_level1_controls_parenchymal_EUROPEUKBB_nowindow_noAPOE.gsa.sets.genes.out
 
-End time is 12:57:20, Tuesday 20 Feb 2024 (elapsed: 00:00:17)
+End time is 12:06:45, Wednesday 21 Feb 2024 (elapsed: 00:00:18)
