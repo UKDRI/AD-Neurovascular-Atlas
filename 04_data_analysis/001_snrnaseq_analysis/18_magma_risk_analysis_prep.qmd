@@ -58,8 +58,8 @@ sce$subcelltype_annotations <- updated_annotations[names(Idents(sce))]
 #subset <- "controls_parenchymal"
 subset <- "controls_vascular"
 
-#level <- "level1"
-level <- "level2"
+level <- "level1"
+#level <- "level2"
 ```
 
 
@@ -277,8 +277,9 @@ top_genes_df <- all_markers_filtered
 I'm not sure I understand the logic of requiring all the celltypes to have the same number of genes as input for MAGMA, so I'll not evaluate this code for now.
 
 ```{r}
-#| eval: false
-min_gene_number <- table(all_markers_filtered$cluster) |> min()
+#| eval: true
+#min_gene_number <- table(all_markers_filtered$cluster) |> min()
+min_gene_number <- 300
 
 top_genes_df <- all_markers |>
   dplyr::group_by(cluster) |>
