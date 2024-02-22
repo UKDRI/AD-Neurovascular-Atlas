@@ -44,6 +44,18 @@ sce <- subset(sce, idents = c("Ependymal-donor31", "Astro-donor31"), invert = TR
 sce$subcelltype_annotations <- updated_annotations[names(Idents(sce))]
 ```
 
+Need the total number of genes for subsetting the celltype markers later
+
+```{r}
+total_genes <- nrow(sce[["RNA"]])
+gene_percents <-
+  list(
+    "one" = round(total_genes * 0.01),
+    "five" = round(total_genes * 0.05),
+    "ten" = round(total_genes * 0.1)
+  )
+```
+
 # Set subset
 
 - All control celltypes
@@ -58,8 +70,8 @@ sce$subcelltype_annotations <- updated_annotations[names(Idents(sce))]
 #subset <- "controls_parenchymal"
 subset <- "controls_vascular"
 
-level <- "level1"
-#level <- "level2"
+#level <- "level1"
+level <- "level2"
 ```
 
 
@@ -89,6 +101,8 @@ if (subset == "controls_parenchymal") {
 Given that some of these fraction subsets will have very few of certain celltypes, I should remove these celltypes from the downstream analysis.
 I'll just define a list of celltypes and exclude them from the relevant fraction
 
+- Seperatre out migroglia in level 1 - vascualr to vascular, parenchymal to parenchymal 
+
 ```{r}
 # Level 1 vascular celltypes
 vascular_celltypes_level1 <- c("Trans-Endo-to-mural", "Endothelial", "Pericyte", 
@@ -103,18 +117,23 @@ vascular_celltypes_level2 <- c('T-Pericyte', 'M-Pericyte', 'Pericyte',
 # Get celltype counts
 celltype_counts <- table(Idents(sce))
 # Get the names of cell types with counts above the threshold
-if (level == "level1" & subset != "controls_vascular") {
+if (level == "level1" && subset == "controls_parenchymal") {
   celltypes_to_keep <-
     names(celltype_counts)[!names(celltype_counts) %in% vascular_celltypes_level1]
-} else if (level == "level1" & subset == "controls_vascular") {
+  # Subset the Seurat object to exclude vascular microglia
+  sce <- subset(sce, subset = subcelltype_annotations != "Microglia-vascular")
+} else if (level == "level1" && subset == "controls_vascular") {
   celltypes_to_keep <-
     names(celltype_counts)[names(celltype_counts) %in% vascular_celltypes_level1]
   # Add microglia back in
   celltypes_to_keep <- c(celltypes_to_keep, "Microglia")
-} else if (level == "level2" & subset != "controls_vascular") {
+  # Subset the Seurat object to exclude parenchymal microglia
+  sce <- subset(sce, subset = subcelltype_annotations != "Microglia-quiescent")
+  sce <- subset(sce, subset = subcelltype_annotations != "Microglia-activated")
+} else if (level == "level2" && subset == "controls_parenchymal") {
   celltypes_to_keep <-
     names(celltype_counts)[!names(celltype_counts) %in% vascular_celltypes_level2]
-} else if (level == "level2" & subset == "controls_vascular") {
+} else if (level == "level2" && subset == "controls_vascular") {
   celltypes_to_keep <-
     names(celltype_counts)[names(celltype_counts) %in% vascular_celltypes_level2]
   celltypes_to_keep <- c(celltypes_to_keep, 'Microglia-vascular', 'T-cell-mixed')
@@ -145,7 +164,7 @@ if (!file.exists(file_name)) {
   # Now run FindAllMarkers, it will use the future plan for parallel computation
   #all_markers <- FindAllMarkers(sce, min.pct = 0.25, logfc.threshold = 0.2, test.use = "MAST", latent.vars = "donor")
   all_markers <-
-    FindAllMarkers(sce, min.pct = 0.25, logfc.threshold = 0)
+    FindAllMarkers(sce, min.pct = 0.25, logfc.threshold = 0.01)
   
   # Save data
   readr::write_tsv(all_markers, file_name)
@@ -183,18 +202,6 @@ top_genes_per_celltype <- lapply(top_genes_per_celltype, function(x) head(x, min
 final_df <- do.call(rbind, top_genes_per_celltype)
 ```
 
-With the minimum 25% of cells expressing a gene requierment I still have relatively few markers per celltypes (minimums of ~2K for the smallest celltypes), so I'll take the top 1000 genes by pvalue per celltype.
-
-```{r}
-top_genes_df <- all_markers |>
-  dplyr::group_by(cluster) |>
-  slice_min(order_by = p_val_adj, n = 1000, with_ties = FALSE)
-# Count the number of genes for each celltype
-counts_per_celltype <- table(top_genes_df$cluster)
-# Test if all celltypes have the same number of genes
-assertthat::assert_that(all(counts_per_celltype == counts_per_celltype[1]))
-```
-
 Then we need to get the data in a format where each row is a celltype and the columns are gene IDs.
 Examples I've seen have entrez IDs, so will probably use those.
 
@@ -203,7 +210,7 @@ Examples I've seen have entrez IDs, so will probably use those.
 ensembl <- useMart("ensembl", dataset = "hsapiens_gene_ensembl")
 entrez_ids <- getBM(attributes = c('ensembl_gene_id', 'entrezgene_id'),
                     filters = 'ensembl_gene_id',
-                    values = top_genes_df$gene,
+                    values = all_markers$gene,
                     mart = ensembl)
 # Remove rows with NA Entrez IDs if present
 entrez_ids <- entrez_ids[!is.na(entrez_ids$entrezgene_id), ]
@@ -211,102 +218,49 @@ entrez_ids <- entrez_ids[!is.na(entrez_ids$entrezgene_id), ]
 # Get unique Ensembl-Entrez pairs by keeping the first occurrence
 entrez_ids <- entrez_ids[!duplicated(entrez_ids$ensembl_gene_id), ]
 
-top_genes_df <- top_genes_df |>
+all_markers <- all_markers |>
   dplyr::left_join(unique(entrez_ids), by = join_by(gene == ensembl_gene_id))
 ```
 
-### Format data for MAGMA
-
-Now I need to get the actual format for MAGMA.
-It wants a file with no column headers, a row per celltype and space separated entrez gene IDs.
+Now subset to the top genes by p-value.
+I'll try comparing the top 1, 5 and 10% of total genes per celltype.
 
 ```{r}
-# Group by celltype and concatenate the Entrez IDs into a space-separated string
-formatted_data <- top_genes_df %>%
-  dplyr::filter(!is.na(entrezgene_id)) |>
-  dplyr::select(cluster, entrezgene_id) |>
-  group_by(cluster) |>
-  summarise(entrez_ids = paste(entrezgene_id, collapse = " "), .groups = 'drop')
-
-# Write the formatted data to a file with no headers and no row names
-readr::write_tsv(formatted_data,
-                 here::here(
-                   "03_data/994_magma_inputs",
-                   paste0("magma_celltypes_", level, "_", subset, ".tsv")
-                 ),
-                 col_names = FALSE)
-```
-
-## Find celltype markers - strict way
-
-I still think it makes more sense to my brain to be more strict about the celltype marker genes, as it seems more compelling to me that a significant association is more likely to be real and not a fluke of having a bigger list of input genes.
-
-```{r}
-rm(all_markers)
-file_name <-
-  here::here("03_data/994_magma_inputs",
-             paste0("cluster_markers_logfc_threshold_", level, "_", subset, ".tsv"))
-# Only run if needed
-if (!file.exists(file_name)) {
-  # Set up future to use multiple cores
-  plan("multisession", workers = 8)
+get_top_gene_subset <- function(df, percent_subset) {
+  df <- df |>
+    # Drop cases where entrez ID is missing
+    dplyr::filter(!is.na(entrezgene_id))
   
-  # Now run FindAllMarkers, it will use the future plan for parallel computation
-  #all_markers <- FindAllMarkers(sce, min.pct = 0.25, logfc.threshold = 0.2, test.use = "MAST", latent.vars = "donor")
-  all_markers <-
-    FindAllMarkers(sce, min.pct = 0.25, logfc.threshold = 0.01)
+  # Check if the minimum number of genes in a cellytpe is less than the % needed
+  min_genes <- min(table(df$cluster))
+  # If it is, then use the smallest number of genes possible
+  if (min_genes < percent_subset) {
+    print("WARNING: There are less genes than the percent subset")
+    print(
+      paste0(
+        "There are: ",
+        percent_subset,
+        " genes needed, but there are only ",
+        min_genes,
+        " in the celltype with the lowest number of genes"
+      )
+    )
+    percent_subset <- min_genes
+  }
   
-  # Save data
-  readr::write_tsv(all_markers, file_name)
-} else {
-  all_markers <- readr::read_tsv(file_name)
+  top_genes_df <- df |>
+    dplyr::group_by(cluster) |>
+    slice_min(order_by = p_val_adj,
+              n = percent_subset,
+              with_ties = FALSE)
+  # Count the number of genes for each celltype
+  counts_per_celltype <- table(top_genes_df$cluster)
+  # Test if all celltypes have the same number of genes
+  assertthat::assert_that(all(counts_per_celltype == counts_per_celltype[1]))
+  return(top_genes_df)
 }
-```
-
-
-```{r}
-# Format data
-# Remove non-significant markers
-all_markers_filtered <- all_markers |>
-  dplyr::filter(p_val_adj < 0.05)
-assertthat::assert_that(sum(all_markers_filtered$p_val_adj > 0.05) == 0)
-
-top_genes_df <- all_markers_filtered
-```
-
-I'm not sure I understand the logic of requiring all the celltypes to have the same number of genes as input for MAGMA, so I'll not evaluate this code for now.
-
-```{r}
-#| eval: true
-#min_gene_number <- table(all_markers_filtered$cluster) |> min()
-min_gene_number <- 300
-
-top_genes_df <- all_markers |>
-  dplyr::group_by(cluster) |>
-  slice_min(order_by = p_val_adj, n = min_gene_number, with_ties = FALSE)
-
-# Count the number of genes for each celltype
-counts_per_celltype <- table(top_genes_df$cluster)
-# Test if all celltypes have the same number of genes
-assertthat::assert_that(all(counts_per_celltype == counts_per_celltype[1]))
-```
-
-
-```{r}
-# Get entrez IDs for genes
-ensembl <- useMart("ensembl", dataset = "hsapiens_gene_ensembl")
-entrez_ids <- getBM(attributes = c('ensembl_gene_id', 'entrezgene_id'),
-                    filters = 'ensembl_gene_id',
-                    values = top_genes_df$gene,
-                    mart = ensembl)
-# Remove rows with NA Entrez IDs if present
-entrez_ids <- entrez_ids[!is.na(entrez_ids$entrezgene_id), ]
-
-# Get unique Ensembl-Entrez pairs by keeping the first occurrence
-entrez_ids <- entrez_ids[!duplicated(entrez_ids$ensembl_gene_id), ]
-
-top_genes_df <- top_genes_df |>
-  dplyr::left_join(unique(entrez_ids), by = join_by(gene == ensembl_gene_id))
+top_genes <-
+  map(gene_percents, ~ get_top_gene_subset(all_markers, .x))
 ```
 
 ### Format data for MAGMA
@@ -315,18 +269,24 @@ Now I need to get the actual format for MAGMA.
 It wants a file with no column headers, a row per celltype and space separated entrez gene IDs.
 
 ```{r}
-# Group by celltype and concatenate the Entrez IDs into a space-separated string
-formatted_data <- top_genes_df %>%
-  dplyr::filter(!is.na(entrezgene_id)) |>
-  dplyr::select(cluster, entrezgene_id) |>
-  group_by(cluster) |>
-  summarise(entrez_ids = paste(entrezgene_id, collapse = " "), .groups = 'drop')
+prep_for_magma <- function(df) {
+  # Group by celltype and concatenate the Entrez IDs into a space-separated string
+  formatted_data <- df %>%
+    dplyr::select(cluster, entrezgene_id) |>
+    group_by(cluster) |>
+    summarise(entrez_ids = paste(entrezgene_id, collapse = " "),
+              .groups = 'drop')
+  return(formatted_data)
+}
+
+formatted_data <- map(top_genes, prep_for_magma)
 
 # Write the formatted data to a file with no headers and no row names
-readr::write_tsv(formatted_data,
+map2(formatted_data, names(formatted_data), ~ readr::write_tsv(.x,
                  here::here(
                    "03_data/994_magma_inputs",
-                   paste0("magma_celltypes_logfc_threshold_", level, "_", subset, ".tsv")
+                   paste0("magma_celltypes_", level, "_", subset, "_top-", .y, "-percent.tsv")
                  ),
-                 col_names = FALSE)
+                 col_names = FALSE))
 ```
+
