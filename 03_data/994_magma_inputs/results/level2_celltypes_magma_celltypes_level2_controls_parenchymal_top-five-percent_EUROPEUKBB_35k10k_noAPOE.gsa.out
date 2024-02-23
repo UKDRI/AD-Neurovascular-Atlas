@@ -1,0 +1,33 @@
+# TOTAL_GENES = 18353
+# TEST_DIRECTION = one-sided, positive (set), two-sided (covar)
+# CONDITIONED_INTERNAL = gene size, gene density, sample size, inverse mac, log(gene size), log(gene density), log(sample size), log(inverse mac)
+VARIABLE                             TYPE  NGENES         BETA     BETA_STD           SE            P FULL_NAME
+Oligo-A                               SET    1274    -0.009552   -0.0024278     0.028098      0.63305 Oligo-A
+Astrocyte-activated                   SET    1236      0.03045    0.0076316     0.028541      0.14302 Astrocyte-activated
+Oligo-B                               SET    1269     0.073619     0.018678     0.027553    0.0037748 Oligo-B
+T-cell-mixed                          SET    1272     0.061391     0.015592     0.027701     0.013346 T-cell-mixed
+T-cell-parenchymal-1                  SET    1283     0.072938     0.018599     0.027401    0.0038891 T-cell-parenchymal-1
+T-cell-parenchymal-2                  SET    1267     0.015056     0.003817     0.027815      0.29415 T-cell-parenchymal-2
+Microglia-quiescent                   SET    1254     0.080048     0.020197     0.027992    0.0021231 Microglia-quiescent
+Microglia-activated                   SET    1271      0.10278     0.026095     0.027347   8.5815e-05 Microglia-activated
+Perivascular                          SET    1265     0.071059     0.018002     0.027648     0.005088 Perivascular
+Microglia-vascular                    SET    1265     0.054644     0.013843     0.027522     0.023557 Microglia-vascular
+Astrocyte-quiescent                   SET    1229   -0.0082508   -0.0020624     0.028602       0.6135 Astrocyte-quiescent
+OPC-A                                 SET    1236     0.044412     0.011131     0.028449     0.059261 OPC-A
+OPC-B                                 SET    1267     0.053915     0.013669     0.028406     0.028856 OPC-B
+Ex-Neuron-L2-3-CBLN2-LINC023...       SET    1254    -0.013791   -0.0034796     0.028321      0.68685 Ex-Neuron-L2-3-CBLN2-LINC02306-CUX2
+Ex-Neuron-ADARB2-ERBB4                SET    1222    -0.027704   -0.0069068     0.028907      0.83106 Ex-Neuron-ADARB2-ERBB4
+In-Neuron-PRKG1-TBC1D4                SET    1246    0.0075498    0.0018993     0.028459       0.3954 In-Neuron-PRKG1-TBC1D4
+In-Neuron-ADARB2-LAMP5-NRG1           SET    1255     0.005485    0.0013844     0.028451      0.42356 In-Neuron-ADARB2-LAMP5-NRG1
+Ex-Neuron-L4-5-RORB-IL1RAPL2          SET    1245   -0.0007806   -0.0001963     0.028398      0.51096 Ex-Neuron-L4-5-RORB-IL1RAPL2
+Ex-Neuron-L6-THEMIS-NFIA              SET    1239   -0.0076203    -0.001912     0.028537      0.60528 Ex-Neuron-L6-THEMIS-NFIA
+low-feature-cells                     SET    1289     0.051489     0.013158     0.027535     0.030755 low-feature-cells
+Ex-Neuron-L3-5-RORB-PLCH1             SET    1232      0.01146    0.0028678     0.028799      0.34535 Ex-Neuron-L3-5-RORB-PLCH1
+Ex-Neuron-DLC1-HS3ST4                 SET    1239   -0.0017341   -0.0004351     0.028565       0.5242 Ex-Neuron-DLC1-HS3ST4
+Ex-Neuron-CBLN2-NRGN                  SET    1221     0.015954     0.003976     0.028794      0.28976 Ex-Neuron-CBLN2-NRGN
+In-Neuron-ADARB2-GRM7                 SET    1254     0.020395    0.0051458     0.028616      0.23802 In-Neuron-ADARB2-GRM7
+In-Neuron-TRHDE-RALYL                 SET    1253      0.02745    0.0069235     0.028717      0.16957 In-Neuron-TRHDE-RALYL
+In-Neuron-ADARB2-IL1RAPL2-CS...       SET    1250    0.0087482     0.002204     0.028492      0.37941 In-Neuron-ADARB2-IL1RAPL2-CSCL14
+In-Neuron-ADARB2-NRG1-RELN            SET    1255     0.021093    0.0053241     0.028421        0.229 In-Neuron-ADARB2-NRG1-RELN
+In-Neuron-DPP10-MEF2C                 SET    1253     0.014102    0.0035568     0.028469      0.31018 In-Neuron-DPP10-MEF2C
+ambiguous                             SET    1232      0.02322    0.0058107      0.02871      0.20933 ambiguous
