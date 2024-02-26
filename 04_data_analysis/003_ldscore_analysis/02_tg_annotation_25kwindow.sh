@@ -48,7 +48,7 @@ INPUT_FILES="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_in
 
 mkdir -p $OUTPUT
 
-for file in ${INPUT_FILE}*; do
+for file in ${INPUT_FILES}/*; do
   basefile=$(basename "$file")
   echo "${basefile}"
 
