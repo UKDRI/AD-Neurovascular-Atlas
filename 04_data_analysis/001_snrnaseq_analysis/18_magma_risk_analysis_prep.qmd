@@ -70,14 +70,20 @@ gene_percents <-
 #subset <- "controls_parenchymal"
 subset <- "controls_vascular"
 
-#level <- "level1"
-level <- "level2"
+level <- "level1"
+#level <- "level2"
 ```
 
 
 ```{r}
 # Subset to controls
 sce <- subset(sce, subset = diagnosis == "Control")
+
+# Get T-Cell numbers
+level1_counts <- table(Idents(sce))
+level2_counts <- table(sce$subcelltype_annotations)
+level1_counts[names(level1_counts) %in% "T-cell"]
+level2_counts[grepl("T-cell", names(level2_counts))]
 
 # Update mystery-cluster label
 update_label <- c("mystery-cluster" = "Trans-Endo-to-mural")
@@ -261,6 +267,28 @@ get_top_gene_subset <- function(df, percent_subset) {
 }
 top_genes <-
   map(gene_percents, ~ get_top_gene_subset(all_markers, .x))
+```
+
+Save the data for LDscore
+
+```{r}
+# Function to extract genes for a given celltype and write them to a file
+write_genes <- function(df, celltype, df_name) {
+  genes <- df$gene[df$cluster == celltype]
+  filename <- here::here("03_data/995_ldsc_inputs/01_celltype_markers",
+                   paste0("ldsc_", celltype, "_", level, "_", subset, "_top-", 
+                          df_name, "-percent.tsv"))
+  writeLines(genes, filename)
+}
+
+# Function to process each dataframe
+process_dataframe <- function(df, df_name) {
+  unique_celltypes <- unique(df$cluster)
+  map(unique_celltypes, ~write_genes(df, .x, df_name))
+}
+
+# Apply the process_dataframe function to each dataframe in the list
+map(names(top_genes), ~process_dataframe(top_genes[[.x]], .x))
 ```
 
 ### Format data for MAGMA
