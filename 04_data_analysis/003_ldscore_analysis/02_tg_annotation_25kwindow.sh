@@ -40,10 +40,9 @@ N=${SLURM_ARRAY_TASK_ID}
 
 
 LDSC="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/ldsc"
-#GENESET="/TG3_level1_GeneSet"
-PHASE3="/nfs/dri/02/rdscw/shared/public/LDSc_regression/1000G_EUR_Phase3_plink"
+PHASE3="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/1000G_EUR_Phase3_plink"
 OUTPUT="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/03_annotations"
-ENSG="/nfs/dri/02/rdscw/shared/public/LDSc_regression/"
+ENSG="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/"
 INPUT_FILES="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/01_celltype_markers"
 #INPUT_FILES="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/02_backgrounds"
 
