@@ -39,27 +39,15 @@ module load bedtools/2.29.2
 N=${SLURM_ARRAY_TASK_ID}
 
 
-LDSC="/LDSC/ldsc"
+LDSC="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/ldsc"
 #GENESET="/TG3_level1_GeneSet"
-PHASE3="/nfs/dri/02/rdscw/shared/public/LDSc_regression
-/1000G_EUR_Phase3_plink"
+PHASE3="/nfs/dri/02/rdscw/shared/public/LDSc_regression/1000G_EUR_Phase3_plink"
 OUTPUT="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/03_annotations"
 ENSG ="/nfs/dri/02/rdscw/shared/public/LDSc_regression/"
-INPUT_FILES="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/"
+INPUT_FILES="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/01_celltype_markers"
+#INPUT_FILES="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/02_backgrounds"
 
 mkdir -p $OUTPUT
-
-# for file in Emeka_Fibroblast Emeka_Immune Emeka_Satglia Emeka_Schwann_M Emeka_Vascular Emeka_control_Fibroblast Emeka_control_Immune Emeka_control_Satglia Emeka_control_Schwann_M Emeka_control_Vascular Emeka_control_neuronal Emeka_neuronal
-# do
-# echo ${file}
-# 
-#   python $LDSC/make_annot.py \
-#   --gene-set-file $GENESET/$file.GeneSet \
-#   --gene-coord-file $ENSG/ENSG_coord.txt \
-#   --windowsize 25000 \
-#   --bimfile $PHASE3/1000G.EUR.QC.$N.bim \
-#   --annot-file $OUTPUT/$file.$N.annot.gz
-# done
 
 for file in ${INPUT_FILE}*; do
   basefile=$(basename "$file")
