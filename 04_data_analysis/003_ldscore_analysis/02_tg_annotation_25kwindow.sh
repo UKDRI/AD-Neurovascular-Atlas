@@ -43,7 +43,7 @@ LDSC="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/ld
 #GENESET="/TG3_level1_GeneSet"
 PHASE3="/nfs/dri/02/rdscw/shared/public/LDSc_regression/1000G_EUR_Phase3_plink"
 OUTPUT="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/03_annotations"
-ENSG ="/nfs/dri/02/rdscw/shared/public/LDSc_regression/"
+ENSG="/nfs/dri/02/rdscw/shared/public/LDSc_regression/"
 INPUT_FILES="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/01_celltype_markers"
 #INPUT_FILES="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/02_backgrounds"
 
