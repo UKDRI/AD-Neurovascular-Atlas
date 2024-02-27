@@ -1,0 +1,12 @@
+# MEAN_SAMPLE_SIZE = 36989
+# TOTAL_GENES = 18877
+# TEST_DIRECTION = one-sided, positive (set), two-sided (covar)
+# CONDITIONED_INTERNAL = gene size, gene density, inverse mac, log(gene size), log(gene density), log(inverse mac)
+VARIABLE                 TYPE  NGENES         BETA     BETA_STD           SE            P
+Endothelial               SET     262     0.013282    0.0015539     0.068522      0.42315
+Fibroblast                SET     254    -0.067359    -0.007761     0.069866       0.8325
+Microglia                 SET     268    -0.045594   -0.0053941     0.065641      0.75634
+Pericyte                  SET     263   -0.0061211  -0.00071747     0.067302      0.53623
+SMC                       SET     266   -0.0095295   -0.0011232     0.067294       0.5563
+T-cell                    SET     263     0.082002    0.0096117     0.066294      0.10806
+Trans-Endo-to-mural       SET     260     0.071836    0.0083726     0.070121      0.15282

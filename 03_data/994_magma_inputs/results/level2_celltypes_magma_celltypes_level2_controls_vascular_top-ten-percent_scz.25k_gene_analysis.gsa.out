@@ -1,0 +1,24 @@
+# MEAN_SAMPLE_SIZE = 36989
+# TOTAL_GENES = 18877
+# TEST_DIRECTION = one-sided, positive (set), two-sided (covar)
+# CONDITIONED_INTERNAL = gene size, gene density, inverse mac, log(gene size), log(gene density), log(inverse mac)
+VARIABLE                    TYPE  NGENES         BETA     BETA_STD           SE            P
+T-Pericyte                   SET    2099     0.081416     0.025596     0.025075   0.00058453
+M-Pericyte                   SET    2098     0.096841     0.030438      0.02498   5.3143e-05
+Pericyte                     SET    2105      0.10689     0.033645     0.024845   8.5116e-06
+Pericyte-2                   SET    2075     0.087628      0.02741     0.025211   0.00025534
+Vascular-SMC                 SET    2109     0.096668     0.030454     0.024729    4.654e-05
+Arteriolar-SMC               SET    2100      0.10734     0.033753     0.024865   7.9592e-06
+Vascular-SMC-LINC00486       SET    2112      0.10547     0.033247     0.024763   1.0329e-05
+Trans-Endo-to-mural          SET    2086     0.045942     0.014404     0.024473      0.03025
+Perivascular-FB-KAZN2        SET    2109      0.10386     0.032718      0.02468   1.2952e-05
+Perivascular-FB              SET    2078     0.082221     0.025735     0.025357   0.00059376
+Meningeal-FB                 SET    2104      0.13439     0.042293      0.02509   4.3128e-08
+Artirial-FB                  SET    2055     0.024243    0.0075511     0.024704      0.16322
+Pericyte-FB                  SET    2065     0.077951     0.024332     0.025277    0.0010235
+Capillary                    SET    2092      0.10186     0.031975      0.02511   2.5045e-05
+Arterial                     SET    2095     0.072785     0.022863      0.02502    0.0018154
+Venous                       SET    2099     0.041851     0.013157     0.024835     0.045986
+T-cell-mixed                 SET    2100     0.083034      0.02611     0.025303   0.00051721
+T-cell-vascular              SET    2099      0.06712     0.021101     0.024526    0.0031063
+Microglia-vascular           SET    2115     0.069404     0.021892      0.02434    0.0021793

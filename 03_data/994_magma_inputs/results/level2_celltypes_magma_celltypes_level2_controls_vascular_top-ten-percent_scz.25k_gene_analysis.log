@@ -1,0 +1,35 @@
+Welcome to MAGMA v1.10 (custom)
+Using flags:
+	--gene-results /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/994_magma_inputs//scz.25k_gene_analysis.genes.raw
+	--set-annot /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/994_magma_inputs//magma_celltypes_level2_controls_vascular_top-ten-percent.tsv
+	--out ./results/level2_celltypes_magma_celltypes_level2_controls_vascular_top-ten-percent_scz.25k_gene_analysis
+
+Start time is 11:53:54, Tuesday 27 Feb 2024
+
+Reading file /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/994_magma_inputs//scz.25k_gene_analysis.genes.raw... 
+	18877 genes read from file
+Loading gene-set annotation...
+Reading file /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/994_magma_inputs//magma_celltypes_level2_controls_vascular_top-ten-percent.tsv... 
+	19 gene-set definitions read from file
+	found 19 gene sets containing genes defined in genotype data (containing a total of 5381 unique genes)
+Preparing variables for analysis...
+	truncating Z-scores 3 points below zero or 6 standard deviations above the mean
+	truncating covariate values more than 5 standard deviations from the mean
+	total variables available for analysis: 19 gene sets
+
+Parsing model specifications...
+Inverting gene-gene correlation matrix...
+Performing regression analysis...
+	testing direction: one-sided, positive (sets), two-sided (covar)
+	conditioning on internal variables:
+		gene size, log(gene size)
+		gene density, log(gene density)
+		inverse mac, log(inverse mac)
+	analysing individual variables
+
+	analysing single-variable models (number of models: 19)
+	writing results to file ./results/level2_celltypes_magma_celltypes_level2_controls_vascular_top-ten-percent_scz.25k_gene_analysis.gsa.out
+	writing gene information to file ./results/level2_celltypes_magma_celltypes_level2_controls_vascular_top-ten-percent_scz.25k_gene_analysis.gsa.genes.out
+	writing gene analysis results per significant result (after multiple testing correction, at alpha = 0.05) to file ./results/level2_celltypes_magma_celltypes_level2_controls_vascular_top-ten-percent_scz.25k_gene_analysis.gsa.sets.genes.out
+
+End time is 11:54:09, Tuesday 27 Feb 2024 (elapsed: 00:00:15)

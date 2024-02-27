@@ -1,0 +1,34 @@
+# MEAN_SAMPLE_SIZE = 36989
+# TOTAL_GENES = 18877
+# TEST_DIRECTION = one-sided, positive (set), two-sided (covar)
+# CONDITIONED_INTERNAL = gene size, gene density, inverse mac, log(gene size), log(gene density), log(inverse mac)
+VARIABLE                             TYPE  NGENES         BETA     BETA_STD           SE            P FULL_NAME
+Astrocyte-activated                   SET    1442       0.1372     0.036444     0.030271   2.9381e-06 Astrocyte-activated
+Astrocyte-quiescent                   SET    1427      0.11155     0.029489     0.030247   0.00011342 Astrocyte-quiescent
+Ex-Neuron-ADARB2-ERBB4                SET    1459      0.12975      0.03465     0.029902   7.2036e-06 Ex-Neuron-ADARB2-ERBB4
+Ex-Neuron-CBLN2-NRGN                  SET    1415      0.15709     0.041368      0.03014   9.4582e-08 Ex-Neuron-CBLN2-NRGN
+Ex-Neuron-DLC1-HS3ST4                 SET    1438      0.17795     0.047209     0.029903   1.3621e-09 Ex-Neuron-DLC1-HS3ST4
+Ex-Neuron-L2-3-CBLN2-LINC023...       SET    1458      0.13538     0.036143     0.029913   3.0307e-06 Ex-Neuron-L2-3-CBLN2-LINC02306-CUX2
+Ex-Neuron-L3-5-RORB-PLCH1             SET    1429      0.13958     0.036924     0.030212   1.9326e-06 Ex-Neuron-L3-5-RORB-PLCH1
+Ex-Neuron-L4-5-RORB-IL1RAPL2          SET    1442      0.12717      0.03378     0.029942   1.0885e-05 Ex-Neuron-L4-5-RORB-IL1RAPL2
+Ex-Neuron-L6-THEMIS-NFIA              SET    1440      0.15618     0.041459     0.029919   9.0604e-08 Ex-Neuron-L6-THEMIS-NFIA
+In-Neuron-ADARB2-GRM7                 SET    1463      0.17388     0.046495      0.03005   3.6683e-09 In-Neuron-ADARB2-GRM7
+In-Neuron-ADARB2-IL1RAPL2-CS...       SET    1464      0.16253     0.043473     0.030345   4.3154e-08 In-Neuron-ADARB2-IL1RAPL2-CSCL14
+In-Neuron-ADARB2-LAMP5-NRG1           SET    1470      0.16631     0.044568     0.029872   1.3141e-08 In-Neuron-ADARB2-LAMP5-NRG1
+In-Neuron-ADARB2-NRG1-RELN            SET    1467      0.16977     0.045452     0.030224    9.892e-09 In-Neuron-ADARB2-NRG1-RELN
+In-Neuron-DPP10-MEF2C                 SET    1465      0.17202     0.046025     0.030103   5.6135e-09 In-Neuron-DPP10-MEF2C
+In-Neuron-PRKG1-TBC1D4                SET    1459      0.17849     0.047666     0.029824   1.1088e-09 In-Neuron-PRKG1-TBC1D4
+In-Neuron-TRHDE-RALYL                 SET    1468      0.21769     0.058299     0.030075    2.383e-13 In-Neuron-TRHDE-RALYL
+Microglia-activated                   SET    1457     0.076529     0.020425     0.029808    0.0051276 Microglia-activated
+Microglia-quiescent                   SET    1449       0.1496     0.039827     0.030177   3.6087e-07 Microglia-quiescent
+Microglia-vascular                    SET    1461      0.18867     0.050418     0.029764   1.1902e-10 Microglia-vascular
+OPC-A                                 SET    1439      0.17638     0.046806     0.030506   3.7704e-09 OPC-A
+OPC-B                                 SET    1474      0.16879     0.045288     0.030096   1.0401e-08 OPC-B
+Oligo-A                               SET    1470      0.12481     0.033447     0.030205   1.8069e-05 Oligo-A
+Oligo-B                               SET    1463      0.20398     0.054544     0.030174   7.1418e-12 Oligo-B
+Perivascular                          SET    1459      0.12793     0.034164     0.030159   1.1155e-05 Perivascular
+T-cell-mixed                          SET    1458      0.16186     0.043211     0.030432   5.3023e-08 T-cell-mixed
+T-cell-parenchymal-1                  SET    1478       0.1662     0.044649     0.029628   1.0324e-08 T-cell-parenchymal-1
+T-cell-parenchymal-2                  SET    1458     0.017953    0.0047929     0.029265      0.26979 T-cell-parenchymal-2
+ambiguous                             SET    1437      0.17175     0.045548     0.029855   4.4782e-09 ambiguous
+low-feature-cells                     SET    1482      0.17526      0.04714     0.029407   1.2919e-09 low-feature-cells
