@@ -60,7 +60,7 @@ for filepath in ${ANNOT}/*.tsv*; do  # Assuming the files have .tsv followed by 
   --l2 \
   --bfile $PHASE3/1000G.EUR.QC.$chrom \
   --ld-wind-cm 1 \
-  --annot $ANNOT/${file_with_path}.tsv.$chrom.annot.gz \
+  --annot ${file_with_path}.tsv.$chrom.annot.gz \
   --thin-annot \
   --out $OUTPUT/${basefile}.$chrom \
   --print-snps $HAPMAP3/hm.$chrom.snp
