@@ -1,16 +1,19 @@
 #!/bin/bash
 
 #SBATCH -p c_vhighmem_dri1 ## dev, compute, htc, highmem
-#SBATCH --job-name=level1_50k_ldscore
+#SBATCH --job-name=bbb_25K_ldscore
 #SBATCH --ntasks=40
 #SBATCH --ntasks-per-node=30
-##### #SBATCH --array=1-308%14
+#SBATCH --array=1-22
+##### #SBATCH --array=1-7590%14
 ##### #SBATCH --mem-per-cpu=8000 # memory limit per core
 #SBATCH --mem=360G # memory limit per compute node for the job
-#SBATCH --time=4-00:00 # maximum job time in D-HH:MM
+#SBATCH --time=3-00:00 # maximum job time in D-HH:MM
 #SBATCH --account=scw1329
-#SBATCH -o /scratch/..../%x_out_%A_%a_%J.txt
-#SBATCH -e /scratch/..../%x_err_%A_%a_%J.txt
+#SBATCH -o /scratch/c.mpmgb/hawk_output/%x_out_%A_%a_%J.txt
+#SBATCH -e /scratch/c.mpmgb/hawk_output/%x_err_%A_%a_%J.txt
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=bernardo-harringtong@cardiff.ac.uk
 
 echo "*****************************************************************"
 echo "All jobs in this array have:"
@@ -36,34 +39,33 @@ module load bedtools/2.29.2
 ## input
 ## gene sets
 
-N=${SLURM_ARRAY_TASK_ID}
+chrom=${SLURM_ARRAY_TASK_ID}
+echo "Processing chromosome ${chrom}"
 
-echo "Input dir: "$INPUT_DIR
+#echo "Input dir: "$INPUT_DIR
 
-LDSC="/LDSC/ldsc"
-PHASE3="/1000G_EUR_Phase3_plink"
-ANNOT="/annotation_output_path"
-OUTPUT="path"
-HAPMAP3="/hapmap3_snps"
+LDSC="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/ldsc"
+PHASE3="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/1000G_EUR_Phase3_plink"
+ANNOT="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/03_annotations"
+OUTPUT="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/04_ldscores"
+HAPMAP3="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/hapmap3_snps"
 
+for filepath in ${ANNOT}/*.tsv*; do  # Assuming the files have .tsv followed by more text
+    file_with_path="${filepath%.tsv*}"  # Removes everything after .tsv, including .tsv itself
+    basefile=$(basename -- "$file_with_path")  # Extracts the base filename without the directory path
 
-for chrom in {1..22}
-do
-  echo ${chrom}
-for file in Emeka_Fibroblast Emeka_Immune Emeka_Satglia Emeka_Schwann_M Emeka_Vascular Emeka_control_Fibroblast Emeka_control_Immune Emeka_control_Satglia Emeka_control_Schwann_M Emeka_control_Vascular Emeka_control_neuronal Emeka_neuronal
-do
-echo ${file}
+    echo ${basefile}
   
   python $LDSC/ldsc.py \
   --l2 \
   --bfile $PHASE3/1000G.EUR.QC.$chrom \
   --ld-wind-cm 1 \
-  --annot $ANNOT/$file.$chrom.annot.gz \
+  --annot $ANNOT/${file_with_path}.tsv.$chrom.annot.gz \
   --thin-annot \
-  --out $OUTPUT/$file.$chrom \
+  --out $OUTPUT/${basefile}.$chrom \
   --print-snps $HAPMAP3/hm.$chrom.snp
 done
-done
+
 
 echo -e "\n************************************************************"
 echo "Finished at: "`date`
