@@ -318,3 +318,33 @@ map2(formatted_data, names(formatted_data), ~ readr::write_tsv(.x,
                  col_names = FALSE))
 ```
 
+# GWAS summary stats
+
+One can search the [Open GWAS Project](https://gwas.mrcieu.ac.uk/) for traits of interest.
+
+```{r}
+#| eval: false
+#### Search for datasets ####
+metagwas <- MungeSumstats::find_sumstats(traits = c("parkinson","alzheimer", "stroke", "schizophrenia", "vascular dementia"), 
+                                         min_sample_size = 5000)
+unique(metagwas$trait)
+```
+
+The following takes the IDs of the GWAS data and downloads/formats them, returning a list of the IDs and their relevant formatted summary stats files.
+Note that it saves to `tempdir()` by default, so files will be lost when the R session ends.
+
+```{r}
+#| eval: false
+# There's a fair few, so I'll just get the latest major GWAS for Scz, PD and stroke
+# I'll skip AD and Scz as I've already got those
+ids <- c("ebi-a-GCST006906", "ieu-b-7")
+
+datasets <- MungeSumstats::import_sumstats(ids = ids, 
+                                           vcf_download = TRUE, 
+                                           download_method = "axel", 
+                                           nThread = max(2,future::availableCores()-2))
+results_df <- data.frame(id=names(datasets),
+                         path=unlist(datasets))
+resutls_df
+```
+
