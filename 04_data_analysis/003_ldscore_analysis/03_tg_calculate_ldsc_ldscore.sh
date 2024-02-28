@@ -71,6 +71,7 @@ export LDSC
 export PHASE3
 export OUTPUT
 export HAPMAP3
+export chrom
 
 parallel -j ${SLURM_CPUS_PER_TASK} --env LDSC,PHASE3,OUTPUT,HAPMAP3 'filepath={}; \
     file_with_path="${filepath%.tsv*}"; \
