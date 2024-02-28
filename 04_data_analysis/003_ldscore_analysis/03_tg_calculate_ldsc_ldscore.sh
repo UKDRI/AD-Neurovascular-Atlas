@@ -85,7 +85,7 @@ parallel -j ${SLURM_CPUS_PER_TASK} --env LDSC,PHASE3,OUTPUT,HAPMAP3 'filepath={}
     --thin-annot \
     --out $OUTPUT/${basefile}.$chrom \
     --print-snps $HAPMAP3/hm.$chrom.snp' \
-    ::: ${ANNOT}/*.top-ten-percent.tsv*
+    ::: ${ANNOT}/*_top-ten-percent.tsv*
 
 
 echo -e "\n************************************************************"
