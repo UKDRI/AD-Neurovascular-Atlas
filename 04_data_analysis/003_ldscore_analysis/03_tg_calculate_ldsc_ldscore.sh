@@ -1,14 +1,13 @@
 #!/bin/bash
 
-#SBATCH -p c_vhighmem_dri1 ## dev, compute, htc, highmem
+#SBATCH -p c_highmem_dri1 ## dev, compute, htc, highmem
 #SBATCH --job-name=bbb_25K_ldscore
-#SBATCH --ntasks=40
-#SBATCH --ntasks-per-node=30
+#SBATCH --cpus-per-task=40
 #SBATCH --array=1-22
 ##### #SBATCH --array=1-7590%14
 ##### #SBATCH --mem-per-cpu=8000 # memory limit per core
-#SBATCH --mem=360G # memory limit per compute node for the job
-#SBATCH --time=3-00:00 # maximum job time in D-HH:MM
+#SBATCH --mem=260G # memory limit per compute node for the job
+#SBATCH --time=6-00:00 # maximum job time in D-HH:MM
 #SBATCH --account=scw1329
 #SBATCH -o /scratch/c.mpmgb/hawk_output/%x_out_%A_%a_%J.txt
 #SBATCH -e /scratch/c.mpmgb/hawk_output/%x_err_%A_%a_%J.txt
@@ -35,6 +34,8 @@ echo -e "*****************************************************************\n"
 
 module load ldsc/1.0.1
 module load bedtools/2.29.2
+module load parallel 
+
 
 ## input
 ## gene sets
@@ -50,21 +51,40 @@ ANNOT="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/0
 OUTPUT="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/04_ldscores"
 HAPMAP3="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/hapmap3_snps"
 
-for filepath in ${ANNOT}/*.tsv*; do  # Assuming the files have .tsv followed by more text
-    file_with_path="${filepath%.tsv*}"  # Removes everything after .tsv, including .tsv itself
-    basefile=$(basename -- "$file_with_path")  # Extracts the base filename without the directory path
+# for filepath in ${ANNOT}/*.tsv*; do  # Assuming the files have .tsv followed by more text
+#     file_with_path="${filepath%.tsv*}"  # Removes everything after .tsv, including .tsv itself
+#     basefile=$(basename -- "$file_with_path")  # Extracts the base filename without the directory path
+# 
+#     echo ${basefile}
+#   
+#   python $LDSC/ldsc.py \
+#   --l2 \
+#   --bfile $PHASE3/1000G.EUR.QC.$chrom \
+#   --ld-wind-cm 1 \
+#   --annot ${file_with_path}.tsv.$chrom.annot.gz \
+#   --thin-annot \
+#   --out $OUTPUT/${basefile}.$chrom \
+#   --print-snps $HAPMAP3/hm.$chrom.snp
+# done
 
-    echo ${basefile}
-  
-  python $LDSC/ldsc.py \
-  --l2 \
-  --bfile $PHASE3/1000G.EUR.QC.$chrom \
-  --ld-wind-cm 1 \
-  --annot ${file_with_path}.tsv.$chrom.annot.gz \
-  --thin-annot \
-  --out $OUTPUT/${basefile}.$chrom \
-  --print-snps $HAPMAP3/hm.$chrom.snp
-done
+export LDSC
+export PHASE3
+export OUTPUT
+export HAPMAP3
+
+parallel -j ${SLURM_CPUS_PER_TASK} --env LDSC,PHASE3,OUTPUT,HAPMAP3 'filepath={}; \
+    file_with_path="${filepath%.tsv*}"; \
+    basefile=$(basename -- "$file_with_path"); \
+    echo ${basefile}; \
+    python $LDSC/ldsc.py \
+    --l2 \
+    --bfile $PHASE3/1000G.EUR.QC.$chrom \
+    --ld-wind-cm 1 \
+    --annot ${file_with_path}.tsv.$chrom.annot.gz \
+    --thin-annot \
+    --out $OUTPUT/${basefile}.$chrom \
+    --print-snps $HAPMAP3/hm.$chrom.snp' \
+    ::: ${ANNOT}/*.top-ten-percent.tsv*
 
 
 echo -e "\n************************************************************"
