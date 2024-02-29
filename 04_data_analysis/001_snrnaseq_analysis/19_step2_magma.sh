@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=MAGMA_step2
-#SBATCH -p c_highmem_dri1
+#SBATCH -p c_compute_dri1
 #SBATCH -o /scratch/c.mpmgb/hawk_output/%x_out_%A_%a_%J.txt
 #SBATCH -e /scratch/c.mpmgb/hawk_output/%x_err_%A_%a_%J.txt
 #SBATCH --time=0-10:00:00
@@ -34,7 +34,7 @@ module purge
 module load magma/1.10
 module load parallel
 
-WORK_DIR="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/993_magma_inputs/"
+WORK_DIR="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/994_magma_inputs/"
 cd $WORK_DIR
 
 #### Without proxies and with APOE - 35k10k window
@@ -256,6 +256,74 @@ mkdir temp_annot_35k10k_nobb # make a temporary directory to host the intermedia
 Annot_File=${WORK_DIR}"NCBI37_annotated_window_35k10k.genes.annot"
 SNP_Pval_File=${WORK_DIR}"stroke_summstats.tsv"
 Output_Prefix="stroke_35k10k"
+
+
+# run magma in parallel, 10 threads in this case
+parallel magma \
+   --batch {} 10 \
+   --bfile $Data_File \
+   --gene-annot $Annot_File \
+   --gene-model snp-wise=mean \
+   --pval $SNP_Pval_File N=446696 \
+   --out temp_annot_35k10k_nobb/$Output_Prefix \
+::: {1..10}
+
+# merge all intermediate files generated under the temp_annot files
+# and send out for one single file set
+
+magma \
+   --merge temp_annot_35k10k_nobb/$Output_Prefix \
+   --out temp_annot_35k10k_nobb/$Output_Prefix
+
+# extract merged files for subsequent analysis
+
+cp ./temp_annot_35k10k_nobb/$Output_Prefix.genes.* .
+
+# remove the temporary directory
+
+rm -r temp_annot_35k10k_nobb
+
+#### With white matter hyperintensities summstats - 35k10k window
+
+mkdir temp_annot_35k10k_nobb # make a temporary directory to host the intermediate files
+
+Annot_File=${WORK_DIR}"NCBI37_annotated_window_35k10k.genes.annot"
+SNP_Pval_File=${WORK_DIR}"wmh_summstats.tsv"
+Output_Prefix="wmh_35k10k"
+
+
+# run magma in parallel, 10 threads in this case
+parallel magma \
+   --batch {} 10 \
+   --bfile $Data_File \
+   --gene-annot $Annot_File \
+   --gene-model snp-wise=mean \
+   --pval $SNP_Pval_File N=11226 \
+   --out temp_annot_35k10k_nobb/$Output_Prefix \
+::: {1..10}
+
+# merge all intermediate files generated under the temp_annot files
+# and send out for one single file set
+
+magma \
+   --merge temp_annot_35k10k_nobb/$Output_Prefix \
+   --out temp_annot_35k10k_nobb/$Output_Prefix
+
+# extract merged files for subsequent analysis
+
+cp ./temp_annot_35k10k_nobb/$Output_Prefix.genes.* .
+
+# remove the temporary directory
+
+rm -r temp_annot_35k10k_nobb
+
+#### With white matter hyperintensities summstats - 35k10k window
+
+mkdir temp_annot_35k10k_nobb # make a temporary directory to host the intermediate files
+
+Annot_File=${WORK_DIR}"NCBI37_annotated_window_35k10k.genes.annot"
+SNP_Pval_File=${WORK_DIR}"pd_summstats.tsv"
+Output_Prefix="pd_35k10k"
 
 
 # run magma in parallel, 10 threads in this case
