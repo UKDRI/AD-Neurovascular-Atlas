@@ -325,7 +325,7 @@ One can search the [Open GWAS Project](https://gwas.mrcieu.ac.uk/) for traits of
 ```{r}
 #| eval: false
 #### Search for datasets ####
-metagwas <- MungeSumstats::find_sumstats(traits = c("parkinson","alzheimer", "stroke", "schizophrenia", "vascular dementia"), 
+metagwas <- MungeSumstats::find_sumstats(traits = c("parkinson","alzheimer", "stroke", "schizophrenia", "vascular dementia", "white matter hyperintensities"), 
                                          min_sample_size = 5000)
 unique(metagwas$trait)
 ```

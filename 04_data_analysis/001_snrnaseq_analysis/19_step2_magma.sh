@@ -249,6 +249,40 @@ cp ./temp_annot_nobb/$Output_Prefix.genes.* .
 
 rm -r temp_annot_nobb
 
+#### With stroke summstats - 35k10k window
+
+mkdir temp_annot_35k10k_nobb # make a temporary directory to host the intermediate files
+
+Annot_File=${WORK_DIR}"NCBI37_annotated_window_35k10k.genes.annot"
+SNP_Pval_File=${WORK_DIR}"stroke_summstats.tsv"
+Output_Prefix="stroke_35k10k"
+
+
+# run magma in parallel, 10 threads in this case
+parallel magma \
+   --batch {} 10 \
+   --bfile $Data_File \
+   --gene-annot $Annot_File \
+   --gene-model snp-wise=mean \
+   --pval $SNP_Pval_File ncol=N \
+   --out temp_annot_35k10k_nobb/$Output_Prefix \
+::: {1..10}
+
+# merge all intermediate files generated under the temp_annot files
+# and send out for one single file set
+
+magma \
+   --merge temp_annot_35k10k_nobb/$Output_Prefix \
+   --out temp_annot_35k10k_nobb/$Output_Prefix
+
+# extract merged files for subsequent analysis
+
+cp ./temp_annot_35k10k_nobb/$Output_Prefix.genes.* .
+
+# remove the temporary directory
+
+rm -r temp_annot_35k10k_nobb
+
 echo -e "\n*****************************************************************"
 echo "Finished at: "`date`
 echo "*****************************************************************"
