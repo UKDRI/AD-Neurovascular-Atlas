@@ -7,7 +7,7 @@
 ##### #SBATCH --array=1-7590%14
 ##### #SBATCH --mem-per-cpu=8000 # memory limit per core
 #SBATCH --mem=260G # memory limit per compute node for the job
-#SBATCH --time=6-00:00 # maximum job time in D-HH:MM
+#SBATCH --time=3-00:00 # maximum job time in D-HH:MM
 #SBATCH --account=scw1329
 #SBATCH -o /scratch/c.mpmgb/hawk_output/%x_out_%A_%a_%J.txt
 #SBATCH -e /scratch/c.mpmgb/hawk_output/%x_err_%A_%a_%J.txt
@@ -51,12 +51,12 @@ ANNOT="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/0
 OUTPUT="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/04_ldscores"
 HAPMAP3="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/hapmap3_snps"
 
-# for filepath in ${ANNOT}/*.tsv*; do  # Assuming the files have .tsv followed by more text
+# for filepath in ${ANNOT}/*_top-ten-percent.tsv*; do  # Assuming the files have .tsv followed by more text
 #     file_with_path="${filepath%.tsv*}"  # Removes everything after .tsv, including .tsv itself
 #     basefile=$(basename -- "$file_with_path")  # Extracts the base filename without the directory path
 # 
 #     echo ${basefile}
-#   
+# 
 #   python $LDSC/ldsc.py \
 #   --l2 \
 #   --bfile $PHASE3/1000G.EUR.QC.$chrom \
@@ -67,26 +67,35 @@ HAPMAP3="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs
 #   --print-snps $HAPMAP3/hm.$chrom.snp
 # done
 
-export LDSC
-export PHASE3
-export OUTPUT
-export HAPMAP3
-export chrom
+# Define the function to run in parallel
+do_work() {
+    filepath=$1
+    file_with_path="${filepath%.tsv*}"  # Removes everything after .tsv, including .tsv itself
+    basefile=$(basename -- "$file_with_path")  # Extracts the base filename without the directory path
+    output_file=$OUTPUT/${basefile}.$chrom
 
-parallel -j ${SLURM_CPUS_PER_TASK} --env LDSC,PHASE3,OUTPUT,HAPMAP3 'filepath={}; \
-    file_with_path="${filepath%.tsv*}"; \
-    basefile=$(basename -- "$file_with_path"); \
-    echo ${basefile}; \
-    python $LDSC/ldsc.py \
-    --l2 \
-    --bfile $PHASE3/1000G.EUR.QC.$chrom \
-    --ld-wind-cm 1 \
-    --annot ${file_with_path}.tsv.$chrom.annot.gz \
-    --thin-annot \
-    --out $OUTPUT/${basefile}.$chrom \
-    --print-snps $HAPMAP3/hm.$chrom.snp' \
-    ::: ${ANNOT}/*_top-ten-percent.tsv*
+    # Check if the output file already exists
+    if [ -f "$output_file" ]; then
+        echo "Output file ${output_file} already exists, skipping."
+    else
+        echo "Processing ${basefile}"
 
+        python $LDSC/ldsc.py \
+        --l2 \
+        --bfile $PHASE3/1000G.EUR.QC.$chrom \
+        --ld-wind-cm 1 \
+        --annot ${file_with_path}.tsv.$chrom.annot.gz \
+        --thin-annot \
+        --out $output_file \
+        --print-snps $HAPMAP3/hm.$chrom.snp
+    fi
+}
+
+export -f do_work
+export LDSC PHASE3 OUTPUT HAPMAP3 chrom
+
+# Run the jobs in parallel, excluding already processed files
+parallel do_work ::: ${ANNOT}/*_top-ten-percent.tsv*
 
 echo -e "\n************************************************************"
 echo "Finished at: "`date`
