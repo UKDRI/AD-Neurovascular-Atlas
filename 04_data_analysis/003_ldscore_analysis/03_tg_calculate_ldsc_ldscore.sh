@@ -72,11 +72,13 @@ do_work() {
     filepath=$1
     file_with_path="${filepath%.tsv*}"  # Removes everything after .tsv, including .tsv itself
     basefile=$(basename -- "$file_with_path")  # Extracts the base filename without the directory path
-    output_file=$OUTPUT/${basefile}.$chrom
 
-    # Check if the output file already exists
-    if [ -f "$output_file" ]; then
-        echo "Output file ${output_file} already exists, skipping."
+    # Construct the pattern for expected output files
+    output_pattern="$OUTPUT/${basefile}.$chrom*"
+
+    # Check if output files already exist
+    if ls $output_pattern 1> /dev/null 2>&1; then
+        echo "Output files for ${basefile} already exist, skipping."
     else
         echo "Processing ${basefile}"
 
@@ -86,7 +88,7 @@ do_work() {
         --ld-wind-cm 1 \
         --annot ${file_with_path}.tsv.$chrom.annot.gz \
         --thin-annot \
-        --out $output_file \
+        --out $OUTPUT/${basefile}.$chrom \
         --print-snps $HAPMAP3/hm.$chrom.snp
     fi
 }
