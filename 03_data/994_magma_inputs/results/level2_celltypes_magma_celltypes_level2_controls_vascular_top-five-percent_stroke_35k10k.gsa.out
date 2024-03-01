@@ -1,0 +1,23 @@
+# TOTAL_GENES = 18368
+# TEST_DIRECTION = one-sided, positive (set), two-sided (covar)
+# CONDITIONED_INTERNAL = gene size, gene density, inverse mac, log(gene size), log(gene density), log(inverse mac)
+VARIABLE                    TYPE  NGENES         BETA     BETA_STD           SE            P
+T-Pericyte                   SET    1307     0.056138     0.014433     0.026234      0.01619
+M-Pericyte                   SET    1305     0.092379     0.023733     0.026289   0.00022138
+Pericyte                     SET    1323     0.068996     0.017838     0.025467    0.0033765
+Pericyte-2                   SET    1271     0.079842     0.020263     0.026723    0.0014077
+Vascular-SMC                 SET    1318     0.067777     0.017492     0.025522    0.0039632
+Arteriolar-SMC               SET    1308     0.077127     0.019836     0.025872    0.0014388
+Vascular-SMC-LINC00486       SET    1323     0.064577     0.016696     0.025221    0.0052311
+Trans-Endo-to-mural          SET    1296     0.057602     0.014751     0.025446     0.011804
+Perivascular-FB-KAZN2        SET    1313     0.058194     0.014993     0.025589     0.011486
+Perivascular-FB              SET    1293     0.073472     0.018795     0.026439    0.0027309
+Meningeal-FB                 SET    1310     0.066908      0.01722     0.026204      0.00534
+Artirial-FB                  SET    1269     0.011813    0.0029958      0.02594      0.32442
+Pericyte-FB                  SET    1275     0.041894     0.010648     0.026343      0.05589
+Capillary                    SET    1300     0.071692     0.018386     0.025925    0.0028465
+Arterial                     SET    1309     0.095187     0.024489     0.026033   0.00012839
+Venous                       SET    1304     0.035487    0.0091139     0.025724     0.083872
+T-cell-mixed                 SET    1308     0.061249     0.015752     0.026271     0.009872
+T-cell-vascular              SET    1304    -0.013438   -0.0034511     0.025269      0.70256
+Microglia-vascular           SET    1322     0.037065    0.0095795     0.024925     0.068507

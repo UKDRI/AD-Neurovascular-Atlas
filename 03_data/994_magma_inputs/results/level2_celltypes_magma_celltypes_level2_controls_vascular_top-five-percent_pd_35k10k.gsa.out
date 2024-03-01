@@ -1,0 +1,23 @@
+# TOTAL_GENES = 18473
+# TEST_DIRECTION = one-sided, positive (set), two-sided (covar)
+# CONDITIONED_INTERNAL = gene size, gene density, sample size, inverse mac, log(gene size), log(gene density), log(sample size), log(inverse mac)
+VARIABLE                    TYPE  NGENES         BETA     BETA_STD           SE            P
+T-Pericyte                   SET    1309     0.047178     0.012106     0.028574     0.049368
+M-Pericyte                   SET    1306     0.052778     0.013528      0.02847     0.031894
+Pericyte                     SET    1324      0.07215     0.018611     0.027929    0.0048967
+Pericyte-2                   SET    1273     0.018535    0.0046952     0.029051      0.26173
+Vascular-SMC                 SET    1319     0.048986     0.012614     0.027732     0.038675
+Arteriolar-SMC               SET    1309     0.040742     0.010454     0.028317     0.075115
+Vascular-SMC-LINC00486       SET    1324     0.053976     0.013923      0.02767     0.025555
+Trans-Endo-to-mural          SET    1296     0.053668     0.013708      0.02794     0.027384
+Perivascular-FB-KAZN2        SET    1314     0.054578     0.014029     0.027784     0.024754
+Perivascular-FB              SET    1293     0.054182     0.013824     0.028714     0.029593
+Meningeal-FB                 SET    1311     0.061023     0.015669     0.028269     0.015447
+Artirial-FB                  SET    1272    0.0017938   0.00045423     0.027833      0.47431
+Pericyte-FB                  SET    1276       0.0126    0.0031951     0.029138      0.33272
+Capillary                    SET    1303     0.077081     0.019737     0.028527    0.0034495
+Arterial                     SET    1310     0.029338    0.0075308     0.028398      0.15078
+Venous                       SET    1306     0.013856    0.0035516     0.027654      0.30817
+T-cell-mixed                 SET    1309     0.053942     0.013841     0.028516     0.029279
+T-cell-vascular              SET    1305     0.012491    0.0032006     0.027411      0.32431
+Microglia-vascular           SET    1326      0.02165    0.0055884     0.026942      0.21083
