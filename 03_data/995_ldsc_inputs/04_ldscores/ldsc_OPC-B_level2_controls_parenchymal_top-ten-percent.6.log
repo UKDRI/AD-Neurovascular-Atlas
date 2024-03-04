@@ -1,0 +1,60 @@
+*********************************************************************
+* LD Score Regression (LDSC)
+* Version 1.0.1
+* (C) 2014-2019 Brendan Bulik-Sullivan and Hilary Finucane
+* Broad Institute of MIT and Harvard / MIT Department of Mathematics
+* GNU General Public License v3
+*********************************************************************
+Call: 
+./ldsc.py \
+--print-snps /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/hapmap3_snps/hm.6.snp \
+--ld-wind-cm 1.0 \
+--out /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/04_ldscores/ldsc_OPC-B_level2_controls_parenchymal_top-ten-percent.6 \
+--bfile /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/1000G_EUR_Phase3_plink/1000G.EUR.QC.6 \
+--thin-annot  \
+--annot /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/03_annotations/ldsc_OPC-B_level2_controls_parenchymal_top-ten-percent.tsv.6.annot.gz \
+--l2  
+
+Beginning analysis at Fri Mar  1 18:20:17 2024
+Read list of 664016 SNPs from /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/1000G_EUR_Phase3_plink/1000G.EUR.QC.6.bim
+Read 1 annotations for 664016 SNPs from /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/03_annotations/ldsc_OPC-B_level2_controls_parenchymal_top-ten-percent.tsv.6.annot.gz
+Read list of 489 individuals from /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/1000G_EUR_Phase3_plink/1000G.EUR.QC.6.fam
+Reading genotypes from /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/1000G_EUR_Phase3_plink/1000G.EUR.QC.6.bed
+Estimating LD Score.
+Reading list of 91491 SNPs for which to print LD Scores from /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/hapmap3_snps/hm.6.snp
+After merging with --print-snps, LD Scores for 80218 SNPs will be printed.
+Writing LD Scores for 80218 SNPs to /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/04_ldscores/ldsc_OPC-B_level2_controls_parenchymal_top-ten-percent.6.l2.ldscore.gz
+
+Summary of LD Scores in /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/04_ldscores/ldsc_OPC-B_level2_controls_parenchymal_top-ten-percent.6.l2.ldscore.gz
+         MAF        L2
+mean  0.2331   13.9395
+std   0.1441   34.2270
+min   0.0051   -2.3764
+25%   0.1074    0.0000
+50%   0.2219    0.2343
+75%   0.3558    7.5647
+max   0.5000  300.3736
+
+MAF/LD Score Correlation Matrix
+        MAF      L2
+MAF  1.0000  0.0639
+L2   0.0639  1.0000
+
+Annotation Correlation Matrix
+       ANNOT
+ANNOT    1.0
+
+Annotation Matrix Column Sums
+ANNOT    76581
+
+Summary of Annotation Matrix Row Sums
+count    664016.0000
+mean          0.1153
+std           0.3194
+min           0.0000
+25%           0.0000
+50%           0.0000
+75%           0.0000
+max           1.0000
+Analysis finished at Fri Mar  1 19:39:19 2024
+Total time elapsed: 1.0h:19.0m:2.19s

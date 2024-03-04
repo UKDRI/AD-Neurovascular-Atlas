@@ -1,0 +1,60 @@
+*********************************************************************
+* LD Score Regression (LDSC)
+* Version 1.0.1
+* (C) 2014-2019 Brendan Bulik-Sullivan and Hilary Finucane
+* Broad Institute of MIT and Harvard / MIT Department of Mathematics
+* GNU General Public License v3
+*********************************************************************
+Call: 
+./ldsc.py \
+--print-snps /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/hapmap3_snps/hm.14.snp \
+--ld-wind-cm 1.0 \
+--out /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/04_ldscores/ldsc_Microglia-vascular_level2_all_controls_top-ten-percent.14 \
+--bfile /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/1000G_EUR_Phase3_plink/1000G.EUR.QC.14 \
+--thin-annot  \
+--annot /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/03_annotations/ldsc_Microglia-vascular_level2_all_controls_top-ten-percent.tsv.14.annot.gz \
+--l2  
+
+Beginning analysis at Sat Mar  2 00:17:48 2024
+Read list of 324698 SNPs from /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/1000G_EUR_Phase3_plink/1000G.EUR.QC.14.bim
+Read 1 annotations for 324698 SNPs from /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/03_annotations/ldsc_Microglia-vascular_level2_all_controls_top-ten-percent.tsv.14.annot.gz
+Read list of 489 individuals from /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/1000G_EUR_Phase3_plink/1000G.EUR.QC.14.fam
+Reading genotypes from /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/1000G_EUR_Phase3_plink/1000G.EUR.QC.14.bed
+Estimating LD Score.
+Reading list of 45556 SNPs for which to print LD Scores from /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/hapmap3_snps/hm.14.snp
+After merging with --print-snps, LD Scores for 39504 SNPs will be printed.
+Writing LD Scores for 39504 SNPs to /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/04_ldscores/ldsc_Microglia-vascular_level2_all_controls_top-ten-percent.14.l2.ldscore.gz
+
+Summary of LD Scores in /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/04_ldscores/ldsc_Microglia-vascular_level2_all_controls_top-ten-percent.14.l2.ldscore.gz
+         MAF        L2
+mean  0.2308   22.6965
+std   0.1432   69.9550
+min   0.0051   -3.0145
+25%   0.1053    0.0000
+50%   0.2188    1.0475
+75%   0.3497   16.2032
+max   0.5000  812.5688
+
+MAF/LD Score Correlation Matrix
+        MAF      L2
+MAF  1.0000 -0.0268
+L2  -0.0268  1.0000
+
+Annotation Correlation Matrix
+       ANNOT
+ANNOT    1.0
+
+Annotation Matrix Column Sums
+ANNOT    51624
+
+Summary of Annotation Matrix Row Sums
+count    324698.0000
+mean          0.1590
+std           0.3657
+min           0.0000
+25%           0.0000
+50%           0.0000
+75%           0.0000
+max           1.0000
+Analysis finished at Sat Mar  2 00:51:03 2024
+Total time elapsed: 33.0m:15.36s

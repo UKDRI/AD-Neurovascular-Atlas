@@ -1,0 +1,60 @@
+*********************************************************************
+* LD Score Regression (LDSC)
+* Version 1.0.1
+* (C) 2014-2019 Brendan Bulik-Sullivan and Hilary Finucane
+* Broad Institute of MIT and Harvard / MIT Department of Mathematics
+* GNU General Public License v3
+*********************************************************************
+Call: 
+./ldsc.py \
+--print-snps /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/hapmap3_snps/hm.3.snp \
+--ld-wind-cm 1.0 \
+--out /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/04_ldscores/ldsc_Trans-Endo-to-mural_level1_controls_vascular_top-ten-percent.3 \
+--bfile /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/1000G_EUR_Phase3_plink/1000G.EUR.QC.3 \
+--thin-annot  \
+--annot /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/03_annotations/ldsc_Trans-Endo-to-mural_level1_controls_vascular_top-ten-percent.tsv.3.annot.gz \
+--l2  
+
+Beginning analysis at Fri Mar  1 16:50:42 2024
+Read list of 706350 SNPs from /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/1000G_EUR_Phase3_plink/1000G.EUR.QC.3.bim
+Read 1 annotations for 706350 SNPs from /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/03_annotations/ldsc_Trans-Endo-to-mural_level1_controls_vascular_top-ten-percent.tsv.3.annot.gz
+Read list of 489 individuals from /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/1000G_EUR_Phase3_plink/1000G.EUR.QC.3.fam
+Reading genotypes from /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/1000G_EUR_Phase3_plink/1000G.EUR.QC.3.bed
+Estimating LD Score.
+Reading list of 96664 SNPs for which to print LD Scores from /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/hapmap3_snps/hm.3.snp
+After merging with --print-snps, LD Scores for 83286 SNPs will be printed.
+Writing LD Scores for 83286 SNPs to /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/04_ldscores/ldsc_Trans-Endo-to-mural_level1_controls_vascular_top-ten-percent.3.l2.ldscore.gz
+
+Summary of LD Scores in /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/04_ldscores/ldsc_Trans-Endo-to-mural_level1_controls_vascular_top-ten-percent.3.l2.ldscore.gz
+         MAF        L2
+mean  0.2395   20.3118
+std   0.1436   43.7533
+min   0.0051   -2.2160
+25%   0.1145    0.0000
+50%   0.2311    1.0450
+75%   0.3630   19.1411
+max   0.5000  741.6456
+
+MAF/LD Score Correlation Matrix
+        MAF      L2
+MAF  1.0000  0.0624
+L2   0.0624  1.0000
+
+Annotation Correlation Matrix
+       ANNOT
+ANNOT    1.0
+
+Annotation Matrix Column Sums
+ANNOT    118851
+
+Summary of Annotation Matrix Row Sums
+count    706350.0000
+mean          0.1683
+std           0.3741
+min           0.0000
+25%           0.0000
+50%           0.0000
+75%           0.0000
+max           1.0000
+Analysis finished at Fri Mar  1 17:40:33 2024
+Total time elapsed: 49.0m:50.56s

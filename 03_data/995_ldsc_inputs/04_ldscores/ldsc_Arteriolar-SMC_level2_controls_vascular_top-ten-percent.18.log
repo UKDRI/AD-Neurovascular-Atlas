@@ -1,0 +1,60 @@
+*********************************************************************
+* LD Score Regression (LDSC)
+* Version 1.0.1
+* (C) 2014-2019 Brendan Bulik-Sullivan and Hilary Finucane
+* Broad Institute of MIT and Harvard / MIT Department of Mathematics
+* GNU General Public License v3
+*********************************************************************
+Call: 
+./ldsc.py \
+--print-snps /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/hapmap3_snps/hm.18.snp \
+--ld-wind-cm 1.0 \
+--out /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/04_ldscores/ldsc_Arteriolar-SMC_level2_controls_vascular_top-ten-percent.18 \
+--bfile /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/1000G_EUR_Phase3_plink/1000G.EUR.QC.18 \
+--thin-annot  \
+--annot /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/03_annotations/ldsc_Arteriolar-SMC_level2_controls_vascular_top-ten-percent.tsv.18.annot.gz \
+--l2  
+
+Beginning analysis at Sat Mar  2 01:54:28 2024
+Read list of 285156 SNPs from /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/1000G_EUR_Phase3_plink/1000G.EUR.QC.18.bim
+Read 1 annotations for 285156 SNPs from /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/03_annotations/ldsc_Arteriolar-SMC_level2_controls_vascular_top-ten-percent.tsv.18.annot.gz
+Read list of 489 individuals from /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/1000G_EUR_Phase3_plink/1000G.EUR.QC.18.fam
+Reading genotypes from /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/1000G_EUR_Phase3_plink/1000G.EUR.QC.18.bed
+Estimating LD Score.
+Reading list of 40891 SNPs for which to print LD Scores from /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/hapmap3_snps/hm.18.snp
+After merging with --print-snps, LD Scores for 35326 SNPs will be printed.
+Writing LD Scores for 35326 SNPs to /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/04_ldscores/ldsc_Arteriolar-SMC_level2_controls_vascular_top-ten-percent.18.l2.ldscore.gz
+
+Summary of LD Scores in /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/04_ldscores/ldsc_Arteriolar-SMC_level2_controls_vascular_top-ten-percent.18.l2.ldscore.gz
+         MAF        L2
+mean  0.2356   14.5003
+std   0.1434   36.2608
+min   0.0051   -1.8020
+25%   0.1094    0.0000
+50%   0.2249    0.1644
+75%   0.3569    7.8622
+max   0.5000  505.2465
+
+MAF/LD Score Correlation Matrix
+        MAF      L2
+MAF  1.0000 -0.0255
+L2  -0.0255  1.0000
+
+Annotation Correlation Matrix
+       ANNOT
+ANNOT    1.0
+
+Annotation Matrix Column Sums
+ANNOT    41613
+
+Summary of Annotation Matrix Row Sums
+count    285156.0000
+mean          0.1459
+std           0.3530
+min           0.0000
+25%           0.0000
+50%           0.0000
+75%           0.0000
+max           1.0000
+Analysis finished at Sat Mar  2 02:14:09 2024
+Total time elapsed: 19.0m:41.14s

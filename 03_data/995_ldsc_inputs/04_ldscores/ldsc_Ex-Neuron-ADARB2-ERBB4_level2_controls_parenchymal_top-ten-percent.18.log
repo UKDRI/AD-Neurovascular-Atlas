@@ -1,0 +1,60 @@
+*********************************************************************
+* LD Score Regression (LDSC)
+* Version 1.0.1
+* (C) 2014-2019 Brendan Bulik-Sullivan and Hilary Finucane
+* Broad Institute of MIT and Harvard / MIT Department of Mathematics
+* GNU General Public License v3
+*********************************************************************
+Call: 
+./ldsc.py \
+--print-snps /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/hapmap3_snps/hm.18.snp \
+--ld-wind-cm 1.0 \
+--out /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/04_ldscores/ldsc_Ex-Neuron-ADARB2-ERBB4_level2_controls_parenchymal_top-ten-percent.18 \
+--bfile /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/1000G_EUR_Phase3_plink/1000G.EUR.QC.18 \
+--thin-annot  \
+--annot /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/03_annotations/ldsc_Ex-Neuron-ADARB2-ERBB4_level2_controls_parenchymal_top-ten-percent.tsv.18.annot.gz \
+--l2  
+
+Beginning analysis at Sat Mar  2 01:58:28 2024
+Read list of 285156 SNPs from /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/1000G_EUR_Phase3_plink/1000G.EUR.QC.18.bim
+Read 1 annotations for 285156 SNPs from /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/03_annotations/ldsc_Ex-Neuron-ADARB2-ERBB4_level2_controls_parenchymal_top-ten-percent.tsv.18.annot.gz
+Read list of 489 individuals from /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/1000G_EUR_Phase3_plink/1000G.EUR.QC.18.fam
+Reading genotypes from /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/1000G_EUR_Phase3_plink/1000G.EUR.QC.18.bed
+Estimating LD Score.
+Reading list of 40891 SNPs for which to print LD Scores from /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/hapmap3_snps/hm.18.snp
+After merging with --print-snps, LD Scores for 35326 SNPs will be printed.
+Writing LD Scores for 35326 SNPs to /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/04_ldscores/ldsc_Ex-Neuron-ADARB2-ERBB4_level2_controls_parenchymal_top-ten-percent.18.l2.ldscore.gz
+
+Summary of LD Scores in /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs/04_ldscores/ldsc_Ex-Neuron-ADARB2-ERBB4_level2_controls_parenchymal_top-ten-percent.18.l2.ldscore.gz
+         MAF        L2
+mean  0.2356   14.4152
+std   0.1434   40.3054
+min   0.0051   -2.2546
+25%   0.1094    0.0000
+50%   0.2249    0.5179
+75%   0.3569    7.6942
+max   0.5000  591.2165
+
+MAF/LD Score Correlation Matrix
+     MAF   L2
+MAF  1.0  0.1
+L2   0.1  1.0
+
+Annotation Correlation Matrix
+       ANNOT
+ANNOT    1.0
+
+Annotation Matrix Column Sums
+ANNOT    43921
+
+Summary of Annotation Matrix Row Sums
+count    285156.000
+mean          0.154
+std           0.361
+min           0.000
+25%           0.000
+50%           0.000
+75%           0.000
+max           1.000
+Analysis finished at Sat Mar  2 02:21:51 2024
+Total time elapsed: 23.0m:23.04s
