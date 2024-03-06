@@ -74,7 +74,7 @@ Data_File=${WORK_DIR}"g1000_eur"
 # 
 # # extract merged files for subsequent analysis
 # 
-# cp ./temp_annot_35k10k/$Output_Prefix.genes.* .
+# cp ./temp_annot_35k10k/$Output_Prefix.genes.* ./gwas_backgrounds
 # 
 # # remove the temporary directory
 # 
@@ -107,7 +107,7 @@ Data_File=${WORK_DIR}"g1000_eur"
 # 
 # # extract merged files for subsequent analysis
 # 
-# cp ./temp_annot/$Output_Prefix.genes.* .
+# cp ./temp_annot/$Output_Prefix.genes.* ./gwas_backgrounds
 # 
 # # remove the temporary directory
 # 
@@ -142,7 +142,7 @@ magma \
 
 # extract merged files for subsequent analysis
 
-cp ./temp_annot_35k10k_nobb/$Output_Prefix.genes.* .
+cp ./temp_annot_35k10k_nobb/$Output_Prefix.genes.* ./gwas_backgrounds
 
 # remove the temporary directory
 
@@ -177,7 +177,7 @@ magma \
 
 # extract merged files for subsequent analysis
 
-cp ./temp_annot_nobb/$Output_Prefix.genes.* .
+cp ./temp_annot_nobb/$Output_Prefix.genes.* ./gwas_backgrounds
 
 # remove the temporary directory
 
@@ -210,7 +210,7 @@ magma \
 
 # extract merged files for subsequent analysis
 
-cp ./temp_annot_nobb/$Output_Prefix.genes.* .
+cp ./temp_annot_nobb/$Output_Prefix.genes.* ./gwas_backgrounds
 
 # remove the temporary directory
 
@@ -243,7 +243,7 @@ magma \
 
 # extract merged files for subsequent analysis
 
-cp ./temp_annot_nobb/$Output_Prefix.genes.* .
+cp ./temp_annot_nobb/$Output_Prefix.genes.* ./gwas_backgrounds
 
 # remove the temporary directory
 
@@ -277,7 +277,7 @@ magma \
 
 # extract merged files for subsequent analysis
 
-cp ./temp_annot_35k10k_nobb/$Output_Prefix.genes.* .
+cp ./temp_annot_35k10k_nobb/$Output_Prefix.genes.* ./gwas_backgrounds
 
 # remove the temporary directory
 
@@ -311,7 +311,7 @@ magma \
 
 # extract merged files for subsequent analysis
 
-cp ./temp_annot_35k10k_nobb/$Output_Prefix.genes.* .
+cp ./temp_annot_35k10k_nobb/$Output_Prefix.genes.* ./gwas_backgrounds
 
 # remove the temporary directory
 
@@ -345,7 +345,7 @@ magma \
 
 # extract merged files for subsequent analysis
 
-cp ./temp_annot_35k10k_nobb/$Output_Prefix.genes.* .
+cp ./temp_annot_35k10k_nobb/$Output_Prefix.genes.* ./gwas_backgrounds
 
 # remove the temporary directory
 
