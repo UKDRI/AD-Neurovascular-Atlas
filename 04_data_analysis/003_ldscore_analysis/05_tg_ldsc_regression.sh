@@ -1,16 +1,14 @@
 #!/bin/bash
 
-#SBATCH -p c_vhighmem_dri1 ## dev, compute, htc, highmem
-#SBATCH --job-name=TG3_level1_ldsc_25k
-#SBATCH --ntasks=40
-#SBATCH --ntasks-per-node=40
-#SBATCH --array=1-22
-##### #SBATCH --mem-per-cpu=8000 # memory limit per core
-#SBATCH --mem=300G # memory limit per compute node for the job
-#SBATCH --time=4-00:00 # maximum job time in D-HH:MM
+#SBATCH -p c_compute_dri1 ## dev, compute, htc, highmem
+#SBATCH --job-name=bbb_25K_ldscore_regression
+#SBATCH --mem=100G # memory limit per compute node for the job
+#SBATCH --time=0-10:00 # maximum job time in D-HH:MM
 #SBATCH --account=scw1329
-#SBATCH -o /scratch/.../%x_out_%A_%a_%J.txt
-#SBATCH -e /scratch/.../%x_err_%A_%a_%J.txt
+#SBATCH -o /scratch/c.mpmgb/hawk_output/%x_out_%A_%a_%J.txt
+#SBATCH -e /scratch/c.mpmgb/hawk_output/%x_err_%A_%a_%J.txt
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=bernardo-harringtong@cardiff.ac.uk
 
 echo "*****************************************************************"
 echo "All jobs in this array have:"
@@ -32,31 +30,37 @@ echo -e "*****************************************************************\n"
 
 module load ldsc/1.0.1
 module load bedtools/2.29.2
+module load parallel
 
 
-N=${SLURM_ARRAY_TASK_ID}
 
+BASEDIR="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs"
+LDSC=$BASEDIR"/ldsc"
+BASELINE=$BASEDIR"/1000G_EUR_Phase3_baseline"
+WEIGHTS=$BASEDIR"/weights_hm3_no_hla"
+OUTPUT=$BASEDIR"/05_ldscore_regression"
+LDCT=$BASEDIR"/celltype_markers.ldcts"
 
-LDSC="/LDSC/ldsc"
-GWASSTAT="/TG3_level1_GeneSet"
-BASELINE="/1000G_EUR_Phase3_baseline"
-OUTPUT="path"
-LDCT="/path"
-WEIGHTS="/weights_hm3_no_hla"
+mkdir -p $OUTPUT
 
+GWASSTAT=$BASEDIR"/gwas_backgrounds"
 
-for gwas in multi_sited neuro_pain
+# Loop over all .sumstats.gz files in the directory
+for gwas_file in "$GWASSTAT"/*.sumstats.gz
 do
-echo ${gwas}
-python2 $LDSC/ldsc.py \
---h2-cts $GWASSTAT/$gwas.sumstats.gz \
---ref-ld-chr $BASELINE/baseline. \
---out $OUTPUT/$gwas.10.25k \
---ref-ld-chr-cts $LDCT/TG10_level1_25k_1000Gv3.ldcts \
---w-ld-chr $WEIGHTS/weights. 
+    # Extract the base name without the extension for use in the output file name
+    gwas=$(basename "$gwas_file" .sumstats.gz)
+
+    echo "${gwas}"
+
+    python2 $LDSC/ldsc.py \
+    --h2-cts "$gwas_file" \
+    --ref-ld-chr $BASELINE/baseline. \
+    --out $OUTPUT/"$gwas".25k \
+    --ref-ld-chr-cts $LDCT \
+    --w-ld-chr $WEIGHTS/weights.
 done
 
 echo -e "\n************************************************************"
 echo "Finished at: "`date`
 echo "*****************************************************************"
-
