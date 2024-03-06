@@ -313,7 +313,7 @@ formatted_data <- map(top_genes, prep_for_magma)
 map2(formatted_data, names(formatted_data), ~ readr::write_tsv(.x,
                  here::here(
                    "03_data/994_magma_inputs",
-                   paste0("magma_celltypes_", level, "_", subset, "_top-", .y, "-percent.tsv")
+                   paste0("magma_celltypes_", level, "_", subset, "_top-", .y, "-percent.magma.txt")
                  ),
                  col_names = FALSE))
 ```
