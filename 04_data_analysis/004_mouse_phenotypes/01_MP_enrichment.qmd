@@ -1,0 +1,169 @@
+---
+title: "MP enrichment analysis"
+execute:
+  eval: true
+#self-contained: true
+code-fold: true
+bibliography: references.bib
+---
+
+```{r}
+#| label: setup
+
+library(simona)
+library(stringr)
+library(ggplot2)
+library(ggsci)
+```
+
+# MPO annotation obo
+
+```{r}
+mp_obo <- simona::import_obo(file = here::here("03_data/996_mouse_phenotype_inputs/MPheno_OBO.ontology"))
+```
+
++ Using the MP annotation in obo format downloaded from [MGI](https://www.informatics.jax.org/downloads/reports/index.html).
+
++ Version `r mp_obo@source`.
+
+## Select MP terms 
+
++ i.e. based on shortest distance from root.
+
+```{r}
+# Get the distance from the root
+dfr <- dag_shortest_dist_from_root(mp_obo)
+summary(dfr)
+
+# Select terms based on distance from the root
+mp_selected <- names(dfr)[which(dfr <= 1)]
+
+# Select based on specific terms 
+# mp_selected <- str_detect(mp_obo@elementMetadata$name, "pain")
+```
+
+# MPI annotations
+
++ MP_MGI_20240207_DeepAnot is a two file tab separated file:
+
++ Contains **deep** MP annotations (propagated to the ancestors of a term(. If a gene is annotated to a MP term is also annotated to the MP ancestor terms.
+
++ **Column 1** contains MP IDs.
+
++ **Column 2** contains all the MGI genes annotated to the MP term.
+
+```{r}
+# MP deep annotation 
+# MP term and MGI (comma separated)
+mp_anot <- read.table(here::here("03_data/996_mouse_phenotype_inputs/MP_MGI_20240207_DeepAnot.txt"), sep = "\t", header = FALSE)
+colnames(mp_anot) <- c("MP_ID", "MGI_IDS")
+
+# Background population # all annotated genes with at least one MP term
+bg <- unique(unlist(str_split(mp_anot$MGI_IDS, ",")))
+# n = 22665 MGIs 
+
+# Check that selected MP are in the MP annotation
+mp_selected <- intersect(mp_selected, mp_anot$MP_ID)
+```
+
+# Genes of interest
+
+```{r}
+# Subset of genes # 28 MGI genes of interest # Emeka's list
+t1 <- read.table("./MGIBatchReport_20240216_071640.txt", sep = "\t", header = TRUE)
+genelist <- t1$MGI.Gene.Marker.ID
+rm(t1)
+
+# List of interest # these were entrez IDs not MGI :'(
+# genelist <-c("52206","74100","14025","227541", "71908","53621","103236", 
+#             "13176","60344", "108655", "14590", "208439","16647","17354",
+#             "17967","22360","18390","18509", "218194","20230","20350",
+#             "20492","22031","171382", "24136","29809","433586","56079")
+# genelist <- paste("MGI:", genelist, sep = "")
+```
+
+# Enrichment analysis
+
++ Based on hypergeometric test.
+
+```{r}
+
+# Test enrichment
+# MP ID, # MP Description, # ngenes # n MP # overlap # p value 
+out1 <- mp_selected
+out2 <- mp_obo@elementMetadata$name[match(x = mp_selected, 
+                                          table = mp_obo@elementMetadata$id)]
+out3 <- vector()
+out4 <- vector()
+out5 <- vector()
+out6 <- vector()
+
+for(i in c(1:length(mp_selected))){
+  mpi <- mp_selected[i]
+  mpi_gene_set <- mp_anot$MGI_IDS[mp_anot$MP_ID %in% mpi]
+  mpi_gene_set <- unlist(str_split(string = mpi_gene_set, pattern = ","))
+  # Number of genes of interest
+  out3[i] <- length(genelist)
+  # Number of genes in MP term
+  out4[i] <- length(mpi_gene_set)
+  # Number of genes of interest annotated to MP term
+  out5[i] <- length(intersect(genelist, mpi_gene_set))
+  # P value from hypergeometric test
+  out6[i] <- phyper(q = length(intersect(genelist, mpi_gene_set)) - 1, 
+         m = length(mpi_gene_set),
+         n = length(bg) - length(mpi_gene_set),
+         k = length(genelist), lower.tail = FALSE)
+}
+
+output <- data.frame(MP_ID = out1,
+                     MP_name = out2,
+                     SizeGeneList = out3, 
+                     SizeMPterm = out4,
+                     GenesInMPterm = out5,
+                     p_value = out6, 
+                     p_value_adj = p.adjust(p = out6, method = "BH"))
+
+rm(out1, out2, out3, out4, out5, out6)
+
+```
+
+# Overview results table
+
++ Showing MP terms with at least 2 genes of interest annoteted to them.
+
+```{r fig.height=5, fig.width=8}
+
+# Data 2 plot 
+d2p <- output
+
+# Order by p value
+d2p <- d2p[order(d2p$p_value, decreasing = FALSE), ]
+d2p$MP_name <- factor(d2p$MP_name, levels = rev(d2p$MP_name))
+
+# Show terms with at least 2 genes
+d2p <- d2p[which(d2p$GenesInMPterm >= 2), ]
+
+g1 <- ggplot(data = d2p, 
+             mapping = aes(y = MP_name, 
+                           x = -log10(p_value_adj), 
+                           size = GenesInMPterm, 
+                           color = -log10(p_value_adj))) + 
+  geom_point() + 
+  theme_classic() + 
+  scale_color_gradient2(low = "snow", mid = "blue", high = "red") + 
+  geom_vline(xintercept = -log10(0.05), linetype = "dashed", color = "grey")
+
+g1 
+
+```
+
+# Save results
+
++ Save MP enrichment results
+
+```{r}
+
+saveRDS(object = output, file = "MPE_example_L1.Rds")
+
+```
+
