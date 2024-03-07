@@ -41,6 +41,9 @@ files <- sub("\\..*$", "", files) |>
 files <- sort(files)
 files <- str_replace_all(files, "-", "_")
 
+## Exclude the top 5% files as a test
+files <- files[!grepl("top_five_percent", files)]
+
 # Gene list files start with "ldsc_" and background gene lists have 
 # "background_genes"
 background_files <- files[grepl("background_genes", files)]
