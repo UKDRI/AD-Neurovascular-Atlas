@@ -32,7 +32,31 @@ module load ldsc/1.0.1
 module load bedtools/2.29.2
 module load parallel
 
+## NOTE: I think maybe the .annot files need to be in the same dir
+# code to remove .tsv from file names in case it matters
+# for file in *tsv*
+# do
+#     # Remove the .tsv part from the filename
+#     new_name="${file/.tsv/}"
+# 
+#     # Optionally, you can rename the files if that's the intention
+#     mv "$file" "$new_name"
+# 
+#     echo "Original filename: $file"
+#     echo "New filename: $new_name"
+# done
 
+# # Loop over all files that contain a hyphen
+# for file in *-*; do
+#     # Replace all hyphens with underscores in the filename
+#     new_name="${file//-/_}"
+# 
+#     # Rename the file
+#     mv "$file" "$new_name"
+# 
+#     # Echo the old and new filenames (optional)
+#     echo "Renamed $file to $new_name"
+# done
 
 BASEDIR="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/995_ldsc_inputs"
 LDSC=$BASEDIR"/ldsc"

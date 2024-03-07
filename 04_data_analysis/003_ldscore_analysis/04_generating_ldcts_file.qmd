@@ -31,7 +31,7 @@ files <- readLines(here::here("03_data/995_ldsc_inputs/ldscore_filepaths.txt"))
 files <- files[!grepl("top-one-percent", files)]
 # Save the directory location
 directory <- unique(dirname(files))
-directory <- paste0("/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/", direcotry, "/")
+directory <- paste0("/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/", directory, "/")
 
 # Now get the basename, sub until the first "." and get the unique strings
 files <- basename(files)
@@ -39,16 +39,19 @@ files <- sub("\\..*$", "", files) |>
   unique()
 # Sort files alphabetically
 files <- sort(files)
+files <- str_replace_all(files, "-", "_")
 
 # Gene list files start with "ldsc_" and background gene lists have 
 # "background_genes"
 background_files <- files[grepl("background_genes", files)]
 celltype_files <- files[!files %in% background_files]
 
-labels_background <- str_replace(background_files, "background_genes-ldsc_", "")
+labels_background <- str_replace(background_files, "background_genes_ldsc_", "")
 labels_celltypes <- str_replace(celltype_files, "ldsc_", "")
 # Assert that these should be equal to make sure the order matches
 assertthat::are_equal(labels_background, labels_celltypes)
+
+####### FIX THIS
 
 # generate .ldcts file for ldscore regression
 paste0(labels_celltypes, " ", directory, celltype_files, ".,", directory, background_files, ".") |> 
