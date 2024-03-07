@@ -1,0 +1,539 @@
+---
+title: CellChat
+execute:
+  eval: true
+#self-contained: true
+code-fold: true
+bibliography: references.bib
+---
+
+```{r}
+here::i_am("04_data_analysis/001_snrnaseq_analysis/16_pathway_analysis.qmd")
+```
+
+# Load packages
+
+```{r}
+source(here::here("04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"))
+```
+
+# Read data
+
+```{r}
+# save data
+sce <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq",
+                                  "11_cell_network_interactions",
+                                  "scflow-sce-annotated.rds"))
+```
+
+# Check complement gene expression
+
+```{r}
+complement_gene_list <- read_excel(here("03_data/991_external_data/complement_gene_list.xlsx")) |>
+  janitor::clean_names() |>
+  dplyr::mutate(gene_name_cap = toupper(gene_name))
+
+head(rownames(sce))
+# need to rotate axis
+DotPlot(sce, complement_gene_list$gene_name_cap) + coord_flip()
+```
+
+# CellChat
+
+`CellChat` is a package for looking at cell-cell interaction networks
+
+It requires a normalised matrix of gene expression data (genes as rows, cells as columns).
+I assume from [the vignette](https://htmlpreview.github.io/?https://github.com/jinworks/CellChat/blob/master/tutorial/CellChat-vignette.html#load-the-required-libraries) that one should look at one group at a time, in this case each fraction per disease state, so 4 groups total.
+
+## Prep data
+
+```{r}
+data.input <- sce[["RNA"]]@data # normalized data matrix
+labels <- Idents(sce)
+meta <- data.frame(labels = labels, row.names = names(labels)) # create a dataframe of the cell labels
+
+# Add a "samples" column that cellChat expects when making the object
+sce$samples <- sce$orig.ident
+```
+
+<!-- I'll start with the higher level celltypes for simplicity. -->
+
+```{r}
+#Idents(sce) <- sce$subcelltype_annotations
+```
+
+## Make CellChat object
+
+```{r}
+cellchat <- createCellChat(object = sce, group.by = "ident", assay = "RNA")
+```
+
+## Set the ligand-receptor interaction database
+
+```{r}
+CellChatDB <- CellChatDB.human # use CellChatDB.mouse if running on mouse data
+showDatabaseCategory(CellChatDB)
+
+# Show the structure of the database
+dplyr::glimpse(CellChatDB$interaction)
+```
+
+There's the option to use a subset of the CellChatDB, for example, just using cell-cell interactions.
+I'll start with that as they recommend not using all of the database.
+I assume this is because there are non-protein signalling stuff in there that we wouldn't have relevant data for?
+
+```{r}
+# use a subset of CellChatDB for cell-cell communication analysis
+CellChatDB.use <- subsetDB(CellChatDB, search = "Secreted Signaling", key = "annotation") # use Secreted Signaling
+
+# Only uses the Secreted Signaling from CellChatDB v1
+#  CellChatDB.use <- subsetDB(CellChatDB, search = list(c("Secreted Signaling"), c("CellChatDB v1")), key = c("annotation", "version"))
+
+# use all CellChatDB except for "Non-protein Signaling" for cell-cell communication analysis
+# CellChatDB.use <- subsetDB(CellChatDB)
+
+
+# use all CellChatDB for cell-cell communication analysis
+# CellChatDB.use <- CellChatDB # simply use the default CellChatDB. We do not suggest to use it in this way because CellChatDB v2 includes "Non-protein Signaling" (i.e., metabolic and synaptic signaling). 
+
+# set the used database in the object
+cellchat@DB <- CellChatDB.use
+```
+
+## Preprocessing the expression data for cell-cell communication analysis
+
+```{r}
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+# get the normalised expression data
+expression_data <- GetAssayData(sce, assay = "RNA", slot = "data")
+
+# a dataframe with rownames containing cell mata data
+meta <- sce@meta.data
+# add manual celltype labels
+meta$label <- Idents(sce)
+# extract the cell names from disease data
+cell_use <- rownames(meta)[meta$diagnosis == "Case" & meta$prep == "V"]
+```
+
+Here I use `expand.grid` to get all unique combinations of diagnosis and prep to get cell networks from.
+
+```{r}
+# Obtain unique combinations of meta$diagnosis and meta$prep
+combinations <- expand.grid(levels(meta$diagnosis), levels(meta$prep))
+
+# Convert the combinations to a list
+combinations_list <- as.list(combinations)
+
+# Print the list of unique combinations
+combinations_list
+
+# Return all subsets
+# Create a function to generate subsets based on the combinations
+get_subsets <- function(diagnosis, prep) {
+  rownames(meta)[meta$diagnosis == diagnosis & meta$prep == prep]
+}
+
+# Use map2 to generate subsets for each combination
+all_subsets <- map2(combinations$Var1, combinations$Var2, ~ get_subsets(.x, .y)) %>%
+  purrr::set_names(paste0(combinations_list$Var1, "+", combinations_list$Var2))
+
+# Print the list of subsets
+map(all_subsets, head)
+```
+
+```{r}
+# Prepare input data for CelChat analysis
+data_input <- map(all_subsets, ~ expression_data[, .x])
+meta <- map(all_subsets, ~ meta[.x, ])
+
+# Remove any labels that aren't present in a group
+meta <- map(meta, ~ {
+  .x$label <-
+    droplevels(.x$label, exclude = setdiff(levels(.x$label), unique(.x$label)))
+  .x
+})
+
+# check the cell labels
+map(meta, ~ unique(.x$label))
+map(meta, dim)
+
+rm(expression_data, combinations, combinations_list)
+```
+
+## Create CellChat object
+
+```{r}
+cellchat <-
+  map2(data_input,
+       meta,
+       ~ createCellChat(
+         object = .x,
+         meta = .y,
+         group.by = "label"
+       ))
+
+rm(data_input, meta)
+```
+
+## Set ligand database
+
+```{r}
+CellChatDB <- CellChatDB.human # use CellChatDB.mouse if running on mouse data
+showDatabaseCategory(CellChatDB)
+```
+
+One can subset of the DB for analysis, but I'll use all for now
+
+```{r}
+# Show the structure of the database
+dplyr::glimpse(CellChatDB$interaction)
+
+# use a subset of CellChatDB for cell-cell communication analysis
+#CellChatDB_use <- subsetDB(CellChatDB, search = "Secreted Signaling")
+# use all CellChatDB for cell-cell communication analysis
+CellChatDB_use <- CellChatDB # simply use the default CellChatDB
+
+# set the used database in the object
+cellchat <- map(cellchat, ~ {
+  .x@DB <- CellChatDB_use
+  .x
+})
+rm(CellChatDB_use, CellChatDB)
+```
+
+## Preprocessing the expression data for cell-cell communication analysis
+
+```{r}
+# subset the expression data of signaling genes for saving computation cost
+cellchat <- map(cellchat, subsetData) # This step is necessary even if using the whole database
+#future::plan("multiprocess", workers = 4) # do parallel
+future::plan("multicore", workers = 8) # do parallel
+# Ran into error with this option being too small
+options(future.globals.maxSize = 5000000000)
+
+# This takes ages to run, so save the output
+# Define the file path to save the resulting object
+result_file <-
+  here::here(
+    "03_data/990_processed_data/001_snrnaseq/11_cell_network_interactions/cellchat_preprocessed.rds"
+  )
+
+# Check if the file exists
+if (!file.exists(result_file)) {
+  # Code for your time-consuming analysis
+  cellchat <- map(cellchat, identifyOverExpressedGenes)
+  cellchat <- map(cellchat, identifyOverExpressedInteractions)
+
+  
+  # Save the resulting object
+  readr::write_rds(cellchat, result_file)
+} else {
+  # Load the existing resulting object
+  cellchat <- readr::read_rds(result_file)
+}
+rm(result_file)
+
+# project gene expression data onto PPI (Optional: when running it, USER should
+# set `raw.use = FALSE` in the function `computeCommunProb()` in order to use
+# the projected data)
+# cellchat <- projectData(cellchat, PPI.human)
+```
+
+## Compute the communication probability and infer cellular communication network
+
+If well-known signaling pathways in the studied biological process are not predicted, USER can try `truncatedMean` to change the method for calculating the average gene expression per cell group.
+
+```{r}
+# Again, this takes quite a while to run
+# Define the file path to save the resulting object
+result_file <-
+  here::here(
+    "03_data/990_processed_data/001_snrnaseq/11_cell_network_interactions/cellchat_communication-prob.rds"
+  )
+
+# Check if the file exists
+if (!file.exists(result_file)) {
+  # Code for your time-consuming analysis
+  cellchat <- map(cellchat, computeCommunProb)
+  # Filter out the cell-cell communication if there are only few number of cells in certain cell groups
+  cellchat <- map(cellchat, ~ filterCommunication(.x, min.cells = 10))
+  
+  # Save the resulting object
+  readr::write_rds(cellchat, result_file)
+} else {
+  # Load the existing resulting object
+  cellchat <- readr::read_rds(result_file)
+}
+rm(result_file)
+```
+
+We can get the cell interaction networks as a dataframe
+
+```{r}
+df_net <- map(cellchat, subsetCommunication)
+head(df_net$`Case+P`)
+# check how many aren't significant
+sum(df_net$`Case+P`$pval > 0.05)
+```
+
+## Infer the cell-cell communication at a signaling pathway level
+
+```{r}
+cellchat <- map(cellchat, computeCommunProbPathway)
+```
+
+## Calculate the aggregated cell-cell communication network
+
+```{r}
+cellchat <- map(cellchat, aggregateNet)
+```
+
+```{r}
+initial_plots <- function(cellchat, comparison) {
+  groupSize <- as.numeric(table(cellchat@idents))
+  par(mfrow = c(1, 2), xpd = TRUE)
+  netVisual_circle(
+    cellchat@net$count,
+    vertex.weight = groupSize,
+    weight.scale = T,
+    label.edge = F,
+    title.name = "Number of interactions"
+  )
+  netVisual_circle(
+    cellchat@net$weight,
+    vertex.weight = groupSize,
+    weight.scale = T,
+    label.edge = F,
+    title.name = "Interaction weights/strength"
+  )
+  mtext(comparison, outer = TRUE, line = -1.5, cex = 1.5)
+}
+
+map2(cellchat, names(cellchat), initial_plots)
+```
+
+```{r}
+#| fig-height: 10
+celltype_plots <- function(cellchat, comparison) {
+  
+  groupSize <- as.numeric(table(cellchat@idents))
+  
+  mat <- cellchat@net$weight
+  par(mfrow = c(3, 4), xpd = TRUE)
+  
+  map(1:nrow(mat), ~ {
+    mat2 <-
+      matrix(
+        0,
+        nrow = nrow(mat),
+        ncol = ncol(mat),
+        dimnames = dimnames(mat)
+      )
+    mat2[.x,] <- mat[.x,]
+    netVisual_circle(
+      mat2,
+      vertex.weight = groupSize,
+      weight.scale = TRUE,
+      edge.weight.max = max(mat),
+      title.name = rownames(mat)[.x]
+    )
+  })
+  mtext(comparison,
+        outer = TRUE,
+        line = -1.5,
+        cex = 1.5)
+}
+
+map2(cellchat, names(cellchat), celltype_plots)
+```
+
+```{r}
+celltype_plots <- function(cellchat, comparison) {
+  
+  groupSize <- as.numeric(table(cellchat@idents))
+  
+  mat <- cellchat@net$weight
+  
+  plots <- map(1:nrow(mat), ~ {
+    mat2 <-
+      matrix(
+        0,
+        nrow = nrow(mat),
+        ncol = ncol(mat),
+        dimnames = dimnames(mat)
+      )
+    mat2[.x,] <- mat[.x,]
+    plot <- netVisual_circle(
+      mat2,
+      vertex.weight = groupSize,
+      weight.scale = TRUE,
+      edge.weight.max = max(mat),
+      title.name = rownames(mat)[.x]
+    )
+    plot
+  })
+  return(plots)
+}
+
+plots <- map2(cellchat, names(cellchat), celltype_plots)
+```
+
+```{r}
+#| fig-height: 10
+par(mfrow = c(3, 4), xpd = TRUE)
+plots$`Case+P`
+mtext(names(plots)[1],
+        outer = TRUE,
+        line = -1.5,
+        cex = 1.5)
+```
+
+## Systems analysis of cell-cell communication network
+
+I'm going to apply all the computation steps now so I can add the plots to explore to a shiny app.
+It'll probably be easier to just explore the results that way.
+
+```{r}
+cellchat <- map(cellchat, ~ netAnalysis_computeCentrality(.x, slot.name = "netP")) 
+```
+
+The `selectK` to figure out how many patterns to use takes a long time to run so I'll skip the eval and just show the plots it produces.
+
+```{r}
+#| eval: false
+map(cellchat, ~ selectK(.x, pattern = "outgoing"))
+```
+
+![Case Parenchyma](/05_figures/990_shared_figures/cellchat_selectk-outgoing_case-parenchyma.png)
+
+![Case vascular](/05_figures/990_shared_figures/cellchat_selectk-outgoing_case-vascular.png)
+
+![Control parenchyma](/05_figures/990_shared_figures/cellchat_selectk-outgoing_control-parenchyma.png)
+
+![Control vascular](/05_figures/990_shared_figures/cellchat_selectk-outgoing_control-vascular.png)
+
+3 seems like a reasonable number of patterns before a big drop off in both.
+
+```{r}
+nPatterns = 3
+cellchat <-
+  map(cellchat,
+      ~ identifyCommunicationPatterns(.x, pattern = "outgoing", k = nPatterns))
+```
+
+```{r}
+#| fig-width: 8
+#| fig-height: 8
+map(cellchat, ~ netAnalysis_dot(.x, pattern = "outgoing"))
+```
+
+```{r}
+#| eval: false
+plots <- map(cellchat, ~ selectK(.x, pattern = "incoming"))
+# Add titles
+plots <- map2(plots, names(plots), ~ .x + ggtitle(paste0(.y, " - Incoming signal")))
+# Save plots
+map2(plots, make.names(names(plots)), ~ ggsave(
+  filename = here::here(
+    "05_figures/990_shared_figures",
+    paste0("cellchat_selectk-incoming_", .y, ".svg")
+  ),
+  plot = .x,
+  device = "svg"
+))
+```
+
+![Case Parenchyma](/05_figures/990_shared_figures/cellchat_selectk-incoming_Case.P.svg)
+
+![Case vascular](/05_figures/990_shared_figures/cellchat_selectk-incoming_Case.V.svg)
+
+![Control parenchyma](/05_figures/990_shared_figures/cellchat_selectk-incoming_Control.P.svg)
+
+![Control vascular](/05_figures/990_shared_figures/cellchat_selectk-incoming_Control.P.svg)
+
+There's a drop off at either 2 or 3, so I'll set to 3 for now.
+
+```{r}
+nPatterns = 3
+cellchat <-
+  map(cellchat,
+      ~ identifyCommunicationPatterns(.x, pattern = "incoming", k = nPatterns))
+```
+
+## Save CellChat obj
+
+```{r}
+readr::write_rds(
+  cellchat,
+  here::here(
+    "03_data/990_processed_data/001_snrnaseq/11_cell_network_interactions/cellchat_obj_highlevel-celltypes.rds"
+  )
+)
+```
+
+## Manifold and classification learning analysis of signaling networks
+
+### Identify signaling groups based on their functional similarity
+
+This code isn't working due to an error with the python `umap-learn` package. 
+It's definately installed, so probably some sort of environment issue - need to debug
+
+```{r}
+#| eval: false
+cellchat <- map(cellchat, ~ computeNetSimilarity(.x, type = "functional"))
+cellchat <- map(cellchat, ~ netEmbedding(.x, type = "functional"))
+#> Manifold learning of the signaling networks for a single dataset
+cellchat <- map(cellchat, ~ netClustering(.x, type = "functional"))
+netVisual_embedding(cellchat[[1]], type = "functional", label.size = 3.5)
+```
+
+```{r}
+#| eval: false
+cellchat <- map(cellchat, ~ computeNetSimilarity(.x, type = "structural"))
+cellchat <- map(cellchat, ~ netEmbedding(.x, type = "structural"))
+#> Manifold learning of the signaling networks for a single dataset
+cellchat <- map(cellchat, ~ netClustering(.x, type = "structural"))
+netVisual_embedding(cellchat[[1]], type = "structural", label.size = 3.5)
+```
+
