@@ -8,7 +8,130 @@ bibliography: references.bib
 ---
 
 ```{r}
-here::i_am("04_data_analysis/001_snrnaseq_analysis/18_magma_risk_analysis.qmd")
+here::i_am("04_data_analysis/007_magma/19_magma_risk_analysis.qmd")
+```
+
+# Load packages
+
+```{r}
+source(here::here("04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"))
+```
+
+Ata gave me the Bellenguez GWAS data without UKbiobank proxy cases, but I need to process the data to be inline with the MAGMA format.
+The SNP IDs in the annotation file are in a rs<id_num> format, so I also need to map the SNPs to those using the 37 build snpdb that can be found [here](https://ftp.ncbi.nih.gov/snp/latest_release/VCF/)
+
+Note that this file had a annoying 37 lines of header info that `arrow` couldn't deal with, and it's a large file so modifying it is a pain, I used this command for parallel compression:
+
+```{sh}
+#| eval: false
+zcat GCF_000001405.25.gz | tail -n +38 | pigz > GCF_000001405.25_header_removed.gz
+```
+
+```{r}
+x <-
+  fread(
+    here::here(
+      "03_data/994_magma_inputs/EADB_release_Feb2020.meta_model_pcs.mac_info_20_GC_OFF.formatted.exc_perc_cases_50.het_5e-8.freq_amp_40.tsv"
+    )
+  )
+#x$PVALUE[which(x$PVALUE == 0)] <- 3e-324
+# x <-
+#   arrow::open_dataset(
+#     here::here(
+#       "03_data/994_magma_inputs/EADB_release_Feb2020.meta_model_pcs.mac_info_20_GC_OFF.formatted.exc_perc_cases_50.het_5e-8.freq_amp_40.tsv"
+#     ), format = "tsv"
+#   )
+x |> dplyr::select(PVALUE) |> collect() |> min()
+x <- x |>
+  dplyr::mutate(PVALUE = if_else(PVALUE == 0, 3e-324, PVALUE),
+                chr_hg38 = gsub("chr", "", chr_hg38))
+x |> dplyr::select(PVALUE) |> collect() |> min()
+x |> dplyr::select(chr_hg38) |> collect() |> head() 
+
+renames <- c(CHR = "chr_hg38", SNP = "MARKER_ID", BP = "position", A1 = "Allele1", A2 = "Allele2", Nca = "N_cases_meta", Nco = "N_controls_meta", P = "PVALUE")
+x2 <-
+  x |> dplyr::select(
+    c(
+      "chr_hg38",
+      "MARKER_ID",
+      "position",
+      "Allele1",
+      "Allele2",
+      "N_cases_meta",
+      "N_controls_meta",
+      "PVALUE"
+    )
+  ) |>
+  dplyr::rename(all_of(renames)) 
+
+# Need to match the SNP IDs to the dbsnp rs IDs as that what's in the annotation file
+#x2 <- x2 |>
+ # separate_wider_delim(SNP, names = c("chromosome", "position", "basepair1", "basepair2"), delim = ":")
+rm(x)
+
+head(x2)
+#snpdb <- fread(here::here("03_data/994_magma_inputs/GCF_000001405.25.gz"), skip = 38)
+#snpdb <- arrow::read_tsv_arrow(here::here("03_data/994_magma_inputs/GCF_000001405.25.gz"), skip = 38, as_data_frame = FALSE)
+db_snp_df <-
+  arrow::open_dataset(
+    here::here(
+      "03_data/994_magma_inputs/GCF_000001405.25_header_removed.gz"
+    ), format = "tsv"
+  )
+
+#db_snp_df <- db_snp_df |> dplyr::rename(CHRO = "#CHROM")
+
+db_snp_df <- db_snp_df |>
+  dplyr::select(`#CHROM`, POS, ID, REF, ALT) |>
+  dplyr::mutate(CHR = sub("^NC_0{0,5}(\\d+).*", "\\1", `#CHROM`),
+                VERSION = as.numeric(sub(".*\\.(\\d+)$", "\\1", `#CHROM`)))
+#db_snp_df |> dplyr::select(CHR) |> collect() |> head() 
+#db_snp_df |> dplyr::select(CHR) |> collect() |> unique()
+#db_snp_df |> dplyr::select(CHRO) |> collect() |> unique()
+# Create a mapping table
+# chrom_mapping <- data.frame(
+#   CHROM = paste0("NC_00000", 1:24, ifelse(1:24 < 10, ".10", ".9")),
+#   CHR = c(1:22, "X", "Y")
+# )
+
+# Use the mapping table to translate the CHROM column in db_snp_df
+#db_snp_df <- dplyr::left_join(db_snp_df, chrom_mapping, by = "CHROM")
+#db_snp_df <- merge(db_snp_df, chrom_mapping, by = "CHROM")
+#merged_df <- dplyr::left_join(x2, db_snp_df, by = dplyr::join_by(CHR, BP == POS, A1 == REF, A2 == ALT))
+#snp_ids <- collect(merged_df)
+
+# Try making a subset of the data
+db_snp_df_sub <- db_snp_df |>
+  dplyr::filter(POS %in% x2$BP)
+db_snp_df_sub <- collect(db_snp_df_sub)
+
+db_snp_df_sub <- db_snp_df_sub |>
+  dplyr::group_by(CHR, POS) |>
+  dplyr::filter(VERSION == max(VERSION)) |>
+  dplyr::ungroup() |>
+  dplyr::select(!c(`#CHROM`, VERSION)) |>
+  unique()
+
+merged_df <- dplyr::left_join(x2, db_snp_df_sub, by = dplyr::join_by(CHR, BP == POS, A1 == REF, A2 == ALT))
+# if the number of rows isn't too much more than 21 million, then try to collect whole file into memory
+
+#merged_df <- inner_join(your_snp_df, snpdb, by = c("chromosome", "position", "basepair"))
+
+# x2 <- x2 |>
+#   mutate(SNP = paste0("rs", as.numeric(str_extract(SNP, "(?<=:)[0-9]+(?=:)"))))
+x2$N <- x2$Nca + x2$Nco
+fwrite(
+  x2,
+  here::here(
+    "03_data/994_magma_inputs/EADB_release_Feb2020.meta_model_pcs.mac_info_20_GC_OFF.formatted.exc_perc_cases_50.het_5e-8.freq_amp_40_magma_format.tsv"
+  ),
+  sep = "\t",
+  quote = FALSE
+)
+# write.table(x2, here::here(
+#     "03_data/994_magma_inputs/EADB_release_Feb2020.meta_model_pcs.mac_info_20_GC_OFF.formatted.exc_perc_cases_50.het_5e-8.freq_amp_40_magma_format.tsv"
+#   ), quote = FALSE, sep = "\t", row.names = FALSE)
+
 ```
 
 ```{r}

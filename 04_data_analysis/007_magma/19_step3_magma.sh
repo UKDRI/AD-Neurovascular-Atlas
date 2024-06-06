@@ -1,12 +1,11 @@
 #!/bin/bash
 #SBATCH --job-name=MAGMA_step3
-#SBATCH -p c_highmem_dri1
+#SBATCH -p c_compute_dri1
 #SBATCH -o /scratch/c.mpmgb/hawk_output/%x_out_%A_%a_%J.txt
 #SBATCH -e /scratch/c.mpmgb/hawk_output/%x_err_%A_%a_%J.txt
-#SBATCH --time=0-10:00:00
+#SBATCH --time=0-01:00:00
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=10
-#SBATCH --array=1
 #SBATCH --account=scw1329
 #SBATCH --mail-type=END,FAIL
 #SBATCH --mail-user=bernardo-harringtong@cardiff.ac.uk
@@ -14,14 +13,6 @@
 #####SBATCH --mem=120G
 
 echo "*****************************************************************"
-echo "All jobs in this array have:"
-echo "  - SLURM_ARRAY_JOB_ID: ${SLURM_ARRAY_JOB_ID}"
-echo "  - SLURM_ARRAY_TASK_COUNT: ${SLURM_ARRAY_TASK_COUNT}"
-echo "  - SLURM_ARRAY_TASK_MIN: ${SLURM_ARRAY_TASK_MIN}"
-echo "  - SLURM_ARRAY_TASK_MAX: ${SLURM_ARRAY_TASK_MAX}"
-echo "Job in the array has:"
-echo "    - SLURM_JOB_ID: ${SLURM_JOB_ID}"
-echo "    - SLURM_ARRAY_TASK_ID: ${SLURM_ARRAY_TASK_ID}"
 echo "Host: "`hostname`
 echo "Number of threads (nproc): "`nproc`
 echo "Total memory in GB: "`free -g | grep -oP '\d+' | sed -n 1p`
@@ -43,7 +34,7 @@ export WORK_DIR
 # Populate Set_Annot_Files array with files matching '*.magma.txt'
 Set_Annot_Files=(${WORK_DIR}/*.magma.txt)
 # Populate Gene_Results_Files array with files matching '*.genes.raw'
-Gene_Results_Files=(${WORK_DIR}/*.genes.raw)
+Gene_Results_Files=(${WORK_DIR}/gwas_backgrounds/*.genes.raw)
 
 # Function to run magma with given files and output prefix
 run_magma() {

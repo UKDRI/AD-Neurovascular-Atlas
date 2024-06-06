@@ -13,7 +13,7 @@ I also need to subset to parenchymal and vascular fractions separately, so three
 My understanding is the input format should be rows per celltypes and columns as gene IDs
 
 ```{r}
-here::i_am("04_data_analysis/001_snrnaseq_analysis/18_magma_risk_analysis_prep.qmd")
+here::i_am("04_data_analysis/007_magma/18_magma_risk_analysis_prep.qmd")
 ```
 
 # Load packages
@@ -66,12 +66,12 @@ gene_percents <-
 
 ```{r}
 # Set subset
-#subset <- "all_controls"
+subset <- "all_controls"
 #subset <- "controls_parenchymal"
-subset <- "controls_vascular"
+#subset <- "controls_vascular"
 
-level <- "level1"
-#level <- "level2"
+#level <- "level1"
+level <- "level2"
 ```
 
 
@@ -269,6 +269,33 @@ top_genes <-
   map(gene_percents, ~ get_top_gene_subset(all_markers, .x))
 ```
 
+Save the top 10% for Zam, he's interested in the mircoglia specifically
+
+```{r}
+write_csv(top_genes$ten, here::here("top_10_percent_celltype_markers.csv"))
+```
+
+```{r}
+#| eval: false
+
+# Look online for list of transition markers and see if they're here or perhaps in their expression?
+trans_endo_mural_markers <- top_genes$ten |> dplyr::filter(cluster == "Trans-Endo-to-mural")
+
+ensembl <- useMart("ensembl", dataset = "hsapiens_gene_ensembl")
+entrez_ids <- getBM(attributes = c('ensembl_gene_id', 'external_gene_name'),
+                    filters = 'ensembl_gene_id',
+                    values = trans_endo_mural_markers$gene,
+                    mart = ensembl)
+# Remove rows with NA Entrez IDs if present
+entrez_ids <- entrez_ids[!is.na(entrez_ids$external_gene_name), ]
+
+# Get unique Ensembl-Entrez pairs by keeping the first occurrence
+entrez_ids <- entrez_ids[!duplicated(entrez_ids$ensembl_gene_id), ]
+
+trans_endo_mural_markers <- trans_endo_mural_markers |>
+  dplyr::left_join(unique(entrez_ids), by = join_by(gene == ensembl_gene_id))
+```
+
 Save the data for LDscore
 
 ```{r}
@@ -318,6 +345,36 @@ map2(formatted_data, names(formatted_data), ~ readr::write_tsv(.x,
                  col_names = FALSE))
 ```
 
+## Save sig hits gene sets
+
+Save a line with the gene lists that are significant hits in the level 2 all controls for AD.
+
+```{r}
+if(level == "level2" &
+   subset == "all_controls") {
+  sig_hits <-
+    c("Microglia-activated",
+      "Pericyte-2",
+      "Perivascular-FB-KAZN2")
+  sig_genesets <- map(sig_hits, ~ formatted_data$ten |>
+                        dplyr::filter(cluster == .x)) |>
+    set_names(sig_hits)
+  
+  map2(
+    sig_genesets,
+    names(sig_genesets),
+    ~ readr::write_tsv(
+      .x,
+      here::here(
+        "03_data/994_magma_inputs/sig_genelist",
+        paste0("sig_celltype_", level, "_", subset, "_", .y, ".condition.txt")
+      ),
+      col_names = FALSE
+    )
+  )
+}
+```
+
 # GWAS summary stats
 
 One can search the [Open GWAS Project](https://gwas.mrcieu.ac.uk/) for traits of interest.
@@ -337,7 +394,9 @@ Note that it saves to `tempdir()` by default, so files will be lost when the R s
 #| eval: false
 # There's a fair few, so I'll just get the latest major GWAS for Scz, PD and stroke
 # I'll skip AD and Scz as I've already got those
-ids <- c("ebi-a-GCST006906", "ieu-b-7")
+ids <- c("ebi-a-GCST006906", "ieu-b-7", "ieu-b-2")
+# Get the kunkle et al stats
+ids <- c("ieu-b-2")
 
 datasets <- MungeSumstats::import_sumstats(ids = ids, 
                                            vcf_download = TRUE, 
@@ -345,6 +404,6 @@ datasets <- MungeSumstats::import_sumstats(ids = ids,
                                            nThread = max(2,future::availableCores()-2))
 results_df <- data.frame(id=names(datasets),
                          path=unlist(datasets))
-resutls_df
+results_df
 ```
 
