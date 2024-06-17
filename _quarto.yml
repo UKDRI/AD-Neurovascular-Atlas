@@ -42,19 +42,31 @@ website:
       background: light
       contents:
         - 06_dissemination/03_website/01_data-analysis.qmd
-        - 04_data_analysis/001_snrnaseq_analysis/01_fastqc.qmd
-        - 04_data_analysis/001_snrnaseq_analysis/02_multiqc.qmd
-        - 04_data_analysis/001_snrnaseq_analysis/03_generate_cellranger_reference.qmd
-        - 04_data_analysis/001_snrnaseq_analysis/04_cellranger_count_set1.qmd
-        - 04_data_analysis/001_snrnaseq_analysis/05_cellranger_count_set2.qmd
-        - 04_data_analysis/001_snrnaseq_analysis/06_cellranger_count_set3.qmd
-        - 04_data_analysis/001_snrnaseq_analysis/07_cellranger_aggr.qmd
-        - 04_data_analysis/001_snrnaseq_analysis/08_scflow_prep.qmd
-        - 04_data_analysis/001_snrnaseq_analysis/09_scflow_run.qmd
-        - 04_data_analysis/001_snrnaseq_analysis/10_scflow_results.qmd
-        - 04_data_analysis/001_snrnaseq_analysis/11_pseudobulk.qmd
-        - 04_data_analysis/001_snrnaseq_analysis/12_pathway_analysis.qmd
-  
+        - section: "Post-seq QC and Prep"
+          contents:
+            - 04_data_analysis/001_snrnaseq_analysis/01_fastqc.qmd
+            - 04_data_analysis/001_snrnaseq_analysis/02_multiqc.qmd
+            - 04_data_analysis/001_snrnaseq_analysis/03_generate_cellranger_reference.qmd
+            - 04_data_analysis/001_snrnaseq_analysis/04_cellranger_count_set1.qmd
+            - 04_data_analysis/001_snrnaseq_analysis/05_cellranger_count_set2.qmd
+            - 04_data_analysis/001_snrnaseq_analysis/06_cellranger_count_set3.qmd
+            - 04_data_analysis/001_snrnaseq_analysis/07_cellranger_aggr.qmd
+        - section: "scFlow"
+          contents:
+            - 04_data_analysis/001_snrnaseq_analysis/08_scflow_prep.qmd
+            - 04_data_analysis/001_snrnaseq_analysis/09_scflow_run.qmd
+            - 04_data_analysis/001_snrnaseq_analysis/10_scflow_results.qmd
+        - section: "Initial analysis"
+          contents:
+            - 04_data_analysis/001_snrnaseq_analysis/11_pseudobulk.qmd
+            - 04_data_analysis/001_snrnaseq_analysis/12_pathway_analysis.qmd
+        - section: "Secondary analysis"
+          contents:
+            - 04_data_analysis/001_snrnaseq_analysis/13_cell_subtypes.qmd
+            - 04_data_analysis/001_snrnaseq_analysis/14_cell_populations.qmd
+            - 04_data_analysis/001_snrnaseq_analysis/15_pseudobulk.qmd
+            - 04_data_analysis/001_snrnaseq_analysis/16_pathway_analysis.qmd
+            
 format:
   html:
     theme:
