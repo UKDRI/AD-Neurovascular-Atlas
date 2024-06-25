@@ -191,7 +191,44 @@ sig_celltypes_magma <- magma_sig |>
   dplyr::rename(ensembl = ensembl_gene_id) |>
   dplyr::filter(set_name %in% c("Microglia-activated", "Pericyte-2", "Perivascular-FB-KAZN2") & input_gene_list == "all_controls" & percent == "top-ten-percent")
 sig_celltypes_magma <- tibble(celltype = "sig_magma_celltypes", data = list(sig_celltypes_magma))
+
 ```
+
+There're a few genes that have overlapping expression in the celltypes, it'd be good to add those together and see what the interactions look like.
+
+```{r}
+x <- sig_celltypes_magma$data[[1]] |>
+  dplyr::left_join(unique_ids, by = join_by(ensembl)) |>
+  dplyr::group_by(set_name) |>
+  dplyr::summarise(genes = gene)
+extra_genes <- data.frame(set_name = c("Microglia-activated"), 
+                          genes = c("ADAM17", "MARCHF7", "PLEKHA1", "MINK1"))
+mg <- x |> dplyr::filter(set_name == "Microglia-activated") |> 
+  rbind(extra_genes)
+extra_genes <- data.frame(set_name = c("Pericyte-2"), genes = c("IQCK"))
+p2 <- x |> dplyr::filter(set_name == "Pericyte-2") |> 
+  rbind(extra_genes)
+extra_genes <- data.frame(set_name = c("Perivascular-FB-KAZN2"), 
+                          genes = c("TRANK1", "EGFR"))
+all <- x |> dplyr::filter(set_name == "Perivascular-FB-KAZN2") |>
+  rbind(extra_genes) |>
+  rbind(mg) |>
+  rbind(p2) |>
+  dplyr::left_join(unique_ids, by = join_by(genes == gene)) |>
+  dplyr::group_by(set_name) |>
+  tidyr::nest() |>
+  dplyr::mutate(celltype = case_when(
+    set_name == "Microglia-activated" ~ "Microglia-activated_sig_magma_extended",
+    set_name == "Pericyte-2" ~ "Pericyte-2_sig_magma_extended",
+    set_name == "Perivascular-FB-KAZN2" ~ "Perivascular-FB-KAZN2_sig_magma_extended",
+    .default = set_name
+  ), input_gene_list = "all_controls", percent = "top-ten-percent", 
+  gwas_backgroup = unique(sig_celltypes_magma$data[[1]]$gwas_background)) |>
+  dplyr::select(celltype, input_gene_list, gwas_backgroup, percent, data)
+
+assertthat::assert_that(map_lgl(all$data, ~ nrow(.x) == nrow(unique(.x))) |> sum() != 0)
+```
+
 
 ```{r}
 gene_list <- res_sig |>
@@ -201,7 +238,9 @@ gene_list <- res_sig |>
 
 # Merge pseudobulk and magma data
 gene_list <- rbind(gene_list, magma_list) |>
-  rbind(sig_celltypes_magma)
+  rbind(sig_celltypes_magma) |>
+  rbind(all)
+rm(all, mg, p2)
 ```
 
 # PPI Test 1. Links within gene set
@@ -553,31 +592,49 @@ results |>
 
 ## Louvain clustering 
 
+- run through funciton code and make sure it's working
+
 ```{r}
-perform_louvain_clustering <- function(subgraph, min_cluster_size, label) {
-  # Louvain clustering
-  cl <- cluster_louvain(subgraph)
+perform_louvain_clustering <- function(graph,
+                                       min_cluster_size = 1,
+                                       color_palette = "Dark2",
+                                       default_color = "grey",
+                                       label) {
+  # Perform Louvain clustering
+  louvain <- cluster_louvain(graph)
   
-  # Determine clusters smaller than the minimum size
-  cluster_sizes <- table(cl$membership)
-  not_assigned <- names(cluster_sizes[cluster_sizes < min_cluster_size])
-  num_clusters <- names(cluster_sizes[cluster_sizes >= min_cluster_size])
+  # Get module membership
+  module_membership <- membership(louvain)
+  # Get the sizes of each module
+  module_sizes <- sizes(louvain)
+  # Filter out small clusters
+  large_modules <- names(module_sizes[module_sizes >= min_cluster_size])
   
-  # Colour assignment
-  cl_cols <- rainbow(n = length(num_clusters))
+  # Create a filtered membership vector
+  filtered_membership <- ifelse(module_membership %in% large_modules, module_membership, 0)
+  # Get the number of remaining modules
+  num_modules <- length(unique(filtered_membership[filtered_membership != 0]))
   
-  # Vectorized color assignment
-  cl_colors <- rep("orange", cl$vcount)
-  membership_to_color <- setNames(cl_cols, num_clusters)
-  cl_colors[cl$membership %in% num_clusters] <- membership_to_color[as.character(cl$membership[cl$membership %in% num_clusters])]
+# Generate distinct colors for each module
+  colors <- brewer.pal(n = num_modules, name = color_palette)
   
-  # Dataframe with clustering and colours
-  module_assignment <- data.frame(gene = cl$names, 
-                                  module = cl$membership, 
-                                  module_color = cl_colors,
-                                  label = label)
+  # Create a color vector with the default color for small clusters
+  module_colors <- rep(default_color, length(filtered_membership))
+  # Assign colors to large modules
+  module_colors[filtered_membership != 0] <- colors[as.integer(factor(filtered_membership[filtered_membership != 0]))]
   
-  return(module_assignment)
+  # Get gene names
+  gene_names <- V(graph)$name
+  
+  # Create dataframe
+  result <- data.frame(
+    gene = gene_names,
+    module = filtered_membership,
+    module_color = module_colors,
+    label = label
+  )
+  
+  return(result)
 }
 
 # remove any subgraphs that are empty
@@ -586,7 +643,7 @@ module_assignment <-
   map2(
     subgraphs,
     names(subgraphs),
-    ~ perform_louvain_clustering(.x, min_cluster_size, .y)
+    ~ perform_louvain_clustering(.x, min_cluster_size = 3, label = .y)
   )
 ```
 
@@ -597,18 +654,51 @@ colnames(info_annot_gene) <- c('entrezid', 'chr', 'start', 'stop', 'strand', "hg
 table_gene_du_id<-merge(table_gene_du,info_annot_gene,by=c("hgnc_symbol"))
 colnames(table_gene_du_id)[2] <- "gene" 
 
-module_assignment <- map(module_assignment, merge, table_gene_du_id, by = "gene")
-x <- map(module_assignment, ~ .x |>
+module_assignment <- map(module_assignment, dplyr::left_join, table_gene_du_id, by = "gene")
+module_assignment <- map(module_assignment, ~ .x |>
            dplyr::left_join(gene_ids, by = join_by(gene == ensembl)) |>
            dplyr::mutate(gene_symbol = if_else(is.na(hgnc_symbol), gene.y, hgnc_symbol)))
 ```
 
-
 ```{r}
 modules <- list_rbind(module_assignment) |>
   dplyr::filter(label %in% sig_celltypes$gene_list) |>
-  dplyr::filter(grepl("_no_apoe|low-feature-cell", label))
+  dplyr::filter(!grepl("low-feature-cell", label))
 
+ad_all_controls <- list(
+  "Microglia-activated_sig-magma-sig-genes_EUROPEUKBB_35k10k_all_controls_top-ten-percent" = c("1" = "Lymphocyte activation", "2" = "Amyloid", "3" = "Dephosphorylation"),
+  "Pericyte-2_sig-magma-sig-genes_EUROPEUKBB_35k10k_all_controls_top-ten-percent" = c("1" = "Amyloid", "3" = "Supramolecular fibre organisation"),
+  "Perivascular-FB-KAZN2_sig-magma-sig-genes_EUROPEUKBB_35k10k_all_controls_top-ten-percent" = c("2" = "Amyloid", "4" = "Viral process", "1" = "Axon terminus")
+)
+
+# function to make df per vector
+make_ppi_df <- function(module_labels, celltype, gwas, fraction, ontology = NA) {
+  df <-
+    tibble(
+      module_label = module_labels,
+      module = as.numeric(names(module_labels)),
+      label = celltype,
+      gwas = gwas,
+      fraction = fraction,
+      ontology = ontology
+    )
+  return(df)
+}
+
+module_labels <-
+  map2(ad_all_controls,
+       names(ad_all_controls),
+       make_ppi_df,
+       "Bellenguez",
+       "all_controls",
+       "all") |>
+  list_rbind()
+
+modules <- modules |>
+  left_join(module_labels, by = join_by(label, module))
+```
+
+```{r}
 ppi_network_plots <- function(group, module_df, overall_network = my_network) {
   
   df <- module_df |>
@@ -617,6 +707,9 @@ ppi_network_plots <- function(group, module_df, overall_network = my_network) {
     dplyr::mutate(genes_in_module = n()) |>
     dplyr::ungroup() |>
     dplyr::filter(genes_in_module > 1)
+  module_legend <- df |>
+    dplyr::select(module_label, module_color) |>
+    dplyr::distinct()
   
   subgraph <- induced_subgraph(graph = overall_network, vids = df$gene)
   # Create a named vector for easy lookup
@@ -630,8 +723,7 @@ V(subgraph)$hgnc_symbol <- ensembl_to_symbol[V(subgraph)$name]
 
 # Choose a layout
 layout <- layout_with_fr(subgraph)
-
-layout <- layout_with_kk(subgraph)
+#layout <- layout_with_kk(subgraph)
 
 # Use the Distributed Recursive Layout
 #layout <- layout_with_drl(subgraph, options = list(simmer.attraction = 0.1))
@@ -650,9 +742,56 @@ plot(subgraph,
      rescale = TRUE, 
      vertex.label = NA,
      main = group)
+  # Add legend
+  legend("bottomright", legend = unique(df$module_label), col = unique(df$module_color), pch = 19, title = "Module")
  box()
  recordPlot()
  
+}
+
+plot_network_ggraph <- function(group, module_df, overall_network = my_network) {
+  require(ggraph)
+  require(tidygraph)
+  
+  df <- module_df |>
+    dplyr::filter(label == group) |>
+    dplyr::group_by(module) |>
+    dplyr::mutate(genes_in_module = n()) |>
+    dplyr::ungroup() |>
+    dplyr::filter(genes_in_module > 1)
+  module_legend <- df |>
+    dplyr::select(module_label, module_color) |>
+    dplyr::distinct()
+  
+  subgraph <- induced_subgraph(graph = overall_network, vids = df$gene)
+  # Create a named vector for easy lookup
+ensembl_to_symbol <- setNames(df$hgnc_symbol, df$gene)
+
+# Add gene symbols to the graph vertices
+V(subgraph)$hgnc_symbol <- ensembl_to_symbol[V(subgraph)$name]
+  # Convert igraph to tidygraph
+  tbl_graph <- as_tbl_graph(subgraph)
+  
+  # Add module information to the graph
+  tbl_graph <- tbl_graph %>%
+    activate(nodes) %>%
+    mutate(module_number = df$module,
+           module_color = df$module_color,
+           module_label = df$module_label,
+           gene_name = df$gene_symbol)
+  
+  # Plot using ggraph
+  p <- ggraph(tbl_graph, layout = 'fr') +  # 'fr' layout for Fruchterman-Reingold
+    geom_edge_link(aes(edge_alpha = 0.5), show.legend = FALSE) +
+    geom_node_point(aes(color = module_label), size = 5) +
+    geom_node_text(aes(label = gene_name), repel = TRUE, size = 3) +
+    scale_color_manual(values = setNames(df$module_color, df$module_label)) +
+    theme_void() +
+    theme(legend.position = "right") +
+    guides(color = guide_legend(override.aes = list(size = 5))) +
+    labs(color = "Module")
+  
+  return(p)
 }
 
 #known_ppi <- read.table(here::here("03_data/993_protein_protein_interaction_data/MergedPPI_2024Feb.txt"), 
@@ -663,6 +802,7 @@ plot(subgraph,
 
 #plots <- map(unique(modules$label), ppi_network_plots, modules, known_ppi)
 plots <- map(unique(modules$label), ppi_network_plots, modules)
+plots <- map(unique(modules$label), plot_network_ggraph, modules)
 
 save_plots <- function(plot, plot_title) {
   png(
@@ -800,7 +940,7 @@ file <-
 
   
 if (!file.exists(file)) {
-  plan("multicore", workers = parallel::detectCores() - 1)
+  plan("multisession", workers = parallel::detectCores() - 1)
   result_list_bp <- future_map(
     gene_list$data,
     ~ enrichGO(
@@ -928,7 +1068,7 @@ treeplot(result_list$`Microglia-activated_sig-magma-sig-genes_EUROPEUKBB_35k10k_
 # Define a safe version of your treeplot function that returns NULL on error
 safe_treeplot <- possibly(treeplot, otherwise = NULL)
 # Use map with the safe version of the function
-plan("multicore", workers = parallel::detectCores() - 1)
+plan("multisession", workers = parallel::detectCores() - 1)
 treeplots <- future_map(result_list, safe_treeplot)
 
 # Remove any NULL entries
@@ -1170,9 +1310,9 @@ vascular_stroke <-
 
 ```{r}
 ad_all_controls <- list(
-  "Microglia-activated" = c("1" = "synapse", "2" = "small_gtpase", "3" = "cell_adhesion", "4" = "amino_acid_processing", "5" = "dna_transcription"),
-  "Pericyte-2" = c("1" = "synaptic_vesicle", "2" = "cholesterol", "3" = "cranial_skele_dev", "4" = "amyloid", "5" = "actin_filament", "6" = "cell_polarity", "7" = "g_protein_receptor"),
-  "Perivascular-FB-KAZN2" = c("1" = "actin_filament", "4" = "gogli_vesicle_tranport", "5" = "gtpase_reg", "6" = "nucleoside_biphosphate")
+  "Microglia-activated" = c("1" = "Lymphocyte activation", "2" = "Amyloid", "3" = "Dephosphorylation"),
+  "Pericyte-2" = c("1" = "Amyloid", "3" = "Supramolecular fibre organisation"),
+  "Perivascular-FB-KAZN2" = c("2" = "Amyloid", "4" = "Viral process", "1" = "Axon terminus")
 )
 module_labels <-
   map2(ad_all_controls,
