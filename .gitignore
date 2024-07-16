@@ -43,3 +43,8 @@ vignettes/*.pdf
 /other-dropbox-from-frank/
 /dropbox-folder-from-frank/
 /_freeze/
+
+03_data/
+# Temp ignore public
+public/
+
