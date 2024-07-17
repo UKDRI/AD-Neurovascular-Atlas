@@ -1,0 +1,42 @@
+project:
+  type: manuscript
+  output-dir: paper
+  render: 
+    - "*.qmd"
+    - "!04_data_analysis/001_snrnaseq_analysis"
+    - "!04_data_analysis/002_genotyping_analysis"
+    - "!04_data_analysis/003_ldscore_analysis"
+    - "!04_data_analysis/992_scripts_from_frank"
+    - "!04_data_analysis/993_scripts_from_ata"
+    - "!04_data_analysis/994_scripts_from_emeka"
+    - "!04_data_analysis/999_results_summary/03_pseudotemporal.qmd"
+    - "!06_dissemination"
+
+execute:
+  freeze: auto
+  warning: false
+  message: false
+
+format:
+  html:
+    toc: true
+    comments:
+      hypothesis: true
+  docx: default
+  jats: default
+  nature-pdf: default
+
+
+#toc: true
+#number-sections: true
+#bibliography: references.bib
+
+# add multiqc reports to website
+resources:
+  - "03_data/990_processed_data/001_snrnaseq/02_multiqc/01_set1_reads/fastqc_endo_10x_set1_reads.html"
+  - "03_data/990_processed_data/001_snrnaseq/02_multiqc/02_set2_reads/fastqc_endo_10x_set2_reads.html"
+  - "03_data/990_processed_data/001_snrnaseq/02_multiqc/03_set3_reads/fastqc_endo_10x_set3_reads.html"
+  - "03_data/990_processed_data/001_snrnaseq/05_cellranger_aggr/cellranger_aggr_all_sets/outs/web_summary.html"
+  - "03_data/990_processed_data/001_snrnaseq/05_cellranger_aggr/cellranger_aggr_set1/outs/web_summary.html"
+  - "03_data/990_processed_data/001_snrnaseq/05_cellranger_aggr/cellranger_aggr_set2/outs/web_summary.html"
+  - "03_data/990_processed_data/001_snrnaseq/05_cellranger_aggr/cellranger_aggr_set3/outs/web_summary.html"
