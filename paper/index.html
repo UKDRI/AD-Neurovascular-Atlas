@@ -1,178 +1,55 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
-    <meta charset="utf-8">
-    <meta name="generator" content="quarto-1.5.54">
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.5.54">
 
-    <meta name="author" content="Gabriel Mateus Bernardo Harrington">
-    <meta name="author" content="Jimena Monzon Sandoval">
-    <meta name="author" content="Michal Rokicki">
-    <meta name="author" content="Zameel Cader">
-    <meta name="author" content="Caleb Webber">
-    <meta name="dcterms.date" content="2024-07-17">
-    <meta name="keywords" content="Alzheimer’s diesease, Blood brain barrier">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-    <title>BBB in AD</title>
-    <style>
-      code{white-space: pre-wrap;}
-      span.smallcaps{font-variant: small-caps;}
-      div.columns{display: flex; gap: min(4vw, 1.5em);}
-      div.column{flex: auto; overflow-x: auto;}
-      div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
-      ul.task-list{list-style: none;}
-      ul.task-list li input[type="checkbox"] {
-        width: 0.8em;
-        margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
-        vertical-align: middle;
-      }
-      /* CSS for syntax highlighting */
-      pre > code.sourceCode { white-space: pre; position: relative; }
-      pre > code.sourceCode > span { line-height: 1.25; }
-      pre > code.sourceCode > span:empty { height: 1.2em; }
-      .sourceCode { overflow: visible; }
-      code.sourceCode > span { color: inherit; text-decoration: inherit; }
-      div.sourceCode { margin: 1em 0; }
-      pre.sourceCode { margin: 0; }
-      @media screen {
-      div.sourceCode { overflow: auto; }
-      }
-      @media print {
-      pre > code.sourceCode { white-space: pre-wrap; }
-      pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
-      }
-      pre.numberSource code
-        { counter-reset: source-line 0; }
-      pre.numberSource code > span
-        { position: relative; left: -4em; counter-increment: source-line; }
-      pre.numberSource code > span > a:first-child::before
-        { content: counter(source-line);
-          position: relative; left: -1em; text-align: right; vertical-align: baseline;
-          border: none; display: inline-block;
-          -webkit-touch-callout: none; -webkit-user-select: none;
-          -khtml-user-select: none; -moz-user-select: none;
-          -ms-user-select: none; user-select: none;
-          padding: 0 4px; width: 4em;
-        }
-      pre.numberSource { margin-left: 3em;  padding-left: 4px; }
-      div.sourceCode
-        {   }
-      @media screen {
-      pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
-      }
-      /* CSS for citations */
-      div.csl-bib-body { }
-      div.csl-entry {
-        clear: both;
-        margin-bottom: 0em;
-      }
-      .hanging-indent div.csl-entry {
-        margin-left:2em;
-        text-indent:-2em;
-      }
-      div.csl-left-margin {
-        min-width:2em;
-        float:left;
-      }
-      div.csl-right-inline {
-        margin-left:2em;
-        padding-left:1em;
-      }
-      div.csl-indent {
-        margin-left: 2em;
-      }    </style>
+<meta name="author" content="Gabriel Mateus Bernardo Harrington">
+<meta name="author" content="Jimena Monzon Sandoval">
+<meta name="author" content="Michal Rokicki">
+<meta name="author" content="Zameel Cader">
+<meta name="author" content="Caleb Webber">
+<meta name="dcterms.date" content="2024-07-17">
+<meta name="keywords" content="Alzheimer’s diesease, Blood brain barrier">
 
-    <style>
-      body.hypothesis-enabled #quarto-embed-header {
-        padding-right: 36px;
-      }
+<title>BBB in AD</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+  margin-bottom: 0em;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
 
-      #quarto-embed-header {
-        height: 3em;
-        width: 100%;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-bottom: solid 1px;
-      }
 
-      #quarto-embed-header h6 {
-        font-size: 1.1em;
-        padding-top: 0.6em;
-        margin-left: 1em;
-        margin-right: 1em;
-        font-weight: 400;
-      }
-
-      #quarto-embed-header a.quarto-back-link,
-      #quarto-embed-header a.quarto-download-embed {
-        font-size: 0.8em;
-        margin-top: 1em;
-        margin-bottom: 1em;
-        margin-left: 1em;
-        margin-right: 1em;
-      }
-
-      .quarto-back-container {
-        padding-left: 0.5em;
-        display: flex;
-      }
-
-      .headroom {
-          will-change: transform;
-          transition: transform 200ms linear;
-      }
-
-      .headroom--pinned {
-          transform: translateY(0%);
-      }
-
-      .headroom--unpinned {
-          transform: translateY(-100%);
-      }      
-    </style>
-
-    <script>
-    window.document.addEventListener("DOMContentLoaded", function () {
-
-      var header = window.document.querySelector("#quarto-embed-header");
-      const titleBannerEl = window.document.querySelector("body > #title-block-header");
-      if (titleBannerEl) {
-        titleBannerEl.style.paddingTop = header.clientHeight + "px";
-      }
-      const contentEl = window.document.getElementById('quarto-content');
-      for (const child of contentEl.children) {
-        child.style.paddingTop = header.clientHeight + "px";
-        child.style.marginTop = "1em";
-      }
-
-      // Use the article root if the `back` call doesn't work. This isn't perfect
-      // but should typically work
-      window.quartoBackToArticle = () => {
-        var currentUrl = window.location.href;
-        window.history.back();
-        setTimeout(() => {
-            // if location was not changed in 100 ms, then there is no history back
-            if(currentUrl === window.location.href){              
-                // redirect to site root
-                window.location.href = "index.html";
-            }
-        }, 100);
-      }
-
-      const headroom = new window.Headroom(header, {
-        tolerance: 5,
-        onPin: function () {
-        },
-        onUnpin: function () {
-        },
-      });
-      headroom.init();
-    });
-    </script>
-
-    
-<script src="site_libs/manuscript-notebook/headroom.min.js"></script>
 <script src="site_libs/clipboard/clipboard.min.js"></script>
 <script src="site_libs/quarto-html/quarto.js"></script>
 <script src="site_libs/quarto-html/popper.min.js"></script>
@@ -186,13 +63,15 @@
 <script src="site_libs/quarto-contrib/glightbox/glightbox.min.js"></script>
 <link href="site_libs/quarto-contrib/glightbox/glightbox.min.css" rel="stylesheet">
 <link href="site_libs/quarto-contrib/glightbox/lightbox.css" rel="stylesheet">
-     <script async="" src="https://hypothes.is/embed.js"></script>
+<script async="" src="https://hypothes.is/embed.js"></script>
 <script>
   window.document.addEventListener("DOMContentLoaded", function (_event) {
     document.body.classList.add('hypothesis-enabled');
   });
-</script>  
-      <meta name="citation_title" content="BBB in AD">
+</script>
+
+
+<meta name="citation_title" content="BBB in AD">
 <meta name="citation_abstract" content="The blood brain barrier, it&amp;amp;#039;s important, probably in AD even
 ">
 <meta name="citation_keywords" content="Alzheimer's diesease,Blood brain barrier">
@@ -213,16 +92,9 @@
 <meta name="citation_reference" content="citation_title=Nextflow enables reproducible computational workflows;,citation_author=Paolo Di Tommaso;,citation_author=Maria Chatzou;,citation_author=Evan W. Floden;,citation_author=Pablo Prieto Barja;,citation_author=Emilio Palumbo;,citation_author=Cedric Notredame;,citation_publication_date=2017-04;,citation_cover_date=2017-04;,citation_year=2017;,citation_fulltext_html_url=https://www.nature.com/articles/nbt.3820;,citation_issue=4;,citation_doi=10.1038/nbt.3820;,citation_volume=35;,citation_language=en;,citation_journal_title=Nature Biotechnology;">
 </head>
 
-  <body class="quarto-notebook">
-    <div id="quarto-embed-header" class="headroom fixed-top bg-primary">
-      
-      <a onclick="window.quartoBackToArticle(); return false;" class="btn btn-primary quarto-back-link" href=""><i class="bi bi-caret-left"></i> Back to Article</a>
-      <h6><i class="bi bi-journal-code"></i> Article Notebook</h6>
+<body>
 
-            <a href="./index.qmd" class="btn btn-primary quarto-download-embed" download="index.qmd">Download Source</a>
-          </div>
-
-     <header id="title-block-header" class="quarto-title-block default toc-left page-columns page-full">
+<header id="title-block-header" class="quarto-title-block default toc-left page-columns page-full">
   <div class="quarto-title-banner page-columns page-full">
     <div class="quarto-title column-body">
       <h1 class="title">BBB in AD</h1>
@@ -316,7 +188,7 @@
               </div>
       </div>
       <div class="quarto-title-meta-column-end quarto-other-formats-target">
-      </div>
+      <div class="quarto-alternate-formats"><div class="quarto-title-meta-heading">Other Formats</div><div class="quarto-title-meta-contents"><p><a href="index.docx"><i class="bi bi-file-word"></i>MS Word</a></p></div><div class="quarto-title-meta-contents"><p><a href="index.pdf"><i class="bi bi-file-pdf"></i>PDF (nature)</a></p></div><div class="quarto-title-meta-contents"><p><a href="index-meca.zip" data-meca-link="true"><i class="bi bi-archive"></i>MECA Bundle</a></p></div></div></div>
     </div>
 
     <div>
@@ -368,932 +240,17 @@
   <li><a href="#supplemental-information-titles-and-legends" id="toc-supplemental-information-titles-and-legends" class="nav-link" data-scroll-target="#supplemental-information-titles-and-legends"><span class="header-section-number">11</span> Supplemental information titles and legends</a></li>
   <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references"><span class="header-section-number">12</span> References</a></li>
   </ul>
-</nav>
+<div class="quarto-alternate-notebooks"><h2>Notebooks</h2><ul><li><a href="index-preview.html"><i class="bi bi-journal-code"></i>Article Notebook</a></li><li><a href="04_data_analysis/999_results_summary/04_figures-preview.html"><i class="bi bi-journal-code"></i>Build figures</a></li><li><a href="04_data_analysis/005_cell-cell_interactions/01_cellchat-preview.html"><i class="bi bi-journal-code"></i>CellChat</a></li><li><a href="04_data_analysis/005_cell-cell_interactions/02_celltype_deg_overlap-preview.html"><i class="bi bi-journal-code"></i>Celltype DEG overlap</a></li><li><a href="04_data_analysis/990_code_libraries/01_r-packages-used-preview.html"><i class="bi bi-journal-code"></i>create vector of packages used</a></li><li><a href="04_data_analysis/007_magma/19_magma_risk_analysis-preview.html"><i class="bi bi-journal-code"></i>MAGMA - risk analysis</a></li><li><a href="04_data_analysis/007_magma/18_magma_risk_analysis_prep-preview.html"><i class="bi bi-journal-code"></i>MAGMA - risk analysis prep</a></li><li><a href="04_data_analysis/007_magma/20_magma_risk_results_analysis-preview.html"><i class="bi bi-journal-code"></i>MAGMA - risk results analysis</a></li><li><a href="04_data_analysis/007_magma/23_risk_gene_expression-preview.html"><i class="bi bi-journal-code"></i>MAGMA risk gene expression</a></li><li><a href="04_data_analysis/004_mouse_phenotypes/01_MP_enrichment-preview.html"><i class="bi bi-journal-code"></i>MP enrichment analysis</a></li><li><a href="04_data_analysis/007_magma/22_pathway_analysis-preview.html"><i class="bi bi-journal-code"></i>Pathway analysis - MAGMA genes</a></li><li><a href="04_data_analysis/006_protein-protein-interactions/17_protein-protein_interactions-preview.html"><i class="bi bi-journal-code"></i>Protein-protein interactions</a></li></ul></div></nav>
 </div>
 <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
 </div>
-<main class="content quarto-banner-title-block" id="quarto-document-content">      
+<main class="content quarto-banner-title-block" id="quarto-document-content">
 
-       <div class="cell-container"><div class="cell-decorator"><pre>In [1]:</pre></div><div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># purl setup script</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">purl</span>(</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"04_data_analysis/990_code_libraries/01_r-packages-used.qmd"</span>),</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"04_data_analysis/990_code_libraries/01_r-packages-used.R"</span>)</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] "/mnt/b57480ca-5ec4-4912-b90b-3982312c5328/UK Dementia Research Institute Dropbox/Gabriel Bernardo Harrington/backup/research/blood-brain-barrier-in-ad/04_data_analysis/990_code_libraries/01_r-packages-used.R"</code></pre>
-</div>
-</div></div>
-<div class="cell-container"><div class="cell-decorator"><pre>In [2]:</pre></div><div class="cell">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'dplyr'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:reshape':
 
-    rename</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following objects are masked from 'package:stats':
 
-    filter, lag</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following objects are masked from 'package:base':
+  
 
-    intersect, setdiff, setequal, union</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'tidyr'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following objects are masked from 'package:reshape':
 
-    expand, smiths</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>here() starts at /mnt/b57480ca-5ec4-4912-b90b-3982312c5328/UK Dementia Research Institute Dropbox/Gabriel Bernardo Harrington/backup/research/blood-brain-barrier-in-ad</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'kableExtra'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:dplyr':
-
-    group_rows</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'janitor'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following objects are masked from 'package:stats':
-
-    chisq.test, fisher.test</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'data.table'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:purrr':
-
-    transpose</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following objects are masked from 'package:dplyr':
-
-    between, first, last</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:reshape':
-
-    melt</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: registry</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: rngtools</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: cluster</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>NMF - BioConductor layer [OK] | Shared memory capabilities [NO: bigmemory] | Cores 2/2</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>  To enable shared memory capabilities, try: install.extras('
-NMF
-')</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: future</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'future'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:NMF':
-
-    run</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'cowplot'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:reshape':
-
-    stamp</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'scales'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:readr':
-
-    col_factor</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:purrr':
-
-    discard</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: grid</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'ggpubr'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:cowplot':
-
-    get_legend</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'gridExtra'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:Biobase':
-
-    combine</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:BiocGenerics':
-
-    combine</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:dplyr':
-
-    combine</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: viridisLite</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'viridis'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:scales':
-
-    viridis_pal</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'pals'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following objects are masked from 'package:viridis':
-
-    cividis, inferno, magma, plasma, turbo, viridis</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following objects are masked from 'package:viridisLite':
-
-    cividis, inferno, magma, plasma, turbo, viridis</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code></code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code></code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Registered S3 methods overwritten by 'proxy':
-  method               from    
-  print.registry_field registry
-  print.registry_entry registry</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code></code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: SingleCellExperiment</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: SummarizedExperiment</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: MatrixGenerics</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: matrixStats</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'matrixStats'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following objects are masked from 'package:Biobase':
-
-    anyMissing, rowMedians</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:dplyr':
-
-    count</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'MatrixGenerics'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following objects are masked from 'package:matrixStats':
-
-    colAlls, colAnyNAs, colAnys, colAvgsPerRowSet, colCollapse,
-    colCounts, colCummaxs, colCummins, colCumprods, colCumsums,
-    colDiffs, colIQRDiffs, colIQRs, colLogSumExps, colMadDiffs,
-    colMads, colMaxs, colMeans2, colMedians, colMins, colOrderStats,
-    colProds, colQuantiles, colRanges, colRanks, colSdDiffs, colSds,
-    colSums2, colTabulates, colVarDiffs, colVars, colWeightedMads,
-    colWeightedMeans, colWeightedMedians, colWeightedSds,
-    colWeightedVars, rowAlls, rowAnyNAs, rowAnys, rowAvgsPerColSet,
-    rowCollapse, rowCounts, rowCummaxs, rowCummins, rowCumprods,
-    rowCumsums, rowDiffs, rowIQRDiffs, rowIQRs, rowLogSumExps,
-    rowMadDiffs, rowMads, rowMaxs, rowMeans2, rowMedians, rowMins,
-    rowOrderStats, rowProds, rowQuantiles, rowRanges, rowRanks,
-    rowSdDiffs, rowSds, rowSums2, rowTabulates, rowVarDiffs, rowVars,
-    rowWeightedMads, rowWeightedMeans, rowWeightedMedians,
-    rowWeightedSds, rowWeightedVars</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:Biobase':
-
-    rowMedians</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: GenomicRanges</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: stats4</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: S4Vectors</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'S4Vectors'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:NMF':
-
-    nrun</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following objects are masked from 'package:data.table':
-
-    first, second</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:tidyr':
-
-    expand</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following objects are masked from 'package:dplyr':
-
-    first, rename</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following objects are masked from 'package:reshape':
-
-    expand, rename</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:utils':
-
-    findMatches</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following objects are masked from 'package:base':
-
-    expand.grid, I, unname</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: IRanges</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'IRanges'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:data.table':
-
-    shift</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:purrr':
-
-    reduce</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following objects are masked from 'package:dplyr':
-
-    collapse, desc, slice</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: GenomeInfoDb</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: scuttle</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: SeuratObject</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: sp</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'sp'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:IRanges':
-
-    %over%</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>'SeuratObject' was built under R 4.4.0 but the current version is
-4.4.1; it is recomended that you reinstall 'SeuratObject' as the ABI
-for R may have changed</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'SeuratObject'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:SummarizedExperiment':
-
-    Assays</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:GenomicRanges':
-
-    intersect</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:GenomeInfoDb':
-
-    intersect</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:IRanges':
-
-    intersect</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:S4Vectors':
-
-    intersect</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:BiocGenerics':
-
-    intersect</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:DT':
-
-    JS</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following objects are masked from 'package:base':
-
-    intersect, t</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'Seurat'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:SummarizedExperiment':
-
-    Assays</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:DT':
-
-    JS</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'DESeq2'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:scater':
-
-    fpkm</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: limma</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'limma'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:DESeq2':
-
-    plotMA</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:scater':
-
-    plotMDS</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:BiocGenerics':
-
-    plotMA</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'edgeR'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:SingleCellExperiment':
-
-    cpm</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'BiocParallel'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:NMF':
-
-    register</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: AnnotationDbi</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'AnnotationDbi'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:dplyr':
-
-    select</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>##############################################################################
-Pathview is an open source software package distributed under GNU General
-Public License version 3 (GPLv3). Details of GPLv3 is available at
-http://www.gnu.org/licenses/gpl-3.0.html. Particullary, users are required to
-formally cite the original Pathview paper (not just mention it) in publications
-or products. For details, do citation("pathview") within R.
-
-The pathview downloads and uses KEGG data. Non-academic uses may require a KEGG
-license agreement (details at http://www.kegg.jp/kegg/legal.html).
-##############################################################################</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: GenomicFeatures</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: AnnotationFilter</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'AnnotationFilter'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:future':
-
-    value</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'ensembldb'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:dplyr':
-
-    filter</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:stats':
-
-    filter</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: BiocFileCache</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: dbplyr</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'dbplyr'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following objects are masked from 'package:dplyr':
-
-    ident, sql</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'AnnotationHub'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:Biobase':
-
-    cache</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'patchwork'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:cowplot':
-
-    align_plots</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: ggrepel</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'PCAtools'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:scran':
-
-    parallelPCA</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following objects are masked from 'package:stats':
-
-    biplot, screeplot</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'igraph'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:Seurat':
-
-    components</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:scater':
-
-    normalize</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:GenomicRanges':
-
-    union</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:IRanges':
-
-    union</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:S4Vectors':
-
-    union</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following objects are masked from 'package:future':
-
-    %-&gt;%, %&lt;-%</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following objects are masked from 'package:NMF':
-
-    algorithm, compare</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following objects are masked from 'package:BiocGenerics':
-
-    normalize, path, union</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following objects are masked from 'package:purrr':
-
-    compose, simplify</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:tibble':
-
-    as_data_frame</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:tidyr':
-
-    crossing</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following objects are masked from 'package:dplyr':
-
-    as_data_frame, groups, union</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following objects are masked from 'package:stats':
-
-    decompose, spectrum</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:base':
-
-    union</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'biomaRt'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following objects are masked from 'package:scRNAseq':
-
-    listDatasets, searchDatasets</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Setting options('download.file.method.GEOquery'='auto')</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Setting options('GEOquery.inmemory.gpl'=FALSE)</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>clusterProfiler v4.12.0  For help: https://yulab-smu.top/biomedical-knowledge-mining-book/
-
-If you use clusterProfiler in published research, please cite:
-T Wu, E Hu, S Xu, M Chen, P Guo, Z Dai, T Feng, L Zhou, W Tang, L Zhan, X Fu, S Liu, X Bo, and G Yu. clusterProfiler 4.0: A universal enrichment tool for interpreting omics data. The Innovation. 2021, 2(3):100141</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'clusterProfiler'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:biomaRt':
-
-    select</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:igraph':
-
-    simplify</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following objects are masked from 'package:ensembldb':
-
-    filter, select</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:AnnotationDbi':
-
-    select</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:IRanges':
-
-    slice</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:S4Vectors':
-
-    rename</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:purrr':
-
-    simplify</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:reshape':
-
-    rename</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:stats':
-
-    filter</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>DOSE v3.30.1  For help: https://yulab-smu.top/biomedical-knowledge-mining-book/
-
-If you use DOSE in published research, please cite:
-Guangchuang Yu, Li-Gen Wang, Guang-Rong Yan, Qing-Yu He. DOSE: an R/Bioconductor package for Disease Ontology Semantic and Enrichment analysis. Bioinformatics 2015, 31(4):608-609</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'enrichplot'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:ggpubr':
-
-    color_palette</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: BSgenome</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: Biostrings</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: XVector</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'XVector'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:purrr':
-
-    compact</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'Biostrings'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:pals':
-
-    alphabet</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:grid':
-
-    pattern</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:base':
-
-    strsplit</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: BiocIO</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: rtracklayer</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'rtracklayer'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:BiocIO':
-
-    FileForFormat</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:igraph':
-
-    blocks</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:AnnotationHub':
-
-    hubUrl</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: replacing previous import 'utils::findMatches' by
-'S4Vectors::findMatches' when loading 'SNPlocs.Hsapiens.dbSNP155.GRCh37'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'qusage'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:clusterProfiler':
-
-    read.gmt</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: replacing previous import 'utils::findMatches' by
-'S4Vectors::findMatches' when loading 'SNPlocs.Hsapiens.dbSNP155.GRCh38'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'SNPlocs.Hsapiens.dbSNP155.GRCh38'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following objects are masked from 'package:SNPlocs.Hsapiens.dbSNP155.GRCh37':
-
-    .loadAlleles, .loadLoc, COMPATIBLE_BSGENOMES</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: Rsamtools</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'GenomicFiles'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following objects are masked from 'package:tidyr':
-
-    pack, unpack</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>========================================
-simona version 1.2.0
-Bioconductor page: http://bioconductor.org/packages/simona/
-Github page: https://github.com/jokergoo/simona
-Documentation: https://jokergoo.github.io/simona/
-
-If you use it in published research, please cite:
-Gu, Z. simona: a Comprehensive R package for Semantic Similarity 
-  Analysis on Bio-Ontologies. bioRxiv 2023.
-
-This message can be suppressed by:
-  suppressPackageStartupMessages(library(simona))
-========================================</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>========================================
-ComplexHeatmap version 2.20.0
-Bioconductor page: http://bioconductor.org/packages/ComplexHeatmap/
-Github page: https://github.com/jokergoo/ComplexHeatmap
-Documentation: http://jokergoo.github.io/ComplexHeatmap-reference
-
-If you use it in published research, please cite either one:
-- Gu, Z. Complex Heatmap Visualization. iMeta 2022.
-- Gu, Z. Complex heatmaps reveal patterns and correlations in multidimensional 
-    genomic data. Bioinformatics 2016.
-
-
-The new InteractiveComplexHeatmap package can directly export static 
-complex heatmaps into an interactive Shiny app with zero effort. Have a try!
-
-This message can be suppressed by:
-  suppressPackageStartupMessages(library(ComplexHeatmap))
-========================================
-! pheatmap() has been masked by ComplexHeatmap::pheatmap(). Most of the arguments
-   in the original pheatmap() are identically supported in the new function. You 
-   can still use the original function by explicitly calling pheatmap::pheatmap().</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'ComplexHeatmap'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:pheatmap':
-
-    pheatmap</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Registered S3 method overwritten by 'ggnetwork':
-  method         from  
-  fortify.igraph ggtree</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'CellChat'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following objects are masked from 'package:scater':
-
-    runPCA, runUMAP</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: Rcpp</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'monocle3'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:presto':
-
-    top_markers</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:igraph':
-
-    clusters</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following objects are masked from 'package:Biobase':
-
-    exprs, fData, fData&lt;-, pData, pData&lt;-</code></pre>
-</div>
-</div></div>
-<div class="cell-container"><div class="cell-decorator"><pre>In [3]:</pre></div><div class="cell">
-<div class="sourceCode cell-code" id="cb197"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb197-1"><a href="#cb197-1" aria-hidden="true" tabindex="-1"></a>donor_metadata <span class="ot">&lt;-</span> readr<span class="sc">::</span><span class="fu">read_csv</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"03_data/999_data_for_publication/donor_meta_data.csv"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Rows: 37 Columns: 37
-── Column specification ────────────────────────────────────────────────────────
-Delimiter: ","
-chr (22): orig.ident, barcode, manifest, donor_ID, diagnosis, prep, sex, bat...
-dbl (15): nCount_RNA, nFeature_RNA, individual, age, PMI, pH_cerebellum, Bra...
-
-ℹ Use `spec()` to retrieve the full column specification for this data.
-ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-</div>
-</div></div>
 <p>Note that I’ll add a skeleton of all the sections Cell outlines</p>
 <section id="summary" class="level2" data-number="1">
 <h2 data-number="1" class="anchored" data-anchor-id="summary"><span class="header-section-number">1</span> Summary</h2>
@@ -1439,12 +396,6 @@ Figure&nbsp;2: (A) figure legend stuff
 <h3 data-number="10.3" class="anchored" data-anchor-id="experimental-model-and-study-participant-details"><span class="header-section-number">10.3</span> Experimental model and study participant details</h3>
 <section id="post-mortem-tissue-donors" class="level4" data-number="10.3.1">
 <h4 data-number="10.3.1" class="anchored" data-anchor-id="post-mortem-tissue-donors"><span class="header-section-number">10.3.1</span> Post-mortem tissue donors</h4>
-<div class="cell-container"><div class="cell-decorator"><pre>In [4]:</pre></div><div class="cell">
-<div class="sourceCode cell-code" id="cb199"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb199-1"><a href="#cb199-1" aria-hidden="true" tabindex="-1"></a>n_males <span class="ot">&lt;-</span> <span class="fu">sum</span>(donor_metadata<span class="sc">$</span>sex <span class="sc">==</span> <span class="st">"M"</span>)</span>
-<span id="cb199-2"><a href="#cb199-2" aria-hidden="true" tabindex="-1"></a>n_females <span class="ot">&lt;-</span> <span class="fu">sum</span>(donor_metadata<span class="sc">$</span>sex <span class="sc">==</span> <span class="st">"F"</span>)</span>
-<span id="cb199-3"><a href="#cb199-3" aria-hidden="true" tabindex="-1"></a>median_age <span class="ot">&lt;-</span> <span class="fu">median</span>(donor_metadata<span class="sc">$</span>age)</span>
-<span id="cb199-4"><a href="#cb199-4" aria-hidden="true" tabindex="-1"></a>age_range <span class="ot">&lt;-</span> <span class="fu">range</span>(donor_metadata<span class="sc">$</span>age)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div></div>
 <p>Post-mortem pre-frontal cortex from 20 controls and 20 AD brain donors were collected from <code>brain bank here</code> under <code>ethics details here</code>. The clinicopathological parameters were collected and summarized in <a href="#tbl-donor-metadata" class="quarto-xref">Table&nbsp;1</a>, including gender, age, diagnosis, APOE status, ethnicity and Braak stage. 3 donors where excluded in QC and of the remaining 37 donors, 23 were female and 14 were male with a median age of 87 (range 48-101). Sex and age were included as a covariates in pseudobulk differential gene expression analysis.</p>
 </section>
 </section>
@@ -1475,13 +426,8 @@ Figure&nbsp;2: (A) figure legend stuff
 </section>
 <section id="supplemental-information-titles-and-legends" class="level2" data-number="11">
 <h2 data-number="11" class="anchored" data-anchor-id="supplemental-information-titles-and-legends"><span class="header-section-number">11</span> Supplemental information titles and legends</h2>
-<div class="cell-container"><div class="cell-decorator"><pre>In [5]:</pre></div><div class="cell">
-
-<div class="cell-container"><div class="cell-decorator"><pre>In [6]:</pre></div><div><div class="sourceCode cell-code" id="cb200"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb200-1"><a href="#cb200-1" aria-hidden="true" tabindex="-1"></a>donor_metadata <span class="sc">|&gt;</span></span>
-<span id="cb200-2"><a href="#cb200-2" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(donor_ID, sex, age, diagnosis, Braak_Tangle, pH_cerebellum, Ethnicity, Brain_weight, diagnosis_details, apoe_status) <span class="sc">|&gt;</span></span>
-<span id="cb200-3"><a href="#cb200-3" aria-hidden="true" tabindex="-1"></a>  janitor<span class="sc">::</span><span class="fu">clean_names</span>() <span class="sc">|&gt;</span></span>
-<span id="cb200-4"><a href="#cb200-4" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">rename</span>(<span class="at">pH_cerebellum =</span> p_h_cerebellum) <span class="sc">|&gt;</span></span>
-<span id="cb200-5"><a href="#cb200-5" aria-hidden="true" tabindex="-1"></a>  gt<span class="sc">::</span><span class="fu">gt</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div><div id="tbl-donor-metadata" class="cell quarto-float quarto-figure quarto-figure-center anchored">
+<div class="cell">
+<div id="tbl-donor-metadata" class="cell quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-tbl figure">
 <figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-donor-metadata-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and samples included in the multi-omics analysis.
@@ -2396,23 +1342,9 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
 </div>
 </div>
 </figure>
-</div></div></div>
-</div></div>
-<div class="cell-container"><div class="cell-decorator"><pre>In [7]:</pre></div><div class="cell">
-<div class="sourceCode cell-code" id="cb201"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb201-1"><a href="#cb201-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Get session information</span></span>
-<span id="cb201-2"><a href="#cb201-2" aria-hidden="true" tabindex="-1"></a>session_info <span class="ot">&lt;-</span> sessioninfo<span class="sc">::</span><span class="fu">session_info</span>()</span>
-<span id="cb201-3"><a href="#cb201-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb201-4"><a href="#cb201-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Extract package information</span></span>
-<span id="cb201-5"><a href="#cb201-5" aria-hidden="true" tabindex="-1"></a>package_info <span class="ot">&lt;-</span> session_info<span class="sc">$</span>packages <span class="sc">%&gt;%</span></span>
-<span id="cb201-6"><a href="#cb201-6" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(package, loadedversion, source) <span class="sc">%&gt;%</span></span>
-<span id="cb201-7"><a href="#cb201-7" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">arrange</span>(package)</span>
-<span id="cb201-8"><a href="#cb201-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb201-9"><a href="#cb201-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Convert to a data frame</span></span>
-<span id="cb201-10"><a href="#cb201-10" aria-hidden="true" tabindex="-1"></a>package_df <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(package_info)</span>
-<span id="cb201-11"><a href="#cb201-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Print table</span></span>
-<span id="cb201-12"><a href="#cb201-12" aria-hidden="true" tabindex="-1"></a>package_df <span class="sc">|&gt;</span></span>
-<span id="cb201-13"><a href="#cb201-13" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">group_by</span>(source) <span class="sc">|&gt;</span></span>
-<span id="cb201-14"><a href="#cb201-14" aria-hidden="true" tabindex="-1"></a>  gt<span class="sc">::</span><span class="fu">gt</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<a class="quarto-notebook-link" id="nblink-1" href="index-preview.html">Source: Article Notebook</a></div>
+<div class="cell">
 <div class="cell-output-display">
 <div id="jrstpfdtax" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
 <style>#jrstpfdtax table {
@@ -4584,11 +3516,14 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
 
 </div>
 </div>
-</div></div>
+</div>
 </section>
 <section id="references" class="level2 unnumbered" data-number="12">
-<h2 class="unnumbered anchored" data-number="12" data-anchor-id="references"><span class="header-section-number">12</span> References</h2>
-<div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="0" role="list">
+
+
+</section>
+
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">12 References</h2><div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="0" role="list">
 <div id="ref-bellenguez2022" class="csl-entry" role="listitem">
 Bellenguez, Céline, Fahri Küçükali, Iris E. Jansen, Luca Kleineidam, Sonia Moreno-Grau, Najaf Amin, Adam C. Naj, et al. 2022. <span>“New Insights into the Genetic Etiology of Alzheimer<span>’</span>s Disease and Related Dementias.”</span> <em>Nature Genetics</em> 54 (4): 412–36. <a href="https://doi.org/10.1038/s41588-022-01024-z">https://doi.org/10.1038/s41588-022-01024-z</a>.
 </div>
@@ -4601,10 +3536,22 @@ Khozoie, Combiz, Nurun Fancy, Mahdi Marjaneh, Alan Murphy, Paul Matthews, and Na
 <div id="ref-kunkle2019" class="csl-entry" role="listitem">
 Kunkle, Brian W., Benjamin Grenier-Boley, Rebecca Sims, Joshua C. Bis, Vincent Damotte, Adam C. Naj, Anne Boland, et al. 2019. <span>“Genetic Meta-Analysis of Diagnosed Alzheimer<span>’</span>s Disease Identifies New Risk Loci and Implicates Aβ, Tau, Immunity and Lipid Processing.”</span> <em>Nature Genetics</em> 51 (3): 414–30. <a href="https://doi.org/10.1038/s41588-019-0358-2">https://doi.org/10.1038/s41588-019-0358-2</a>.
 </div>
-</div>
-</section>
-     </main>
-<!-- /main column -->  <script id="quarto-html-after-body" type="application/javascript">
+</div></section><section class="quarto-appendix-contents" id="quarto-citation"><h2 class="anchored quarto-appendix-heading">Citation</h2><div><div class="quarto-appendix-secondary-label">BibTeX citation:</div><pre class="sourceCode code-with-copy quarto-appendix-bibtex"><code class="sourceCode bibtex">@online{mateus_bernardo_harrington2024,
+  author = {Mateus Bernardo Harrington, Gabriel and Monzon Sandoval,
+    Jimena and Rokicki, Michal and Cader, Zameel and Webber, Caleb},
+  title = {BBB in {AD}},
+  date = {2024-07-17},
+  langid = {en},
+  abstract = {The blood brain barrier, it’s important, probably in AD
+    even}
+}
+</code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre><div class="quarto-appendix-secondary-label">For attribution, please cite this work as:</div><div id="ref-mateus_bernardo_harrington2024" class="csl-entry quarto-appendix-citeas" role="listitem">
+Mateus Bernardo Harrington, Gabriel, Jimena Monzon Sandoval, Michal
+Rokicki, Zameel Cader, and Caleb Webber. 2024. <span>“BBB in AD.”</span>
+Cell. July 17, 2024.
+</div></div></section></div></main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
 window.document.addEventListener("DOMContentLoaded", function (event) {
   const toggleBodyColorMode = (bsSheetEl) => {
     const mode = bsSheetEl.getAttribute("data-mode");
@@ -5023,7 +3970,9 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     }
   }
 });
-</script>  </div> <!-- /content -->  <script>var lightboxQuarto = GLightbox({"descPosition":"bottom","openEffect":"zoom","loop":false,"selector":".lightbox","closeEffect":"zoom"});
+</script>
+</div> <!-- /content -->
+<script>var lightboxQuarto = GLightbox({"selector":".lightbox","descPosition":"bottom","openEffect":"zoom","loop":false,"closeEffect":"zoom"});
 (function() {
   let previousOnload = window.onload;
   window.onload = () => {
@@ -5054,6 +4003,9 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
   };
   
 })();
-          </script> 
-  
+          </script>
+
+
+
+
 </body></html>

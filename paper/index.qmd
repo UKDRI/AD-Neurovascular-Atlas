@@ -132,7 +132,7 @@ This study provides a valuable resource for understanding NVU composition and dy
 
 ### Isolating the neurovascular unit
 
-![](05_figures/990_shared_figures/003_final_figures/figure1.png){#fig-method fig-alt="A multi-panel figure on our method for isolating the neurovascular unit, and a highlevel data summary. Panel A is a cartoon of the isolation method. Panel B and C are UMAP plots showing the cells from the vascular/parenchymal fractions and the celltype annotation respectively."}
+![(A) Neurovascular unit isolation method. (B)](05_figures/990_shared_figures/003_final_figures/figure1.png){#fig-method fig-alt="A multi-panel figure on our method for isolating the neurovascular unit, and a highlevel data summary. Panel A is a cartoon of the isolation method. Panel B and C are UMAP plots showing the cells from the vascular/parenchymal fractions and the celltype annotation respectively."}
 
 -   Explain isolation (or refer to pre-print if it's ready?)
 -   The quality/purity of the enrichment
@@ -144,7 +144,7 @@ This study provides a valuable resource for understanding NVU composition and dy
 -   TODO:
   -   Run the level 1 celltypes through the PPI/GO/MPO analysis
 
-![](05_figures/990_shared_figures/003_final_figures/figure2.png){#fig-risk fig-alt="A multi-panel figure about Alzheimer's disease risk enrichment."}
+![(A) figure legend stuff](05_figures/990_shared_figures/003_final_figures/figure2.png){#fig-risk fig-alt="A multi-panel figure about Alzheimer's disease risk enrichment."}
 
 -   Analysing Alzheimer's disease celltype-specific risk with the latest Bellenguez AD GWAS shows a significant enrichment of activated microglia, a pericyte subtype and a perivascular fibroblast subtype.[@bellenguez2022]
 -   The prior Kunkle GWAS and Bellenguez without the UKBioBank proxy cases (note in the case of the Bellenguez I lost over half the SNPs in the translation to dbSNP rs IDs, dunno what effect keeping them would have...) do not show the same enrichment.[@kunkle2019]
@@ -258,8 +258,6 @@ median_age <- median(donor_metadata$age)
 age_range <- range(donor_metadata$age)
 ```
 
--   Need to add sex info
-
 Post-mortem pre-frontal cortex from 20 controls and 20 AD brain donors were collected from `brain bank here` under `ethics details here`.
 The clinicopathological parameters were collected and summarized in @tbl-donor-metadata, including gender, age, diagnosis, APOE status, ethnicity and Braak stage.
 3 donors where excluded in QC and of the remaining `{r} nrow(donor_metadata)` donors, `{r} n_females` were female and `{r} n_males` were male with a median age of `{r} median_age` (range `{r} age_range[1]`-`{r} age_range[2]`).
@@ -295,7 +293,7 @@ This annotation process was validated by comparing the identified cell types to 
 
 ```{r}
 #| label: tbl-donor-metadata
-#| tbl-cap: Clinical Information. Clinical characteristics of the cohort and samples included in the multi-omics analysis.
+#| tbl-cap: "Clinical Information. Clinical characteristics of the cohort and samples included in the multi-omics analysis."
 
 donor_metadata |>
   dplyr::select(donor_ID, sex, age, diagnosis, Braak_Tangle, pH_cerebellum, Ethnicity, Brain_weight, diagnosis_details, apoe_status) |>
@@ -306,7 +304,7 @@ donor_metadata |>
 
 ```{r}
 #| label: supptbl-r-packages
-#| tbl-cap: R packages used
+#| tbl-cap: "R packages used"
 
 # Get session information
 session_info <- sessioninfo::session_info()
