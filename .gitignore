@@ -45,6 +45,3 @@ vignettes/*.pdf
 /_freeze/
 
 03_data/
-# Temp ignore public
-public/
-

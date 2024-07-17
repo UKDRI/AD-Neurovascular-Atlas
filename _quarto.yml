@@ -1,6 +1,6 @@
 project:
   type: manuscript
-  output-dir: paper
+  output-dir: public
   render: 
     - "*.qmd"
     - "!04_data_analysis/001_snrnaseq_analysis"
