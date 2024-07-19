@@ -1,0 +1,262 @@
+---
+title: scflow prep
+execute: 
+  eval: false
+  purl: false
+bibliography: references.bib
+---
+
+# Getting scflow on hawk
+
+So someone in Super Computing Wales added a handy nf-core profile config we can use, and this also includes a nice guide to getting set up for using nf-core pipelines: [https://github.com/nf-core/configs/blob/master/docs/scw.md](https://github.com/nf-core/configs/blob/master/docs/scw.md)
+
+I've followed the guide for offline use, which I won't rehash here, check the above link if curious.
+
+# Input files
+
+To run scflow we need a manifest tsv file where the first column is a unique sample ID and the second column is the file path to the directory that has the `barcodes.tsv`, `genes.tsv` and `matrix.mtx` files.
+
+I'm assuming we want to use the filtered gene-barcode matrices in MEX format as opposed to the raw files.
+
+Note that this page has a mix of bash (run on Hawk) and R code (run locally), I've just run these bits manually and recorded the code here for now.
+
+## Manifest file
+
+First let's sort the manifest for our samples.
+
+Here's how I generated it:
+
+```{r}
+
+## Project root variables defined in the following
+source 00_hpc_variables.sh
+
+# list the cellranger count output directories
+find $PROJECT_ROOT"03_data/990_processed_data/001_snrnaseq/04_cellranger_count/" -maxdepth 2 -mindepth 2 -type d > scflow_manifest.txt
+
+# use the last directory in the path as the sample id
+awk -F'/' '{print $NF "\t" $0}' scflow_manifest.txt > scflow_manifest2.txt
+
+# append "outs/filtered_gene_bc_matrices" to file paths
+sed "s|$|/outs/filtered_feature_bc_matrix|" scflow_manifest2.txt > scflow_manifest3.txt
+
+# remove the undetermined sample and P_39
+grep -v "Undetermined" scflow_manifest3.txt > scflow_manifest4.txt
+grep -v "P_39" scflow_manifest4.txt > scflow_manifest5.txt
+
+# add the table headers
+awk -v line="key\tfilepath" 'BEGIN{print line}{print}' scflow_manifest5.txt > scflow_manifest.tsv
+
+# clean up
+rm scflow_manifest.txt scflow_manifest2.txt scflow_manifest3.txt scflow_manifest4.txt scflow_manifest5.txt
+```
+
+We would also like to include the brain atlas from @yang_human_2022.
+Their data is on GEO so I've downloaded and extracted that to gluster.
+
+```{r}
+#| include: false
+# having extracted the RAW tar file and moved them to their own dir, I'll get 
+# the full path to these directories
+find $(pwd) -mindepth 1 -type d > file_paths.txt
+
+# use the last directory in the path as the sample id
+awk -F'/' '{print $NF "\t" $0}' file_paths.txt > yang_manifest.tsv 
+
+# remove the ugly string on the sample IDs
+awk -F'\t' -v OFS='\t' '{sub("_filtered_feature_bc_matrix", "", $1); print}' yang_manifest.tsv > yang_manifest2.tsv
+
+# add yang sample manifest to main samples
+cat yang_manifest2.tsv >> scflow_manifest.tsv
+
+# clean up 
+rm yang_manifest*
+```
+
+## Sample metadata
+
+We also need to sort out the sample metadata for the Yang data.
+
+```{r}
+#| label: load packages
+#| eval: true
+library(purrr)
+pkg <- c("readr", "dplyr", "here", "GEOquery", "magrittr", "tidyr", "yaml", 
+         "gt")
+map(pkg, library, character.only = TRUE)
+
+```
+
+```{r}
+# current metadata structure for first 2 sample batches
+metadata <- read_tsv(here("03_data/990_processed_data/001_snrnaseq/90_sample_info/samples_meta_merged_final.txt"))
+names(metadata)
+# add a column for the technique - don't know much about it so I'll just call
+# it Oxford for now
+metadata$technique <- "oxford"
+# also don't know brain region
+metadata$brain_region <- "dunno"
+
+# get yang data
+gsm <- getGEO("GSE163577")
+# get phenotype data
+phenodata <- gsm$GSE163577_series_matrix.txt.gz@phenoData@data
+# select useful cols
+phenodata <- phenodata %>%
+  dplyr::select(
+    title,
+    geo_accession,
+    extract_protocol_ch1,
+    data_processing,
+    platform_id,
+    instrument_model,
+    supplementary_file_1,
+    `brain region:ch1`,
+    `disease:ch1`
+  )
+
+# load scflow test sample sheet
+example_samplesheet <- read_tsv(here("03_data/990_processed_data/001_snrnaseq/90_sample_info/scflowSampleSheet_example.tsv"))
+```
+
+There are nice geo accessions that would be handy to use as unique sample IDs for the yang manifest file
+
+```{r}
+# save id and path for manifest file
+yang_manifest <- phenodata %>%
+  dplyr::select(geo_accession, supplementary_file_1)
+
+# get the last part of path
+last_path <- sub(".*/", "", yang_manifest$supplementary_file_1)
+# get after first _
+last_path <- sub("^[^_]*_", "", last_path)
+# remove file extension
+last_path <- gsub("\\.tar\\.gz$", "", last_path)
+
+# update path to yang data on gluster
+yang_manifest$supplementary_file_1 <-
+  paste0(
+    here("03_data/990_processed_data/001_snrnaseq/06_scflow/yang_2022_data/"),
+    last_path
+  )
+# update names to be in line with scflow manifest file
+names(yang_manifest) <- c("key", "filepath")
+# save to tsv
+write_tsv(yang_manifest, here("03_data/990_processed_data/001_snrnaseq/06_scflow/yang_manifest.tsv"))
+```
+
+Then we just need to merge the two manifest files together.
+
+```{r}
+(cat scflow_manifest.tsv && tail -n +2 yang_manifest.tsv) > scflow_manifest_both.tsv
+```
+
+It turns out that you can't have delimiters in the key for the mainfest/sample files, so I need to remove the underscores too
+
+```{r}
+awk 'BEGIN{FS=OFS="\t"} {gsub("_", "", $1)} 1'  scflow_manifest_both.tsv > scflow_manifest_final.tsv
+```
+
+
+We need to get the phenotype data from the yang GEO data in line with our phenotype data to join them.
+My understanding from the Yang paper is that they only looked at the vascular/perivascular component, so I'll label the `prep` as `V` for now.
+
+```{r}
+# sort yang phenotype data and join to ours
+merged_meta <- phenodata %>%
+  dplyr::rename(sample = geo_accession,
+                brain_region = `brain region:ch1`,
+                type = `disease:ch1`) %>%
+  # add cell subsetting technique and cell population
+  dplyr::mutate(technique = "VINE-seq", prep = "V") %>%
+  # select cols of interest
+  dplyr::select(sample, brain_region, type, technique, prep) %>%
+  # merge datasets
+  dplyr::bind_rows(metadata, .) %>%
+  # make control label consistent
+  dplyr::mutate(type = ifelse(type == "CT", "Control", type)) %>%
+  # add final group column for differential expression
+  dplyr::mutate(group = paste(type, prep, technique, brain_region, sep = "_"),
+                sample = gsub("_", "", sample)) %>%
+  # rename to sample sheet style
+  dplyr::rename(manifest = sample,
+                diagnosis = type)
+```
+
+```{r}
+# save metadata
+write_tsv(merged_meta, file = here("03_data/990_processed_data/001_snrnaseq/90_sample_info/sample_metadata.tsv"))
+```
+
+## Getting marker genes
+
+The EBI has the [Single cell expression atlas](https://www.ebi.ac.uk/gxa/sc/home) so I'll use that for our gene annotation markers.
+There is an R package on Bioconductor for querying it, but it doesn't seem to have an easy way of querying by tissues/organ, so I'll just manually download them (there aren't that many).
+
+```{r}
+#| eval: true
+# list gene marker csvs
+gene_markers_files <-
+  list.files(
+    here(
+      "03_data/990_processed_data/001_snrnaseq/06_scflow/2023-05-22_gene-markers"
+    ),
+    full.names = TRUE
+  )
+
+# Extract the final part of the path after the last "/"
+file_names <- basename(gene_markers_files)
+# Remove the file extension
+file_names <- tools::file_path_sans_ext(file_names)
+
+gene_markers <- map(gene_markers_files, read_csv) %>%
+  set_names(file_names)
+
+# add annotation name
+gene_markers <-
+  map2(gene_markers, file_names, ~ dplyr::mutate(.x, annotation = .y)) %>%
+  # bind rows
+  dplyr::bind_rows()
+
+# the odd column headers are the experiment ID and the values are expression
+# pivot long
+gene_markers <- gene_markers %>%
+  pivot_longer(!c(Category, annotation),
+               names_to = "experiment_id",
+               values_to = "expression") %>%
+  # remove cases where expression is 0
+  dplyr::filter(!is.na(expression)) %>%
+  dplyr::rename(gene = Category)
+
+# Filter out duplicate genes within each annotation
+gene_markers_clean <- gene_markers %>%
+  group_by(annotation) %>%
+  filter(!duplicated(gene)) %>%
+  # remove the "top-genes" part of the string
+  dplyr::mutate(annotation = gsub("top-.*", "", annotation))
+
+gt(gene_markers_clean)
+```
+
+Now we can generate the yaml file we need from this dataframe
+
+```{r}
+#| eval: true
+# Group the dataframe by 'annotation' and aggregate genes as a list
+result <- gene_markers_clean %>%
+  group_by(annotation) %>%
+  summarise(genes = list(unique(gene))) %>%
+  ungroup()
+
+# Convert the result to a nested list using map()
+result_list <- map(set_names(result$genes, result$annotation), as.list)
+
+# Write the YAML to a file
+yaml_output <- write_yaml(
+  result_list,
+  here(
+    "03_data/990_processed_data/001_snrnaseq/06_scflow/reddim_genes.yml"
+  )
+)
+```
+

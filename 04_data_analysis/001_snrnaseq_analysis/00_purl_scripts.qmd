@@ -1,0 +1,183 @@
+---
+title: Purl scripts
+---
+
+Several of the .qmd files have bash code to be run on our HPC, so I need to extract the code from those blocks to separate script files.
+This can be done with the `purl` function from `knitr`, though I believe the plan is for this to be more formally incorporate this kind of functionality into Quarto itself.
+
+Firstly, let's define the paths where the data and project are on the HPC.
+
+```{r}
+#| label: HPC variables
+
+PROJECT_ROOT="/scratch/c.mpmgb/blood-brain-barrier-in-ad/"
+## This if for batch 1 set 1
+INPUT_DIR_b1s1="/nfs/dri/02/rdscw/shared/webber/Endo_10X/FASTQ/Set_1/211008_A00748_0157_AHT7TJDSX2_fastq_L2_3_4/"
+## This is for batch 1 set 2
+INPUT_DIR_b1s2="/nfs/dri/02/rdscw/shared/webber/Endo_10X/FASTQ/Set_2/"
+## This is the directory for batch 2 (set 3)
+INPUT_DIR="/nfs/dri/02/rdsmbh/shared/rdsmbh/230327_A00748_0368_AH5CTMDSX5_fastq/"
+
+## Location to store genomic reference data
+REF_DIR="/nfs/dri/02/rdscw/shared/webber/reference_genomes"
+
+## CR executable
+CELL_RANGER="/scratch/c.mpmgb/tools/cellranger-7.1.0/bin/cellranger"
+```
+
+
+```{r}
+#| label: purl scripts
+#| purl: false
+# purl scripts
+knitr::purl(
+  here::here("04_data_analysis/001_snrnaseq_analysis/00_purl_scripts.qmd"),
+  here::here("04_data_analysis/001_snrnaseq_analysis/00_hpc_variables.sh"),
+  documentation = 0
+)
+knitr::purl(
+  here::here("04_data_analysis/001_snrnaseq_analysis/01_fastqc.qmd"),
+  here::here("04_data_analysis/001_snrnaseq_analysis/01_fastqc_set1.sh"),
+  documentation = 0
+)
+knitr::purl(
+  here::here("04_data_analysis/001_snrnaseq_analysis/02_multiqc.qmd"),
+  here::here("04_data_analysis/001_snrnaseq_analysis/02_multiqc.sh"),
+  documentation = 0
+)
+knitr::purl(
+  here::here(
+    "04_data_analysis/001_snrnaseq_analysis/03_generate_cellranger_reference.qmd"
+  ),
+  here::here(
+    "04_data_analysis/001_snrnaseq_analysis/03_generate_cellranger_reference.sh"
+  ),
+  documentation = 0
+)
+knitr::purl(
+  here::here(
+    "04_data_analysis/001_snrnaseq_analysis/04_cellranger_count_set1.qmd"
+  ),
+  here::here(
+    "04_data_analysis/001_snrnaseq_analysis/04_cellranger_count_set1.sh"
+  ),
+  documentation = 0
+)
+knitr::purl(
+  here::here(
+    "04_data_analysis/001_snrnaseq_analysis/05_cellranger_count_set2.qmd"
+  ),
+  here::here(
+    "04_data_analysis/001_snrnaseq_analysis/05_cellranger_count_set2.sh"
+  ),
+  documentation = 0
+)
+knitr::purl(
+  here::here(
+    "04_data_analysis/001_snrnaseq_analysis/06_cellranger_count_set3.qmd"
+  ),
+  here::here(
+    "04_data_analysis/001_snrnaseq_analysis/06_cellranger_count_set3.sh"
+  ),
+  documentation = 0
+)
+knitr::purl(
+  here::here(
+    "04_data_analysis/001_snrnaseq_analysis/07_cellranger_aggr.qmd"
+  ),
+  here::here(
+    "04_data_analysis/001_snrnaseq_analysis/07_cellranger_aggr.sh"
+  ),
+  documentation = 0
+)
+knitr::purl(
+  here::here(
+    "04_data_analysis/001_snrnaseq_analysis/09_scflow_run.qmd"
+  ),
+  here::here(
+    "03_data/990_processed_data/001_snrnaseq/06_scflow/pipeline_temp.config"
+  ),
+  documentation = 0
+)
+knitr::purl(
+  here::here(
+    "04_data_analysis/002_genotyping_analysis/01_get_vcf_specific_pos_set1.qmd"
+  ),
+  here::here(
+    "04_data_analysis/002_genotyping_analysis/01_get_vcf_specific_pos_set1.sh"
+  ),
+  documentation = 0
+)
+knitr::purl(
+  here::here(
+    "04_data_analysis/002_genotyping_analysis/02_get_vcf_specific_pos_set2.qmd"
+  ),
+  here::here(
+    "04_data_analysis/002_genotyping_analysis/02_get_vcf_specific_pos_set2.sh"
+  ),
+  documentation = 0
+)
+knitr::purl(
+  here::here(
+    "04_data_analysis/002_genotyping_analysis/03_get_vcf_specific_pos_set3.qmd"
+  ),
+  here::here(
+    "04_data_analysis/002_genotyping_analysis/03_get_vcf_specific_pos_set3.sh"
+  ),
+  documentation = 0
+)
+knitr::purl(
+  here::here(
+    "04_data_analysis/002_genotyping_analysis/04_generate_cellranger_reference_hg19.qmd"
+  ),
+  here::here(
+    "04_data_analysis/002_genotyping_analysis/04_generate_cellranger_reference_hg19.sh"
+  ),
+  documentation = 0
+)
+knitr::purl(
+  here::here(
+    "04_data_analysis/002_genotyping_analysis/05_run_liftover_vcf_set1.qmd"
+  ),
+  here::here(
+    "04_data_analysis/002_genotyping_analysis/05_run_liftover_vcf_set1.sh"
+  ),
+  documentation = 0
+)
+knitr::purl(
+  here::here(
+    "04_data_analysis/002_genotyping_analysis/06_run_liftover_vcf_set2.qmd"
+  ),
+  here::here(
+    "04_data_analysis/002_genotyping_analysis/06_run_liftover_vcf_set2.sh"
+  ),
+  documentation = 0
+)
+knitr::purl(
+  here::here(
+    "04_data_analysis/002_genotyping_analysis/07_run_liftover_vcf_set3.qmd"
+  ),
+  here::here(
+    "04_data_analysis/002_genotyping_analysis/07_run_liftover_vcf_set3.sh"
+  ),
+  documentation = 0
+)
+knitr::purl(
+  here::here(
+    "04_data_analysis/002_genotyping_analysis/08_get_genotyping_comparison_dna-rna.qmd"
+  ),
+  here::here(
+    "04_data_analysis/002_genotyping_analysis/08_get_genotyping_comparison_dna-rna.sh"
+  ),
+  documentation = 0
+)
+knitr::purl(
+  here::here(
+    "04_data_analysis/002_genotyping_analysis/10_get_apoe_status.qmd"
+  ),
+  here::here(
+    "04_data_analysis/002_genotyping_analysis/10_get_apoe_status.sh"
+  ),
+  documentation = 0
+)
+```
