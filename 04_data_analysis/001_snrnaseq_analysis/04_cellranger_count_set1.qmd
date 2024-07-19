@@ -70,9 +70,6 @@ SAMPLE_ID_FILE=$PROJECT_ROOT"03_data/990_processed_data/001_snrnaseq/90_sample_i
 SAMPLE_ID_NEW_FILE=$PROJECT_ROOT"03_data/990_processed_data/001_snrnaseq/90_sample_info/samples_set1_IDs_swap.txt"
 
 ## CR reference
-## pre-computed and downloaded from CR website as is (refdata-gex-GRCh38-2020-A.tar.gz)
-## based on ensembl v98/gencode v32
-## CR_REF="/scratch/c.mpmgb/Tools/CellRanger/CellRanger_references/refdata-gex-GRCh38-2020-A"
 ## updated CR reference based on ensembl v109 (Gencode v43)
 ## from get_cellranger_reference.sh
 CR_REF=$PROJECT_ROOT"03_data/990_processed_data/001_snrnaseq/03_cellranger_reference/GRCh38"
