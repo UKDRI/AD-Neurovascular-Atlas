@@ -11,7 +11,7 @@
 <meta name="author" content="Michal Rokicki">
 <meta name="author" content="Zameel Cader">
 <meta name="author" content="Caleb Webber">
-<meta name="dcterms.date" content="2024-07-17">
+<meta name="dcterms.date" content="2024-07-30">
 <meta name="keywords" content="Alzheimer’s diesease, Blood brain barrier">
 
 <title>BBB in AD</title>
@@ -70,6 +70,35 @@ div.csl-indent {
   });
 </script>
 
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
 <meta name="citation_title" content="BBB in AD">
 <meta name="citation_abstract" content="The blood brain barrier, it&amp;amp;#039;s important, probably in AD even
@@ -80,16 +109,22 @@ div.csl-indent {
 <meta name="citation_author" content="Michal Rokicki">
 <meta name="citation_author" content="Zameel Cader">
 <meta name="citation_author" content="Caleb Webber">
-<meta name="citation_publication_date" content="2024-07-17">
-<meta name="citation_cover_date" content="2024-07-17">
+<meta name="citation_publication_date" content="2024-07-30">
+<meta name="citation_cover_date" content="2024-07-30">
 <meta name="citation_year" content="2024">
-<meta name="citation_online_date" content="2024-07-17">
+<meta name="citation_online_date" content="2024-07-30">
 <meta name="citation_language" content="en">
 <meta name="citation_journal_title" content="Cell">
 <meta name="citation_reference" content="citation_title=New insights into the genetic etiology of Alzheimer’s disease and related dementias;,citation_author=Céline Bellenguez;,citation_author=Fahri Küçükali;,citation_author=Iris E. Jansen;,citation_author=Luca Kleineidam;,citation_author=Sonia Moreno-Grau;,citation_author=Najaf Amin;,citation_author=Adam C. Naj;,citation_author=Rafael Campos-Martin;,citation_author=Benjamin Grenier-Boley;,citation_author=Victor Andrade;,citation_author=Peter A. Holmans;,citation_author=Anne Boland;,citation_author=Vincent Damotte;,citation_author=Sven J. Lee;,citation_author=Marcos R. Costa;,citation_author=Teemu Kuulasmaa;,citation_author=Qiong Yang;,citation_author=Itziar Rojas;,citation_author=Joshua C. Bis;,citation_author=Amber Yaqub;,citation_author=Ivana Prokic;,citation_author=Julien Chapuis;,citation_author=Shahzad Ahmad;,citation_author=Vilmantas Giedraitis;,citation_author=Dag Aarsland;,citation_author=Pablo Garcia-Gonzalez;,citation_author=Carla Abdelnour;,citation_author=Emilio Alarcón-Martín;,citation_author=Daniel Alcolea;,citation_author=Montserrat Alegret;,citation_author=Ignacio Alvarez;,citation_author=Victoria Álvarez;,citation_author=Nicola J. Armstrong;,citation_author=Anthoula Tsolaki;,citation_author=Carmen Antúnez;,citation_author=Ildebrando Appollonio;,citation_author=Marina Arcaro;,citation_author=Silvana Archetti;,citation_author=Alfonso Arias Pastor;,citation_author=Beatrice Arosio;,citation_author=Lavinia Athanasiu;,citation_author=Henri Bailly;,citation_author=Nerisa Banaj;,citation_author=Miquel Baquero;,citation_author=Sandra Barral;,citation_author=Alexa Beiser;,citation_author=Ana Belén Pastor;,citation_author=Jennifer E. Below;,citation_author=Penelope Benchek;,citation_author=Luisa Benussi;,citation_author=Claudine Berr;,citation_author=Céline Besse;,citation_author=Valentina Bessi;,citation_author=Giuliano Binetti;,citation_author=Alessandra Bizarro;,citation_author=Rafael Blesa;,citation_author=Mercè Boada;,citation_author=Eric Boerwinkle;,citation_author=Barbara Borroni;,citation_author=Silvia Boschi;,citation_author=Paola Bossù;,citation_author=Geir Bråthen;,citation_author=Jan Bressler;,citation_author=Catherine Bresner;,citation_author=Henry Brodaty;,citation_author=Keeley J. Brookes;,citation_author=Luis Ignacio Brusco;,citation_author=Dolores Buiza-Rueda;,citation_author=Katharina Bûrger;,citation_author=Vanessa Burholt;,citation_author=William S. Bush;,citation_author=Miguel Calero;,citation_author=Laura B. Cantwell;,citation_author=Geneviève Chene;,citation_author=Jaeyoon Chung;,citation_author=Michael L. Cuccaro;,citation_author=Ángel Carracedo;,citation_author=Roberta Cecchetti;,citation_author=Laura Cervera-Carles;,citation_author=Camille Charbonnier;,citation_author=Hung-Hsin Chen;,citation_author=Caterina Chillotti;,citation_author=Simona Ciccone;,citation_author=Jurgen A. H. R. Claassen;,citation_author=Christopher Clark;,citation_author=Elisa Conti;,citation_author=Anaïs Corma-Gómez;,citation_author=Emanuele Costantini;,citation_author=Carlo Custodero;,citation_author=Delphine Daian;,citation_author=Maria Carolina Dalmasso;,citation_author=Antonio Daniele;,citation_author=Efthimios Dardiotis;,citation_author=Jean-François Dartigues;,citation_author=Peter Paul Deyn;,citation_author=Katia Paiva Lopes;,citation_author=Lot D. Witte;,citation_author=Stéphanie Debette;,citation_author=Jürgen Deckert;,citation_author=Teodoro Ser;,citation_author=Nicola Denning;,citation_author=Anita DeStefano;,citation_author=Martin Dichgans;,citation_author=Janine Diehl-Schmid;,citation_author=Mónica Diez-Fairen;,citation_author=Paolo Dionigi Rossi;,citation_author=Srdjan Djurovic;,citation_author=Emmanuelle Duron;,citation_author=Emrah Düzel;,citation_author=Carole Dufouil;,citation_author=Gudny Eiriksdottir;,citation_author=Sebastiaan Engelborghs;,citation_author=Valentina Escott-Price;,citation_author=Ana Espinosa;,citation_author=Michael Ewers;,citation_author=Kelley M. Faber;,citation_author=Tagliavini Fabrizio;,citation_author=Sune Fallgaard Nielsen;,citation_author=David W. Fardo;,citation_author=Lucia Farotti;,citation_author=Chiara Fenoglio;,citation_author=Marta Fernández-Fuertes;,citation_author=Raffaele Ferrari;,citation_author=Catarina B. Ferreira;,citation_author=Evelyn Ferri;,citation_author=Bertrand Fin;,citation_author=Peter Fischer;,citation_author=Tormod Fladby;,citation_author=Klaus Fließbach;,citation_author=Bernard Fongang;,citation_author=Myriam Fornage;,citation_author=Juan Fortea;,citation_author=Tatiana M. Foroud;,citation_author=Silvia Fostinelli;,citation_author=Nick C. Fox;,citation_author=Emlio Franco-Macías;,citation_author=María J. Bullido;,citation_author=Ana Frank-García;,citation_author=Lutz Froelich;,citation_author=Brian Fulton-Howard;,citation_author=Daniela Galimberti;,citation_author=Jose Maria García-Alberca;,citation_author=Pablo García-González;,citation_author=Sebastian Garcia-Madrona;,citation_author=Guillermo Garcia-Ribas;,citation_author=Roberta Ghidoni;,citation_author=Ina Giegling;,citation_author=Giaccone Giorgio;,citation_author=Alison M. Goate;,citation_author=Oliver Goldhardt;,citation_author=Duber Gomez-Fonseca;,citation_author=Antonio González-Pérez;,citation_author=Caroline Graff;,citation_author=Giulia Grande;,citation_author=Emma Green;,citation_author=Timo Grimmer;,citation_author=Edna Grünblatt;,citation_author=Michelle Grunin;,citation_author=Vilmundur Gudnason;,citation_author=Tamar Guetta-Baranes;,citation_author=Annakaisa Haapasalo;,citation_author=Georgios Hadjigeorgiou;,citation_author=Jonathan L. Haines;,citation_author=Kara L. Hamilton-Nelson;,citation_author=Harald Hampel;,citation_author=Olivier Hanon;,citation_author=John Hardy;,citation_author=Annette M. Hartmann;,citation_author=Lucrezia Hausner;,citation_author=Janet Harwood;,citation_author=Stefanie Heilmann-Heimbach;,citation_author=Seppo Helisalmi;,citation_author=Michael T. Heneka;,citation_author=Isabel Hernández;,citation_author=Martin J. Herrmann;,citation_author=Per Hoffmann;,citation_author=Clive Holmes;,citation_author=Henne Holstege;,citation_author=Raquel Huerto Vilas;,citation_author=Marc Hulsman;,citation_author=Jack Humphrey;,citation_author=Geert Jan Biessels;,citation_author=Xueqiu Jian;,citation_author=Charlotte Johansson;,citation_author=Gyungah R. Jun;,citation_author=Yuriko Kastumata;,citation_author=John Kauwe;,citation_author=Patrick G. Kehoe;,citation_author=Lena Kilander;,citation_author=Anne Kinhult Ståhlbom;,citation_author=Miia Kivipelto;,citation_author=Anne Koivisto;,citation_author=Johannes Kornhuber;,citation_author=Mary H. Kosmidis;,citation_author=Walter A. Kukull;,citation_author=Pavel P. Kuksa;,citation_author=Brian W. Kunkle;,citation_author=Amanda B. Kuzma;,citation_author=Carmen Lage;,citation_author=Erika J. Laukka;,citation_author=Lenore Launer;,citation_author=Alessandra Lauria;,citation_author=Chien-Yueh Lee;,citation_author=Jenni Lehtisalo;,citation_author=Ondrej Lerch;,citation_author=Alberto Lleó;,citation_author=William Longstreth;,citation_author=Oscar Lopez;,citation_author=Adolfo Lopez Munain;,citation_author=Seth Love;,citation_author=Malin Löwemark;,citation_author=Lauren Luckcuck;,citation_author=Kathryn L. Lunetta;,citation_author=Yiyi Ma;,citation_author=Juan Macías;,citation_author=Catherine A. MacLeod;,citation_author=Wolfgang Maier;,citation_author=Francesca Mangialasche;,citation_author=Marco Spallazzi;,citation_author=Marta Marquié;,citation_author=Rachel Marshall;,citation_author=Eden R. Martin;,citation_author=Angel Martín Montes;,citation_author=Carmen Martínez Rodríguez;,citation_author=Carlo Masullo;,citation_author=Richard Mayeux;,citation_author=Simon Mead;,citation_author=Patrizia Mecocci;,citation_author=Miguel Medina;,citation_author=Alun Meggy;,citation_author=Shima Mehrabian;,citation_author=Silvia Mendoza;,citation_author=Manuel Menéndez-González;,citation_author=Pablo Mir;,citation_author=Susanne Moebus;,citation_author=Merel Mol;,citation_author=Laura Molina-Porcel;,citation_author=Laura Montrreal;,citation_author=Laura Morelli;,citation_author=Fermin Moreno;,citation_author=Kevin Morgan;,citation_author=Thomas Mosley;,citation_author=Markus M. Nöthen;,citation_author=Carolina Muchnik;,citation_author=Shubhabrata Mukherjee;,citation_author=Benedetta Nacmias;,citation_author=Tiia Ngandu;,citation_author=Gael Nicolas;,citation_author=Børge G. Nordestgaard;,citation_author=Robert Olaso;,citation_author=Adelina Orellana;,citation_author=Michela Orsini;,citation_author=Gemma Ortega;,citation_author=Alessandro Padovani;,citation_author=Caffarra Paolo;,citation_author=Goran Papenberg;,citation_author=Lucilla Parnetti;,citation_author=Florence Pasquier;,citation_author=Pau Pastor;,citation_author=Gina Peloso;,citation_author=Alba Pérez-Cordón;,citation_author=Jordi Pérez-Tur;,citation_author=Pierre Pericard;,citation_author=Oliver Peters;,citation_author=Yolande A. L. Pijnenburg;,citation_author=Juan A. Pineda;,citation_author=Gerard Piñol-Ripoll;,citation_author=Claudia Pisanu;,citation_author=Thomas Polak;,citation_author=Julius Popp;,citation_author=Danielle Posthuma;,citation_author=Josef Priller;,citation_author=Raquel Puerta;,citation_author=Olivier Quenez;,citation_author=Inés Quintela;,citation_author=Jesper Qvist Thomassen;,citation_author=Alberto Rábano;,citation_author=Innocenzo Rainero;,citation_author=Farid Rajabli;,citation_author=Inez Ramakers;,citation_author=Luis M. Real;,citation_author=Marcel J. T. Reinders;,citation_author=Christiane Reitz;,citation_author=Dolly Reyes-Dumeyer;,citation_author=Perry Ridge;,citation_author=Steffi Riedel-Heller;,citation_author=Peter Riederer;,citation_author=Natalia Roberto;,citation_author=Eloy Rodriguez-Rodriguez;,citation_author=Arvid Rongve;,citation_author=Irene Rosas Allende;,citation_author=Maitée Rosende-Roca;,citation_author=Jose Luis Royo;,citation_author=Elisa Rubino;,citation_author=Dan Rujescu;,citation_author=María Eugenia Sáez;,citation_author=Paraskevi Sakka;,citation_author=Ingvild Saltvedt;,citation_author=Ángela Sanabria;,citation_author=María Bernal Sánchez-Arjona;,citation_author=Florentino Sanchez-Garcia;,citation_author=Pascual Sánchez Juan;,citation_author=Raquel Sánchez-Valle;,citation_author=Sigrid B. Sando;,citation_author=Chloé Sarnowski;,citation_author=Claudia L. Satizabal;,citation_author=Michela Scamosci;,citation_author=Nikolaos Scarmeas;,citation_author=Elio Scarpini;,citation_author=Philip Scheltens;,citation_author=Norbert Scherbaum;,citation_author=Martin Scherer;,citation_author=Matthias Schmid;,citation_author=Anja Schneider;,citation_author=Jonathan M. Schott;,citation_author=Geir Selbæk;,citation_author=Davide Seripa;,citation_author=Manuel Serrano;,citation_author=Jin Sha;,citation_author=Alexey A. Shadrin;,citation_author=Olivia Skrobot;,citation_author=Susan Slifer;,citation_author=Gijsje J. L. Snijders;,citation_author=Hilkka Soininen;,citation_author=Vincenzo Solfrizzi;,citation_author=Alina Solomon;,citation_author=Yeunjoo Song;,citation_author=Sandro Sorbi;,citation_author=Oscar Sotolongo-Grau;,citation_author=Gianfranco Spalletta;,citation_author=Annika Spottke;,citation_author=Alessio Squassina;,citation_author=Eystein Stordal;,citation_author=Juan Pablo Tartan;,citation_author=Lluís Tárraga;,citation_author=Niccolo Tesí;,citation_author=Anbupalam Thalamuthu;,citation_author=Tegos Thomas;,citation_author=Giuseppe Tosto;,citation_author=Latchezar Traykov;,citation_author=Lucio Tremolizzo;,citation_author=Anne Tybjærg-Hansen;,citation_author=Andre Uitterlinden;,citation_author=Abbe Ullgren;,citation_author=Ingun Ulstein;,citation_author=Sergi Valero;,citation_author=Otto Valladares;,citation_author=Christine Van Broeckhoven;,citation_author=Jeffery Vance;,citation_author=Badri N. Vardarajan;,citation_author=Aad Lugt;,citation_author=Jasper Van Dongen;,citation_author=Jeroen Rooij;,citation_author=John Swieten;,citation_author=Rik Vandenberghe;,citation_author=Frans Verhey;,citation_author=Jean-Sébastien Vidal;,citation_author=Jonathan Vogelgsang;,citation_author=Martin Vyhnalek;,citation_author=Michael Wagner;,citation_author=David Wallon;,citation_author=Li-San Wang;,citation_author=Ruiqi Wang;,citation_author=Leonie Weinhold;,citation_author=Jens Wiltfang;,citation_author=Gill Windle;,citation_author=Bob Woods;,citation_author=Mary Yannakoulia;,citation_author=Habil Zare;,citation_author=Yi Zhao;,citation_author=Xiaoling Zhang;,citation_author=Congcong Zhu;,citation_author=Miren Zulaica;,citation_author=Lindsay A. Farrer;,citation_author=Bruce M. Psaty;,citation_author=Mohsen Ghanbari;,citation_author=Towfique Raj;,citation_author=Perminder Sachdev;,citation_author=Karen Mather;,citation_author=Frank Jessen;,citation_author=M. Arfan Ikram;,citation_author=Alexandre Mendonça;,citation_author=Jakub Hort;,citation_author=Magda Tsolaki;,citation_author=Margaret A. Pericak-Vance;,citation_author=Philippe Amouyel;,citation_author=Julie Williams;,citation_author=Ruth Frikke-Schmidt;,citation_author=Jordi Clarimon;,citation_author=Jean-François Deleuze;,citation_author=Giacomina Rossi;,citation_author=Sudha Seshadri;,citation_author=Ole A. Andreassen;,citation_author=Martin Ingelsson;,citation_author=Mikko Hiltunen;,citation_author=Kristel Sleegers;,citation_author=Gerard D. Schellenberg;,citation_author=Cornelia M. Duijn;,citation_author=Rebecca Sims;,citation_author=Wiesje M. Flier;,citation_author=Agustín Ruiz;,citation_author=Alfredo Ramirez;,citation_author=Jean-Charles Lambert;,citation_publication_date=2022-04;,citation_cover_date=2022-04;,citation_year=2022;,citation_fulltext_html_url=https://www.nature.com/articles/s41588-022-01024-z;,citation_issue=4;,citation_doi=10.1038/s41588-022-01024-z;,citation_volume=54;,citation_language=en;,citation_journal_title=Nature Genetics;">
 <meta name="citation_reference" content="citation_title=Genetic meta-analysis of diagnosed Alzheimer’s disease identifies new risk loci and implicates Aβ, tau, immunity and lipid processing;,citation_author=Brian W. Kunkle;,citation_author=Benjamin Grenier-Boley;,citation_author=Rebecca Sims;,citation_author=Joshua C. Bis;,citation_author=Vincent Damotte;,citation_author=Adam C. Naj;,citation_author=Anne Boland;,citation_author=Maria Vronskaya;,citation_author=Sven J. Lee;,citation_author=Alexandre Amlie-Wolf;,citation_author=Céline Bellenguez;,citation_author=Aura Frizatti;,citation_author=Vincent Chouraki;,citation_author=Eden R. Martin;,citation_author=Kristel Sleegers;,citation_author=Nandini Badarinarayan;,citation_author=Johanna Jakobsdottir;,citation_author=Kara L. Hamilton-Nelson;,citation_author=Sonia Moreno-Grau;,citation_author=Robert Olaso;,citation_author=Rachel Raybould;,citation_author=Yuning Chen;,citation_author=Amanda B. Kuzma;,citation_author=Mikko Hiltunen;,citation_author=Taniesha Morgan;,citation_author=Shahzad Ahmad;,citation_author=Badri N. Vardarajan;,citation_author=Jacques Epelbaum;,citation_author=Per Hoffmann;,citation_author=Merce Boada;,citation_author=Gary W. Beecham;,citation_author=Jean-Guillaume Garnier;,citation_author=Denise Harold;,citation_author=Annette L. Fitzpatrick;,citation_author=Otto Valladares;,citation_author=Marie-Laure Moutet;,citation_author=Amy Gerrish;,citation_author=Albert V. Smith;,citation_author=Liming Qu;,citation_author=Delphine Bacq;,citation_author=Nicola Denning;,citation_author=Xueqiu Jian;,citation_author=Yi Zhao;,citation_author=Maria Del Zompo;,citation_author=Nick C. Fox;,citation_author=Seung-Hoan Choi;,citation_author=Ignacio Mateo;,citation_author=Joseph T. Hughes;,citation_author=Hieab H. Adams;,citation_author=John Malamon;,citation_author=Florentino Sanchez-Garcia;,citation_author=Yogen Patel;,citation_author=Jennifer A. Brody;,citation_author=Beth A. Dombroski;,citation_author=Maria Candida Deniz Naranjo;,citation_author=Makrina Daniilidou;,citation_author=Gudny Eiriksdottir;,citation_author=Shubhabrata Mukherjee;,citation_author=David Wallon;,citation_author=James Uphill;,citation_author=Thor Aspelund;,citation_author=Laura B. Cantwell;,citation_author=Fabienne Garzia;,citation_author=Daniela Galimberti;,citation_author=Edith Hofer;,citation_author=Mariusz Butkiewicz;,citation_author=Bertrand Fin;,citation_author=Elio Scarpini;,citation_author=Chloe Sarnowski;,citation_author=Will S. Bush;,citation_author=Stéphane Meslage;,citation_author=Johannes Kornhuber;,citation_author=Charles C. White;,citation_author=Yuenjoo Song;,citation_author=Robert C. Barber;,citation_author=Sebastiaan Engelborghs;,citation_author=Sabrina Sordon;,citation_author=Dina Voijnovic;,citation_author=Perrie M. Adams;,citation_author=Rik Vandenberghe;,citation_author=Manuel Mayhaus;,citation_author=L. Adrienne Cupples;,citation_author=Marilyn S. Albert;,citation_author=Peter P. De Deyn;,citation_author=Wei Gu;,citation_author=Jayanadra J. Himali;,citation_author=Duane Beekly;,citation_author=Alessio Squassina;,citation_author=Annette M. Hartmann;,citation_author=Adelina Orellana;,citation_author=Deborah Blacker;,citation_author=Eloy Rodriguez-Rodriguez;,citation_author=Simon Lovestone;,citation_author=Melissa E. Garcia;,citation_author=Rachelle S. Doody;,citation_author=Carmen Munoz-Fernadez;,citation_author=Rebecca Sussams;,citation_author=Honghuang Lin;,citation_author=Thomas J. Fairchild;,citation_author=Yolanda A. Benito;,citation_author=Clive Holmes;,citation_author=Hata Karamujić-Čomić;,citation_author=Matthew P. Frosch;,citation_author=Hakan Thonberg;,citation_author=Wolfgang Maier;,citation_author=Gennady Roshchupkin;,citation_author=Bernardino Ghetti;,citation_author=Vilmantas Giedraitis;,citation_author=Amit Kawalia;,citation_author=Shuo Li;,citation_author=Ryan M. Huebinger;,citation_author=Lena Kilander;,citation_author=Susanne Moebus;,citation_author=Isabel Hernández;,citation_author=M. Ilyas Kamboh;,citation_author=RoseMarie Brundin;,citation_author=James Turton;,citation_author=Qiong Yang;,citation_author=Mindy J. Katz;,citation_author=Letizia Concari;,citation_author=Jenny Lord;,citation_author=Alexa S. Beiser;,citation_author=C. Dirk Keene;,citation_author=Seppo Helisalmi;,citation_author=Iwona Kloszewska;,citation_author=Walter A. Kukull;,citation_author=Anne Maria Koivisto;,citation_author=Aoibhinn Lynch;,citation_author=Lluís Tarraga;,citation_author=Eric B. Larson;,citation_author=Annakaisa Haapasalo;,citation_author=Brian Lawlor;,citation_author=Thomas H. Mosley;,citation_author=Richard B. Lipton;,citation_author=Vincenzo Solfrizzi;,citation_author=Michael Gill;,citation_author=W. T. Longstreth;,citation_author=Thomas J. Montine;,citation_author=Vincenza Frisardi;,citation_author=Monica Diez-Fairen;,citation_author=Fernando Rivadeneira;,citation_author=Ronald C. Petersen;,citation_author=Vincent Deramecourt;,citation_author=Ignacio Alvarez;,citation_author=Francesca Salani;,citation_author=Antonio Ciaramella;,citation_author=Eric Boerwinkle;,citation_author=Eric M. Reiman;,citation_author=Nathalie Fievet;,citation_author=Jerome I. Rotter;,citation_author=Joan S. Reisch;,citation_author=Olivier Hanon;,citation_author=Chiara Cupidi;,citation_author=A. G. Andre Uitterlinden;,citation_author=Donald R. Royall;,citation_author=Carole Dufouil;,citation_author=Raffaele Giovanni Maletta;,citation_author=Itziar Rojas;,citation_author=Mary Sano;,citation_author=Alexis Brice;,citation_author=Roberta Cecchetti;,citation_author=Peter St George-Hyslop;,citation_author=Karen Ritchie;,citation_author=Magda Tsolaki;,citation_author=Debby W. Tsuang;,citation_author=Bruno Dubois;,citation_author=David Craig;,citation_author=Chuang-Kuo Wu;,citation_author=Hilkka Soininen;,citation_author=Despoina Avramidou;,citation_author=Roger L. Albin;,citation_author=Laura Fratiglioni;,citation_author=Antonia Germanou;,citation_author=Liana G. Apostolova;,citation_author=Lina Keller;,citation_author=Maria Koutroumani;,citation_author=Steven E. Arnold;,citation_author=Francesco Panza;,citation_author=Olymbia Gkatzima;,citation_author=Sanjay Asthana;,citation_author=Didier Hannequin;,citation_author=Patrice Whitehead;,citation_author=Craig S. Atwood;,citation_author=Paolo Caffarra;,citation_author=Harald Hampel;,citation_author=Inés Quintela;,citation_author=Ángel Carracedo;,citation_author=Lars Lannfelt;,citation_author=David C. Rubinsztein;,citation_author=Lisa L. Barnes;,citation_author=Florence Pasquier;,citation_author=Lutz Frölich;,citation_author=Sandra Barral;,citation_author=Bernadette McGuinness;,citation_author=Thomas G. Beach;,citation_author=Janet A. Johnston;,citation_author=James T. Becker;,citation_author=Peter Passmore;,citation_author=Eileen H. Bigio;,citation_author=Jonathan M. Schott;,citation_author=Thomas D. Bird;,citation_author=Jason D. Warren;,citation_author=Bradley F. Boeve;,citation_author=Michelle K. Lupton;,citation_author=James D. Bowen;,citation_author=Petra Proitsi;,citation_author=Adam Boxer;,citation_author=John F. Powell;,citation_author=James R. Burke;,citation_author=John S. K. Kauwe;,citation_author=Jeffrey M. Burns;,citation_author=Michelangelo Mancuso;,citation_author=Joseph D. Buxbaum;,citation_author=Ubaldo Bonuccelli;,citation_author=Nigel J. Cairns;,citation_author=Andrew McQuillin;,citation_author=Chuanhai Cao;,citation_author=Gill Livingston;,citation_author=Chris S. Carlson;,citation_author=Nicholas J. Bass;,citation_author=Cynthia M. Carlsson;,citation_author=John Hardy;,citation_author=Regina M. Carney;,citation_author=Jose Bras;,citation_author=Minerva M. Carrasquillo;,citation_author=Rita Guerreiro;,citation_author=Mariet Allen;,citation_author=Helena C. Chui;,citation_author=Elizabeth Fisher;,citation_author=Carlo Masullo;,citation_author=Elizabeth A. Crocco;,citation_author=Charles DeCarli;,citation_author=Gina Bisceglio;,citation_author=Malcolm Dick;,citation_author=Li Ma;,citation_author=Ranjan Duara;,citation_author=Neill R. Graff-Radford;,citation_author=Denis A. Evans;,citation_author=Angela Hodges;,citation_author=Kelley M. Faber;,citation_author=Martin Scherer;,citation_author=Kenneth B. Fallon;,citation_author=Matthias Riemenschneider;,citation_author=David W. Fardo;,citation_author=Reinhard Heun;,citation_author=Martin R. Farlow;,citation_author=Heike Kölsch;,citation_author=Steven Ferris;,citation_author=Markus Leber;,citation_author=Tatiana M. Foroud;,citation_author=Isabella Heuser;,citation_author=Douglas R. Galasko;,citation_author=Ina Giegling;,citation_author=Marla Gearing;,citation_author=Michael Hüll;,citation_author=Daniel H. Geschwind;,citation_author=John R. Gilbert;,citation_author=John Morris;,citation_author=Robert C. Green;,citation_author=Kevin Mayo;,citation_author=John H. Growdon;,citation_author=Thomas Feulner;,citation_author=Ronald L. Hamilton;,citation_author=Lindy E. Harrell;,citation_author=Dmitriy Drichel;,citation_author=Lawrence S. Honig;,citation_author=Thomas D. Cushion;,citation_author=Matthew J. Huentelman;,citation_author=Paul Hollingworth;,citation_author=Christine M. Hulette;,citation_author=Bradley T. Hyman;,citation_author=Rachel Marshall;,citation_author=Gail P. Jarvik;,citation_author=Alun Meggy;,citation_author=Erin Abner;,citation_author=Georgina E. Menzies;,citation_author=Lee-Way Jin;,citation_author=Ganna Leonenko;,citation_author=Luis M. Real;,citation_author=Gyungah R. Jun;,citation_author=Clinton T. Baldwin;,citation_author=Detelina Grozeva;,citation_author=Anna Karydas;,citation_author=Giancarlo Russo;,citation_author=Jeffrey A. Kaye;,citation_author=Ronald Kim;,citation_author=Frank Jessen;,citation_author=Neil W. Kowall;,citation_author=Bruno Vellas;,citation_author=Joel H. Kramer;,citation_author=Emma Vardy;,citation_author=Frank M. LaFerla;,citation_author=Karl-Heinz Jöckel;,citation_author=James J. Lah;,citation_author=Martin Dichgans;,citation_author=James B. Leverenz;,citation_author=David Mann;,citation_author=Allan I. Levey;,citation_author=Stuart Pickering-Brown;,citation_author=Andrew P. Lieberman;,citation_author=Norman Klopp;,citation_author=Kathryn L. Lunetta;,citation_author=H.-Erich Wichmann;,citation_author=Constantine G. Lyketsos;,citation_author=Kevin Morgan;,citation_author=Daniel C. Marson;,citation_author=Kristelle Brown;,citation_author=Frank Martiniuk;,citation_author=Christopher Medway;,citation_author=Deborah C. Mash;,citation_author=Markus M. Nöthen;,citation_author=Eliezer Masliah;,citation_author=Nigel M. Hooper;,citation_author=Wayne C. McCormick;,citation_author=Antonio Daniele;,citation_author=Susan M. McCurry;,citation_author=Anthony Bayer;,citation_author=Andrew N. McDavid;,citation_author=John Gallacher;,citation_author=Ann C. McKee;,citation_author=Hendrik Bussche;,citation_author=Marsel Mesulam;,citation_author=Carol Brayne;,citation_author=Bruce L. Miller;,citation_author=Steffi Riedel-Heller;,citation_author=Carol A. Miller;,citation_author=Joshua W. Miller;,citation_author=Ammar Al-Chalabi;,citation_author=John C. Morris;,citation_author=Christopher E. Shaw;,citation_author=Amanda J. Myers;,citation_author=Jens Wiltfang;,citation_author=Sid O’Bryant;,citation_author=John M. Olichney;,citation_author=Victoria Alvarez;,citation_author=Joseph E. Parisi;,citation_author=Andrew B. Singleton;,citation_author=Henry L. Paulson;,citation_author=John Collinge;,citation_author=William R. Perry;,citation_author=Simon Mead;,citation_author=Elaine Peskind;,citation_author=David H. Cribbs;,citation_author=Martin Rossor;,citation_author=Aimee Pierce;,citation_author=Natalie S. Ryan;,citation_author=Wayne W. Poon;,citation_author=Benedetta Nacmias;,citation_author=Huntington Potter;,citation_author=Sandro Sorbi;,citation_author=Joseph F. Quinn;,citation_author=Eleonora Sacchinelli;,citation_author=Ashok Raj;,citation_author=Gianfranco Spalletta;,citation_author=Murray Raskind;,citation_author=Carlo Caltagirone;,citation_author=Paola Bossù;,citation_author=Maria Donata Orfei;,citation_author=Barry Reisberg;,citation_author=Robert Clarke;,citation_author=Christiane Reitz;,citation_author=A. David Smith;,citation_author=John M. Ringman;,citation_author=Donald Warden;,citation_author=Erik D. Roberson;,citation_author=Gordon Wilcock;,citation_author=Ekaterina Rogaeva;,citation_author=Amalia Cecilia Bruni;,citation_author=Howard J. Rosen;,citation_author=Maura Gallo;,citation_author=Roger N. Rosenberg;,citation_author=Yoav Ben-Shlomo;,citation_author=Mark A. Sager;,citation_author=Patrizia Mecocci;,citation_author=Andrew J. Saykin;,citation_author=Pau Pastor;,citation_author=Michael L. Cuccaro;,citation_author=Jeffery M. Vance;,citation_author=Julie A. Schneider;,citation_author=Lori S. Schneider;,citation_author=Susan Slifer;,citation_author=William W. Seeley;,citation_author=Amanda G. Smith;,citation_author=Joshua A. Sonnen;,citation_author=Salvatore Spina;,citation_author=Robert A. Stern;,citation_author=Russell H. Swerdlow;,citation_author=Mitchell Tang;,citation_author=Rudolph E. Tanzi;,citation_author=John Q. Trojanowski;,citation_author=Juan C. Troncoso;,citation_author=Vivianna M. Van Deerlin;,citation_author=Linda J. Van Eldik;,citation_author=Harry V. Vinters;,citation_author=Jean Paul Vonsattel;,citation_author=Sandra Weintraub;,citation_author=Kathleen A. Welsh-Bohmer;,citation_author=Kirk C. Wilhelmsen;,citation_author=Jennifer Williamson;,citation_author=Thomas S. Wingo;,citation_author=Randall L. Woltjer;,citation_author=Clinton B. Wright;,citation_author=Chang-En Yu;,citation_author=Lei Yu;,citation_author=Yasaman Saba;,citation_author=Alberto Pilotto;,citation_author=Maria J. Bullido;,citation_author=Oliver Peters;,citation_author=Paul K. Crane;,citation_author=David Bennett;,citation_author=Paola Bosco;,citation_author=Eliecer Coto;,citation_author=Virginia Boccardi;,citation_author=Phil L. De Jager;,citation_author=Alberto Lleo;,citation_author=Nick Warner;,citation_author=Oscar L. Lopez;,citation_author=Martin Ingelsson;,citation_author=Panagiotis Deloukas;,citation_author=Carlos Cruchaga;,citation_author=Caroline Graff;,citation_author=Rhian Gwilliam;,citation_author=Myriam Fornage;,citation_author=Alison M. Goate;,citation_author=Pascual Sanchez-Juan;,citation_author=Patrick G. Kehoe;,citation_author=Najaf Amin;,citation_author=Nilifur Ertekin-Taner;,citation_author=Claudine Berr;,citation_author=Stéphanie Debette;,citation_author=Seth Love;,citation_author=Lenore J. Launer;,citation_author=Steven G. Younkin;,citation_author=Jean-Francois Dartigues;,citation_author=Chris Corcoran;,citation_author=M. Arfan Ikram;,citation_author=Dennis W. Dickson;,citation_author=Gael Nicolas;,citation_author=Dominique Campion;,citation_author=JoAnn Tschanz;,citation_author=Helena Schmidt;,citation_author=Hakon Hakonarson;,citation_author=Jordi Clarimon;,citation_author=Ron Munger;,citation_author=Reinhold Schmidt;,citation_author=Lindsay A. Farrer;,citation_author=Christine Van Broeckhoven;,citation_author=Michael C. O’Donovan;,citation_author=Anita L. DeStefano;,citation_author=Lesley Jones;,citation_author=Jonathan L. Haines;,citation_author=Jean-Francois Deleuze;,citation_author=Michael J. Owen;,citation_author=Vilmundur Gudnason;,citation_author=Richard Mayeux;,citation_author=Valentina Escott-Price;,citation_author=Bruce M. Psaty;,citation_author=Alfredo Ramirez;,citation_author=Li-San Wang;,citation_author=Agustin Ruiz;,citation_author=Cornelia M. Duijn;,citation_author=Peter A. Holmans;,citation_author=Sudha Seshadri;,citation_author=Julie Williams;,citation_author=Phillippe Amouyel;,citation_author=Gerard D. Schellenberg;,citation_author=Jean-Charles Lambert;,citation_author=Margaret A. Pericak-Vance;,citation_publication_date=2019-03;,citation_cover_date=2019-03;,citation_year=2019;,citation_fulltext_html_url=https://www.nature.com/articles/s41588-019-0358-2;,citation_issue=3;,citation_doi=10.1038/s41588-019-0358-2;,citation_volume=51;,citation_language=en;,citation_journal_title=Nature Genetics;">
 <meta name="citation_reference" content="citation_title=scFlow: A scalable and reproducible analysis pipeline for single-cell RNA sequencing dat;,citation_author=Combiz Khozoie;,citation_author=Nurun Fancy;,citation_author=Mahdi Marjaneh;,citation_author=Alan Murphy;,citation_author=Paul Matthews;,citation_author=Nathan Skene;,citation_publication_date=2021;,citation_cover_date=2021;,citation_year=2021;,citation_fulltext_html_url=https://doi.org/10.22541/au.162912533.38489960/v2;,citation_doi=10.22541/au.162912533.38489960/v2;">
 <meta name="citation_reference" content="citation_title=Nextflow enables reproducible computational workflows;,citation_author=Paolo Di Tommaso;,citation_author=Maria Chatzou;,citation_author=Evan W. Floden;,citation_author=Pablo Prieto Barja;,citation_author=Emilio Palumbo;,citation_author=Cedric Notredame;,citation_publication_date=2017-04;,citation_cover_date=2017-04;,citation_year=2017;,citation_fulltext_html_url=https://www.nature.com/articles/nbt.3820;,citation_issue=4;,citation_doi=10.1038/nbt.3820;,citation_volume=35;,citation_language=en;,citation_journal_title=Nature Biotechnology;">
+<meta name="citation_reference" content="citation_title=Dictionary learning for integrative, multimodal and scalable single-cell analysis;,citation_author=Yuhan Hao;,citation_author=Tim Stuart;,citation_author=Madeline H Kowalski;,citation_author=Saket Choudhary;,citation_author=Paul Hoffman;,citation_author=Austin Hartman;,citation_author=Avi Srivastava;,citation_author=Gesmira Molla;,citation_author=Shaista Madad;,citation_author=Carlos Fernandez-Granda;,citation_author=Rahul Satija;,citation_publication_date=2023;,citation_cover_date=2023;,citation_year=2023;,citation_fulltext_html_url=https://doi.org/10.1038/s41587-023-01767-y;,citation_doi=10.1038/s41587-023-01767-y;">
+<meta name="citation_reference" content="citation_title=R: A language and environment for statistical computing;,citation_author=R Core Team undefined;,citation_publication_date=2024;,citation_cover_date=2024;,citation_year=2024;,citation_fulltext_html_url=https://www.R-project.org/;">
+<meta name="citation_reference" content="citation_title=A human brain vascular atlas reveals diverse mediators of Alzheimer’s risk;,citation_author=Andrew C. Yang;,citation_author=Ryan T. Vest;,citation_author=Fabian Kern;,citation_author=Davis P. Lee;,citation_author=Maayan Agam;,citation_author=Christina A. Maat;,citation_author=Patricia M. Losada;,citation_author=Michelle B. Chen;,citation_author=Nicholas Schaum;,citation_author=Nathalie Khoury;,citation_author=Angus Toland;,citation_author=Kruti Calcuttawala;,citation_author=Heather Shin;,citation_author=Róbert Pálovics;,citation_author=Andrew Shin;,citation_author=Elizabeth Y. Wang;,citation_author=Jian Luo;,citation_author=David Gate;,citation_author=Walter J. Schulz-Schaeffer;,citation_author=Pauline Chu;,citation_author=Julie A. Siegenthaler;,citation_author=M. Windy McNerney;,citation_author=Andreas Keller;,citation_author=Tony Wyss-Coray;,citation_publication_date=2022-03;,citation_cover_date=2022-03;,citation_year=2022;,citation_issue=7903;,citation_doi=10.1038/s41586-021-04369-3;,citation_volume=603;,citation_language=eng;,citation_journal_title=Nature;">
+<meta name="citation_reference" content="citation_title=Dictionary learning for integrative, multimodal and scalable single-cell analysis;,citation_author=Yuhan Hao;,citation_author=Tim Stuart;,citation_author=Madeline H Kowalski;,citation_author=Saket Choudhary;,citation_author=Paul Hoffman;,citation_author=Austin Hartman;,citation_author=Avi Srivastava;,citation_author=Gesmira Molla;,citation_author=Shaista Madad;,citation_author=Carlos Fernandez-Granda;,citation_author=Rahul Satija;,citation_publication_date=2023;,citation_cover_date=2023;,citation_year=2023;,citation_fulltext_html_url=https://doi.org/10.1038/s41587-023-01767-y;,citation_doi=10.1038/s41587-023-01767-y;">
+<meta name="citation_reference" content="citation_title=CellChat: Inference and analysis of cell-cell communication from single-cell and spatially resolved transcriptomics data;,citation_author=Suoqin Jin;,citation_publication_date=2024;,citation_cover_date=2024;,citation_year=2024;,citation_fulltext_html_url=https://github.com/jinworks/CellChat;">
+<meta name="citation_reference" content="citation_title=Propeller: Testing for differences in cell type proportions in single cell data;,citation_author=Belinda Phipson;,citation_author=Choon Boon Sim;,citation_author=Enzo R Porrello;,citation_author=Alex W Hewitt;,citation_author=Joseph Powell;,citation_author=Alicia Oshlack;,citation_publication_date=2022;,citation_cover_date=2022;,citation_year=2022;,citation_fulltext_html_url=https://doi.org/10.1093/bioinformatics/btac582;,citation_volume=38;">
 </head>
 
 <body>
@@ -180,7 +215,7 @@ div.csl-indent {
                 <div>
             <div class="quarto-title-meta-heading">Published</div>
             <div class="quarto-title-meta-contents">
-              <p class="date">July 17, 2024</p>
+              <p class="date">July 30, 2024</p>
             </div>
           </div>
           
@@ -218,10 +253,11 @@ div.csl-indent {
   <li><a href="#results" id="toc-results" class="nav-link" data-scroll-target="#results"><span class="header-section-number">3</span> Results</a>
   <ul class="collapse">
   <li><a href="#isolating-the-neurovascular-unit" id="toc-isolating-the-neurovascular-unit" class="nav-link" data-scroll-target="#isolating-the-neurovascular-unit"><span class="header-section-number">3.1</span> Isolating the neurovascular unit</a></li>
-  <li><a href="#risk-section-summary" id="toc-risk-section-summary" class="nav-link" data-scroll-target="#risk-section-summary"><span class="header-section-number">3.2</span> Risk section summary</a></li>
-  <li><a href="#identification-of-risk-associations-in-specific-cell-types" id="toc-identification-of-risk-associations-in-specific-cell-types" class="nav-link" data-scroll-target="#identification-of-risk-associations-in-specific-cell-types"><span class="header-section-number">3.3</span> Identification of Risk Associations in Specific Cell Types</a></li>
-  <li><a href="#magma-analysis" id="toc-magma-analysis" class="nav-link" data-scroll-target="#magma-analysis"><span class="header-section-number">3.4</span> MAGMA Analysis</a></li>
-  <li><a href="#degs" id="toc-degs" class="nav-link" data-scroll-target="#degs"><span class="header-section-number">3.5</span> DEGs</a></li>
+  <li><a href="#differential-cell-populations" id="toc-differential-cell-populations" class="nav-link" data-scroll-target="#differential-cell-populations"><span class="header-section-number">3.2</span> Differential cell populations</a></li>
+  <li><a href="#risk-section-summary" id="toc-risk-section-summary" class="nav-link" data-scroll-target="#risk-section-summary"><span class="header-section-number">3.3</span> Risk section summary</a></li>
+  <li><a href="#identification-of-risk-associations-in-specific-cell-types" id="toc-identification-of-risk-associations-in-specific-cell-types" class="nav-link" data-scroll-target="#identification-of-risk-associations-in-specific-cell-types"><span class="header-section-number">3.4</span> Identification of Risk Associations in Specific Cell Types</a></li>
+  <li><a href="#magma-analysis" id="toc-magma-analysis" class="nav-link" data-scroll-target="#magma-analysis"><span class="header-section-number">3.5</span> MAGMA Analysis</a></li>
+  <li><a href="#degs" id="toc-degs" class="nav-link" data-scroll-target="#degs"><span class="header-section-number">3.6</span> DEGs</a></li>
   </ul></li>
   <li><a href="#discussion" id="toc-discussion" class="nav-link" data-scroll-target="#discussion"><span class="header-section-number">4</span> Discussion</a></li>
   <li><a href="#acknowledgments" id="toc-acknowledgments" class="nav-link" data-scroll-target="#acknowledgments"><span class="header-section-number">5</span> Acknowledgments</a></li>
@@ -240,7 +276,7 @@ div.csl-indent {
   <li><a href="#supplemental-information-titles-and-legends" id="toc-supplemental-information-titles-and-legends" class="nav-link" data-scroll-target="#supplemental-information-titles-and-legends"><span class="header-section-number">11</span> Supplemental information titles and legends</a></li>
   <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references"><span class="header-section-number">12</span> References</a></li>
   </ul>
-<div class="quarto-alternate-notebooks"><h2>Notebooks</h2><ul><li><a href="index-preview.html"><i class="bi bi-journal-code"></i>Article Notebook</a></li><li><a href="04_data_analysis/999_results_summary/04_figures-preview.html"><i class="bi bi-journal-code"></i>Build figures</a></li><li><a href="04_data_analysis/005_cell-cell_interactions/01_cellchat-preview.html"><i class="bi bi-journal-code"></i>CellChat</a></li><li><a href="04_data_analysis/005_cell-cell_interactions/02_celltype_deg_overlap-preview.html"><i class="bi bi-journal-code"></i>Celltype DEG overlap</a></li><li><a href="04_data_analysis/990_code_libraries/01_r-packages-used-preview.html"><i class="bi bi-journal-code"></i>create vector of packages used</a></li><li><a href="04_data_analysis/007_magma/19_magma_risk_analysis-preview.html"><i class="bi bi-journal-code"></i>MAGMA - risk analysis</a></li><li><a href="04_data_analysis/007_magma/18_magma_risk_analysis_prep-preview.html"><i class="bi bi-journal-code"></i>MAGMA - risk analysis prep</a></li><li><a href="04_data_analysis/007_magma/20_magma_risk_results_analysis-preview.html"><i class="bi bi-journal-code"></i>MAGMA - risk results analysis</a></li><li><a href="04_data_analysis/007_magma/23_risk_gene_expression-preview.html"><i class="bi bi-journal-code"></i>MAGMA risk gene expression</a></li><li><a href="04_data_analysis/004_mouse_phenotypes/01_MP_enrichment-preview.html"><i class="bi bi-journal-code"></i>MP enrichment analysis</a></li><li><a href="04_data_analysis/007_magma/22_pathway_analysis-preview.html"><i class="bi bi-journal-code"></i>Pathway analysis - MAGMA genes</a></li><li><a href="04_data_analysis/006_protein-protein-interactions/17_protein-protein_interactions-preview.html"><i class="bi bi-journal-code"></i>Protein-protein interactions</a></li></ul></div></nav>
+<div class="quarto-alternate-notebooks"><h2>Notebooks</h2><ul><li><a href="index-preview.html"><i class="bi bi-journal-code"></i>Article Notebook</a></li><li><a href="04_data_analysis/999_results_summary/04_figures-preview.html"><i class="bi bi-journal-code"></i>Build figures</a></li><li><a href="04_data_analysis/005_cell-cell_interactions/01_cellchat-preview.html"><i class="bi bi-journal-code"></i>CellChat</a></li><li><a href="04_data_analysis/005_cell-cell_interactions/02_celltype_deg_overlap-preview.html"><i class="bi bi-journal-code"></i>Celltype DEG overlap</a></li><li><a href="04_data_analysis/990_code_libraries/01_r-packages-used-preview.html"><i class="bi bi-journal-code"></i>create vector of packages used</a></li><li><a href="temp/walkthrough-preview.html"><i class="bi bi-journal-code"></i>Hello, Quarto</a></li><li><a href="04_data_analysis/007_magma/19_magma_risk_analysis-preview.html"><i class="bi bi-journal-code"></i>MAGMA - risk analysis</a></li><li><a href="04_data_analysis/007_magma/18_magma_risk_analysis_prep-preview.html"><i class="bi bi-journal-code"></i>MAGMA - risk analysis prep</a></li><li><a href="04_data_analysis/007_magma/20_magma_risk_results_analysis-preview.html"><i class="bi bi-journal-code"></i>MAGMA - risk results analysis</a></li><li><a href="04_data_analysis/007_magma/23_risk_gene_expression-preview.html"><i class="bi bi-journal-code"></i>MAGMA risk gene expression</a></li><li><a href="04_data_analysis/004_mouse_phenotypes/01_MP_enrichment-preview.html"><i class="bi bi-journal-code"></i>MP enrichment analysis</a></li><li><a href="04_data_analysis/007_magma/22_pathway_analysis-preview.html"><i class="bi bi-journal-code"></i>Pathway analysis - MAGMA genes</a></li><li><a href="04_data_analysis/006_protein-protein-interactions/17_protein-protein_interactions-preview.html"><i class="bi bi-journal-code"></i>Protein-protein interactions</a></li></ul></div></nav>
 </div>
 <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
 </div>
@@ -282,13 +318,24 @@ Figure&nbsp;1: (A) Neurovascular unit isolation method. (B)
 <li>The quality/purity of the enrichment</li>
 <li>The cohort details/summary?</li>
 <li>Celltype annotation?</li>
+<li>Compare method directly to Yang atlas paper</li>
 </ul>
 </section>
-<section id="risk-section-summary" class="level3" data-number="3.2">
-<h3 data-number="3.2" class="anchored" data-anchor-id="risk-section-summary"><span class="header-section-number">3.2</span> Risk section summary</h3>
+<section id="differential-cell-populations" class="level3" data-number="3.2">
+<h3 data-number="3.2" class="anchored" data-anchor-id="differential-cell-populations"><span class="header-section-number">3.2</span> Differential cell populations</h3>
+<ul>
+<li>NOTE: I’ll add this here but might be worth moving around to be with section on EndoMT
+<ul>
+<li>Also may need to update the figure number/panel reference if things move around</li>
+</ul></li>
+</ul>
+<p>We observed significant differences in the proportions of NULL (p = 0.029, FDR = 0.89), NULL (p = 0.01, FDR = 0.456), and NULL (p = 0.02, FDR = 0.456) between case and control group, with all 3 celltypes being lower in cases than controls (<a href="#fig-method" class="quarto-xref">Figure&nbsp;1</a> (F).</p>
+</section>
+<section id="risk-section-summary" class="level3" data-number="3.3">
+<h3 data-number="3.3" class="anchored" data-anchor-id="risk-section-summary"><span class="header-section-number">3.3</span> Risk section summary</h3>
 <ul>
 <li>TODO:</li>
-<li>Run the level 1 celltypes through the PPI/GO/MPO analysis</li>
+<li>Expand on the level 1 T-cell stuff, most of the celltypes have t-cell/lymphocyte GO pathways</li>
 </ul>
 <div id="fig-risk" class="quarto-float quarto-figure quarto-figure-center anchored" alt="A multi-panel figure about Alzheimer's disease risk enrichment.">
 <figure class="quarto-float quarto-float-fig figure">
@@ -300,45 +347,64 @@ Figure&nbsp;2: (A) figure legend stuff
 </figcaption>
 </figure>
 </div>
+</section>
+<section id="identification-of-risk-associations-in-specific-cell-types" class="level3" data-number="3.4">
+<h3 data-number="3.4" class="anchored" data-anchor-id="identification-of-risk-associations-in-specific-cell-types"><span class="header-section-number">3.4</span> Identification of Risk Associations in Specific Cell Types</h3>
+<p>We sought to understand what celltype-specific AD risk associations would emerge with a fuller representation of celltypes in the brain. Using single-nuclei sequencing data, we investigated the association of gene expression profiles in various celltypes with Alzheimer’s disease (AD) risk. Our analysis in the high-level celltypes identified significant risk associations after multiple testing correction in four celltypes: fibroblasts, pericytes, microglia and T-cells. When looking at more details cell sub-types we identify activated microglia (microglia-A), pericyte-2, and perivascular-FB-2 being significantly associated with disease risk.</p>
+</section>
+<section id="magma-analysis" class="level3" data-number="3.5">
+<h3 data-number="3.5" class="anchored" data-anchor-id="magma-analysis"><span class="header-section-number">3.5</span> MAGMA Analysis</h3>
+<p>To determine these associations, we employed Multi-marker Analysis of GenoMic Annotation (MAGMA) against the latest Bellenguez AD Genome-Wide Association Study (GWAS).<span class="citation" data-cites="bellenguez2022">(<a href="#ref-bellenguez2022" role="doc-biblioref">Bellenguez et al. 2022</a>)</span> We subset to control samples and identified celltype-specific marker genes using <code>FindAllMarkers</code> from the Seurat package.<span class="citation" data-cites="Seurat-2">(<a href="#ref-Seurat-2" role="doc-biblioref">Hao et al. 2023a</a>)</span> Only genes that are detected in a minimum of 25% of cells in either of the two populations are considered and a minimum log fold change of 0.01 was used. This function was used to apply a Wilcoxon Rank Sum test to compare each cluster against all other clusters identifying differentially expressed gene. From this list of genes, the top ten percent of the total number of genes in the dataset which had the lowest p-values were selected as the celltype specific genes.</p>
+<p>Microglia-A, which play a crucial role in immune response within the brain, exhibited a pronounced association with AD risk. Pericyte-2, involved in blood-brain barrier maintenance and cerebral blood flow regulation, also showed significant associations. Similarly, perivascular-FB-2, essential for the structural integrity of the blood-brain barrier and extracellular matrix composition, were identified as significantly associated with AD risk.</p>
+<section id="conditional-analysis" class="level4" data-number="3.5.1">
+<h4 data-number="3.5.1" class="anchored" data-anchor-id="conditional-analysis"><span class="header-section-number">3.5.1</span> Conditional Analysis</h4>
+<p>We conducted conditional analysis to assess the independence of the risk signals from each celltype. The results showed significant enrichment for each of the three cell types even when conditioned on the other two cell types, indicating that the observed signals are unique and not confounded by the other cell types.&lt;NOTE: refer to figure panel of conditional analysis here&gt;</p>
+</section>
+<section id="gene-ontology-go-enrichment-analysis" class="level4" data-number="3.5.2">
+<h4 data-number="3.5.2" class="anchored" data-anchor-id="gene-ontology-go-enrichment-analysis"><span class="header-section-number">3.5.2</span> Gene Ontology (GO) Enrichment Analysis</h4>
+<p>To further understand the biological implications of these associations, we performed Gene Ontology (GO) enrichment analysis on the significant genes identified by MAGMA for each of the aforementioned cell types. The GO analysis revealed several enriched pathways, prominently featuring several amyloid-related processes. The enrichment of genes involved in amyloid precursor protein (APP) processing, amyloid-beta (Aβ) formation, and amyloid plaque clearance was particularly notable. This finding aligns with the well-established role of amyloid pathology in AD. Additionally, for microglia-A and pericyte-2 cell types, significant GO terms related to T-cell and lymphocyte regulation were identified, suggesting an immune regulatory component in AD risk, especially given the significant risk association of T-cells in the level 1 analysis.</p>
+</section>
+<section id="protein-protein-interaction-ppi-networks" class="level4" data-number="3.5.3">
+<h4 data-number="3.5.3" class="anchored" data-anchor-id="protein-protein-interaction-ppi-networks"><span class="header-section-number">3.5.3</span> Protein-Protein Interaction (PPI) Networks</h4>
+<p>We constructed protein-protein interaction networks for the significant genes identified in each cell type. The PPI networks all had significantly more interacting proteins then one would expect by change. Subsequent Louvain clustering of these networks revealed modules associated with amyloid-related processes (via GO enrichment analysis) across all three cell types. This suggests a coordinated risk association involving amyloid processing among microglia-A, pericyte-2, and perivascular-FB-2.</p>
+</section>
+<section id="mouse-ontology-data-analysis" class="level4" data-number="3.5.4">
+<h4 data-number="3.5.4" class="anchored" data-anchor-id="mouse-ontology-data-analysis"><span class="header-section-number">3.5.4</span> Mouse Ontology Data Analysis</h4>
+<p>To further validate our findings, we used mouse ontology data to investigate the functional implications of the significant genes. We subset the database to terms with more than 10 and less than 200 genes and look for more overlap in a term than we would expect by chance. For microglia-A, significant associations were found with the abnormal cell chemotaxis and hematoma terms. Pericyte-2 showed significant associations with amyloidosis and tau protein deposits. However, no significant associations were identified for perivascular-FB-2.</p>
+</section>
+<section id="cell-cell-communication" class="level4" data-number="3.5.5">
+<h4 data-number="3.5.5" class="anchored" data-anchor-id="cell-cell-communication"><span class="header-section-number">3.5.5</span> Cell-cell communication</h4>
+<p>To investigate the communication between these three celltypes we utilised <code>CellChat</code> and compared cases and controls.<span class="citation" data-cites="CellChat">(<a href="#ref-CellChat" role="doc-biblioref">Jin 2024</a>)</span> We find communication in pericyte-2 and microglia-A via Transforming Growth Factor <span class="math inline">\(\beta\)</span> 1 (TGF<span class="math inline">\(\beta1\)</span>) as a ligand in pericyte-2 to TGF<span class="math inline">\(\beta\)</span> Receptor (TGF<span class="math inline">\(\beta\)</span>R) 1/2 and Activin A Receptor Type 1 (ACVR1) in microglia-A for cases but not controls, suggesting more activation of microglia by pericytes.&lt;NOTE: refs needed&gt;</p>
 <ul>
-<li>Analysing Alzheimer’s disease celltype-specific risk with the latest Bellenguez AD GWAS shows a significant enrichment of activated microglia, a pericyte subtype and a perivascular fibroblast subtype.<span class="citation" data-cites="bellenguez2022">(<a href="#ref-bellenguez2022" role="doc-biblioref">Bellenguez et al. 2022</a>)</span></li>
-<li>The prior Kunkle GWAS and Bellenguez without the UKBioBank proxy cases (note in the case of the Bellenguez I lost over half the SNPs in the translation to dbSNP rs IDs, dunno what effect keeping them would have…) do not show the same enrichment.<span class="citation" data-cites="kunkle2019">(<a href="#ref-kunkle2019" role="doc-biblioref">Kunkle et al. 2019</a>)</span></li>
-<li>GO terms: running GO on the sig magma genes shows amyloid pathways in all three celltypes and regulation of t-cells in microglia/perictye2</li>
+<li>NOTES on cellchat ligand receptor pairs:
+<ul>
+<li>Pericyte-2 -&gt; Microglia-A (all in cases but not controls):
+<ul>
+<li>PTN (Pleiotrophin) -&gt; NCL (Nucleolin) - roles in neuroprotection, neuronal growth and repair - modulating microglia survival/activation?</li>
+<li>IL34 -&gt; CSF1R (Colony Stimulating Factor 1 receptor) - similarly likely activating microglia more</li>
+<li>BMP6 (Bone morphogenetic protein 6) -&gt; BMPR1A/BMPR2/ACVR1 - again development/activation</li>
+</ul></li>
+<li>Microglia-A -&gt; Pericyte-2 (most present in both case and control)
+<ul>
+<li>WNT5A -&gt; MCAM - cell adhesion, migration and polarity (BBB integrity?)</li>
+<li>TGFB1 -&gt; TGFRB1/2 + ACVR1 (<strong>cases only</strong>) - pericyte activation</li>
+<li>SPP1 -&gt; CD44 + ITGAV + ITGB5 + ITGB1 - cell adhesion/migration/survival (BBB/ injury response)</li>
+<li>PDGFB -&gt; PDGFRB - pericyte proliferation, survival and recruitment to blood vessels (response to vascular damage?)</li>
+<li>LGALS9 -&gt; CD44 - again, adhesion things</li>
+<li>GRN -&gt; SORT1 (<strong>cases only</strong>) - inflammatory things</li>
+<li>GAS6 -&gt; MERTK + AXL - cell survival (apoptosis?) - anti-inflammatory</li>
+</ul></li>
+</ul></li>
 </ul>
 </section>
-<section id="identification-of-risk-associations-in-specific-cell-types" class="level3" data-number="3.3">
-<h3 data-number="3.3" class="anchored" data-anchor-id="identification-of-risk-associations-in-specific-cell-types"><span class="header-section-number">3.3</span> Identification of Risk Associations in Specific Cell Types</h3>
-<p>We sought to understand what celltype-specific AD risk associations would emerge with a fuller representation of celltypes in the brain. Using single-nuclei sequencing data, we investigated the association of gene expression profiles in various cell types with Alzheimer’s disease (AD) risk. Our analysis identified significant risk associations in three specific cell types: microglia-A, pericyte-2, and perivascular-FB-2.</p>
-</section>
-<section id="magma-analysis" class="level3" data-number="3.4">
-<h3 data-number="3.4" class="anchored" data-anchor-id="magma-analysis"><span class="header-section-number">3.4</span> MAGMA Analysis</h3>
-<p>To determine these associations, we employed Multi-marker Analysis of GenoMic Annotation (MAGMA) against the latest Bellenguez AD Genome-Wide Association Study (GWAS).<span class="citation" data-cites="bellenguez2022">(<a href="#ref-bellenguez2022" role="doc-biblioref">Bellenguez et al. 2022</a>)</span> The results revealed significant associations for activated microglia (microglia-A), pericyte-2, and perivascular-FB-2. Microglia-A, which play a crucial role in immune response within the brain, exhibited a pronounced association with AD risk. pericyte-2, involved in blood-brain barrier maintenance and cerebral blood flow regulation, also showed significant associations. Similarly, perivascular-FB-2, essential for the structural integrity of the blood-brain barrier and extracellular matrix composition, were identified as significantly associated with AD risk.</p>
-<section id="conditional-analysis" class="level4" data-number="3.4.1">
-<h4 data-number="3.4.1" class="anchored" data-anchor-id="conditional-analysis"><span class="header-section-number">3.4.1</span> Conditional Analysis</h4>
-<p>We conducted conditional analysis to assess the independence of the risk signals. The results showed significant enrichment for each of the three cell types even when conditioned on the other two cell types, indicating that the observed signals are unique and not confounded by the other cell types.</p>
-</section>
-<section id="gene-ontology-go-enrichment-analysis" class="level4" data-number="3.4.2">
-<h4 data-number="3.4.2" class="anchored" data-anchor-id="gene-ontology-go-enrichment-analysis"><span class="header-section-number">3.4.2</span> Gene Ontology (GO) Enrichment Analysis</h4>
-<p>To further understand the biological implications of these associations, we performed Gene Ontology (GO) enrichment analysis on the significant genes identified by MAGMA for each of the aforementioned cell types. The GO analysis revealed several enriched pathways, prominently featuring amyloid-related processes. The enrichment of genes involved in amyloid precursor protein (APP) processing, amyloid-beta (Aβ) formation, and amyloid plaque clearance was particularly notable. This finding aligns with the well-established role of amyloid pathology in AD. Additionally, for microglia-A and pericyte-2 cell types, significant GO terms related to T-cell and lymphocyte regulation were identified, suggesting an immune regulatory component in AD risk.</p>
-</section>
-<section id="protein-protein-interaction-ppi-networks" class="level4" data-number="3.4.3">
-<h4 data-number="3.4.3" class="anchored" data-anchor-id="protein-protein-interaction-ppi-networks"><span class="header-section-number">3.4.3</span> Protein-Protein Interaction (PPI) Networks</h4>
-<p>We constructed protein-protein interaction networks for the significant genes identified in each cell type. The PPI networks were significant, and subsequent Louvain clustering of these networks revealed modules associated with amyloid-related processes across all three cell types. This suggests a coordinated risk association involving amyloid processing among microglia-A, pericyte-2, and perivascular-FB-2.</p>
-</section>
-<section id="mouse-ontology-data-analysis" class="level4" data-number="3.4.4">
-<h4 data-number="3.4.4" class="anchored" data-anchor-id="mouse-ontology-data-analysis"><span class="header-section-number">3.4.4</span> Mouse Ontology Data Analysis</h4>
-<p>To further validate our findings, we used mouse ontology data to investigate the functional implications of the significant genes. For microglia-A, significant associations were found with abnormal cell chemotaxis and hematoma. pericyte-2 showed significant associations with amyloidosis and tau protein deposits. However, no significant associations were identified for perivascular-FB-2.</p>
-</section>
-<section id="interpretation" class="level4" data-number="3.4.5">
-<h4 data-number="3.4.5" class="anchored" data-anchor-id="interpretation"><span class="header-section-number">3.4.5</span> Interpretation</h4>
+<section id="interpretation" class="level4" data-number="3.5.6">
+<h4 data-number="3.5.6" class="anchored" data-anchor-id="interpretation"><span class="header-section-number">3.5.6</span> Interpretation</h4>
 <p>The identification of these specific cell types and the enrichment of amyloid-related processes underscore the complex interplay between various cellular components in the brain and AD pathology. Microglia-A, pericyte-2, and perivascular-FB-2 may contribute to disease mechanisms through their roles in immune response, vascular integrity, and amyloid processing, respectively. The independence of these signals, as shown by conditional analysis, highlights the unique contributions of each cell type. Additionally, the PPI network analysis suggests a coordinated risk association involving amyloid-related processes across these cell types. Mouse ontology data further supports these findings, particularly highlighting the roles of microglia-A and pericyte-2 cells in AD-related pathologies.</p>
 <p>These findings provide new insights into potential cellular targets for therapeutic intervention in Alzheimer’s disease.</p>
-<hr>
-<p>This version is more in line with the conventions of scientific writing, avoiding bullet points and providing a more continuous narrative. Adjust the specific details and gene lists as needed based on your actual data.</p>
 </section>
 </section>
-<section id="degs" class="level3" data-number="3.5">
-<h3 data-number="3.5" class="anchored" data-anchor-id="degs"><span class="header-section-number">3.5</span> DEGs</h3>
+<section id="degs" class="level3" data-number="3.6">
+<h3 data-number="3.6" class="anchored" data-anchor-id="degs"><span class="header-section-number">3.6</span> DEGs</h3>
 <ul>
 <li>ex-neuron 5 - interesting DEGs and sig proportion difference</li>
 </ul>
@@ -372,85 +438,31 @@ Figure&nbsp;2: (A) figure legend stuff
 </ul>
 <section id="key-resoures-table" class="level3" data-number="10.1">
 <h3 data-number="10.1" class="anchored" data-anchor-id="key-resoures-table"><span class="header-section-number">10.1</span> Key resoures table</h3>
-</section>
-<section id="resource-availability" class="level3" data-number="10.2">
-<h3 data-number="10.2" class="anchored" data-anchor-id="resource-availability"><span class="header-section-number">10.2</span> Resource availability</h3>
-<section id="lead-contact" class="level4" data-number="10.2.1">
-<h4 data-number="10.2.1" class="anchored" data-anchor-id="lead-contact"><span class="header-section-number">10.2.1</span> Lead contact</h4>
-<p>Further information and requests for resources and reagents should be directed to and will be fulfilled by the lead contact, <code>name here</code> (<code>email here</code>).</p>
-</section>
-<section id="materials-availability" class="level4" data-number="10.2.2">
-<h4 data-number="10.2.2" class="anchored" data-anchor-id="materials-availability"><span class="header-section-number">10.2.2</span> Materials availability</h4>
-<p>No unique reagents were generated for this study.</p>
-</section>
-<section id="data-and-code-availability" class="level4" data-number="10.2.3">
-<h4 data-number="10.2.3" class="anchored" data-anchor-id="data-and-code-availability"><span class="header-section-number">10.2.3</span> Data and code availability</h4>
-<ul>
-<li>All raw data are available in the GEO database under the accession number GEO:</li>
-<li>The Seurat object generated from the scFlow pipeline is included in the Docker image with the R environment used for analysis here:</li>
-<li>All original code has been deposited at Zenodo and is publicly available as of the date of publication. DOIs are listed in the key resources table.</li>
-</ul>
-</section>
-</section>
-<section id="experimental-model-and-study-participant-details" class="level3" data-number="10.3">
-<h3 data-number="10.3" class="anchored" data-anchor-id="experimental-model-and-study-participant-details"><span class="header-section-number">10.3</span> Experimental model and study participant details</h3>
-<section id="post-mortem-tissue-donors" class="level4" data-number="10.3.1">
-<h4 data-number="10.3.1" class="anchored" data-anchor-id="post-mortem-tissue-donors"><span class="header-section-number">10.3.1</span> Post-mortem tissue donors</h4>
-<p>Post-mortem pre-frontal cortex from 20 controls and 20 AD brain donors were collected from <code>brain bank here</code> under <code>ethics details here</code>. The clinicopathological parameters were collected and summarized in <a href="#tbl-donor-metadata" class="quarto-xref">Table&nbsp;1</a>, including gender, age, diagnosis, APOE status, ethnicity and Braak stage. 3 donors where excluded in QC and of the remaining 37 donors, 23 were female and 14 were male with a median age of 87 (range 48-101). Sex and age were included as a covariates in pseudobulk differential gene expression analysis.</p>
-</section>
-</section>
-<section id="method-details" class="level3" data-number="10.4">
-<h3 data-number="10.4" class="anchored" data-anchor-id="method-details"><span class="header-section-number">10.4</span> Method details</h3>
-<section id="sample-prepneurovascular-unit-isolation" class="level4" data-number="10.4.1">
-<h4 data-number="10.4.1" class="anchored" data-anchor-id="sample-prepneurovascular-unit-isolation"><span class="header-section-number">10.4.1</span> Sample prep/neurovascular unit isolation</h4>
-</section>
-<section id="rna-sequencing" class="level4" data-number="10.4.2">
-<h4 data-number="10.4.2" class="anchored" data-anchor-id="rna-sequencing"><span class="header-section-number">10.4.2</span> RNA sequencing</h4>
-</section>
-</section>
-<section id="quantification-and-statistical-analysis" class="level3" data-number="10.5">
-<h3 data-number="10.5" class="anchored" data-anchor-id="quantification-and-statistical-analysis"><span class="header-section-number">10.5</span> Quantification and statistical analysis</h3>
-<section id="data-processing" class="level4" data-number="10.5.1">
-<h4 data-number="10.5.1" class="anchored" data-anchor-id="data-processing"><span class="header-section-number">10.5.1</span> Data Processing</h4>
-<p>The raw sequencing data was processed using CellRanger (version 7.1.0, 10X Genomics), which performed initial alignment, filtering, barcode counting, and UMI counting. An updated reference genome (Ensembl version 109 and Gencode version 43 annotations for GRCh38) was generated for use with CellRanger. The resulting gene-barcode matrices were then further processed using the scFlow pipeline implemented in Nextflow.<span class="citation" data-cites="khozoie2021 ditommaso2017">(<a href="#ref-khozoie2021" role="doc-biblioref">Khozoie et al. 2021</a>; <a href="#ref-ditommaso2017" role="doc-biblioref">Di Tommaso et al. 2017</a>)</span></p>
-</section>
-<section id="quality-control" class="level4" data-number="10.5.2">
-<h4 data-number="10.5.2" class="anchored" data-anchor-id="quality-control"><span class="header-section-number">10.5.2</span> Quality Control</h4>
-<p>The processed data were read into R (version 4.4.0) using the Seurat package (version 5.1.0).<span class="citation" data-cites="base Seurat">(<a href="#ref-base" role="doc-biblioref"><strong>base?</strong></a>; <a href="#ref-Seurat" role="doc-biblioref"><strong>Seurat?</strong></a>)</span> Basic quality control (QC) measures were applied to ensure data integrity and reliability. Specifically, cells with low feature counts were filtered out, and donors with an insufficient number of high-quality cells were excluded from further analysis, resulting in 3 donors being excluded (both fractions). The criteria for low feature counts and donor exclusion were determined based on established thresholds in the literature and empirical distributions observed in the data.</p>
-</section>
-<section id="cell-type-annotation" class="level4" data-number="10.5.3">
-<h4 data-number="10.5.3" class="anchored" data-anchor-id="cell-type-annotation"><span class="header-section-number">10.5.3</span> Cell Type Annotation</h4>
-<p>Cell types were annotated based on canonical marker genes identified from the literature, <span class="citation" data-cites="yang2022">(<a href="#ref-yang2022" role="doc-biblioref"><strong>yang2022?</strong></a>)</span> in particular. The expression levels of these marker genes were used to classify cells into distinct cell types. This annotation process was validated by comparing the identified cell types to known cell type distributions in similar datasets.</p>
-</section>
-</section>
-</section>
-<section id="supplemental-information-titles-and-legends" class="level2" data-number="11">
-<h2 data-number="11" class="anchored" data-anchor-id="supplemental-information-titles-and-legends"><span class="header-section-number">11</span> Supplemental information titles and legends</h2>
 <div class="cell">
-<div id="tbl-donor-metadata" class="cell quarto-float quarto-figure quarto-figure-center anchored">
+<div id="tbl-key-resources" class="cell quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-tbl figure">
-<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-donor-metadata-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and samples included in the multi-omics analysis.
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-key-resources-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;1: Key resources table
 </figcaption>
-<div aria-describedby="tbl-donor-metadata-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div aria-describedby="tbl-key-resources-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div class="cell-output-display">
-<div id="oqnvdexuob" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#oqnvdexuob table {
+<div id="gaijfavwwt" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#gaijfavwwt table {
   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#oqnvdexuob thead, #oqnvdexuob tbody, #oqnvdexuob tfoot, #oqnvdexuob tr, #oqnvdexuob td, #oqnvdexuob th {
+#gaijfavwwt thead, #gaijfavwwt tbody, #gaijfavwwt tfoot, #gaijfavwwt tr, #gaijfavwwt td, #gaijfavwwt th {
   border-style: none;
 }
 
-#oqnvdexuob p {
+#gaijfavwwt p {
   margin: 0;
   padding: 0;
 }
 
-#oqnvdexuob .gt_table {
+#gaijfavwwt .gt_table {
   display: table;
   border-collapse: collapse;
   line-height: normal;
@@ -476,12 +488,12 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
   border-left-color: #D3D3D3;
 }
 
-#oqnvdexuob .gt_caption {
+#gaijfavwwt .gt_caption {
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
-#oqnvdexuob .gt_title {
+#gaijfavwwt .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -493,7 +505,7 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
   border-bottom-width: 0;
 }
 
-#oqnvdexuob .gt_subtitle {
+#gaijfavwwt .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -505,7 +517,7 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
   border-top-width: 0;
 }
 
-#oqnvdexuob .gt_heading {
+#gaijfavwwt .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -517,13 +529,13 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
   border-right-color: #D3D3D3;
 }
 
-#oqnvdexuob .gt_bottom_border {
+#gaijfavwwt .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#oqnvdexuob .gt_col_headings {
+#gaijfavwwt .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -538,7 +550,7 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
   border-right-color: #D3D3D3;
 }
 
-#oqnvdexuob .gt_col_heading {
+#gaijfavwwt .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -558,7 +570,7 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
   overflow-x: hidden;
 }
 
-#oqnvdexuob .gt_column_spanner_outer {
+#gaijfavwwt .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -570,15 +582,15 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
   padding-right: 4px;
 }
 
-#oqnvdexuob .gt_column_spanner_outer:first-child {
+#gaijfavwwt .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#oqnvdexuob .gt_column_spanner_outer:last-child {
+#gaijfavwwt .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#oqnvdexuob .gt_column_spanner {
+#gaijfavwwt .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -590,11 +602,11 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
   width: 100%;
 }
 
-#oqnvdexuob .gt_spanner_row {
+#gaijfavwwt .gt_spanner_row {
   border-bottom-style: hidden;
 }
 
-#oqnvdexuob .gt_group_heading {
+#gaijfavwwt .gt_group_heading {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -620,7 +632,7 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
   text-align: left;
 }
 
-#oqnvdexuob .gt_empty_group_heading {
+#gaijfavwwt .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -635,15 +647,15 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
   vertical-align: middle;
 }
 
-#oqnvdexuob .gt_from_md > :first-child {
+#gaijfavwwt .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#oqnvdexuob .gt_from_md > :last-child {
+#gaijfavwwt .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#oqnvdexuob .gt_row {
+#gaijfavwwt .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -662,7 +674,7 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
   overflow-x: hidden;
 }
 
-#oqnvdexuob .gt_stub {
+#gaijfavwwt .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -675,7 +687,7 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
   padding-right: 5px;
 }
 
-#oqnvdexuob .gt_stub_row_group {
+#gaijfavwwt .gt_stub_row_group {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -689,15 +701,15 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
   vertical-align: top;
 }
 
-#oqnvdexuob .gt_row_group_first td {
+#gaijfavwwt .gt_row_group_first td {
   border-top-width: 2px;
 }
 
-#oqnvdexuob .gt_row_group_first th {
+#gaijfavwwt .gt_row_group_first th {
   border-top-width: 2px;
 }
 
-#oqnvdexuob .gt_summary_row {
+#gaijfavwwt .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -707,16 +719,16 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
   padding-right: 5px;
 }
 
-#oqnvdexuob .gt_first_summary_row {
+#gaijfavwwt .gt_first_summary_row {
   border-top-style: solid;
   border-top-color: #D3D3D3;
 }
 
-#oqnvdexuob .gt_first_summary_row.thick {
+#gaijfavwwt .gt_first_summary_row.thick {
   border-top-width: 2px;
 }
 
-#oqnvdexuob .gt_last_summary_row {
+#gaijfavwwt .gt_last_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -726,7 +738,7 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
   border-bottom-color: #D3D3D3;
 }
 
-#oqnvdexuob .gt_grand_summary_row {
+#gaijfavwwt .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -736,7 +748,7 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
   padding-right: 5px;
 }
 
-#oqnvdexuob .gt_first_grand_summary_row {
+#gaijfavwwt .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -746,7 +758,7 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
   border-top-color: #D3D3D3;
 }
 
-#oqnvdexuob .gt_last_grand_summary_row_top {
+#gaijfavwwt .gt_last_grand_summary_row_top {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -756,11 +768,11 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
   border-bottom-color: #D3D3D3;
 }
 
-#oqnvdexuob .gt_striped {
+#gaijfavwwt .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#oqnvdexuob .gt_table_body {
+#gaijfavwwt .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -769,7 +781,7 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
   border-bottom-color: #D3D3D3;
 }
 
-#oqnvdexuob .gt_footnotes {
+#gaijfavwwt .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -783,7 +795,7 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
   border-right-color: #D3D3D3;
 }
 
-#oqnvdexuob .gt_footnote {
+#gaijfavwwt .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding-top: 4px;
@@ -792,7 +804,7 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
   padding-right: 5px;
 }
 
-#oqnvdexuob .gt_sourcenotes {
+#gaijfavwwt .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -806,7 +818,7 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
   border-right-color: #D3D3D3;
 }
 
-#oqnvdexuob .gt_sourcenote {
+#gaijfavwwt .gt_sourcenote {
   font-size: 90%;
   padding-top: 4px;
   padding-bottom: 4px;
@@ -814,68 +826,664 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
   padding-right: 5px;
 }
 
-#oqnvdexuob .gt_left {
+#gaijfavwwt .gt_left {
   text-align: left;
 }
 
-#oqnvdexuob .gt_center {
+#gaijfavwwt .gt_center {
   text-align: center;
 }
 
-#oqnvdexuob .gt_right {
+#gaijfavwwt .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#oqnvdexuob .gt_font_normal {
+#gaijfavwwt .gt_font_normal {
   font-weight: normal;
 }
 
-#oqnvdexuob .gt_font_bold {
+#gaijfavwwt .gt_font_bold {
   font-weight: bold;
 }
 
-#oqnvdexuob .gt_font_italic {
+#gaijfavwwt .gt_font_italic {
   font-style: italic;
 }
 
-#oqnvdexuob .gt_super {
+#gaijfavwwt .gt_super {
   font-size: 65%;
 }
 
-#oqnvdexuob .gt_footnote_marks {
+#gaijfavwwt .gt_footnote_marks {
   font-size: 75%;
   vertical-align: 0.4em;
   position: initial;
 }
 
-#oqnvdexuob .gt_asterisk {
+#gaijfavwwt .gt_asterisk {
   font-size: 100%;
   vertical-align: 0;
 }
 
-#oqnvdexuob .gt_indent_1 {
+#gaijfavwwt .gt_indent_1 {
   text-indent: 5px;
 }
 
-#oqnvdexuob .gt_indent_2 {
+#gaijfavwwt .gt_indent_2 {
   text-indent: 10px;
 }
 
-#oqnvdexuob .gt_indent_3 {
+#gaijfavwwt .gt_indent_3 {
   text-indent: 15px;
 }
 
-#oqnvdexuob .gt_indent_4 {
+#gaijfavwwt .gt_indent_4 {
   text-indent: 20px;
 }
 
-#oqnvdexuob .gt_indent_5 {
+#gaijfavwwt .gt_indent_5 {
   text-indent: 25px;
+}
+
+#gaijfavwwt .katex-display {
+  display: inline-flex !important;
+  margin-bottom: 0.75em !important;
+}
+
+#gaijfavwwt div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+  height: 0px !important;
 }
 </style>
 
 <table class="gt_table do-not-create-environment cell caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
+<thead>
+<tr class="header gt_col_headings">
+<th id="group" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">group</th>
+<th id="REAGENT or RESOURCE" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">REAGENT or RESOURCE</th>
+<th id="SOURCE" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">SOURCE</th>
+<th id="IDENTIFIER" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">IDENTIFIER</th>
+</tr>
+</thead>
+<tbody class="gt_table_body">
+<tr class="odd">
+<td class="gt_row gt_left" headers="group">Critical commercial assays</td>
+<td class="gt_row gt_left" headers="REAGENT or RESOURCE">10X Genomics Chromium Single Cell 3' Reagent Kits</td>
+<td class="gt_row gt_left" headers="SOURCE">10X Genomics</td>
+<td class="gt_row gt_left" headers="IDENTIFIER">PN-</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="group">Deposited data</td>
+<td class="gt_row gt_left" headers="REAGENT or RESOURCE">Raw and analysed data</td>
+<td class="gt_row gt_left" headers="SOURCE">This paper</td>
+<td class="gt_row gt_left" headers="IDENTIFIER">GEO:</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="group">Software and algorithms</td>
+<td class="gt_row gt_left" headers="REAGENT or RESOURCE">Cellranger v7.1.0</td>
+<td class="gt_row gt_left" headers="SOURCE">10X Genomics</td>
+<td class="gt_row gt_left" headers="IDENTIFIER">https://www.10xgenomics.com/software</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="group">Software and algorithms</td>
+<td class="gt_row gt_left" headers="REAGENT or RESOURCE">Nextflow v23.04.1.5866</td>
+<td class="gt_row gt_left" headers="SOURCE">https://doi.org/10.1038/nbt.3820</td>
+<td class="gt_row gt_left" headers="IDENTIFIER">https://www.nextflow.io/</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="group">Software and algorithms</td>
+<td class="gt_row gt_left" headers="REAGENT or RESOURCE">scFow pipeline v0.7.2</td>
+<td class="gt_row gt_left" headers="SOURCE">https://doi.org/10.22541/au.162912533.38489960/v1</td>
+<td class="gt_row gt_left" headers="IDENTIFIER">https://github.com/combiz/nf-core-scflow/tree/dev-nf</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="group">Software and algorithms</td>
+<td class="gt_row gt_left" headers="REAGENT or RESOURCE">R v4.4.1</td>
+<td class="gt_row gt_left" headers="SOURCE">R Foundation for Statistical Computing</td>
+<td class="gt_row gt_left" headers="IDENTIFIER">https://www.R-project.org/</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="group">Software and algorithms</td>
+<td class="gt_row gt_left" headers="REAGENT or RESOURCE">Seurat v5.1.0</td>
+<td class="gt_row gt_left" headers="SOURCE">https://doi.org/10.1038/s41587-023-01767-y</td>
+<td class="gt_row gt_left" headers="IDENTIFIER">NA</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="group">Software and algorithms</td>
+<td class="gt_row gt_left" headers="REAGENT or RESOURCE">Data analysis code</td>
+<td class="gt_row gt_left" headers="SOURCE">This paper</td>
+<td class="gt_row gt_left" headers="IDENTIFIER">doi for code goes here</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+</figure>
+</div>
+<a class="quarto-notebook-link" id="nblink-1" href="index-preview.html">Source: Article Notebook</a></div>
+</section>
+<section id="resource-availability" class="level3" data-number="10.2">
+<h3 data-number="10.2" class="anchored" data-anchor-id="resource-availability"><span class="header-section-number">10.2</span> Resource availability</h3>
+<section id="lead-contact" class="level4" data-number="10.2.1">
+<h4 data-number="10.2.1" class="anchored" data-anchor-id="lead-contact"><span class="header-section-number">10.2.1</span> Lead contact</h4>
+<p>Further information and requests for resources and reagents should be directed to and will be fulfilled by the lead contact, <code>name here</code> (<code>email here</code>).</p>
+</section>
+<section id="materials-availability" class="level4" data-number="10.2.2">
+<h4 data-number="10.2.2" class="anchored" data-anchor-id="materials-availability"><span class="header-section-number">10.2.2</span> Materials availability</h4>
+<p>No unique reagents were generated for this study.</p>
+</section>
+<section id="data-and-code-availability" class="level4" data-number="10.2.3">
+<h4 data-number="10.2.3" class="anchored" data-anchor-id="data-and-code-availability"><span class="header-section-number">10.2.3</span> Data and code availability</h4>
+<ul>
+<li>All raw data are available in the GEO database under the accession number GEO:</li>
+<li>The Seurat object generated from the scFlow pipeline is included in the Docker image with the R environment used for analysis here:</li>
+<li>All original code has been deposited at Zenodo and is publicly available as of the date of publication. DOIs are listed in the key resources table.</li>
+</ul>
+</section>
+</section>
+<section id="experimental-model-and-study-participant-details" class="level3" data-number="10.3">
+<h3 data-number="10.3" class="anchored" data-anchor-id="experimental-model-and-study-participant-details"><span class="header-section-number">10.3</span> Experimental model and study participant details</h3>
+<section id="post-mortem-tissue-donors" class="level4" data-number="10.3.1">
+<h4 data-number="10.3.1" class="anchored" data-anchor-id="post-mortem-tissue-donors"><span class="header-section-number">10.3.1</span> Post-mortem tissue donors</h4>
+<p>Post-mortem pre-frontal cortex from 20 controls and 20 AD brain donors were collected from <code>brain bank here</code> under <code>ethics details here</code>. The clinicopathological parameters were collected and summarized in <a href="#supptbl-donor-metadata" class="quarto-xref">Table S1</a>, including gender, age, diagnosis, APOE status, ethnicity and Braak stage. 3 donors where excluded in QC and of the remaining 37 donors, 23 were female and 14 were male with a median age of 87 (range 48-101). Sex and age were included as a covariates in pseudobulk differential gene expression analysis.</p>
+</section>
+</section>
+<section id="method-details" class="level3" data-number="10.4">
+<h3 data-number="10.4" class="anchored" data-anchor-id="method-details"><span class="header-section-number">10.4</span> Method details</h3>
+<section id="sample-prepneurovascular-unit-isolation" class="level4" data-number="10.4.1">
+<h4 data-number="10.4.1" class="anchored" data-anchor-id="sample-prepneurovascular-unit-isolation"><span class="header-section-number">10.4.1</span> Sample prep/neurovascular unit isolation</h4>
+</section>
+<section id="rna-sequencing" class="level4" data-number="10.4.2">
+<h4 data-number="10.4.2" class="anchored" data-anchor-id="rna-sequencing"><span class="header-section-number">10.4.2</span> RNA sequencing</h4>
+</section>
+</section>
+<section id="quantification-and-statistical-analysis" class="level3" data-number="10.5">
+<h3 data-number="10.5" class="anchored" data-anchor-id="quantification-and-statistical-analysis"><span class="header-section-number">10.5</span> Quantification and statistical analysis</h3>
+<section id="data-processing" class="level4" data-number="10.5.1">
+<h4 data-number="10.5.1" class="anchored" data-anchor-id="data-processing"><span class="header-section-number">10.5.1</span> Data Processing</h4>
+<p>The raw sequencing data was processed using CellRanger (version 7.1.0, 10X Genomics), which performed initial alignment, filtering, barcode counting, and UMI counting. An updated reference genome (Ensembl version 109 and Gencode version 43 annotations for GRCh38) was generated for use with CellRanger. The resulting gene-barcode matrices were then further processed using the scFlow pipeline implemented in Nextflow.<span class="citation" data-cites="khozoie2021 ditommaso2017">(<a href="#ref-khozoie2021" role="doc-biblioref">Khozoie et al. 2021</a>; <a href="#ref-ditommaso2017" role="doc-biblioref">Di Tommaso et al. 2017</a>)</span></p>
+</section>
+<section id="quality-control" class="level4" data-number="10.5.2">
+<h4 data-number="10.5.2" class="anchored" data-anchor-id="quality-control"><span class="header-section-number">10.5.2</span> Quality Control</h4>
+<p>The processed data were read into R (version 4.4.0) using the Seurat package (version 5.1.0).<span class="citation" data-cites="base Seurat">(<a href="#ref-base" role="doc-biblioref">2024</a>; <a href="#ref-Seurat" role="doc-biblioref">Hao et al. 2023b</a>)</span> In addition to the filtering performed by scFlow, cells with low feature/RNA counts were filtered out (between &lt;300 &amp; &lt;7500 for features and &gt;1000 for RNA), and donors with an insufficient number of high-quality cells were excluded from further analysis, resulting in 3 donors (both fractions), and the vascular fraction from 1 addition donor being excluded.</p>
+</section>
+<section id="clustering" class="level4" data-number="10.5.3">
+<h4 data-number="10.5.3" class="anchored" data-anchor-id="clustering"><span class="header-section-number">10.5.3</span> Clustering</h4>
+<p>A standard Seurat workflow was followed including normalisation, finding variable features, scaling and PCA. For the UMAP 35 dimensions and a resolution of 0.6 was used.</p>
+</section>
+<section id="cell-type-annotation" class="level4" data-number="10.5.4">
+<h4 data-number="10.5.4" class="anchored" data-anchor-id="cell-type-annotation"><span class="header-section-number">10.5.4</span> Cell Type Annotation</h4>
+<p>Cell types were annotated based on canonical marker genes identified from the literature, <span class="citation" data-cites="yang2022">Yang et al. (<a href="#ref-yang2022" role="doc-biblioref">2022</a>)</span> in particular. The expression levels of these marker genes were used to classify cells into distinct level 1 cell types. These higher level celltypes were then subclustered with 20 dimensions and a resolution of 0.4 to identify level 2 cell subtypes. This annotation process was validated by comparing the identified cell types to known cell type distributions in similar datasets.</p>
+</section>
+<section id="differential-cell-populations-1" class="level4" data-number="10.5.5">
+<h4 data-number="10.5.5" class="anchored" data-anchor-id="differential-cell-populations-1"><span class="header-section-number">10.5.5</span> Differential cell populations</h4>
+<p>To analyse differences in cell type proportions between case and control groups, we utilized the propeller function from the speckle R package (version 1.4.0) on the vascular and parenchymal fractions separately.<span class="citation" data-cites="speckle">(<a href="#ref-speckle" role="doc-biblioref">Phipson et al. 2022</a>)</span> This method employs a robust linear modelling framework to test for significant differences in cell type proportions across experimental conditions, while accounting for the compositional nature of the data and potential variability between samples.</p>
+</section>
+<section id="pseudobulk-differential-gene-expression" class="level4" data-number="10.5.6">
+<h4 data-number="10.5.6" class="anchored" data-anchor-id="pseudobulk-differential-gene-expression"><span class="header-section-number">10.5.6</span> Pseudobulk differential gene expression</h4>
+</section>
+</section>
+</section>
+<section id="supplemental-information-titles-and-legends" class="level2" data-number="11">
+<h2 data-number="11" class="anchored" data-anchor-id="supplemental-information-titles-and-legends"><span class="header-section-number">11</span> Supplemental information titles and legends</h2>
+<div id="supptbl-donor-metadata" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-supptbl figure">
+<div aria-describedby="supptbl-donor-metadata-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell">
+<div class="cell-output-display">
+<div id="gmkabjzdoj" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#gmkabjzdoj table {
+  font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#gmkabjzdoj thead, #gmkabjzdoj tbody, #gmkabjzdoj tfoot, #gmkabjzdoj tr, #gmkabjzdoj td, #gmkabjzdoj th {
+  border-style: none;
+}
+
+#gmkabjzdoj p {
+  margin: 0;
+  padding: 0;
+}
+
+#gmkabjzdoj .gt_table {
+  display: table;
+  border-collapse: collapse;
+  line-height: normal;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#gmkabjzdoj .gt_caption {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+#gmkabjzdoj .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#gmkabjzdoj .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 3px;
+  padding-bottom: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#gmkabjzdoj .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#gmkabjzdoj .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#gmkabjzdoj .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#gmkabjzdoj .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#gmkabjzdoj .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#gmkabjzdoj .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#gmkabjzdoj .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#gmkabjzdoj .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#gmkabjzdoj .gt_spanner_row {
+  border-bottom-style: hidden;
+}
+
+#gmkabjzdoj .gt_group_heading {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  text-align: left;
+}
+
+#gmkabjzdoj .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#gmkabjzdoj .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#gmkabjzdoj .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#gmkabjzdoj .gt_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#gmkabjzdoj .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#gmkabjzdoj .gt_stub_row_group {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+  vertical-align: top;
+}
+
+#gmkabjzdoj .gt_row_group_first td {
+  border-top-width: 2px;
+}
+
+#gmkabjzdoj .gt_row_group_first th {
+  border-top-width: 2px;
+}
+
+#gmkabjzdoj .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#gmkabjzdoj .gt_first_summary_row {
+  border-top-style: solid;
+  border-top-color: #D3D3D3;
+}
+
+#gmkabjzdoj .gt_first_summary_row.thick {
+  border-top-width: 2px;
+}
+
+#gmkabjzdoj .gt_last_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#gmkabjzdoj .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#gmkabjzdoj .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#gmkabjzdoj .gt_last_grand_summary_row_top {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: double;
+  border-bottom-width: 6px;
+  border-bottom-color: #D3D3D3;
+}
+
+#gmkabjzdoj .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#gmkabjzdoj .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#gmkabjzdoj .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#gmkabjzdoj .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#gmkabjzdoj .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#gmkabjzdoj .gt_sourcenote {
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#gmkabjzdoj .gt_left {
+  text-align: left;
+}
+
+#gmkabjzdoj .gt_center {
+  text-align: center;
+}
+
+#gmkabjzdoj .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#gmkabjzdoj .gt_font_normal {
+  font-weight: normal;
+}
+
+#gmkabjzdoj .gt_font_bold {
+  font-weight: bold;
+}
+
+#gmkabjzdoj .gt_font_italic {
+  font-style: italic;
+}
+
+#gmkabjzdoj .gt_super {
+  font-size: 65%;
+}
+
+#gmkabjzdoj .gt_footnote_marks {
+  font-size: 75%;
+  vertical-align: 0.4em;
+  position: initial;
+}
+
+#gmkabjzdoj .gt_asterisk {
+  font-size: 100%;
+  vertical-align: 0;
+}
+
+#gmkabjzdoj .gt_indent_1 {
+  text-indent: 5px;
+}
+
+#gmkabjzdoj .gt_indent_2 {
+  text-indent: 10px;
+}
+
+#gmkabjzdoj .gt_indent_3 {
+  text-indent: 15px;
+}
+
+#gmkabjzdoj .gt_indent_4 {
+  text-indent: 20px;
+}
+
+#gmkabjzdoj .gt_indent_5 {
+  text-indent: 25px;
+}
+
+#gmkabjzdoj .katex-display {
+  display: inline-flex !important;
+  margin-bottom: 0.75em !important;
+}
+
+#gmkabjzdoj div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+  height: 0px !important;
+}
+</style>
+
+<table class="gt_table caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
 <thead>
 <tr class="header gt_col_headings">
 <th id="donor_id" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">donor_id</th>
@@ -1341,28 +1949,34 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
 </div>
 </div>
 </div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-supptbl" id="supptbl-donor-metadata-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table S1: Clinical Information. Clinical characteristics of the cohort and samples included in the multi-omics analysis.
+</figcaption>
 </figure>
 </div>
-<a class="quarto-notebook-link" id="nblink-1" href="index-preview.html">Source: Article Notebook</a></div>
+<div id="supptbl-r-packages" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-supptbl figure">
+<div aria-describedby="supptbl-r-packages-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div class="cell">
 <div class="cell-output-display">
-<div id="jrstpfdtax" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#jrstpfdtax table {
+<div id="zfpfynnahu" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#zfpfynnahu table {
   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#jrstpfdtax thead, #jrstpfdtax tbody, #jrstpfdtax tfoot, #jrstpfdtax tr, #jrstpfdtax td, #jrstpfdtax th {
+#zfpfynnahu thead, #zfpfynnahu tbody, #zfpfynnahu tfoot, #zfpfynnahu tr, #zfpfynnahu td, #zfpfynnahu th {
   border-style: none;
 }
 
-#jrstpfdtax p {
+#zfpfynnahu p {
   margin: 0;
   padding: 0;
 }
 
-#jrstpfdtax .gt_table {
+#zfpfynnahu .gt_table {
   display: table;
   border-collapse: collapse;
   line-height: normal;
@@ -1388,12 +2002,12 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
   border-left-color: #D3D3D3;
 }
 
-#jrstpfdtax .gt_caption {
+#zfpfynnahu .gt_caption {
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
-#jrstpfdtax .gt_title {
+#zfpfynnahu .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -1405,7 +2019,7 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
   border-bottom-width: 0;
 }
 
-#jrstpfdtax .gt_subtitle {
+#zfpfynnahu .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -1417,7 +2031,7 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
   border-top-width: 0;
 }
 
-#jrstpfdtax .gt_heading {
+#zfpfynnahu .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -1429,13 +2043,13 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
   border-right-color: #D3D3D3;
 }
 
-#jrstpfdtax .gt_bottom_border {
+#zfpfynnahu .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#jrstpfdtax .gt_col_headings {
+#zfpfynnahu .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -1450,7 +2064,7 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
   border-right-color: #D3D3D3;
 }
 
-#jrstpfdtax .gt_col_heading {
+#zfpfynnahu .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1470,7 +2084,7 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
   overflow-x: hidden;
 }
 
-#jrstpfdtax .gt_column_spanner_outer {
+#zfpfynnahu .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1482,15 +2096,15 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
   padding-right: 4px;
 }
 
-#jrstpfdtax .gt_column_spanner_outer:first-child {
+#zfpfynnahu .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#jrstpfdtax .gt_column_spanner_outer:last-child {
+#zfpfynnahu .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#jrstpfdtax .gt_column_spanner {
+#zfpfynnahu .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -1502,11 +2116,11 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
   width: 100%;
 }
 
-#jrstpfdtax .gt_spanner_row {
+#zfpfynnahu .gt_spanner_row {
   border-bottom-style: hidden;
 }
 
-#jrstpfdtax .gt_group_heading {
+#zfpfynnahu .gt_group_heading {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1532,7 +2146,7 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
   text-align: left;
 }
 
-#jrstpfdtax .gt_empty_group_heading {
+#zfpfynnahu .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -1547,15 +2161,15 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
   vertical-align: middle;
 }
 
-#jrstpfdtax .gt_from_md > :first-child {
+#zfpfynnahu .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#jrstpfdtax .gt_from_md > :last-child {
+#zfpfynnahu .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#jrstpfdtax .gt_row {
+#zfpfynnahu .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1574,7 +2188,7 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
   overflow-x: hidden;
 }
 
-#jrstpfdtax .gt_stub {
+#zfpfynnahu .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1587,7 +2201,7 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
   padding-right: 5px;
 }
 
-#jrstpfdtax .gt_stub_row_group {
+#zfpfynnahu .gt_stub_row_group {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1601,15 +2215,15 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
   vertical-align: top;
 }
 
-#jrstpfdtax .gt_row_group_first td {
+#zfpfynnahu .gt_row_group_first td {
   border-top-width: 2px;
 }
 
-#jrstpfdtax .gt_row_group_first th {
+#zfpfynnahu .gt_row_group_first th {
   border-top-width: 2px;
 }
 
-#jrstpfdtax .gt_summary_row {
+#zfpfynnahu .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -1619,16 +2233,16 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
   padding-right: 5px;
 }
 
-#jrstpfdtax .gt_first_summary_row {
+#zfpfynnahu .gt_first_summary_row {
   border-top-style: solid;
   border-top-color: #D3D3D3;
 }
 
-#jrstpfdtax .gt_first_summary_row.thick {
+#zfpfynnahu .gt_first_summary_row.thick {
   border-top-width: 2px;
 }
 
-#jrstpfdtax .gt_last_summary_row {
+#zfpfynnahu .gt_last_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1638,7 +2252,7 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
   border-bottom-color: #D3D3D3;
 }
 
-#jrstpfdtax .gt_grand_summary_row {
+#zfpfynnahu .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -1648,7 +2262,7 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
   padding-right: 5px;
 }
 
-#jrstpfdtax .gt_first_grand_summary_row {
+#zfpfynnahu .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1658,7 +2272,7 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
   border-top-color: #D3D3D3;
 }
 
-#jrstpfdtax .gt_last_grand_summary_row_top {
+#zfpfynnahu .gt_last_grand_summary_row_top {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1668,11 +2282,11 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
   border-bottom-color: #D3D3D3;
 }
 
-#jrstpfdtax .gt_striped {
+#zfpfynnahu .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#jrstpfdtax .gt_table_body {
+#zfpfynnahu .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -1681,7 +2295,7 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
   border-bottom-color: #D3D3D3;
 }
 
-#jrstpfdtax .gt_footnotes {
+#zfpfynnahu .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -1695,7 +2309,7 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
   border-right-color: #D3D3D3;
 }
 
-#jrstpfdtax .gt_footnote {
+#zfpfynnahu .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding-top: 4px;
@@ -1704,7 +2318,7 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
   padding-right: 5px;
 }
 
-#jrstpfdtax .gt_sourcenotes {
+#zfpfynnahu .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -1718,7 +2332,7 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
   border-right-color: #D3D3D3;
 }
 
-#jrstpfdtax .gt_sourcenote {
+#zfpfynnahu .gt_sourcenote {
   font-size: 90%;
   padding-top: 4px;
   padding-bottom: 4px;
@@ -1726,69 +2340,77 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
   padding-right: 5px;
 }
 
-#jrstpfdtax .gt_left {
+#zfpfynnahu .gt_left {
   text-align: left;
 }
 
-#jrstpfdtax .gt_center {
+#zfpfynnahu .gt_center {
   text-align: center;
 }
 
-#jrstpfdtax .gt_right {
+#zfpfynnahu .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#jrstpfdtax .gt_font_normal {
+#zfpfynnahu .gt_font_normal {
   font-weight: normal;
 }
 
-#jrstpfdtax .gt_font_bold {
+#zfpfynnahu .gt_font_bold {
   font-weight: bold;
 }
 
-#jrstpfdtax .gt_font_italic {
+#zfpfynnahu .gt_font_italic {
   font-style: italic;
 }
 
-#jrstpfdtax .gt_super {
+#zfpfynnahu .gt_super {
   font-size: 65%;
 }
 
-#jrstpfdtax .gt_footnote_marks {
+#zfpfynnahu .gt_footnote_marks {
   font-size: 75%;
   vertical-align: 0.4em;
   position: initial;
 }
 
-#jrstpfdtax .gt_asterisk {
+#zfpfynnahu .gt_asterisk {
   font-size: 100%;
   vertical-align: 0;
 }
 
-#jrstpfdtax .gt_indent_1 {
+#zfpfynnahu .gt_indent_1 {
   text-indent: 5px;
 }
 
-#jrstpfdtax .gt_indent_2 {
+#zfpfynnahu .gt_indent_2 {
   text-indent: 10px;
 }
 
-#jrstpfdtax .gt_indent_3 {
+#zfpfynnahu .gt_indent_3 {
   text-indent: 15px;
 }
 
-#jrstpfdtax .gt_indent_4 {
+#zfpfynnahu .gt_indent_4 {
   text-indent: 20px;
 }
 
-#jrstpfdtax .gt_indent_5 {
+#zfpfynnahu .gt_indent_5 {
   text-indent: 25px;
+}
+
+#zfpfynnahu .katex-display {
+  display: inline-flex !important;
+  margin-bottom: 0.75em !important;
+}
+
+#zfpfynnahu div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+  height: 0px !important;
 }
 </style>
 
 <table class="gt_table caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
-<caption>R packages used</caption>
 <thead>
 <tr class="header gt_col_headings">
 <th id="package" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">package</th>
@@ -2437,11 +3059,11 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
 <td class="gt_row gt_right" headers="Bioconductor 3.19 (R 4.4.1)  loadedversion">3.60.3</td>
 </tr>
 <tr class="even gt_group_heading_row">
-<td colspan="2" id="Github (jinworks/CellChat@862ab34277942ca26dad41ed2d168fcbdf952950)" class="gt_group_heading" data-quarto-table-cell-role="th" scope="colgroup">Github (jinworks/CellChat@862ab34277942ca26dad41ed2d168fcbdf952950)</td>
+<td colspan="2" id="Github (jinworks/CellChat@88c2e13cb2eec53299072314bccafda33f8a7a1d)" class="gt_group_heading" data-quarto-table-cell-role="th" scope="colgroup">Github (jinworks/CellChat@88c2e13cb2eec53299072314bccafda33f8a7a1d)</td>
 </tr>
 <tr class="odd gt_row_group_first">
-<td class="gt_row gt_left" headers="Github (jinworks/CellChat@862ab34277942ca26dad41ed2d168fcbdf952950)  package">CellChat</td>
-<td class="gt_row gt_right" headers="Github (jinworks/CellChat@862ab34277942ca26dad41ed2d168fcbdf952950)  loadedversion">2.1.2</td>
+<td class="gt_row gt_left" headers="Github (jinworks/CellChat@88c2e13cb2eec53299072314bccafda33f8a7a1d)  package">CellChat</td>
+<td class="gt_row gt_right" headers="Github (jinworks/CellChat@88c2e13cb2eec53299072314bccafda33f8a7a1d)  loadedversion">2.1.2</td>
 </tr>
 <tr class="even gt_group_heading_row">
 <td colspan="2" id="RSPM (R 4.4.1)" class="gt_group_heading" data-quarto-table-cell-role="th" scope="colgroup">RSPM (R 4.4.1)</td>
@@ -2451,12 +3073,28 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
 <td class="gt_row gt_right" headers="RSPM (R 4.4.1)  loadedversion">1.2.3</td>
 </tr>
 <tr class="even">
+<td class="gt_row gt_left" headers="RSPM (R 4.4.1)  package">RCurl</td>
+<td class="gt_row gt_right" headers="RSPM (R 4.4.1)  loadedversion">1.98-1.16</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="RSPM (R 4.4.1)  package">RSpectra</td>
+<td class="gt_row gt_right" headers="RSPM (R 4.4.1)  loadedversion">0.16-2</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="RSPM (R 4.4.1)  package">Rcpp</td>
+<td class="gt_row gt_right" headers="RSPM (R 4.4.1)  loadedversion">1.0.13</td>
+</tr>
+<tr class="odd">
 <td class="gt_row gt_left" headers="RSPM (R 4.4.1)  package">RcppParallel</td>
 <td class="gt_row gt_right" headers="RSPM (R 4.4.1)  loadedversion">5.1.8</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td class="gt_row gt_left" headers="RSPM (R 4.4.1)  package">SparseM</td>
-<td class="gt_row gt_right" headers="RSPM (R 4.4.1)  loadedversion">1.84</td>
+<td class="gt_row gt_right" headers="RSPM (R 4.4.1)  loadedversion">1.84-2</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="RSPM (R 4.4.1)  package">WriteXLS</td>
+<td class="gt_row gt_right" headers="RSPM (R 4.4.1)  loadedversion">6.7.0</td>
 </tr>
 <tr class="even">
 <td class="gt_row gt_left" headers="RSPM (R 4.4.1)  package">XML</td>
@@ -2471,28 +3109,44 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
 <td class="gt_row gt_right" headers="RSPM (R 4.4.1)  loadedversion">3.6.3</td>
 </tr>
 <tr class="odd">
+<td class="gt_row gt_left" headers="RSPM (R 4.4.1)  package">colorspace</td>
+<td class="gt_row gt_right" headers="RSPM (R 4.4.1)  loadedversion">2.1-1</td>
+</tr>
+<tr class="even">
 <td class="gt_row gt_left" headers="RSPM (R 4.4.1)  package">crayon</td>
 <td class="gt_row gt_right" headers="RSPM (R 4.4.1)  loadedversion">1.5.3</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td class="gt_row gt_left" headers="RSPM (R 4.4.1)  package">digest</td>
 <td class="gt_row gt_right" headers="RSPM (R 4.4.1)  loadedversion">0.6.36</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td class="gt_row gt_left" headers="RSPM (R 4.4.1)  package">downlit</td>
 <td class="gt_row gt_right" headers="RSPM (R 4.4.1)  loadedversion">0.4.4</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td class="gt_row gt_left" headers="RSPM (R 4.4.1)  package">emmeans</td>
 <td class="gt_row gt_right" headers="RSPM (R 4.4.1)  loadedversion">1.10.3</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td class="gt_row gt_left" headers="RSPM (R 4.4.1)  package">evaluate</td>
 <td class="gt_row gt_right" headers="RSPM (R 4.4.1)  loadedversion">0.24.0</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="RSPM (R 4.4.1)  package">fitdistrplus</td>
+<td class="gt_row gt_right" headers="RSPM (R 4.4.1)  loadedversion">1.2-1</td>
 </tr>
 <tr class="even">
 <td class="gt_row gt_left" headers="RSPM (R 4.4.1)  package">ggsci</td>
 <td class="gt_row gt_right" headers="RSPM (R 4.4.1)  loadedversion">3.2.0</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="RSPM (R 4.4.1)  package">gt</td>
+<td class="gt_row gt_right" headers="RSPM (R 4.4.1)  loadedversion">0.11.0</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="RSPM (R 4.4.1)  package">httr2</td>
+<td class="gt_row gt_right" headers="RSPM (R 4.4.1)  loadedversion">1.0.2</td>
 </tr>
 <tr class="odd">
 <td class="gt_row gt_left" headers="RSPM (R 4.4.1)  package">knitr</td>
@@ -2511,52 +3165,92 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
 <td class="gt_row gt_right" headers="RSPM (R 4.4.1)  loadedversion">2.1.1</td>
 </tr>
 <tr class="odd">
-<td class="gt_row gt_left" headers="RSPM (R 4.4.1)  package">ps</td>
-<td class="gt_row gt_right" headers="RSPM (R 4.4.1)  loadedversion">1.7.7</td>
+<td class="gt_row gt_left" headers="RSPM (R 4.4.1)  package">pals</td>
+<td class="gt_row gt_right" headers="RSPM (R 4.4.1)  loadedversion">1.9</td>
 </tr>
 <tr class="even">
-<td class="gt_row gt_left" headers="RSPM (R 4.4.1)  package">reticulate</td>
+<td class="gt_row gt_left" headers="RSPM (R 4.4.1)  package">parallelly</td>
 <td class="gt_row gt_right" headers="RSPM (R 4.4.1)  loadedversion">1.38.0</td>
 </tr>
 <tr class="odd">
+<td class="gt_row gt_left" headers="RSPM (R 4.4.1)  package">polyclip</td>
+<td class="gt_row gt_right" headers="RSPM (R 4.4.1)  loadedversion">1.10-7</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="RSPM (R 4.4.1)  package">ps</td>
+<td class="gt_row gt_right" headers="RSPM (R 4.4.1)  loadedversion">1.7.7</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="RSPM (R 4.4.1)  package">reticulate</td>
+<td class="gt_row gt_right" headers="RSPM (R 4.4.1)  loadedversion">1.38.0</td>
+</tr>
+<tr class="even">
 <td class="gt_row gt_left" headers="RSPM (R 4.4.1)  package">rlang</td>
 <td class="gt_row gt_right" headers="RSPM (R 4.4.1)  loadedversion">1.1.4</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td class="gt_row gt_left" headers="RSPM (R 4.4.1)  package">robustbase</td>
 <td class="gt_row gt_right" headers="RSPM (R 4.4.1)  loadedversion">0.99-3</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td class="gt_row gt_left" headers="RSPM (R 4.4.1)  package">scatterpie</td>
 <td class="gt_row gt_right" headers="RSPM (R 4.4.1)  loadedversion">0.2.3</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td class="gt_row gt_left" headers="RSPM (R 4.4.1)  package">secretbase</td>
-<td class="gt_row gt_right" headers="RSPM (R 4.4.1)  loadedversion">1.0.0</td>
+<td class="gt_row gt_right" headers="RSPM (R 4.4.1)  loadedversion">1.0.1</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="RSPM (R 4.4.1)  package">shadowtext</td>
+<td class="gt_row gt_right" headers="RSPM (R 4.4.1)  loadedversion">0.1.4</td>
 </tr>
 <tr class="odd">
+<td class="gt_row gt_left" headers="RSPM (R 4.4.1)  package">slam</td>
+<td class="gt_row gt_right" headers="RSPM (R 4.4.1)  loadedversion">0.1-51</td>
+</tr>
+<tr class="even">
 <td class="gt_row gt_left" headers="RSPM (R 4.4.1)  package">spatstat.data</td>
 <td class="gt_row gt_right" headers="RSPM (R 4.4.1)  loadedversion">3.1-2</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="RSPM (R 4.4.1)  package">spatstat.explore</td>
+<td class="gt_row gt_right" headers="RSPM (R 4.4.1)  loadedversion">3.3-1</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="RSPM (R 4.4.1)  package">spatstat.geom</td>
+<td class="gt_row gt_right" headers="RSPM (R 4.4.1)  loadedversion">3.3-2</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="RSPM (R 4.4.1)  package">spatstat.random</td>
+<td class="gt_row gt_right" headers="RSPM (R 4.4.1)  loadedversion">3.3-1</td>
 </tr>
 <tr class="even">
 <td class="gt_row gt_left" headers="RSPM (R 4.4.1)  package">spatstat.sparse</td>
 <td class="gt_row gt_right" headers="RSPM (R 4.4.1)  loadedversion">3.1-0</td>
 </tr>
 <tr class="odd">
+<td class="gt_row gt_left" headers="RSPM (R 4.4.1)  package">spatstat.univar</td>
+<td class="gt_row gt_right" headers="RSPM (R 4.4.1)  loadedversion">3.0-0</td>
+</tr>
+<tr class="even">
 <td class="gt_row gt_left" headers="RSPM (R 4.4.1)  package">spatstat.utils</td>
 <td class="gt_row gt_right" headers="RSPM (R 4.4.1)  loadedversion">3.0-5</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td class="gt_row gt_left" headers="RSPM (R 4.4.1)  package">targets</td>
 <td class="gt_row gt_right" headers="RSPM (R 4.4.1)  loadedversion">1.7.1</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td class="gt_row gt_left" headers="RSPM (R 4.4.1)  package">xfun</td>
-<td class="gt_row gt_right" headers="RSPM (R 4.4.1)  loadedversion">0.45</td>
+<td class="gt_row gt_right" headers="RSPM (R 4.4.1)  loadedversion">0.46</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="RSPM (R 4.4.1)  package">yaml</td>
+<td class="gt_row gt_right" headers="RSPM (R 4.4.1)  loadedversion">2.3.10</td>
 </tr>
 <tr class="even">
-<td class="gt_row gt_left" headers="RSPM (R 4.4.1)  package">yaml</td>
-<td class="gt_row gt_right" headers="RSPM (R 4.4.1)  loadedversion">2.3.9</td>
+<td class="gt_row gt_left" headers="RSPM (R 4.4.1)  package">yulab.utils</td>
+<td class="gt_row gt_right" headers="RSPM (R 4.4.1)  loadedversion">0.1.5</td>
 </tr>
 <tr class="odd gt_group_heading_row">
 <td colspan="2" id="CRAN (R 4.4.0)" class="gt_group_heading" data-quarto-table-cell-role="th" scope="colgroup">CRAN (R 4.4.0)</td>
@@ -2618,16 +3312,8 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.1-3</td>
 </tr>
 <tr class="even">
-<td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">RCurl</td>
-<td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.98-1.14</td>
-</tr>
-<tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">ROCR</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.0-11</td>
-</tr>
-<tr class="even">
-<td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">RSpectra</td>
-<td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">0.16-1</td>
 </tr>
 <tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">RcppAnnoy</td>
@@ -2646,52 +3332,44 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">0.7.1</td>
 </tr>
 <tr class="odd">
-<td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">WriteXLS</td>
-<td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">6.6.0</td>
-</tr>
-<tr class="even">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">abind</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.4-5</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">ape</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">5.8</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">askpass</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.2.0</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">assertthat</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">0.2.1</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">base64enc</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">0.1-3</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">beeswarm</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">0.4.0</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">bit</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">4.0.5</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">bit64</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">4.0.5</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">bitops</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.0-7</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">blob</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.2.4</td>
-</tr>
-<tr class="even">
-<td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">bslib</td>
-<td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">0.7.0</td>
 </tr>
 <tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">cachem</td>
@@ -2722,92 +3400,84 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">0.3-65</td>
 </tr>
 <tr class="even">
-<td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">colorspace</td>
-<td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">2.1-0</td>
-</tr>
-<tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">corrgram</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.14</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">cowplot</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.1.3</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">crosstalk</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.2.1</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">curl</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">5.2.1</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">data.table</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.15.4</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">dbplyr</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">2.5.0</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">deldir</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">2.0-4</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">dichromat</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">2.0-0.1</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">doParallel</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.0.17</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">doRNG</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.8.6</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">dotCall64</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.1-1</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">dplyr</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.1.4</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">e1071</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.7-14</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">europepmc</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">0.4.3</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">fansi</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.0.6</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">farver</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">2.1.2</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">fastDummies</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.7.3</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">fastmatch</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.1-4</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">fftw</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.0-8</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">filelock</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.0.3</td>
-</tr>
-<tr class="odd">
-<td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">fitdistrplus</td>
-<td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.1-11</td>
 </tr>
 <tr class="even">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">forcats</td>
@@ -2826,100 +3496,92 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">0.3.1</td>
 </tr>
 <tr class="even">
-<td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">future</td>
-<td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.33.2</td>
-</tr>
-<tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">future.apply</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.11.2</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">gargle</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.5.2</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">generics</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">0.1.3</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">ggalluvial</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">0.12.5</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">ggbeeswarm</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">0.7.2</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">ggforce</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">0.4.2</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">ggplot2</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">3.5.1</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">ggplotify</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">0.1.2</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">ggpubr</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">0.6.0</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">ggraph</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">2.2.1</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">ggrepel</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">0.9.5</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">ggridges</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">0.5.6</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">ggsignif</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">0.6.4</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">ggvenn</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">0.1.10</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">globals</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">0.16.3</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">glue</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.7.0</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">goftest</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.2-3</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">graphlayouts</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.1.1</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">gridBase</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">0.4-7</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">gridExtra</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">2.3</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">gridGraphics</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">0.5-1</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">gson</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">0.1.0</td>
-</tr>
-<tr class="odd">
-<td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">gt</td>
-<td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">0.10.1</td>
 </tr>
 <tr class="even">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">gtable</td>
@@ -2954,160 +3616,144 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.4.7</td>
 </tr>
 <tr class="even">
-<td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">httr2</td>
-<td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.0.1</td>
-</tr>
-<tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">ica</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.0-3</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">igraph</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">2.0.3</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">irlba</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">2.3.5.1</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">iterators</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.0.14</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">janeaustenr</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.0.0</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">janitor</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">2.2.0</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">jquerylib</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">0.1.4</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">jsonlite</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.8.8</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">kableExtra</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.4.0</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">labelled</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">2.13.0</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">later</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.3.2</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">lazyeval</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">0.2.2</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">leiden</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">0.4.3.1</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">lifecycle</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.0.4</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">listenv</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">0.9.1</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">lmtest</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">0.9-40</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">lubridate</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.9.3</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">magrittr</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">2.0.3</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">mapproj</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.2.11</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">maps</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">3.4.2</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">matrixStats</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.3.0</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">memoise</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">2.0.1</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">mime</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">0.12</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">miniUI</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">0.1.1.1</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">munsell</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">0.5.1</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">mvoutlier</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">2.1.1</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">nlme</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">3.1-165</td>
 </tr>
-<tr class="even">
-<td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">pals</td>
-<td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.8</td>
-</tr>
 <tr class="odd">
-<td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">parallelly</td>
-<td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.37.1</td>
-</tr>
-<tr class="even">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">patchwork</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.2.0</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">pbapply</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.7-2</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">pcaPP</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">2.0-4</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">pheatmap</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.0.12</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">pillar</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.9.0</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">pkgconfig</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">2.0.3</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">plyr</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.8.9</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">png</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">0.1-8</td>
-</tr>
-<tr class="even">
-<td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">polyclip</td>
-<td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.10-6</td>
 </tr>
 <tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">prettyunits</td>
@@ -3230,44 +3876,20 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.0-27</td>
 </tr>
 <tr class="odd">
-<td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">shadowtext</td>
-<td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">0.1.3</td>
-</tr>
-<tr class="even">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">shape</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.4.6.1</td>
 </tr>
-<tr class="odd">
-<td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">shiny</td>
-<td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.8.1.1</td>
-</tr>
 <tr class="even">
-<td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">slam</td>
-<td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">0.1-50</td>
-</tr>
-<tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">snakecase</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">0.11.1</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">sp</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">2.1-4</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">spam</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">2.10-0</td>
-</tr>
-<tr class="even">
-<td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">spatstat.explore</td>
-<td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">3.2-7</td>
-</tr>
-<tr class="odd">
-<td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">spatstat.geom</td>
-<td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">3.2-9</td>
-</tr>
-<tr class="even">
-<td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">spatstat.random</td>
-<td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">3.2-3</td>
 </tr>
 <tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">statmod</td>
@@ -3394,26 +4016,34 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.8-4</td>
 </tr>
 <tr class="even">
-<td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">yulab.utils</td>
-<td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">0.1.4</td>
-</tr>
-<tr class="odd">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.0)  package">zoo</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.0)  loadedversion">1.8-12</td>
 </tr>
-<tr class="even gt_group_heading_row">
+<tr class="odd gt_group_heading_row">
 <td colspan="2" id="Github (chris-mcginnis-ucsf/DoubletFinder@03e9f37f891ef76a23cc55ea69f940c536ae8f9f)" class="gt_group_heading" data-quarto-table-cell-role="th" scope="colgroup">Github (chris-mcginnis-ucsf/DoubletFinder@03e9f37f891ef76a23cc55ea69f940c536ae8f9f)</td>
 </tr>
-<tr class="odd gt_row_group_first">
+<tr class="even gt_row_group_first">
 <td class="gt_row gt_left" headers="Github (chris-mcginnis-ucsf/DoubletFinder@03e9f37f891ef76a23cc55ea69f940c536ae8f9f)  package">DoubletFinder</td>
 <td class="gt_row gt_right" headers="Github (chris-mcginnis-ucsf/DoubletFinder@03e9f37f891ef76a23cc55ea69f940c536ae8f9f)  loadedversion">2.0.4</td>
 </tr>
-<tr class="even gt_group_heading_row">
+<tr class="odd gt_group_heading_row">
 <td colspan="2" id="CRAN (R 4.4.1)" class="gt_group_heading" data-quarto-table-cell-role="th" scope="colgroup">CRAN (R 4.4.1)</td>
 </tr>
-<tr class="odd gt_row_group_first">
+<tr class="even gt_row_group_first">
 <td class="gt_row gt_left" headers="CRAN (R 4.4.1)  package">MASS</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.4.1)  loadedversion">7.3-61</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="CRAN (R 4.4.1)  package">bslib</td>
+<td class="gt_row gt_right" headers="CRAN (R 4.4.1)  loadedversion">0.8.0</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="CRAN (R 4.4.1)  package">future</td>
+<td class="gt_row gt_right" headers="CRAN (R 4.4.1)  loadedversion">1.34.0</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="CRAN (R 4.4.1)  package">shiny</td>
+<td class="gt_row gt_right" headers="CRAN (R 4.4.1)  loadedversion">1.9.0</td>
 </tr>
 <tr class="even gt_group_heading_row">
 <td colspan="2" id="CRAN (R 4.3.3)" class="gt_group_heading" data-quarto-table-cell-role="th" scope="colgroup">CRAN (R 4.3.3)</td>
@@ -3427,87 +4057,83 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
 <td class="gt_row gt_right" headers="CRAN (R 4.3.3)  loadedversion">1.3-30</td>
 </tr>
 <tr class="odd gt_group_heading_row">
-<td colspan="2" id="CRAN (R 4.3.2)" class="gt_group_heading" data-quarto-table-cell-role="th" scope="colgroup">CRAN (R 4.3.2)</td>
+<td colspan="2" id="Github (satijalab/seurat-wrappers@8d46d6c47c089e193fe5c02a8c23970715918aa9)" class="gt_group_heading" data-quarto-table-cell-role="th" scope="colgroup">Github (satijalab/seurat-wrappers@8d46d6c47c089e193fe5c02a8c23970715918aa9)</td>
 </tr>
 <tr class="even gt_row_group_first">
-<td class="gt_row gt_left" headers="CRAN (R 4.3.2)  package">Rcpp</td>
-<td class="gt_row gt_right" headers="CRAN (R 4.3.2)  loadedversion">1.0.12</td>
+<td class="gt_row gt_left" headers="Github (satijalab/seurat-wrappers@8d46d6c47c089e193fe5c02a8c23970715918aa9)  package">SeuratWrappers</td>
+<td class="gt_row gt_right" headers="Github (satijalab/seurat-wrappers@8d46d6c47c089e193fe5c02a8c23970715918aa9)  loadedversion">0.3.5</td>
+</tr>
+<tr class="odd gt_group_heading_row">
+<td colspan="2" id="Github (ropensci/bib2df@de0838da561544361d9be6ff20192d0d1c794cde)" class="gt_group_heading" data-quarto-table-cell-role="th" scope="colgroup">Github (ropensci/bib2df@de0838da561544361d9be6ff20192d0d1c794cde)</td>
+</tr>
+<tr class="even gt_row_group_first">
+<td class="gt_row gt_left" headers="Github (ropensci/bib2df@de0838da561544361d9be6ff20192d0d1c794cde)  package">bib2df</td>
+<td class="gt_row gt_right" headers="Github (ropensci/bib2df@de0838da561544361d9be6ff20192d0d1c794cde)  loadedversion">1.1.2.0</td>
+</tr>
+<tr class="odd gt_group_heading_row">
+<td colspan="2" id="CRAN (R 4.3.1)" class="gt_group_heading" data-quarto-table-cell-role="th" scope="colgroup">CRAN (R 4.3.1)</td>
+</tr>
+<tr class="even gt_row_group_first">
+<td class="gt_row gt_left" headers="CRAN (R 4.3.1)  package">class</td>
+<td class="gt_row gt_right" headers="CRAN (R 4.3.1)  loadedversion">7.3-22</td>
 </tr>
 <tr class="odd">
+<td class="gt_row gt_left" headers="CRAN (R 4.3.1)  package">lattice</td>
+<td class="gt_row gt_right" headers="CRAN (R 4.3.1)  loadedversion">0.22-5</td>
+</tr>
+<tr class="even gt_group_heading_row">
+<td colspan="2" id="CRAN (R 4.3.2)" class="gt_group_heading" data-quarto-table-cell-role="th" scope="colgroup">CRAN (R 4.3.2)</td>
+</tr>
+<tr class="odd gt_row_group_first">
 <td class="gt_row gt_left" headers="CRAN (R 4.3.2)  package">cluster</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.3.2)  loadedversion">2.1.6</td>
 </tr>
 <tr class="even gt_group_heading_row">
-<td colspan="2" id="Github (satijalab/seurat-wrappers@8d46d6c47c089e193fe5c02a8c23970715918aa9)" class="gt_group_heading" data-quarto-table-cell-role="th" scope="colgroup">Github (satijalab/seurat-wrappers@8d46d6c47c089e193fe5c02a8c23970715918aa9)</td>
-</tr>
-<tr class="odd gt_row_group_first">
-<td class="gt_row gt_left" headers="Github (satijalab/seurat-wrappers@8d46d6c47c089e193fe5c02a8c23970715918aa9)  package">SeuratWrappers</td>
-<td class="gt_row gt_right" headers="Github (satijalab/seurat-wrappers@8d46d6c47c089e193fe5c02a8c23970715918aa9)  loadedversion">0.3.5</td>
-</tr>
-<tr class="even gt_group_heading_row">
-<td colspan="2" id="Github (ropensci/bib2df@de0838da561544361d9be6ff20192d0d1c794cde)" class="gt_group_heading" data-quarto-table-cell-role="th" scope="colgroup">Github (ropensci/bib2df@de0838da561544361d9be6ff20192d0d1c794cde)</td>
-</tr>
-<tr class="odd gt_row_group_first">
-<td class="gt_row gt_left" headers="Github (ropensci/bib2df@de0838da561544361d9be6ff20192d0d1c794cde)  package">bib2df</td>
-<td class="gt_row gt_right" headers="Github (ropensci/bib2df@de0838da561544361d9be6ff20192d0d1c794cde)  loadedversion">1.1.2.0</td>
-</tr>
-<tr class="even gt_group_heading_row">
-<td colspan="2" id="CRAN (R 4.3.1)" class="gt_group_heading" data-quarto-table-cell-role="th" scope="colgroup">CRAN (R 4.3.1)</td>
-</tr>
-<tr class="odd gt_row_group_first">
-<td class="gt_row gt_left" headers="CRAN (R 4.3.1)  package">class</td>
-<td class="gt_row gt_right" headers="CRAN (R 4.3.1)  loadedversion">7.3-22</td>
-</tr>
-<tr class="even">
-<td class="gt_row gt_left" headers="CRAN (R 4.3.1)  package">lattice</td>
-<td class="gt_row gt_right" headers="CRAN (R 4.3.1)  loadedversion">0.22-5</td>
-</tr>
-<tr class="odd gt_group_heading_row">
 <td colspan="2" id="CRAN (R 4.2.2)" class="gt_group_heading" data-quarto-table-cell-role="th" scope="colgroup">CRAN (R 4.2.2)</td>
 </tr>
-<tr class="even gt_row_group_first">
+<tr class="odd gt_row_group_first">
 <td class="gt_row gt_left" headers="CRAN (R 4.2.2)  package">codetools</td>
 <td class="gt_row gt_right" headers="CRAN (R 4.2.2)  loadedversion">0.2-19</td>
 </tr>
-<tr class="odd gt_group_heading_row">
+<tr class="even gt_group_heading_row">
 <td colspan="2" id="Github (theislab/kBET@afc5f431bcbefd73267acc066a0f2e4eaa10a355)" class="gt_group_heading" data-quarto-table-cell-role="th" scope="colgroup">Github (theislab/kBET@afc5f431bcbefd73267acc066a0f2e4eaa10a355)</td>
 </tr>
-<tr class="even gt_row_group_first">
+<tr class="odd gt_row_group_first">
 <td class="gt_row gt_left" headers="Github (theislab/kBET@afc5f431bcbefd73267acc066a0f2e4eaa10a355)  package">kBET</td>
 <td class="gt_row gt_right" headers="Github (theislab/kBET@afc5f431bcbefd73267acc066a0f2e4eaa10a355)  loadedversion">0.99.6</td>
 </tr>
-<tr class="odd gt_group_heading_row">
+<tr class="even gt_group_heading_row">
 <td colspan="2" id="Github (cole-trapnell-lab/monocle3@98402ed0c10cac020524bebbb9300614a799f6d1)" class="gt_group_heading" data-quarto-table-cell-role="th" scope="colgroup">Github (cole-trapnell-lab/monocle3@98402ed0c10cac020524bebbb9300614a799f6d1)</td>
 </tr>
-<tr class="even gt_row_group_first">
+<tr class="odd gt_row_group_first">
 <td class="gt_row gt_left" headers="Github (cole-trapnell-lab/monocle3@98402ed0c10cac020524bebbb9300614a799f6d1)  package">monocle3</td>
 <td class="gt_row gt_right" headers="Github (cole-trapnell-lab/monocle3@98402ed0c10cac020524bebbb9300614a799f6d1)  loadedversion">1.3.7</td>
 </tr>
-<tr class="odd gt_group_heading_row">
-<td colspan="2" id="Github (ropensci/plotly@963b9143ba4102eca8edbd4750d4c85541ddd0f5)" class="gt_group_heading" data-quarto-table-cell-role="th" scope="colgroup">Github (ropensci/plotly@963b9143ba4102eca8edbd4750d4c85541ddd0f5)</td>
+<tr class="even gt_group_heading_row">
+<td colspan="2" id="Github (ropensci/plotly@3cf17c00477e6992cde648c6e711d5b464b04439)" class="gt_group_heading" data-quarto-table-cell-role="th" scope="colgroup">Github (ropensci/plotly@3cf17c00477e6992cde648c6e711d5b464b04439)</td>
 </tr>
-<tr class="even gt_row_group_first">
-<td class="gt_row gt_left" headers="Github (ropensci/plotly@963b9143ba4102eca8edbd4750d4c85541ddd0f5)  package">plotly</td>
-<td class="gt_row gt_right" headers="Github (ropensci/plotly@963b9143ba4102eca8edbd4750d4c85541ddd0f5)  loadedversion">4.10.4.9000</td>
+<tr class="odd gt_row_group_first">
+<td class="gt_row gt_left" headers="Github (ropensci/plotly@3cf17c00477e6992cde648c6e711d5b464b04439)  package">plotly</td>
+<td class="gt_row gt_right" headers="Github (ropensci/plotly@3cf17c00477e6992cde648c6e711d5b464b04439)  loadedversion">4.10.4.9000</td>
 </tr>
-<tr class="odd gt_group_heading_row">
+<tr class="even gt_group_heading_row">
 <td colspan="2" id="Github (immunogenomics/presto@7636b3d0465c468c35853f82f1717d3a64b3c8f6)" class="gt_group_heading" data-quarto-table-cell-role="th" scope="colgroup">Github (immunogenomics/presto@7636b3d0465c468c35853f82f1717d3a64b3c8f6)</td>
 </tr>
-<tr class="even gt_row_group_first">
+<tr class="odd gt_row_group_first">
 <td class="gt_row gt_left" headers="Github (immunogenomics/presto@7636b3d0465c468c35853f82f1717d3a64b3c8f6)  package">presto</td>
 <td class="gt_row gt_right" headers="Github (immunogenomics/presto@7636b3d0465c468c35853f82f1717d3a64b3c8f6)  loadedversion">1.0.0</td>
 </tr>
-<tr class="odd gt_group_heading_row">
+<tr class="even gt_group_heading_row">
 <td colspan="2" id="Github (neurogenomics/scFlow@065bc13dacee707a0437fb65e006647660fc13c7)" class="gt_group_heading" data-quarto-table-cell-role="th" scope="colgroup">Github (neurogenomics/scFlow@065bc13dacee707a0437fb65e006647660fc13c7)</td>
 </tr>
-<tr class="even gt_row_group_first">
+<tr class="odd gt_row_group_first">
 <td class="gt_row gt_left" headers="Github (neurogenomics/scFlow@065bc13dacee707a0437fb65e006647660fc13c7)  package">scFlow</td>
 <td class="gt_row gt_right" headers="Github (neurogenomics/scFlow@065bc13dacee707a0437fb65e006647660fc13c7)  loadedversion">0.7.4</td>
 </tr>
-<tr class="odd gt_group_heading_row">
+<tr class="even gt_group_heading_row">
 <td colspan="2" id="Github (rpolicastro/scProportionTest@37a04900be1c991428da15af7f9aa7b0ad84661e)" class="gt_group_heading" data-quarto-table-cell-role="th" scope="colgroup">Github (rpolicastro/scProportionTest@37a04900be1c991428da15af7f9aa7b0ad84661e)</td>
 </tr>
-<tr class="even gt_row_group_first">
+<tr class="odd gt_row_group_first">
 <td class="gt_row gt_left" headers="Github (rpolicastro/scProportionTest@37a04900be1c991428da15af7f9aa7b0ad84661e)  package">scProportionTest</td>
 <td class="gt_row gt_right" headers="Github (rpolicastro/scProportionTest@37a04900be1c991428da15af7f9aa7b0ad84661e)  loadedversion">0.0.0.9000</td>
 </tr>
@@ -3516,6 +4142,12 @@ Table&nbsp;1: Clinical Information. Clinical characteristics of the cohort and s
 
 </div>
 </div>
+</div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-supptbl" id="supptbl-r-packages-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table S2: R packages used
+</figcaption>
+</figure>
 </div>
 </section>
 <section id="references" class="level2 unnumbered" data-number="12">
@@ -3530,17 +4162,32 @@ Bellenguez, Céline, Fahri Küçükali, Iris E. Jansen, Luca Kleineidam, Sonia M
 <div id="ref-ditommaso2017" class="csl-entry" role="listitem">
 Di Tommaso, Paolo, Maria Chatzou, Evan W. Floden, Pablo Prieto Barja, Emilio Palumbo, and Cedric Notredame. 2017. <span>“Nextflow Enables Reproducible Computational Workflows.”</span> <em>Nature Biotechnology</em> 35 (4): 316–19. <a href="https://doi.org/10.1038/nbt.3820">https://doi.org/10.1038/nbt.3820</a>.
 </div>
+<div id="ref-Seurat" class="csl-entry" role="listitem">
+Hao, Yuhan, Tim Stuart, Madeline H Kowalski, Saket Choudhary, Paul Hoffman, Austin Hartman, Avi Srivastava, et al. 2023b. <span>“Dictionary Learning for Integrative, Multimodal and Scalable Single-Cell Analysis.”</span> <a href="https://doi.org/10.1038/s41587-023-01767-y">https://doi.org/10.1038/s41587-023-01767-y</a>.
+</div>
+<div id="ref-Seurat-2" class="csl-entry" role="listitem">
+———, et al. 2023a. <span>“Dictionary Learning for Integrative, Multimodal and Scalable Single-Cell Analysis.”</span> <a href="https://doi.org/10.1038/s41587-023-01767-y">https://doi.org/10.1038/s41587-023-01767-y</a>.
+</div>
+<div id="ref-CellChat" class="csl-entry" role="listitem">
+Jin, Suoqin. 2024. <span>“CellChat: Inference and Analysis of Cell-Cell Communication from Single-Cell and Spatially Resolved Transcriptomics Data.”</span> <a href="https://github.com/jinworks/CellChat">https://github.com/jinworks/CellChat</a>.
+</div>
 <div id="ref-khozoie2021" class="csl-entry" role="listitem">
 Khozoie, Combiz, Nurun Fancy, Mahdi Marjaneh, Alan Murphy, Paul Matthews, and Nathan Skene. 2021. <span>“scFlow: A Scalable and Reproducible Analysis Pipeline for Single-Cell RNA Sequencing Dat.”</span> <a href="https://doi.org/10.22541/au.162912533.38489960/v2">https://doi.org/10.22541/au.162912533.38489960/v2</a>.
 </div>
-<div id="ref-kunkle2019" class="csl-entry" role="listitem">
-Kunkle, Brian W., Benjamin Grenier-Boley, Rebecca Sims, Joshua C. Bis, Vincent Damotte, Adam C. Naj, Anne Boland, et al. 2019. <span>“Genetic Meta-Analysis of Diagnosed Alzheimer<span>’</span>s Disease Identifies New Risk Loci and Implicates Aβ, Tau, Immunity and Lipid Processing.”</span> <em>Nature Genetics</em> 51 (3): 414–30. <a href="https://doi.org/10.1038/s41588-019-0358-2">https://doi.org/10.1038/s41588-019-0358-2</a>.
+<div id="ref-speckle" class="csl-entry" role="listitem">
+Phipson, Belinda, Choon Boon Sim, Enzo R Porrello, Alex W Hewitt, Joseph Powell, and Alicia Oshlack. 2022. <span>“Propeller: Testing for Differences in Cell Type Proportions in Single Cell Data”</span> 38: –6. <a href="https://doi.org/10.1093/bioinformatics/btac582">https://doi.org/10.1093/bioinformatics/btac582</a>.
+</div>
+<div id="ref-base" class="csl-entry" role="listitem">
+R Core Team. 2024. <span>“R: A Language and Environment for Statistical Computing.”</span> <a href="https://www.R-project.org/">https://www.R-project.org/</a>.
+</div>
+<div id="ref-yang2022" class="csl-entry" role="listitem">
+Yang, Andrew C., Ryan T. Vest, Fabian Kern, Davis P. Lee, Maayan Agam, Christina A. Maat, Patricia M. Losada, et al. 2022. <span>“A human brain vascular atlas reveals diverse mediators of Alzheimer’s risk.”</span> <em>Nature</em> 603 (7903): 885–92. <a href="https://doi.org/10.1038/s41586-021-04369-3">https://doi.org/10.1038/s41586-021-04369-3</a>.
 </div>
 </div></section><section class="quarto-appendix-contents" id="quarto-citation"><h2 class="anchored quarto-appendix-heading">Citation</h2><div><div class="quarto-appendix-secondary-label">BibTeX citation:</div><pre class="sourceCode code-with-copy quarto-appendix-bibtex"><code class="sourceCode bibtex">@online{mateus_bernardo_harrington2024,
   author = {Mateus Bernardo Harrington, Gabriel and Monzon Sandoval,
     Jimena and Rokicki, Michal and Cader, Zameel and Webber, Caleb},
   title = {BBB in {AD}},
-  date = {2024-07-17},
+  date = {2024-07-30},
   langid = {en},
   abstract = {The blood brain barrier, it’s important, probably in AD
     even}
@@ -3548,7 +4195,7 @@ Kunkle, Brian W., Benjamin Grenier-Boley, Rebecca Sims, Joshua C. Bis, Vincent D
 </code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre><div class="quarto-appendix-secondary-label">For attribution, please cite this work as:</div><div id="ref-mateus_bernardo_harrington2024" class="csl-entry quarto-appendix-citeas" role="listitem">
 Mateus Bernardo Harrington, Gabriel, Jimena Monzon Sandoval, Michal
 Rokicki, Zameel Cader, and Caleb Webber. 2024. <span>“BBB in AD.”</span>
-Cell. July 17, 2024.
+Cell. July 30, 2024.
 </div></div></section></div></main>
 <!-- /main column -->
 <script id="quarto-html-after-body" type="application/javascript">
@@ -3972,7 +4619,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 });
 </script>
 </div> <!-- /content -->
-<script>var lightboxQuarto = GLightbox({"selector":".lightbox","descPosition":"bottom","openEffect":"zoom","loop":false,"closeEffect":"zoom"});
+<script>var lightboxQuarto = GLightbox({"selector":".lightbox","descPosition":"bottom","openEffect":"zoom","closeEffect":"zoom","loop":false});
 (function() {
   let previousOnload = window.onload;
   window.onload = () => {

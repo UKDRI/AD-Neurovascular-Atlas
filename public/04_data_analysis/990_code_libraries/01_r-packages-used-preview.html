@@ -229,7 +229,7 @@
 <span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a>    <span class="do">## If the packages are bioconductor, install via biocmanager</span></span>
 <span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a>    <span class="do">## If there are any packages in the list that aren't installed,</span></span>
 <span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a>    <span class="do">## install them</span></span>
-<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">length</span>(new_pkg) <span class="sc">&gt;</span> <span class="dv">0</span> <span class="sc">&amp;</span> <span class="sc">!</span>bioconductor) {</span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">length</span>(new_pkg) <span class="sc">&gt;</span> <span class="dv">0</span> <span class="sc">&amp;</span> <span class="sc">!</span>bioconductor <span class="sc">&amp;</span> <span class="sc">!</span>devtools) {</span>
 <span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a>        <span class="fu">install.packages</span>(new_pkg, <span class="at">repos =</span> <span class="st">"https://cran.rstudio.com"</span>)</span>
 <span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span> <span class="cf">if</span> (<span class="fu">length</span>(new_pkg) <span class="sc">&gt;</span> <span class="dv">0</span> <span class="sc">&amp;</span> bioconductor) {</span>
 <span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a>        BiocManager<span class="sc">::</span><span class="fu">install</span>(new_pkg)</span>
@@ -436,6 +436,11 @@ Attaching package: 'future'</code></pre>
 <div class="cell-output cell-output-stderr">
 <pre><code>
 Attaching package: 'cowplot'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following object is masked from 'package:gt':
+
+    as_gtable</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
 <pre><code>The following object is masked from 'package:reshape':
@@ -658,10 +663,10 @@ $plots14
 $plots15
 [1] TRUE</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb83"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb83-1"><a href="#cb83-1" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: load libraries</span></span>
-<span id="cb83-2"><a href="#cb83-2" aria-hidden="true" tabindex="-1"></a><span class="co">#| include: false</span></span>
-<span id="cb83-3"><a href="#cb83-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb83-4"><a href="#cb83-4" aria-hidden="true" tabindex="-1"></a><span class="fu">sort_packages</span>(pkg_bioconductor, <span class="at">bioconductor =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb84"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb84-1"><a href="#cb84-1" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: load libraries</span></span>
+<span id="cb84-2"><a href="#cb84-2" aria-hidden="true" tabindex="-1"></a><span class="co">#| include: false</span></span>
+<span id="cb84-3"><a href="#cb84-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb84-4"><a href="#cb84-4" aria-hidden="true" tabindex="-1"></a><span class="fu">sort_packages</span>(pkg_bioconductor, <span class="at">bioconductor =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Loading required package: cellity</code></pre>
 </div>
@@ -1593,20 +1598,84 @@ Attaching package: 'ComplexHeatmap'</code></pre>
 [[43]]
 [1] TRUE</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb269"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb269-1"><a href="#cb269-1" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: load libraries</span></span>
-<span id="cb269-2"><a href="#cb269-2" aria-hidden="true" tabindex="-1"></a><span class="co">#| include: false</span></span>
-<span id="cb269-3"><a href="#cb269-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb269-4"><a href="#cb269-4" aria-hidden="true" tabindex="-1"></a><span class="fu">sort_packages</span>(pkg_devtools, <span class="at">devtools =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb270"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb270-1"><a href="#cb270-1" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: load libraries</span></span>
+<span id="cb270-2"><a href="#cb270-2" aria-hidden="true" tabindex="-1"></a><span class="co">#| include: false</span></span>
+<span id="cb270-3"><a href="#cb270-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb270-4"><a href="#cb270-4" aria-hidden="true" tabindex="-1"></a><span class="fu">sort_packages</span>(pkg_devtools, <span class="at">devtools =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Downloading GitHub repo jinworks/CellChat@HEAD</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Rcpp   (1.0.12       -&gt; 1.0.13      ) [CRAN]
+bslib  (0.7.0        -&gt; 0.8.0       ) [CRAN]
+future (1.33.2       -&gt; 1.34.0      ) [CRAN]
+shiny  (1.8.1.1      -&gt; 1.9.0       ) [CRAN]
+plotly (963b9143b... -&gt; 3cf17c004...) [GitHub]</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Skipping 4 packages not available: Biobase, BiocNeighbors, BiocGenerics, ComplexHeatmap</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Installing 4 packages: Rcpp, bslib, future, shiny</code></pre>
+</div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Installing packages into '/home/mateusharrington/R/x86_64-pc-linux-gnu-library/4.4'
 (as 'lib' is unspecified)</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>Warning: packages 'jinworks/CellChat', 'rpolicastro/scProportionTest', 'chris-mcginnis-ucsf/DoubletFinder', 'neurogenomics/scFlow', 'immunogenomics/presto', 'cole-trapnell-lab/monocle3', 'satijalab/seurat-wrappers' are not available for this version of R
-
-Versions of these packages for your version of R might be available elsewhere,
-see the ideas at
-https://cran.r-project.org/doc/manuals/r-patched/R-admin.html#Installing-packages</code></pre>
+<pre><code>Downloading GitHub repo ropensci/plotly@HEAD</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+── R CMD build ─────────────────────────────────────────────────────────────────
+* checking for file ‘/tmp/Rtmp3TUdbG/remotes25ac625cdd61/plotly-plotly.R-3cf17c0/DESCRIPTION’ ... OK
+* preparing ‘plotly’:
+* checking DESCRIPTION meta-information ... OK
+* checking for LF line-endings in source and make files and shell scripts
+* checking for empty or unneeded directories
+* building ‘plotly_4.10.4.9000.tar.gz’</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Installing package into '/home/mateusharrington/R/x86_64-pc-linux-gnu-library/4.4'
+(as 'lib' is unspecified)</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>── R CMD build ─────────────────────────────────────────────────────────────────
+* checking for file ‘/tmp/Rtmp3TUdbG/remotes25ac7d6e76b9/jinworks-CellChat-88c2e13/DESCRIPTION’ ... OK
+* preparing ‘CellChat’:
+* checking DESCRIPTION meta-information ... OK
+* cleaning src
+* checking for LF line-endings in source and make files and shell scripts
+* checking for empty or unneeded directories
+* building ‘CellChat_2.1.2.tar.gz’</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Installing package into '/home/mateusharrington/R/x86_64-pc-linux-gnu-library/4.4'
+(as 'lib' is unspecified)</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Skipping install of 'scProportionTest' from a github remote, the SHA1 (37a04900) has not changed since last install.
+  Use `force = TRUE` to force installation</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Skipping install of 'DoubletFinder' from a github remote, the SHA1 (03e9f37f) has not changed since last install.
+  Use `force = TRUE` to force installation</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Skipping install of 'scFlow' from a github remote, the SHA1 (065bc13d) has not changed since last install.
+  Use `force = TRUE` to force installation</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Skipping install of 'presto' from a github remote, the SHA1 (7636b3d0) has not changed since last install.
+  Use `force = TRUE` to force installation</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Skipping install of 'monocle3' from a github remote, the SHA1 (98402ed0) has not changed since last install.
+  Use `force = TRUE` to force installation</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Skipping install of 'SeuratWrappers' from a github remote, the SHA1 (8d46d6c4) has not changed since last install.
+  Use `force = TRUE` to force installation</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Loading required package: CellChat</code></pre>
@@ -1648,11 +1717,6 @@ Attaching package: 'CellChat'</code></pre>
 Attaching package: 'monocle3'</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:presto':
-
-    top_markers</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
 <pre><code>The following object is masked from 'package:igraph':
 
     clusters</code></pre>
@@ -1683,7 +1747,7 @@ logical.return = TRUE, : there is no package called 'seurat-wrappers'</code></pr
 [1] TRUE
 
 [[5]]
-[1] TRUE
+[1] FALSE
 
 [[6]]
 [1] TRUE
@@ -1693,18 +1757,18 @@ logical.return = TRUE, : there is no package called 'seurat-wrappers'</code></pr
 </div>
 </div></div>
 <div class="cell-container"><div class="cell-decorator"><pre>In [2]:</pre></div><div class="cell">
-<div class="sourceCode cell-code" id="cb289"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb289-1"><a href="#cb289-1" aria-hidden="true" tabindex="-1"></a><span class="co">#| purl: false</span></span>
-<span id="cb289-2"><a href="#cb289-2" aria-hidden="true" tabindex="-1"></a><span class="co"># subset devtools packages to after the "/" for the library calls</span></span>
-<span id="cb289-3"><a href="#cb289-3" aria-hidden="true" tabindex="-1"></a>pkg_devtools <span class="ot">&lt;-</span> <span class="fu">sapply</span>(<span class="fu">strsplit</span>(pkg_devtools, <span class="st">"/"</span>), tail, <span class="at">n =</span> <span class="dv">1</span>)</span>
-<span id="cb289-4"><a href="#cb289-4" aria-hidden="true" tabindex="-1"></a>pkg_devtools <span class="ot">&lt;-</span> <span class="fu">sub</span>(<span class="st">"azimuth"</span>, <span class="st">"Azimuth"</span>, pkg_devtools)</span>
-<span id="cb289-5"><a href="#cb289-5" aria-hidden="true" tabindex="-1"></a>pkg_devtools <span class="ot">&lt;-</span> <span class="fu">sub</span>(<span class="st">"seurat-wrappers"</span>, <span class="st">"SeuratWrappers"</span>, pkg_devtools)</span>
-<span id="cb289-6"><a href="#cb289-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb289-7"><a href="#cb289-7" aria-hidden="true" tabindex="-1"></a><span class="co"># create library calls for renv</span></span>
-<span id="cb289-8"><a href="#cb289-8" aria-hidden="true" tabindex="-1"></a>library_calls <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"library("</span>, <span class="fu">c</span>(pkg, pkg_bioconductor, pkg_devtools), <span class="st">")"</span>)</span>
-<span id="cb289-9"><a href="#cb289-9" aria-hidden="true" tabindex="-1"></a><span class="fu">write_lines</span>(library_calls, <span class="fu">here</span>(<span class="st">"04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb303"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb303-1"><a href="#cb303-1" aria-hidden="true" tabindex="-1"></a><span class="co">#| purl: false</span></span>
+<span id="cb303-2"><a href="#cb303-2" aria-hidden="true" tabindex="-1"></a><span class="co"># subset devtools packages to after the "/" for the library calls</span></span>
+<span id="cb303-3"><a href="#cb303-3" aria-hidden="true" tabindex="-1"></a>pkg_devtools <span class="ot">&lt;-</span> <span class="fu">sapply</span>(<span class="fu">strsplit</span>(pkg_devtools, <span class="st">"/"</span>), tail, <span class="at">n =</span> <span class="dv">1</span>)</span>
+<span id="cb303-4"><a href="#cb303-4" aria-hidden="true" tabindex="-1"></a>pkg_devtools <span class="ot">&lt;-</span> <span class="fu">sub</span>(<span class="st">"azimuth"</span>, <span class="st">"Azimuth"</span>, pkg_devtools)</span>
+<span id="cb303-5"><a href="#cb303-5" aria-hidden="true" tabindex="-1"></a>pkg_devtools <span class="ot">&lt;-</span> <span class="fu">sub</span>(<span class="st">"seurat-wrappers"</span>, <span class="st">"SeuratWrappers"</span>, pkg_devtools)</span>
+<span id="cb303-6"><a href="#cb303-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb303-7"><a href="#cb303-7" aria-hidden="true" tabindex="-1"></a><span class="co"># create library calls for renv</span></span>
+<span id="cb303-8"><a href="#cb303-8" aria-hidden="true" tabindex="-1"></a>library_calls <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"library("</span>, <span class="fu">c</span>(pkg, pkg_bioconductor, pkg_devtools), <span class="st">")"</span>)</span>
+<span id="cb303-9"><a href="#cb303-9" aria-hidden="true" tabindex="-1"></a><span class="fu">write_lines</span>(library_calls, <span class="fu">here</span>(<span class="st">"04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div></div>
 <div class="cell-container"><div class="cell-decorator"><pre>In [3]:</pre></div><div class="cell">
-<div class="sourceCode cell-code" id="cb290"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb290-1"><a href="#cb290-1" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span>(pkg, pkg_bioconductor, pkg_devtools, sort_packages)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb304"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb304-1"><a href="#cb304-1" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span>(pkg, pkg_bioconductor, pkg_devtools, sort_packages)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div></div>
      </main>
 <!-- /main column -->  <script id="quarto-html-after-body" type="application/javascript">

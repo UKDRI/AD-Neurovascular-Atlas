@@ -138,56 +138,109 @@ This study provides a valuable resource for understanding NVU composition and dy
 -   The quality/purity of the enrichment
 -   The cohort details/summary?
 -   Celltype annotation?
+-   Compare method directly to Yang atlas paper
+
+### Differential cell populations
+
+- NOTE: I'll add this here but might be worth moving around to be with section on EndoMT
+    - Also may need to update the figure number/panel reference if things move around
+
+```{r}
+#| label: get celltype label abbreviations
+celltype_abbrev_df <- readr::read_tsv(here::here("05_figures/990_shared_figures/003_final_figures/001_data_for_plots/celltype_abbreviations.tsv"))
+```
+
+```{r}
+#| label: get speckle celltype pop differences
+# Read in data, add celltype abbreviations and add fraction label
+cell_pop_diff_par <- readr::read_csv(here::here("03_data/990_processed_data/001_snrnaseq/10_cell_subtypes/speckle_level2_celltype_proportions_parenchymal.csv")) |>
+  dplyr::rename(celltype = BaselineProp.clusters) |>
+  dplyr::left_join(celltype_abbrev_df, by = join_by(celltype)) |>
+  dplyr::mutate(fraction = "P")
+# Do the same and rbind with parenchymal fraction
+cell_pop_diff <- readr::read_csv(here::here("03_data/990_processed_data/001_snrnaseq/10_cell_subtypes/speckle_level2_celltype_proportions_vascular.csv")) |>
+  dplyr::rename(celltype = BaselineProp.clusters) |>
+  dplyr::left_join(celltype_abbrev_df, by = join_by(celltype)) |>
+  dplyr::mutate(fraction = "V") |>
+  rbind(cell_pop_diff_par)
+# Filter to sig pop differences
+cell_pop_diff_sig <- cell_pop_diff |>
+  dplyr::filter(P.Value < 0.05) |>
+  dplyr::mutate(across(where(is.numeric), \(x) round(x, digits = 3)))
+```
+
+We observed significant differences in the proportions of `{r} cell_pop_diff_sig$celltype_abbrev[1]` (p = `{r} cell_pop_diff_sig$P.Value[1]`, FDR = `{r} cell_pop_diff_sig$FDR[1]`), `{r} cell_pop_diff_sig$celltype_abbrev[2]` (p = `{r} cell_pop_diff_sig$P.Value[2]`, FDR = `{r} cell_pop_diff_sig$FDR[2]`), and `{r} cell_pop_diff_sig$celltype_abbrev[3]` (p = `{r} cell_pop_diff_sig$P.Value[3]`, FDR = `{r} cell_pop_diff_sig$FDR[3]`) between case and control group, with all 3 celltypes being lower in cases than controls (@fig-method (F).
 
 ### Risk section summary
 
 -   TODO:
-  -   Run the level 1 celltypes through the PPI/GO/MPO analysis
+-   Expand on the level 1 T-cell stuff, most of the celltypes have t-cell/lymphocyte GO pathways
 
 ![(A) figure legend stuff](05_figures/990_shared_figures/003_final_figures/figure2.png){#fig-risk fig-alt="A multi-panel figure about Alzheimer's disease risk enrichment."}
-
--   Analysing Alzheimer's disease celltype-specific risk with the latest Bellenguez AD GWAS shows a significant enrichment of activated microglia, a pericyte subtype and a perivascular fibroblast subtype.[@bellenguez2022]
--   The prior Kunkle GWAS and Bellenguez without the UKBioBank proxy cases (note in the case of the Bellenguez I lost over half the SNPs in the translation to dbSNP rs IDs, dunno what effect keeping them would have...) do not show the same enrichment.[@kunkle2019]
--   GO terms: running GO on the sig magma genes shows amyloid pathways in all three celltypes and regulation of t-cells in microglia/perictye2
 
 ### Identification of Risk Associations in Specific Cell Types
 
 We sought to understand what celltype-specific AD risk associations would emerge with a fuller representation of celltypes in the brain.
-Using single-nuclei sequencing data, we investigated the association of gene expression profiles in various cell types with Alzheimer's disease (AD) risk.
-Our analysis identified significant risk associations in three specific cell types: microglia-A, pericyte-2, and perivascular-FB-2.
+Using single-nuclei sequencing data, we investigated the association of gene expression profiles in various celltypes with Alzheimer's disease (AD) risk.
+Our analysis in the high-level celltypes identified significant risk associations after multiple testing correction in four celltypes: fibroblasts, pericytes, microglia and T-cells.
+When looking at more details cell sub-types we identify activated microglia (microglia-A), pericyte-2, and perivascular-FB-2 being significantly associated with disease risk.
 
 ### MAGMA Analysis
 
-To determine these associations, we employed Multi-marker Analysis of GenoMic Annotation (MAGMA) against the latest Bellenguez AD Genome-Wide Association Study (GWAS).[@bellenguez2022] The results revealed significant associations for activated microglia (microglia-A), pericyte-2, and perivascular-FB-2.
+To determine these associations, we employed Multi-marker Analysis of GenoMic Annotation (MAGMA) against the latest Bellenguez AD Genome-Wide Association Study (GWAS).[@bellenguez2022] 
+We subset to control samples and identified celltype-specific marker genes using `FindAllMarkers` from the Seurat package.[@Seurat-2] Only genes that are detected in a minimum of 25% of cells in either of the two populations are considered and a minimum log fold change of 0.01 was used.
+This function was used to apply a Wilcoxon Rank Sum test to compare each cluster against all other clusters identifying differentially expressed gene.
+From this list of genes, the top ten percent of the total number of genes in the dataset which had the lowest p-values were selected as the celltype specific genes.
+
 Microglia-A, which play a crucial role in immune response within the brain, exhibited a pronounced association with AD risk.
-pericyte-2, involved in blood-brain barrier maintenance and cerebral blood flow regulation, also showed significant associations.
+Pericyte-2, involved in blood-brain barrier maintenance and cerebral blood flow regulation, also showed significant associations.
 Similarly, perivascular-FB-2, essential for the structural integrity of the blood-brain barrier and extracellular matrix composition, were identified as significantly associated with AD risk.
 
 #### Conditional Analysis
 
-We conducted conditional analysis to assess the independence of the risk signals.
-The results showed significant enrichment for each of the three cell types even when conditioned on the other two cell types, indicating that the observed signals are unique and not confounded by the other cell types.
+We conducted conditional analysis to assess the independence of the risk signals from each celltype.
+The results showed significant enrichment for each of the three cell types even when conditioned on the other two cell types, indicating that the observed signals are unique and not confounded by the other cell types.\<NOTE: refer to figure panel of conditional analysis here\>
 
 #### Gene Ontology (GO) Enrichment Analysis
 
 To further understand the biological implications of these associations, we performed Gene Ontology (GO) enrichment analysis on the significant genes identified by MAGMA for each of the aforementioned cell types.
-The GO analysis revealed several enriched pathways, prominently featuring amyloid-related processes.
+The GO analysis revealed several enriched pathways, prominently featuring several amyloid-related processes.
 The enrichment of genes involved in amyloid precursor protein (APP) processing, amyloid-beta (Aβ) formation, and amyloid plaque clearance was particularly notable.
 This finding aligns with the well-established role of amyloid pathology in AD.
-Additionally, for microglia-A and pericyte-2 cell types, significant GO terms related to T-cell and lymphocyte regulation were identified, suggesting an immune regulatory component in AD risk.
+Additionally, for microglia-A and pericyte-2 cell types, significant GO terms related to T-cell and lymphocyte regulation were identified, suggesting an immune regulatory component in AD risk, especially given the significant risk association of T-cells in the level 1 analysis.
 
 #### Protein-Protein Interaction (PPI) Networks
 
 We constructed protein-protein interaction networks for the significant genes identified in each cell type.
-The PPI networks were significant, and subsequent Louvain clustering of these networks revealed modules associated with amyloid-related processes across all three cell types.
+The PPI networks all had significantly more interacting proteins then one would expect by change.
+Subsequent Louvain clustering of these networks revealed modules associated with amyloid-related processes (via GO enrichment analysis) across all three cell types.
 This suggests a coordinated risk association involving amyloid processing among microglia-A, pericyte-2, and perivascular-FB-2.
 
 #### Mouse Ontology Data Analysis
 
 To further validate our findings, we used mouse ontology data to investigate the functional implications of the significant genes.
-For microglia-A, significant associations were found with abnormal cell chemotaxis and hematoma.
-pericyte-2 showed significant associations with amyloidosis and tau protein deposits.
+We subset the database to terms with more than 10 and less than 200 genes and look for more overlap in a term than we would expect by chance.
+For microglia-A, significant associations were found with the abnormal cell chemotaxis and hematoma terms.
+Pericyte-2 showed significant associations with amyloidosis and tau protein deposits.
 However, no significant associations were identified for perivascular-FB-2.
+
+#### Cell-cell communication
+
+To investigate the communication between these three celltypes we utilised `CellChat` and compared cases and controls.[@CellChat] We find communication in pericyte-2 and microglia-A via Transforming Growth Factor $\beta$ 1 (TGF$\beta1$) as a ligand in pericyte-2 to TGF$\beta$ Receptor (TGF$\beta$R) 1/2 and Activin A Receptor Type 1 (ACVR1) in microglia-A for cases but not controls, suggesting more activation of microglia by pericytes.\<NOTE: refs needed\>
+
+-   NOTES on cellchat ligand receptor pairs:
+    -   Pericyte-2 -\> Microglia-A (all in cases but not controls):
+        -   PTN (Pleiotrophin) -\> NCL (Nucleolin) - roles in neuroprotection, neuronal growth and repair - modulating microglia survival/activation?
+        -   IL34 -\> CSF1R (Colony Stimulating Factor 1 receptor) - similarly likely activating microglia more
+        -   BMP6 (Bone morphogenetic protein 6) -\> BMPR1A/BMPR2/ACVR1 - again development/activation
+    -   Microglia-A -\> Pericyte-2 (most present in both case and control)
+        -   WNT5A -\> MCAM - cell adhesion, migration and polarity (BBB integrity?)
+        -   TGFB1 -\> TGFRB1/2 + ACVR1 (**cases only**) - pericyte activation
+        -   SPP1 -\> CD44 + ITGAV + ITGB5 + ITGB1 - cell adhesion/migration/survival (BBB/ injury response)
+        -   PDGFB -\> PDGFRB - pericyte proliferation, survival and recruitment to blood vessels (response to vascular damage?)
+        -   LGALS9 -\> CD44 - again, adhesion things
+        -   GRN -\> SORT1 (**cases only**) - inflammatory things
+        -   GAS6 -\> MERTK + AXL - cell survival (apoptosis?) - anti-inflammatory
 
 #### Interpretation
 
@@ -198,11 +251,6 @@ Additionally, the PPI network analysis suggests a coordinated risk association i
 Mouse ontology data further supports these findings, particularly highlighting the roles of microglia-A and pericyte-2 cells in AD-related pathologies.
 
 These findings provide new insights into potential cellular targets for therapeutic intervention in Alzheimer's disease.
-
-------------------------------------------------------------------------
-
-This version is more in line with the conventions of scientific writing, avoiding bullet points and providing a more continuous narrative.
-Adjust the specific details and gene lists as needed based on your actual data.
 
 ### DEGs
 
@@ -230,6 +278,14 @@ And a pdf guide [here](https://www.cell.com/pb-assets/journals/research/cell/met
 -   Raw data will go on GEO I guess
 
 ### Key resoures table
+
+```{r}
+#| label: tbl-key-resources
+#| tbl-cap: Key resources table
+key_resources <- read_excel(here::here("03_data/999_data_for_publication/key_resources_table.xlsx"))
+
+gt::gt(key_resources)
+```
 
 ### Resource availability
 
@@ -259,7 +315,7 @@ age_range <- range(donor_metadata$age)
 ```
 
 Post-mortem pre-frontal cortex from 20 controls and 20 AD brain donors were collected from `brain bank here` under `ethics details here`.
-The clinicopathological parameters were collected and summarized in @tbl-donor-metadata, including gender, age, diagnosis, APOE status, ethnicity and Braak stage.
+The clinicopathological parameters were collected and summarized in @supptbl-donor-metadata, including gender, age, diagnosis, APOE status, ethnicity and Braak stage.
 3 donors where excluded in QC and of the remaining `{r} nrow(donor_metadata)` donors, `{r} n_females` were female and `{r} n_males` were male with a median age of `{r} median_age` (range `{r} age_range[1]`-`{r} age_range[2]`).
 Sex and age were included as a covariates in pseudobulk differential gene expression analysis.
 
@@ -275,26 +331,37 @@ Sex and age were included as a covariates in pseudobulk differential gene expres
 
 The raw sequencing data was processed using CellRanger (version 7.1.0, 10X Genomics), which performed initial alignment, filtering, barcode counting, and UMI counting.
 An updated reference genome (Ensembl version 109 and Gencode version 43 annotations for GRCh38) was generated for use with CellRanger.
-The resulting gene-barcode matrices were then further processed using the scFlow pipeline implemented in Nextflow.[@khozoie2021 ;@ditommaso2017]
+The resulting gene-barcode matrices were then further processed using the scFlow pipeline implemented in Nextflow.[@khozoie2021 ; @ditommaso2017]
 
 #### Quality Control
 
-The processed data were read into R (version 4.4.0) using the Seurat package (version 5.1.0).[@base; @Seurat] Basic quality control (QC) measures were applied to ensure data integrity and reliability.
-Specifically, cells with low feature counts were filtered out, and donors with an insufficient number of high-quality cells were excluded from further analysis, resulting in 3 donors being excluded (both fractions).
-The criteria for low feature counts and donor exclusion were determined based on established thresholds in the literature and empirical distributions observed in the data.
+The processed data were read into R (version 4.4.0) using the Seurat package (version 5.1.0).[@base; @Seurat] 
+In addition to the filtering performed by scFlow, cells with low feature/RNA counts were filtered out (between \<300 & \<7500 for features and \>1000 for RNA), and donors with an insufficient number of high-quality cells were excluded from further analysis, resulting in 3 donors (both fractions), and the vascular fraction from 1 addition donor being excluded.
+
+#### Clustering
+
+A standard Seurat workflow was followed including normalisation, finding variable features, scaling and PCA.
+For the UMAP 35 dimensions and a resolution of 0.6 was used.
 
 #### Cell Type Annotation
 
 Cell types were annotated based on canonical marker genes identified from the literature, @yang2022 in particular.
-The expression levels of these marker genes were used to classify cells into distinct cell types.
+The expression levels of these marker genes were used to classify cells into distinct level 1 cell types.
+These higher level celltypes were then subclustered with 20 dimensions and a resolution of 0.4 to identify level 2 cell subtypes.
 This annotation process was validated by comparing the identified cell types to known cell type distributions in similar datasets.
+
+#### Differential cell populations
+
+To analyse differences in cell type proportions between case and control groups, we utilized the propeller function from the speckle R package (version 1.4.0) on the vascular and parenchymal fractions separately.[@speckle] 
+This method employs a robust linear modelling framework to test for significant differences in cell type proportions across experimental conditions, while accounting for the compositional nature of the data and potential variability between samples.
+
+#### Pseudobulk differential gene expression
 
 ## Supplemental information titles and legends
 
-```{r}
-#| label: tbl-donor-metadata
-#| tbl-cap: "Clinical Information. Clinical characteristics of the cohort and samples included in the multi-omics analysis."
+::: {#supptbl-donor-metadata}
 
+```{r}
 donor_metadata |>
   dplyr::select(donor_ID, sex, age, diagnosis, Braak_Tangle, pH_cerebellum, Ethnicity, Brain_weight, diagnosis_details, apoe_status) |>
   janitor::clean_names() |>
@@ -302,10 +369,11 @@ donor_metadata |>
   gt::gt()
 ```
 
-```{r}
-#| label: supptbl-r-packages
-#| tbl-cap: "R packages used"
+Clinical Information. Clinical characteristics of the cohort and samples included in the multi-omics analysis.
+:::
 
+::: {#supptbl-r-packages}
+```{r}
 # Get session information
 session_info <- sessioninfo::session_info()
 
@@ -322,5 +390,7 @@ package_df |>
   gt::gt()
 ```
 
+R packages used
 
+:::
 ## References
