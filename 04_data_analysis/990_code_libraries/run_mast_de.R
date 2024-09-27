@@ -41,7 +41,7 @@ perform_DE <- function(seruat_obj, cell_type) {
       subset.ident = cell_type
     )
     df$celltype <- cell_type
-    qs::qsave(file)
+    qs::qsave(df, file)
   } else {
     df <- qs::qread(file)
   }
