@@ -27,7 +27,7 @@ sce <- subset(sce,
 
 # Define a function to perform differential expression analysis for a given cell type
 perform_DE <- function(seruat_obj, cell_type) {
-  file <- here("03_data/990_processed_data/001_snrnaseq/13_mast_de",
+  file <- here::here("03_data/990_processed_data/001_snrnaseq/13_mast_de",
                paste0(cell_type, "mast_de.tsv"))
   if (!exists(file)) {
     # Perform differential expression analysis using MAST
