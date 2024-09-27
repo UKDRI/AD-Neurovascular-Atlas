@@ -7,10 +7,6 @@ if (!require("future", character.only = TRUE)) {
   install.packages("future")
   library(future)
 }
-if (!require("MAST", character.only = TRUE)) {
-  install.packages("MAST")
-  library(MAST)
-}
 if (!require("qs", character.only = TRUE)) {
   install.packages("qs")
   library(qs)
