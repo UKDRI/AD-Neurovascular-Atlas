@@ -28,7 +28,7 @@ sce <- subset(sce,
 # Define a function to perform differential expression analysis for a given cell type
 perform_DE <- function(seruat_obj, cell_type) {
   file <- here::here("03_data/990_processed_data/001_snrnaseq/13_mast_de",
-               paste0(cell_type, "mast_de.tsv"))
+               paste0(cell_type, "mast_de.qs"))
   if (!exists(file)) {
     # Perform differential expression analysis using MAST
     df <- FindMarkers(
@@ -41,9 +41,9 @@ perform_DE <- function(seruat_obj, cell_type) {
       subset.ident = cell_type
     )
     df$celltype <- cell_type
-    readr::write_tsv(file)
+    qs::qsave(file)
   } else {
-    df <- readr::read_tsv(file)
+    df <- qs::qread(file)
   }
   return(df)
   print(paste0("Finished: ", cell_type))
