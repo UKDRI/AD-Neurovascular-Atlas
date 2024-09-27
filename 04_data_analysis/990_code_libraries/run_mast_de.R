@@ -50,7 +50,7 @@ perform_DE <- function(seruat_obj, cell_type) {
 }
 
 # setup columns to aggregate by
-sce$celltype <- Idents(seurat_obj)
+sce$celltype <- Idents(sce)
 # remove the "_" in the celltype names and replace with "-"
 sce$celltype <- gsub("_", "-", sce$celltype)
 sce$diagnosis <- forcats::fct_recode(sce$diagnosis, AD = "Case")
