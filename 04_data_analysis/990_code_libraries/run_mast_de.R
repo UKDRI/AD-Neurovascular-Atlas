@@ -57,13 +57,6 @@ sce$diagnosis <- forcats::fct_recode(sce$diagnosis, AD = "Case")
 # Use purrr::map to apply the perform_DE function to each cell type
 # Set up parallel processing
 plan(strategy = "multicore", workers = parallel::detectCores())
-de_results <- purrr::map(unique(sce$celltype), perform_DE, seruat_obj = sce)
-
-# Name the list elements by cell type
-names(de_results) <- unique(sce$celltype)
-
-# Save
-qs::qsave(de_results, here::here("03_data/990_processed_data/001_snrnaseq/13_mast_de/level2/mast_de_results_list.qs"))
 
 # level 1
 Idents(sce) <- sce$highlevel_manual_annotations
@@ -75,3 +68,13 @@ names(de_results) <- unique(sce$highlevel_manual_annotations)
 
 # Save
 qs::qsave(de_results, here::here("03_data/990_processed_data/001_snrnaseq/13_mast_de/level1/mast_de_results_list.qs"))
+
+
+Idents(sce) <- sce$celltype
+de_results <- purrr::map(unique(sce$celltype), perform_DE, seruat_obj = sce)
+
+# Name the list elements by cell type
+names(de_results) <- unique(sce$celltype)
+
+# Save
+qs::qsave(de_results, here::here("03_data/990_processed_data/001_snrnaseq/13_mast_de/level2/mast_de_results_list.qs"))
