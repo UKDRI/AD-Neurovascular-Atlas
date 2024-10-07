@@ -26,9 +26,9 @@ sce <- subset(sce,
 )
 
 # Define a function to perform differential expression analysis for a given cell type
-perform_DE <- function(seruat_obj, cell_type) {
+perform_DE <- function(seruat_obj, cell_type, level = "level2") {
   file <- here::here("03_data/990_processed_data/001_snrnaseq/13_mast_de",
-               paste0(cell_type, "mast_de.qs"))
+               level, paste0(cell_type, "mast_de.qs"))
   if (!exists(file)) {
     # Perform differential expression analysis using MAST
     df <- FindMarkers(
@@ -63,4 +63,14 @@ de_results <- purrr::map(unique(sce$celltype), perform_DE, seruat_obj = sce)
 names(de_results) <- unique(sce$celltype)
 
 # Save
-qs::qsave(de_results, here::here("03_data/990_processed_data/001_snrnaseq/13_mast_de/mast_de_results_list.qs"))
+qs::qsave(de_results, here::here("03_data/990_processed_data/001_snrnaseq/13_mast_de/level2/mast_de_results_list.qs"))
+
+# level 1
+Idents(sce) <- sce$highlevel_manual_annotations
+de_results <- purrr::map(unique(sce$highlevel_manual_annotations), perform_DE, seruat_obj = sce)
+
+# Name the list elements by cell type
+names(de_results) <- unique(sce$highlevel_manual_annotations)
+
+# Save
+qs::qsave(de_results, here::here("03_data/990_processed_data/001_snrnaseq/13_mast_de/level1/mast_de_results_list.qs"))
