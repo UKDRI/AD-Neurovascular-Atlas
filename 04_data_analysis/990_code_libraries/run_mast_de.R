@@ -67,7 +67,8 @@ qs::qsave(de_results, here::here("03_data/990_processed_data/001_snrnaseq/13_mas
 
 # level 1
 Idents(sce) <- sce$highlevel_manual_annotations
-de_results <- purrr::map(unique(sce$highlevel_manual_annotations), perform_DE, seruat_obj = sce)
+de_results <- purrr::map(unique(sce$highlevel_manual_annotations), perform_DE, 
+                         seruat_obj = sce, level = "leve1")
 
 # Name the list elements by cell type
 names(de_results) <- unique(sce$highlevel_manual_annotations)
