@@ -43,7 +43,7 @@ perform_DE <- function(seruat_obj, cell_type, level = "level2") {
       subset.ident = cell_type
     )
     df$celltype <- cell_type
-    print("Dataframe for ", level, " - ", cell_type)
+    print(paste0("Dataframe for ", level, " - ", cell_type))
     print(head(df))
     print(paste0("Saving: ", file))
     readr::write_rds(df, file_rds)
