@@ -29,6 +29,8 @@ sce <- subset(sce,
 perform_DE <- function(seruat_obj, cell_type, level = "level2") {
   file <- here::here("03_data/990_processed_data/001_snrnaseq/13_mast_de",
                level, paste0(cell_type, "mast_de.qs"))
+  file_rds <- here::here("03_data/990_processed_data/001_snrnaseq/13_mast_de",
+               level, paste0(cell_type, "mast_de.rds"))
   if (!exists(file)) {
     # Perform differential expression analysis using MAST
     df <- FindMarkers(
@@ -41,6 +43,8 @@ perform_DE <- function(seruat_obj, cell_type, level = "level2") {
       subset.ident = cell_type
     )
     df$celltype <- cell_type
+    print(paste0("Saving: ", file))
+    readr::write_rds(df, file_rds)
     qs::qsave(df, file)
   } else {
     df <- qs::qread(file)
