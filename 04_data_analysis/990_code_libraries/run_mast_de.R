@@ -29,8 +29,6 @@ sce <- subset(sce,
 perform_DE <- function(seruat_obj, cell_type, level = "level2") {
   file <- here::here("03_data/990_processed_data/001_snrnaseq/13_mast_de",
                level, paste0(cell_type, "mast_de.qs"))
-  file_rds <- here::here("03_data/990_processed_data/001_snrnaseq/13_mast_de",
-               level, paste0(cell_type, "mast_de.rds"))
   if (!exists(file)) {
     # Perform differential expression analysis using MAST
     df <- FindMarkers(
@@ -46,7 +44,6 @@ perform_DE <- function(seruat_obj, cell_type, level = "level2") {
     print(paste0("Dataframe for ", level, " - ", cell_type))
     print(head(df))
     print(paste0("Saving: ", file))
-    readr::write_rds(df, file_rds)
     qs::qsave(df, file)
   } else {
     df <- qs::qread(file)
@@ -67,7 +64,7 @@ plan(strategy = "multicore", workers = parallel::detectCores())
 # level 1
 Idents(sce) <- sce$highlevel_manual_annotations
 de_results <- purrr::map(unique(sce$highlevel_manual_annotations), perform_DE, 
-                         seruat_obj = sce, level = "leve1")
+                         seruat_obj = sce, level = "level1")
 
 # Name the list elements by cell type
 names(de_results) <- unique(sce$highlevel_manual_annotations)
