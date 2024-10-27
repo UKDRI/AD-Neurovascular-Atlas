@@ -12,7 +12,7 @@ if (!require("qs", character.only = TRUE)) {
   library(qs)
 }
 library(slingshot)
-library(tradeseq)
+library(tradeSeq)
 
 # read data
 sce_slingshot <- qs::qread(sce_slingshot, here("03_data/990_processed_data/008_pseudotime",
