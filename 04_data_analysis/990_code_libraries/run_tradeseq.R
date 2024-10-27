@@ -15,7 +15,7 @@ library(slingshot)
 library(tradeSeq)
 
 # read data
-sce_slingshot <- qs::qread(here("03_data/990_processed_data/008_pseudotime",
+sce_slingshot <- qs::qread(here::here("03_data/990_processed_data/008_pseudotime",
                               "slingshot_obj.qs"))
 
 sds <- SlingshotDataSet(sce_slingshot)
