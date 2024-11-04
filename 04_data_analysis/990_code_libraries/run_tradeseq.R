@@ -1,12 +1,4 @@
 # load packages
-if (!require("Seurat", character.only = TRUE)) {
-  install.packages("Seurat")
-  library(Seurat)
-}
-if (!require("future", character.only = TRUE)) {
-  install.packages("future")
-  library(future)
-}
 if (!require("qs", character.only = TRUE)) {
   install.packages("qs")
   library(qs)
@@ -15,36 +7,45 @@ library(slingshot)
 library(tradeSeq)
 
 # read data
-sce_slingshot <- qs::qread(here::here("03_data/990_processed_data/008_pseudotime",
-                              "slingshot_obj.qs"))
-
-# subsample to a very small number of cells to test code is working
-subsample_cells <- function(sce, celltype_col, n = 5000) {
-  cell_types <- unique(colData(sce)[[celltype_col]])
-  sampled_cells <- unlist(lapply(cell_types, function(ct) {
-    cells <- which(colData(sce)[[celltype_col]] == ct)
-    if (length(cells) > n) {
-      sample(cells, n)
-    } else {
-      cells
-    }
-  }))
-  return(sampled_cells)
+file <- here::here("03_data/990_processed_data/008_pseudotime",
+                   "slingshot_sds_subset.qs")
+if (!file.exists(file)) {
+  sce_slingshot <- qs::qread(here::here(
+    "03_data/990_processed_data/008_pseudotime",
+    "slingshot_obj.qs"
+  ))
+  
+  # subsample to a very small number of cells to test code is working
+  subsample_cells <- function(sce, celltype_col, n = 5000) {
+    cell_types <- unique(colData(sce)[[celltype_col]])
+    sampled_cells <- unlist(lapply(cell_types, function(ct) {
+      cells <- which(colData(sce)[[celltype_col]] == ct)
+      if (length(cells) > n) {
+        sample(cells, n)
+      } else {
+        cells
+      }
+    }))
+    return(sampled_cells)
+  }
+  
+  celltype_col <- "level1_celltypes_with_endomt_subclusters"
+  set.seed(1234)
+  sampled_cells <- subsample_cells(sce_slingshot, celltype_col)
+  sce_subsampled <- sce_slingshot[, sampled_cells]
+  
+  sce_subsampled <- slingshot(
+    sce_subsampled,
+    clusterLabels = 'level1_celltypes_with_endomt_subclusters',
+    start.clus = "Endothelial",
+    reducedDim = 'PCA'
+  )
+  
+  sds <- SlingshotDataSet(sce_subsampled)
+  qs::qsave(sds, file)
+} else {
+  sds <- qs::qread(file)
 }
-
-celltype_col <- "level1_celltypes_with_endomt_subclusters"
-set.seed(1234)
-sampled_cells <- subsample_cells(sce_slingshot, celltype_col)
-sce_subsampled <- sce_slingshot[, sampled_cells]
-
-sce_subsampled <- slingshot(
-  sce_subsampled,
-  clusterLabels = 'level1_celltypes_with_endomt_subclusters',
-  start.clus = "Endothelial",
-  reducedDim = 'PCA'
-)
-
-sds <- SlingshotDataSet(sce_subsampled)
 
 # Annoyingly this doesn't subset all the elements of the sds object, 
 # so I'll need to do that manually
