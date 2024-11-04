@@ -1,12 +1,12 @@
 #!/bin/bash
 
-#SBATCH -p c_highmem_dri1
+#SBATCH -p c_vhighmem_dri1
 #SBATCH --job-name=run_tradeseq
 #SBATCH --ntasks=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=40
-#SBATCH --mem=320G # memory limit per compute node for the job
-#SBATCH --time=1-00:00 # maximum job time in D-HH:MM
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=720G # memory limit per compute node for the job
+#SBATCH --time=3-00:00 # maximum job time in D-HH:MM
 #SBATCH --account=scw1329
 #SBATCH -o /scratch/c.mpmgb/hawk_output/%x_out_%A_%a_%J.txt
 #SBATCH -e /scratch/c.mpmgb/hawk_output/%x_err_%A_%a_%J.txt

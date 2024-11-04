@@ -37,32 +37,60 @@ set.seed(1234)
 sampled_cells <- subsample_cells(sce_slingshot, celltype_col)
 sce_subsampled <- sce_slingshot[, sampled_cells]
 
+sce_subsampled <- slingshot(
+  sce_subsampled,
+  clusterLabels = 'level1_celltypes_with_endomt_subclusters',
+  start.clus = "Endothelial",
+  reducedDim = 'PCA'
+)
 
 sds <- SlingshotDataSet(sce_subsampled)
+
+# Annoyingly this doesn't subset all the elements of the sds object, 
+# so I'll need to do that manually
+original_curves <- slingCurves(sds)
+
+# Create a subset version of the curves
+subset_curves <- lapply(original_curves, function(curve) {
+  curve$lambda <- curve$lambda[sampled_cells]
+  curve$dist_ind <- curve$dist_ind[sampled_cells]
+  curve$w<- curve$w[sampled_cells]
+  
+  return(curve)
+})
+
+sds@curves <- subset_curves
+
 # Set up parallel processing
 BPPARAM <- BiocParallel::bpparam()
-BPPARAM$workers <- parallel::detectCores()
+BPPARAM$workers <- 8
 BPPARAM
 
 # Evaluate the optimal number of knots
+file <- here::here("03_data/990_processed_data/008_pseudotime/slingshot_kvalues.qs")
+if(!file.exists(file)) {
+  
 set.seed(123)  # For reproducibility
 print("Running evaluateK...")
 k_values <- evaluateK(counts = assays(sce_subsampled)$counts, 
-                      sds = test$slingshot, nGenes = 500, k = 3:10, 
+                      sds = sds, nGenes = 500, k = 3:10, 
                       parallel = TRUE, BPPARAM = BPPARAM)
+
+qs::qsave(k_values, file)
 print("Finished evaluateK!")
+} else {
+  k_values <- qs::qread(file)
+}
 
-qs::qsave(k_values, here::here("03_data/990_processed_data/008_pseudotime/slingshot_kvalues.qs"))
 
-k_values
-optimal_k <- which.min(k_values$ic$BIC)
+#optimal_k <- which.min(k_values$ic$BIC)
 # Fit GAMs for each gene along the pseudotime
 print("Running fitGAM...")
 sce_subsampled <- fitGAM(
-  counts = assays(sce_subsample)$counts,
+  counts = assays(sce_subsampled)$counts,
   pseudotime = slingPseudotime(sds, na = FALSE),
   cellWeights = slingCurveWeights(sds),
-  nknots = optimal_k,
+  nknots = 6,
   parallel = TRUE,
   BPPARAM = BPPARAM
 )
