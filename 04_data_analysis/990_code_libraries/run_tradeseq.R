@@ -82,14 +82,45 @@ print("Finished evaluateK!")
   k_values <- qs::qread(file)
 }
 
+# Assuming kResults is your matrix from evaluateK
+# Rows are genes, columns are different values of K
+# summarized_metrics <- apply(kResults, 2, mean)  # You can use mean, median, etc.
 
-#optimal_k <- which.min(k_values$ic$BIC)
+# If you want to use a different summary statistic, e.g., median:
+# summarized_metrics <- apply(k_values, 2, median)
+# 
+# # Create a data frame for plotting
+# ks <- as.numeric(colnames(k_values))
+# metrics_df <- data.frame(
+#   K = seq_along((colnames(k_values))) + 2,
+#   Metric = summarized_metrics
+# )
+# 
+# # Plot the summarized metric
+# ggplot(metrics_df, aes(x = K, y = Metric)) +
+#   geom_line() +
+#   geom_point() +
+#   labs(title = "Summarized Metric for Different K", x = "Number of Clusters (K)", y = "Summarized Metric")
+
+
+# It gave an error due to NAs in pseudotime, which should be impossible, but perhaps due to aspect not being subset equally
+pseudotime <- slingPseudotime(sds, na = FALSE)
+na_counts <- sum(is.na(pseudotime))
+if (na_counts > 0) {
+  stop("There are still NA values in the pseudotime matrix.")
+}
+
+valid_cells <- complete.cases(pseudotime)
+pseudotime <- pseudotime[valid_cells, ]
+counts <- assays(sce_subsampled)$counts[, valid_cells]
+cellWeights <- slingCurveWeights(sds)[valid_cells, ]
+
 # Fit GAMs for each gene along the pseudotime
 print("Running fitGAM...")
 sce_subsampled <- fitGAM(
-  counts = assays(sce_subsampled)$counts,
-  pseudotime = slingPseudotime(sds, na = FALSE),
-  cellWeights = slingCurveWeights(sds),
+  counts = counts,
+  pseudotime = pseudotime,
+  cellWeights = cellWeights,
   nknots = 6,
   parallel = TRUE,
   BPPARAM = BPPARAM
