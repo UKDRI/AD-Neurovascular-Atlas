@@ -6,7 +6,10 @@ if (!require("qs", character.only = TRUE)) {
 library(slingshot)
 library(tradeSeq)
 
-# read data
+# read data 
+# NOTE: for some reason the data was behaving differently on the HPC than 
+# locally, some data was lost when the sds object is created, so I've run this 
+# part locally and just read in the file on the HPC
 file <- here::here("03_data/990_processed_data/008_pseudotime",
                    "slingshot_sds_subset.qs")
 if (!file.exists(file)) {
@@ -42,25 +45,33 @@ if (!file.exists(file)) {
   )
   
   sds <- SlingshotDataSet(sce_subsampled)
+  
+  # Annoyingly this doesn't subset all the elements of the sds object,
+  # so I'll need to do that manually
+  original_curves <- slingCurves(sds)
+  
+  # Create a subset version of the curves
+  subset_curves <- lapply(original_curves, function(curve) {
+    curve$lambda <- curve$lambda[sampled_cells]
+    curve$dist_ind <- curve$dist_ind[sampled_cells]
+    curve$w <- curve$w[sampled_cells]
+    
+    return(curve)
+  })
+  
+  sds@curves <- subset_curves
   qs::qsave(sds, file)
+  
+  qs::qsave(sce_subsampled, here::here("03_data/990_processed_data/008_pseudotime",
+                   "slingshot_subset.qs"))
+  
+
 } else {
   sds <- qs::qread(file)
+  sce_subsampled <- qs::qread(here::here("03_data/990_processed_data/008_pseudotime",
+                   "slingshot_subset.qs"))
 }
 
-# Annoyingly this doesn't subset all the elements of the sds object, 
-# so I'll need to do that manually
-original_curves <- slingCurves(sds)
-
-# Create a subset version of the curves
-subset_curves <- lapply(original_curves, function(curve) {
-  curve$lambda <- curve$lambda[sampled_cells]
-  curve$dist_ind <- curve$dist_ind[sampled_cells]
-  curve$w<- curve$w[sampled_cells]
-  
-  return(curve)
-})
-
-sds@curves <- subset_curves
 
 # Set up parallel processing
 BPPARAM <- BiocParallel::bpparam()
