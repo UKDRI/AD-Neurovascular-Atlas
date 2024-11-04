@@ -11,7 +11,7 @@ library(tradeSeq)
 # locally, some data was lost when the sds object is created, so I've run this 
 # part locally and just read in the file on the HPC
 file <- here::here("03_data/990_processed_data/008_pseudotime",
-                   "slingshot_sds_subset.qs")
+                   "slingshot_sds_subset_1k.qs")
 if (!file.exists(file)) {
   sce_slingshot <- qs::qread(here::here(
     "03_data/990_processed_data/008_pseudotime",
@@ -34,7 +34,7 @@ if (!file.exists(file)) {
   
   celltype_col <- "level1_celltypes_with_endomt_subclusters"
   set.seed(1234)
-  sampled_cells <- subsample_cells(sce_slingshot, celltype_col)
+  sampled_cells <- subsample_cells(sce_slingshot, celltype_col, n = 1000)
   sce_subsampled <- sce_slingshot[, sampled_cells]
   
   sce_subsampled <- slingshot(
@@ -59,17 +59,16 @@ if (!file.exists(file)) {
     return(curve)
   })
   
-  sds@curves <- subset_curves
+  #sds@curves <- subset_curves
   qs::qsave(sds, file)
   
   qs::qsave(sce_subsampled, here::here("03_data/990_processed_data/008_pseudotime",
-                   "slingshot_subset.qs"))
-  
+                   "slingshot_subset_1k.qs"))
 
 } else {
   sds <- qs::qread(file)
   sce_subsampled <- qs::qread(here::here("03_data/990_processed_data/008_pseudotime",
-                   "slingshot_subset.qs"))
+                   "slingshot_subset_1k.qs"))
 }
 
 
@@ -79,7 +78,7 @@ BPPARAM$workers <- 8
 BPPARAM
 
 # Evaluate the optimal number of knots
-file <- here::here("03_data/990_processed_data/008_pseudotime/slingshot_kvalues.qs")
+file <- here::here("03_data/990_processed_data/008_pseudotime/slingshot_kvalues_1k.qs")
 if(!file.exists(file)) {
   
 set.seed(123)  # For reproducibility
@@ -143,7 +142,7 @@ print("Finished fitGAM!")
 gam_results <- rowData(sce_slingshot)$tradeSeq
 
 # Save
-qs::qsave(sce_slingshot, here::here("03_data/990_processed_data/008_pseudotime/slingshot_tradeseq.qs"))
+qs::qsave(sce_slingshot, here::here("03_data/990_processed_data/008_pseudotime/slingshot_tradeseq_1k.qs"))
 
 print("gam results head:")
 print(head(gam_results))
