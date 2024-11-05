@@ -56,6 +56,7 @@ perform_DE <- function(seruat_obj, cell_type, level = "level2") {
 sce$celltype <- Idents(sce)
 # remove the "_" in the celltype names and replace with "-"
 sce$celltype <- gsub("_", "-", sce$celltype)
+sce$celltype <- gsub(" ", "-", sce$celltype)
 sce$diagnosis <- forcats::fct_recode(sce$diagnosis, AD = "Case")
 # Use purrr::map to apply the perform_DE function to each cell type
 # Set up parallel processing
