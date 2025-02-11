@@ -91,8 +91,7 @@ map(pkg, library, character.only = TRUE)
 # current metadata structure for first 2 sample batches
 metadata <- read_tsv(here("03_data/990_processed_data/001_snrnaseq/90_sample_info/samples_meta_merged_final.txt"))
 names(metadata)
-# add a column for the technique - don't know much about it so I'll just call
-# it Oxford for now
+# add a column for the technique 
 metadata$technique <- "oxford"
 # also don't know brain region
 metadata$brain_region <- "dunno"

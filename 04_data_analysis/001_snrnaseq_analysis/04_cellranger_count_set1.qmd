@@ -13,7 +13,7 @@ So the FASTQ files across the 4 subdirs need to be combined as input for one sam
 I think there were a couple of corner cases for those samples, one sample was of lower quality and not sequenced again, and one extra run of another sample basically had just one read.
 I think the script to run CellRanger for Set_2 should mention this and deal with it.
 
-Due to this funk with the samples I'll keep them are seperate scripts for all three sets.
+Due to this funk with the samples I'll keep them are separate scripts for all three sets.
 
 ```{r}
 #!/bin/bash
