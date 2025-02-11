@@ -1,0 +1,870 @@
+---
+title: Pseudobulk - subtypes
+execute:
+  eval: true
+#self-contained: true
+---
+
+I'll redo the pseudobulk with the updated subtype annotations here
+
+```{r}
+here::i_am("04_data_analysis/001_snrnaseq_analysis/15_pseudobulk.qmd")
+```
+
+# Load packages
+
+```{r}
+source(here::here("04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"))
+```
+
+# Read in data
+
+```{r}
+#| eval: true
+# read data
+#sce <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-sce-annotated.rds"))
+sce <- qs::qread(here::here("03_data/990_processed_data/001_snrnaseq/11_cell_network_interactions/scflow-sce-annotated.qs"))
+```
+
+```{r}
+# need to fix rownames in order to subset
+gene_ensembl_ids <- data.frame(gene = rownames(sce@assays$RNA@data), ensembl = rownames(sce@assays$RNA@counts))
+```
+
+## Endothelin-1
+
+EDN1 is of interest
+```{r}
+DotPlot(sce, features = "EDN1")
+
+data <- FetchData(sce, vars = c("EDN1", "diagnosis", "highlevel_manual_annotations"))
+ggplot(data, aes(y = highlevel_manual_annotations, x = EDN1, fill = diagnosis)) +
+  geom_violin() +
+  theme_minimal() +
+  labs(title = "EDN1 Expression in Different Cell Types",
+       x = "Cell Type",
+       y = "EDN1 Expression")
+
+avg_cases <- AggregateExpression(sce, group.by = c("ident", "diagnosis")) #%>%
+end1 <- avg_cases$RNA |>
+  as.data.frame() |>
+  rownames_to_column("gene") |>
+  dplyr::filter(gene == "ENSG00000078401") |>
+  pivot_longer(!gene, names_to = "celltype", values_to = "avg_expression") |>
+  separate_wider_delim(celltype, delim = "_", names = c("celltype", "diagnosis"))
+
+end1 |>
+  dplyr::filter(avg_expression > 1000) |>
+  ggplot(aes(gene, celltype, colour = log(avg_expression))) +
+  geom_point() +
+  facet_wrap(~diagnosis)
+```
+
+# GLP1R
+
+```{r}
+#| eval: false
+Idents(sce) <- sce$subcelltype_annotations
+DotPlot(sce, features = "GLP1R")
+ggsave(here("GLP1R_dotplot.png"), height = 9, width = 4)
+FeaturePlot(sce, features = "GLP1R")
+ggsave(here("GLP1R_umap.png"), height = 5, width = 5)
+sce$level1 <- if_else(is.na(sce$level1_celltypes_with_endomt_subclusters), sce$highlevel_manual_annotations, sce$level1_celltypes_with_endomt_subclusters)
+Idents(sce) <- sce$level1
+VlnPlot(sce, features = "GLP1R",  pt.size = 0)
+ggsave(here("GLP1R_violin.png"), height = 5, width = 5)
+```
+
+# edgeR pseudobulk
+
+```{r}
+#| fig-width: 10
+#| fig-height: 10
+sce
+p1 <- Seurat::DimPlot(sce, reduction = "umap", label = TRUE, raster = FALSE)
+p2 <- Seurat::DimPlot(sce, reduction = "umap", group.by = "donor", 
+                      raster = FALSE)
+p1 | p2
+rm(p1, p2)
+```
+
+edgeR needs a group column, to start I'll make 2 groups based on diagnosis
+
+```{r}
+sce$group <- paste0(sce$donor, "_", sce$diagnosis)
+y <- edgeR::Seurat2PB(sce, sample = "group", cluster = "subcelltype_annotations")
+head(y$samples, n=10L)
+```
+
+## Filtering and normalisation
+
+Check library sizes of the pseudo-bulk samples and filter out those below 50K
+
+```{r}
+summary(y$samples$lib.size)
+
+keep_samples <- y$samples$lib.size > 5e4
+table(keep_samples)
+
+y <- y[, keep_samples]
+
+rm(keep_samples)
+```
+
+Filter out lowly expressed genes
+
+```{r}
+keep_genes <- filterByExpr(y, group=y$samples$cluster,
+                           min.count=10, min.total.count=20)
+table(keep_genes)
+
+y <- y[keep_genes, , keep=FALSE]
+
+rm(keep_genes)
+```
+
+TMM normalisation to estimate effective library size
+
+```{r}
+y <- normLibSizes(y)
+head(y$samples, n=10L)
+
+summary(y$samples$norm.factors)
+```
+
+## Data check
+
+```{r}
+cluster <- as.factor(y$samples$cluster)
+plotMDS(y, pch=16, col=c(2:8)[cluster], main="MDS")
+legend("bottomright", legend=paste0("cluster",levels(cluster)),
+       pch=16, col=2:8, cex=0.8)
+```
+
+## Design matrix
+
+```{r}
+donor <- factor(y$samples$sample)
+design <- model.matrix(~ cluster + donor)
+
+colnames(design) <- gsub("donor", "", colnames(design))
+colnames(design)[1] <- "Int"
+
+head(design)
+dim(design)
+```
+
+## Dispersion estimation
+
+```{r}
+#| eval: false
+y <- estimateDisp(y, design, robust=TRUE)
+y$common.dispersion
+plotBCV(y)
+```
+
+```{r}
+#| eval: false
+fit <- glmQLFit(y, design, robust=TRUE)
+plotQLDisp(fit)
+```
+
+## Marker gene identification
+
+```{r}
+#| eval: false
+ncls <- nlevels(cluster)
+contr <- rbind( matrix(1/(1-ncls), ncls, ncls),
+                matrix(0, ncol(design)-ncls, ncls) )
+
+diag(contr) <- 1
+contr[1,] <- 0
+
+rownames(contr) <- colnames(design)
+colnames(contr) <- paste0("cluster", levels(cluster))
+
+contr
+```
+
+```{r}
+#| eval: false
+qlf <- map(1:ncls, ~ {
+  qlf_result <- glmQLFTest(fit, contrast = contr[, .x])
+  qlf_result$comparison <- paste0("cluster", levels(cluster)[.x], "_vs_others")
+  qlf_result
+})
+```
+
+```{r}
+#| eval: false
+topTags(qlf[[1]], n=10L)
+```
+
+```{r}
+#| eval: false
+dt <- lapply(lapply(qlf, decideTestsDGE), summary)
+dt.all <- do.call("cbind", dt)
+dt.all
+```
+
+Get top 20 marker (up-regulated) genes for each cluster
+
+```{r}
+#| eval: false
+top <- 20
+topMarkers <- map(1:ncls, ~ {
+  ord <- order(qlf[[.x]]$table$PValue, decreasing = FALSE)
+  up <- qlf[[.x]]$table$logFC > 0
+  rownames(y)[ord[up][1:top]]
+})
+
+topMarkers <- unique(unlist(topMarkers))
+# remove blanks
+topMarkers <- topMarkers[which(topMarkers != "")]
+head(topMarkers)
+```
+
+```{r}
+#| fig-width: 10
+#| fig-height: 10
+#| eval: false
+lcpm <- cpm(y, log = TRUE)
+annot <- data.frame(cluster = paste0("cluster ", cluster))
+rownames(annot) <- colnames(y)
+ann_colors <- list(cluster = 2:length(levels(cluster)))
+names(ann_colors$cluster) <- paste0("cluster ", levels(cluster)[2:length(levels(cluster))])
+
+pheatmap::pheatmap(
+  lcpm[topMarkers,],
+  breaks = seq(-2, 2, length.out = 101),
+  color = colorRampPalette(c("blue", "white", "red"))(100),
+  scale = "row",
+  cluster_cols = TRUE,
+  border_color = "NA",
+  fontsize_row = 5,
+  treeheight_row = 70,
+  treeheight_col = 70,
+  #cutree_cols = 7,
+  clustering_method = "ward.D2",
+  show_colnames = FALSE,
+  #annotation_col = annot,
+  annotation_colors = ann_colors
+)
+```
+
+## DEG plots
+
+Get the gene tables
+
+```{r}
+#| eval: false
+clean_lrt_results <-
+  function(lrt_results,
+           pval_adjust_method = "BH",
+           verbose = TRUE) {
+    # Get results table
+    pvals <- lrt_results$table
+    
+    # Add adj p-values
+    pvals$adj_pval <- stats::p.adjust(pvals$PValue,
+                                      method = pval_adjust_method)
+    
+    # Make rownames a column
+    pvals$name <- rownames(pvals)
+    rownames(pvals) <- NULL
+    
+    # add comparison
+    pvals <- pvals %>%
+      dplyr::mutate(comparison = sub("cluster", "", lrt_results$comparison),
+                deg_direction = ifelse(logFC > 0, "Up", "Down"))
+    
+    # Print number of DEGs found if verbose
+    if (verbose) {
+      numDEGs <- nrow(pvals[pvals$adj_pval < 0.05, ])
+      message(lrt_results$comparison, ": ", numDEGs, " DEGs found")
+    }
+    
+    return(pvals)
+}
+
+df <- map(qlf, clean_lrt_results) %>%
+  purrr::list_rbind()
+```
+
+### Counts of DEGs
+
+```{r}
+#| eval: false
+#| fig-width: 10
+#| fig-height: 10
+#| warning: false
+df %>%
+  # filter to sig DEGs
+  dplyr::filter(PValue < 0.05) %>%
+  ggplot(aes(x = factor(deg_direction), fill = factor(comparison))) +
+  geom_histogram(stat = "count") +
+  facet_wrap(~factor(comparison)) +
+  ggtitle("Cell type counts of DEGs")+
+  labs(y= "Log2 Fold Change", x = "DEG direction", fill="Cell Type") +
+  theme_cowplot()+
+  theme(axis.text = element_text(size=9)) +
+  scale_fill_viridis(discrete = T)
+  #scale_fill_manual(values=pal)
+```
+
+```{r}
+#| eval: false
+#| include: false
+df %>%
+  # filter to sig DEGs
+  dplyr::filter(PValue < 0.05) %>%
+  ggplot(aes(x = comparison, y = logFC, fill = factor(comparison))) +
+  geom_boxplot() +
+  facet_wrap(~factor(comparison)) +
+  ggtitle("Cell type Log2 Fold Change of DEGs") +#,
+          # subtitle = paste0("Median LFC of Down and Up regulated DEGs: ",
+          #                   round(degs_median_lfc$V1[[2]]*-1,2),", ",
+          #                   round(degs_median_lfc$V1[[1]],2)))+
+  labs(y= "Log2 Fold Change", x = "DEG direction", fill="Cell Type") +
+  theme_cowplot()+
+  theme(axis.text = element_text(size=6),
+       axis.text.x = element_text(angle = 45, hjust = 1, size = 6)) +
+  scale_fill_viridis(discrete = T, labels = c("AD P vs others", "AD V vs others", "Control P vs others", "Control V vs others"))
+```
+
+### Volcano plots
+
+```{r}
+#| eval: false
+#| fig-width: 10
+#| fig-height: 10
+# add colour identifier
+cols <- c("Up" = "#FDE725FF", "Down" = "#440154FF")
+
+df %>%
+  # scale FDR by log10
+  ggplot(aes(x = logFC, y = -log10(adj_pval))) +
+  geom_point(aes(colour = ifelse(
+    -log10(adj_pval) < -log10(0.05), "Below HLine", deg_direction
+  )), stat = "identity", size = .2) +
+  facet_wrap( ~ factor(comparison), scales = "free") +
+  geom_hline(
+    yintercept = -log10(0.05),
+    colour = "#990000",
+    linetype = "dashed",
+    linewidth = .3
+  ) +
+  geom_vline(
+    xintercept = 2,
+    colour = "#990000",
+    linewidth = .3,
+    linetype = "dashed"
+  ) +
+  geom_vline(
+    xintercept = -2,
+    colour = "#990000",
+    linewidth = .3,
+    linetype = "dashed"
+  ) +
+  labs(y = "-log10(FDR)", x = "Log2 Fold Change", colour = "") +
+  theme_cowplot() +
+  theme(
+    axis.text = element_text(size = 9),
+    axis.text.x = element_blank(),
+    legend.text = element_text(size = 10)
+  ) +
+  scale_colour_manual(values = c(cols, "grey"), guide = FALSE) +
+  geom_text_repel(
+    # give top three genes per cell type by adjusted p value
+    data = df %>%
+      dplyr::group_by(comparison) %>%
+      dplyr::slice_min(adj_pval, n = 3),
+    aes(label = name),
+    size = 3,
+    box.padding = unit(0.35, "lines"),
+    point.padding = unit(0.3, "lines")
+  )
+```
+
+## Save data
+
+```{r}
+#| eval: false
+readr::write_rds(df, here::here("03_data/990_processed_data/001_snrnaseq/08_pseudobulk/pseudobulk_ad-vs-control_edger_subtype-annotated.rds"))
+```
+
+```{r}
+rm(list = ls()[!ls() %in% "sce"])
+```
+
+# DESeq 2
+
+Let's first try doing pseudobulk by disease status and fraction
+
+```{r}
+# get gene and ensembl IDs
+gene_ensembl_ids <- data.frame(gene = rownames(sce@assays$RNA@data), ensembl = rownames(sce@assays$RNA@counts))
+```
+
+```{r}
+# setup columns to aggregate by
+sce$celltype <- Idents(sce)
+# remove the "_" in the celltype names and replace with "-"
+sce$celltype <- gsub("_", "-", sce$celltype)
+sce$diagnosis <- fct_recode(sce$diagnosis, AD = "Case")
+
+rownames(sce@assays$RNA@counts) <- gene_ensembl_ids$gene
+
+# counts matrix individual level
+cts <-
+  AggregateExpression(
+    sce,
+    group.by = c("celltype", "donor", "diagnosis"),
+    assays = "RNA",
+    slot = "counts",
+    return.seurat = FALSE
+  )
+cts <- cts$RNA
+cts[1:5, 1:10]
+```
+
+Now we need to do some data manipulation to get the count and column data in the format DESeq2 requires
+
+```{r}
+# transpose
+cts_t <- t(cts) %>%
+  as.data.frame()
+
+split_rows <- gsub('_.*', '', rownames(cts_t))
+
+cts_split <- split.data.frame(cts_t,
+                              f = factor(split_rows))
+
+cts_split_m <- lapply(cts_split, function(x) {
+  t(x)
+})
+
+# Function to modify column names
+modify_column_names <- function(df, number_of_groups = 2) {
+  df <- as.data.frame(df)
+  # get the number of "_" seperations in the names
+  number_of_splits <- length(strsplit(as.character(names(df)), "_")[[1]])
+  # get the last n - 1 groups
+  cols <-
+    map((number_of_splits - (number_of_groups - 1)):number_of_splits,
+        ~ sapply(strsplit(as.character(names(
+          df
+        )), "_"), "[", .x))
+  names(df) <- do.call(paste, c(cols, sep = "_"))
+  
+  return(df)
+}
+cts_split_m <- map(cts_split_m, modify_column_names)
+```
+
+```{r}
+cts_split_m$`Ex-Neuron-ADARB2-ERBB4`[1:10,1:4]
+```
+
+I need to add additional data for the design
+
+```{r}
+# get unique meta data per sample
+meta <- sce@meta.data |> 
+  dplyr::distinct(orig.ident, .keep_all = TRUE) |>
+  dplyr::select(donor, sex, apoe_status, age)
+```
+
+```{r}
+# get the col data
+colData <- map(
+  cts_split_m,
+  ~ data.frame(
+    samples = colnames(.x),
+    condition = factor(ifelse(grepl("Control", colnames(.x)), "Control", "AD")),
+    donor = sapply(strsplit(colnames(.x), "_"), "[", 1)
+  ) |>
+    dplyr::left_join(meta, by = "donor") |>
+    dplyr::distinct() |>
+    column_to_rownames(var = "samples") |>
+    dplyr::mutate(apoe_status = str_replace(apoe_status, "/", "-")) |>
+    dplyr::mutate(apoe_status = as.factor(apoe_status))
+)
+
+# make sure controls are the reference level
+colData <- map(colData, ~ .x |>
+                 dplyr::mutate(condition = relevel(condition, ref = "Control")))
+
+
+str(colData$Arterial)
+```
+
+```{r}
+#| eval: false
+# get the col data with fractions
+colData <- map(
+  cts_split_m,
+  ~ data.frame(
+    samples = colnames(.x),
+    condition = case_when(
+  grepl("Control_P", colnames(.x)) ~ "Control_P",
+  grepl("Control_V", colnames(.x)) ~ "Control_V",
+  grepl("AD_P", colnames(.x)) ~ "AD_P",
+  grepl("AD_V", colnames(.x)) ~ "AD_V"
+)
+  ) %>%
+    column_to_rownames(var = "samples")
+)
+```
+
+```{r}
+# check that count and col data cols/rows match
+check <- map2_lgl(cts_split_m, colData, ~ ncol(.x) == nrow(.y))
+assertthat::assert_that(sum(check) != 0)
+```
+
+## With and without APOE 
+
+Want to run the differential expression with and without APOE as a covariate
+
+```{r}
+use_apoe = FALSE
+if (use_apoe) {
+  # get DESeq2 object
+  dds <-
+    map2(
+      cts_split_m,
+      colData,
+      ~ DESeqDataSetFromMatrix(
+        countData = .x,
+        colData = .y,
+        design = ~ condition + age + sex + apoe_status
+      )
+    )
+} else {
+  # Without apoe
+  dds <-
+    map2(
+      cts_split_m,
+      colData,
+      ~ DESeqDataSetFromMatrix(
+        countData = .x,
+        colData = .y,
+        design = ~ condition + age + sex
+      )
+    )
+}
+```
+
+```{r}
+# run DESeq2
+dds <- map(dds, DESeq)
+```
+
+We can see the result names
+
+```{r}
+resultsNames(dds$Arterial)
+```
+
+And then extract these results
+
+```{r}
+#| eval: false
+#| include: false
+
+## The following is if there a more complex comparison
+
+# Get the unique pairwise contrasts from each celltype
+get_contrasts <- function(vector) {
+  # Create pairwise combinations
+  pairs <- combn(vector, 2)
+  
+  # Convert to list
+  contrasts <- split(pairs, col(pairs))
+  
+  # Add condition for contrast
+  contrasts <- map(contrasts, ~ c("condition", .x)) %>%
+    purrr::set_names(map(contrasts, paste0, collapse = "_"))
+  
+  return(contrasts)
+}
+
+# Character vector of unique conditions
+vector <- map(colData, ~ unique(.x$condition))
+contrasts <- map(map(colData, ~ unique(.x$condition)), get_contrasts)
+```
+
+```{r}
+#| eval: false
+#| include: false
+# Get results
+res <- map2(dds, contrasts, function(celltype, compare) {
+  map(compare, ~ results(celltype, contrast = .x))
+})
+```
+
+```{r}
+res <- map(dds, ~results(.x, name = "condition_AD_vs_Control"))
+head(res$Arterial)
+```
+
+
+```{r}
+#| eval: false
+#| include: false
+
+## Again for more complex comparisons
+# Merge contrasts and celltypes into one dataframe
+res_merged <- map2(res, names(res), function(data, celltype) {
+  map2(data, names(data), ~ as.data.frame(.x) %>%
+         rownames_to_column("gene") %>%
+         dplyr::mutate(contrast = .y, deg_direction = case_when(
+           log2FoldChange > 0 & padj < 0.05 ~ "Up",
+           log2FoldChange < 0 & padj < 0.05 ~ "Down",
+           .default = "Not Sig"),
+           celltype = celltype)) %>%
+    purrr::list_rbind() 
+  }) %>%
+  purrr::list_rbind() 
+
+head(res_merged)
+```
+
+```{r}
+# merge celltype dataframes
+res_merged <- map2(res, names(res), ~ as.data.frame(.x) %>%
+                     rownames_to_column("gene") %>%
+                     dplyr::mutate(celltype = .y, deg_direction = case_when(
+                       log2FoldChange > 0 & padj < 0.05 ~ "Up",
+                       log2FoldChange < 0 & padj < 0.05 ~ "Down",
+                       .default = "Not Sig"))) %>%
+  purrr::list_rbind()
+head(res_merged)
+```
+
+```{r}
+# save results
+if(use_apoe) {
+  # readr::write_rds(
+  #   res_merged,
+  #   here::here(
+  #     "03_data/990_processed_data/001_snrnaseq/08_pseudobulk/pseudobulk_ad-vs-control_deseq2_subtype-annotated_apoe.rds"
+  #   )
+  # )
+  readr::write_csv(
+    res_merged,
+    here::here(
+      "03_data/990_processed_data/001_snrnaseq/08_pseudobulk/pseudobulk_ad-vs-control_deseq2_subtype-annotated_apoe.csv"
+    )
+  )
+} else {
+  # readr::write_rds(
+  #   res_merged,
+  #   here::here(
+  #     "03_data/990_processed_data/001_snrnaseq/08_pseudobulk/pseudobulk_ad-vs-control_deseq2_subtype-annotated_no-apoe.rds"
+  #   )
+  # )
+  readr::write_csv(
+    res_merged,
+    here::here(
+      "03_data/990_processed_data/001_snrnaseq/08_pseudobulk/pseudobulk_ad-vs-control_deseq2_subtype-annotated_no-apoe.csv"
+    )
+  )
+}
+```
+
+<!-- ## Plots -->
+
+```{r}
+#| fig-width: 10
+#| fig-height: 10
+#| eval: false
+#| include: false
+# Nest the data by celltype
+res_nested <- res_merged %>% 
+  na.omit() %>%
+  nest(data = -contrast)
+
+# Generate plots for each nested group
+plots <- map2(res_nested$data, res_nested$contrast, ~ .x %>%
+  ggplot(aes(x = factor(deg_direction), fill = factor(celltype))) +
+  geom_histogram(stat = "count") +
+  facet_wrap(~factor(celltype)) +
+  ggtitle(paste0("Cell type counts of DEGs - ", .y)) +
+  labs(y= "Log2 Fold Change", x = "DEG direction", fill="Cell Type") +
+  theme_cowplot()+
+  theme(axis.text = element_text(size=9)) +
+  scale_fill_viridis(discrete = T)
+  #scale_fill_manual(values=pal)
+      ) %>%
+  purrr::set_names(res_nested$contrast)
+
+# Print the plots
+plots$Control_P_AD_P
+plots$Control_V_AD_V
+```
+
+<!-- ### Volcano plots -->
+
+```{r}
+#| fig-width: 10
+#| fig-height: 10
+#| eval: false
+#| include: false
+# add colour identifier
+cols <- c("Up" = "#FDE725FF", "Down" = "#440154FF", "Not Sig" = "#d3d3d3")
+
+volc_plot <- map2(res_nested$data, res_nested$contrast, ~ .x %>%
+  # filter to significant hits
+  #dplyr::filter(padj < 0.05) %>%
+  unique() %>%
+  # scale FDR by log10
+  ggplot(aes(x = log2FoldChange, y = -log10(padj))) +
+  geom_point(aes(colour = deg_direction), stat = "identity", size = .2) +
+  facet_wrap( ~ factor(celltype), scales = "free") +
+  geom_hline(
+    yintercept = -log10(0.05),
+    colour = "#990000",
+    linetype = "dashed",
+    linewidth = .3
+  ) +
+  geom_vline(
+    xintercept = 2,
+    colour = "#990000",
+    linewidth = .3,
+    linetype = "dashed"
+  ) +
+  geom_vline(
+    xintercept = -2,
+    colour = "#990000",
+    linewidth = .3,
+    linetype = "dashed"
+  ) +
+  # geom_vline(xintercept = 0, colour="black", size=.3) +
+  labs(y = "-log10(FDR)", x = "Log2 Fold Change", colour = "") +
+  theme_cowplot() +
+  ggtitle(paste0("Volcano plot - ", .y)) +
+  theme(
+    axis.text = element_text(size = 9),
+    #axis.text.x = element_blank(),
+    legend.text = element_text(size = 10)
+  ) +
+  scale_colour_manual(values = cols) +
+  geom_text_repel(
+    # give top three genes per cell type by adjusted p value
+    data = res_merged %>%
+      dplyr::group_by(celltype) %>%
+      dplyr::slice_min(padj, n = 3),
+    aes(label = gene),
+    size = 3,
+    box.padding = unit(0.35, "lines"),
+    point.padding = unit(0.3, "lines")
+  )) %>%
+  purrr::set_names(res_nested$contrast)
+
+volc_plot$Control_P_AD_P
+volc_plot$Control_V_AD_V
+# Save
+#ggsave(here::here("05_figures/990_shared_figures/deseq2_volcano-plot.png"), volc_plot, device = "png")
+# Remove
+rm(volc_plot)
+```
+
+## Plots
+
+```{r}
+#| warning: false
+res_merged %>%
+  ggplot(aes(x = factor(deg_direction), fill = factor(celltype))) +
+  geom_histogram(stat = "count") +
+  facet_wrap(~factor(celltype)) +
+  ggtitle("Cell type counts of DEGs - Control VS AD")+
+  labs(y= "Log2 Fold Change", x = "DEG direction", fill="Cell Type") +
+  theme_cowplot()+
+  theme(axis.text = element_text(size=9)) +
+  scale_fill_viridis(discrete = T)
+  #scale_fill_manual(values=pal)
+```
+
+### Volcano plots
+
+```{r}
+# add colour identifier
+cols <- c("Up" = "#FDE725FF", "Down" = "#440154FF", "Not Sig" = "#d3d3d3")
+
+volc_plot <- res_merged %>%
+  # filter to significant hits
+  #dplyr::filter(padj < 0.05) %>%
+  # scale FDR by log10
+  ggplot(aes(x = log2FoldChange, y = -log10(padj))) +
+  geom_point(aes(colour = deg_direction), stat = "identity", size = .2) +
+  facet_wrap( ~ factor(celltype), scales = "free") +
+  geom_hline(
+    yintercept = -log10(0.05),
+    colour = "#990000",
+    linetype = "dashed",
+    linewidth = .3
+  ) +
+  # geom_vline(xintercept = 0, colour="black", size=.3) +
+  labs(y = "-log10(FDR)", x = "Log2 Fold Change", colour = "") +
+  theme_cowplot() +
+  theme(
+    axis.text = element_text(size = 9),
+    #axis.text.x = element_blank(),
+    legend.text = element_text(size = 10)
+  ) +
+  scale_colour_manual(values = cols) +
+  geom_text_repel(
+    # give top three genes per cell type by adjusted p value
+    data = res_merged %>%
+      dplyr::group_by(celltype) %>%
+      dplyr::slice_min(padj, n = 3),
+    aes(label = gene),
+    size = 3,
+    box.padding = unit(0.35, "lines"),
+    point.padding = unit(0.3, "lines")
+  )
+
+volc_plot
+# Save
+ggsave(here::here("05_figures/990_shared_figures/deseq2_volcano-plot_subtypes.png"), volc_plot, device = "png")
+# Remove
+rm(volc_plot)
+```
+
+# MAST DE
+
+Using MAST via the Seurat function is returning very few sig genes for some reason, it's probably doing some filtering itself
+
+```{r}
+run_mast <- function(cell_type, seurat_obj) {
+  # Subset the Seurat object for the current cell type
+  subset_obj <- subset(seurat_obj, subset = celltype == cell_type)
+  
+  # Convert to SingleCellAssay (SCA) object for MAST
+  sca <- as.SingleCellExperiment(subset_obj)
+  
+  # Set up the formula for the model
+  zlm_formula <- as.formula("~ diagnosis + donor + age + sex")
+  
+  # Fit the model
+  zlmCond <- zlm(zlm_formula, sca)
+  
+  # Perform the likelihood ratio test
+  summaryCond <- summary(zlmCond, doLRT = 'diagnosis')
+  
+  # Extract the results
+  summaryDt <- summaryCond$datatable
+  
+  # Filter for significant results (adjust this as needed)
+  significant_genes <- summaryDt[contrast == 'diagnosis' &
+                                   component == 'H', ]
+  
+  # Add a column for the cell type
+  significant_genes$cell_type <- cell_type
+  
+  return(significant_genes)
+}
+```
+
