@@ -1,0 +1,1235 @@
+---
+title: Pathway analysis - subtypes
+execute:
+  eval: true
+#self-contained: true
+---
+
+```{r}
+here::i_am("04_data_analysis/001_snrnaseq_analysis/16_pathway_analysis.qmd")
+```
+
+# Load packages
+
+```{r}
+source(here::here("04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"))
+```
+
+# APOE status
+
+For the sake on simplicity, I'm just gonna set a variable here as to whether to process the data with or without APOE as a covariate
+
+```{r}
+include_apoe = FALSE
+```
+
+# Read in data
+
+```{r}
+#| eval: true
+# read data
+#res <- readr::read_rds(df, here::here("03_data/990_processed_data/001_snrnaseq/08_pseudobulk/pseudobulk_ad-vs-control-vs-fraction_edger_subtype-annotated.rds"))
+# Get DESeq2 results
+# res <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/08_pseudobulk/pseudobulk_ad-vs-control_deseq2_subtype-annotated.rds")) %>%
+#   na.omit()
+if(include_apoe) {
+res <- readr::read_csv(here::here("03_data/990_processed_data/001_snrnaseq/08_pseudobulk/pseudobulk_ad-vs-control_deseq2_subtype-annotated_apoe.csv")) %>%
+  na.omit()
+} else {
+res <- readr::read_csv(here::here("03_data/990_processed_data/001_snrnaseq/08_pseudobulk/pseudobulk_ad-vs-control_deseq2_subtype-annotated_no-apoe.csv")) %>%
+  na.omit()
+}
+```
+
+## MAST
+
+Seurat has a built in function that can run MAST, I'll use that here with donors as a covariate.
+
+Since it takes a while to run, I used the HPC, I'll read in the results file here
+
+```{r}
+tar_load(translated_id)
+
+mast_level <- "level2"
+if(mast_level != "level1") {
+  mast_de <- qs::qread(here::here("03_data/990_processed_data/001_snrnaseq/13_mast_de/level2/mast_de_results_list.qs")) |>
+    map(rownames_to_column, var = "ensembl") |>
+    list_rbind() |>
+    dplyr::left_join(translated_id, by = join_by(ensembl == ensembl_gene_id)) |>
+    dplyr::group_by(celltype) |>
+    dplyr::distinct(ensembl, .keep_all = TRUE) |>
+    dplyr::ungroup()
+} else {
+  mast_de <- qs::qread(here::here("03_data/990_processed_data/001_snrnaseq/13_mast_de/level1/mast_de_results_list.qs")) |>
+    map(rownames_to_column, var = "ensembl") |>
+    list_rbind() |>
+    dplyr::left_join(translated_id, by = join_by(ensembl == ensembl_gene_id)) |>
+    dplyr::group_by(celltype) |>
+    dplyr::distinct(ensembl, .keep_all = TRUE) |>
+    dplyr::ungroup()
+}
+
+
+mast_de |>
+  dplyr::filter(p_val_adj < 0.05) |>
+  readr::write_tsv("mast_sig_degs.tsv")
+mast_de |>
+  dplyr::filter(p_val_adj < 0.05) |>
+  dplyr::summarise(n_sig_degs = n(), .by = celltype) |>
+  readr::write_tsv("mast_sig_deg_numbers.tsv")
+```
+
+# Data prep
+
+- note look at genes for sig pathways in ENdo MT subtypes - marker gene maybe
+
+```{r}
+# filter to sig genes
+res_sig <- dplyr::filter(res, padj < 0.05) |>
+  dplyr::filter(!celltype %in% c("ambiguous", "low-feature-cells"))
+
+# get gene names per celltype
+genes_sum <- res_sig %>%
+  dplyr::group_by(celltype, deg_direction) %>%
+  dplyr::summarise(list_of_columns = list(gene))
+genes <- genes_sum$list_of_columns
+names(genes) <- paste0(genes_sum$celltype, "_", genes_sum$deg_direction)
+```
+
+```{r}
+pseudobulk_de <- res |>
+  dplyr::filter(!celltype %in% c("ambiguous", "low-feature-cells")) |>
+  dplyr::select(gene, padj, celltype, pvalue) |>
+  dplyr::rename(pval = pvalue)
+
+mast_des <- mast_de |>
+  #dplyr::filter(p_val_adj < 0.05) |>
+  dplyr::select(hgnc_symbol, p_val_adj, celltype, p_val) |>
+  dplyr::rename(gene = hgnc_symbol, padj = p_val_adj, pval = p_val)
+
+compare_de_results <- function(cell_type,
+                               de1,
+                               de2,
+                               de1_name = "pseudobulk",
+                               de2_name = "MAST") {
+  df1 <- de1 |>
+    dplyr::filter(celltype == cell_type) |>
+    dplyr::select(!celltype)
+  df2 <- dplyr::filter(de2, celltype == cell_type) |>
+    dplyr::select(!celltype)
+  
+  df1_sig_genes <- df1 |>
+    dplyr::filter(padj < 0.05) |>
+    dplyr::pull(gene)
+  df2_sig_genes <- df2 |>
+    dplyr::filter(padj < 0.05) |>
+    dplyr::pull(gene)
+  sig_genes <- c(df1_sig_genes, df2_sig_genes) |> unique()
+  
+  # filter to genes that are sig in both
+  df1 <- df1 |>
+    dplyr::filter(gene %in% sig_genes)
+  df2 <- df2 |>
+    dplyr::filter(gene %in% sig_genes)
+  
+  
+  # Rank DEGs based on p-value
+  df1 <- df1[order(df1$padj), ]
+  df2 <- df2[order(df2$padj), ]
+  
+  # Add rank columns
+  df1$rank <- rank(df1$pval)
+  df2$rank <- rank(df2$pval)
+  
+  # Merge the two data frames by gene
+  merged_results <- merge(df1,
+                          df2,
+                          by = "gene",
+                          suffixes = c(paste0("_", de1_name), paste0("_", de2_name)))
+  
+  # Calculate Spearman's rank correlation
+  spearman_correlation <- cor(merged_results[[paste0("rank_", de1_name)]], merged_results[[paste0("rank_", de2_name)]], method = "spearman")
+  
+  overlap_genes <- intersect(df1$gene, df2$gene)
+  cat("Number of overlapping genes for",
+      cell_type,
+      ":",
+      length(overlap_genes),
+      "\n")
+  
+  df <- data.frame(
+    "celltype" = cell_type,
+    "spearman_cor" = spearman_correlation,
+    "overlapping_genes" = length(overlap_genes),
+    method_1_n_degs = nrow(df1),
+    method_2_n_degs = nrow(df2)
+  )
+  # Hypergeomtric test of overlap enrichment
+  all_genes <- unique(c(de1$gene, de2$gene)) # All genes considered in both methods
+  # Significant DEGs from method 1
+  method1_genes <- de1 |>
+    dplyr::filter(celltype == cell_type) |>
+    dplyr::filter(padj < 0.05) |>
+    dplyr::pull(gene)
+  method2_genes <- de2 |>
+    dplyr::filter(celltype == cell_type) |>
+    dplyr::filter(padj < 0.05) |>
+    dplyr::pull(gene)
+  
+  # Calculate parameters
+  M <- length(all_genes) # Total number of genes
+  n <- length(method1_genes) # Number of significant DEGs in method 1
+  k <- length(method2_genes) # Number of significant DEGs in method 2
+  overlap_genes <- intersect(method1_genes, method2_genes) # Overlapping DEGs
+  x <- length(overlap_genes) # Number of overlapping DEGs
+  
+  # Use phyper to calculate the p-value
+  p_value <- phyper(x - 1, n, M - n, k, lower.tail = FALSE)
+  df$pval <- p_value
+  
+  return(df)
+}
+
+df <- map_dfr(unique(mast_de$celltype), compare_de_results, 
+              pseudobulk_de, mast_des) |>
+  dplyr::rename(n_total_pseudobulk = method_1_n_degs,
+                n_total_mast = method_2_n_degs)
+readr::write_tsv(df, here("pseudobulk_mast_deg_overlap.tsv"))
+```
+
+```{r}
+n_genes <- res_sig |>
+  dplyr::summarise(n_sig_genes_pseudobulk = n(), .by = celltype)
+mast_de_sig <- mast_de |>
+  dplyr::filter(p_val_adj < 0.05)
+n_genes <- mast_de_sig |>
+  dplyr::summarise(n_sig_genes_mast = n(), .by = celltype) |>
+  dplyr::left_join(n_genes, by = join_by(celltype))
+
+mast_de_sig |>
+  dplyr::filter(hgnc_symbol %in% c("GRN", "SORT1"))
+res_sig |>
+  dplyr::filter(gene %in% c("GRN", "SORT1"))
+overlap_per_celltype <- function(cell_type, df1, df2) {
+  df1 <- df1 |>
+    dplyr::filter(celltype == cell_type)
+  df2 <- df2 |>
+    dplyr::filter(celltype == cell_type)
+  # Overlapping genes
+  overlapping_genes <- intersect(unique(df1$gene), unique(df2$hgnc_symbol))
+  
+  df <- data.frame(celltype = cell_type, 
+                   overlap_sig_genes = length(overlapping_genes))
+  return(df)
+}
+
+n_genes <- map_dfr(unique(res$celltype), overlap_per_celltype, res_sig, mast_de_sig) |>
+  dplyr::filter(celltype %in% n_genes$celltype) |>
+  dplyr::left_join(n_genes, by = join_by(celltype))
+
+n_genes |>
+  pivot_longer(!celltype, values_to = "n") |>
+  ggplot(aes(x = celltype, y = n, fill = name)) +
+  geom_bar(stat = "identity", position = position_dodge()) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggsave(here("mast_pseudobulk_n_sig_genes.png"), height = 8, width = 10)
+```
+
+```{r}
+# Get versions with all sig DEGs and with a filter on logFC
+filter_logfc <- TRUE
+
+if(filter_logfc){
+  mast_de_sig <- mast_de_sig |>
+    dplyr::filter(abs(avg_log2FC) > 1)
+}
+# get gene names per celltype
+genes_sum <- mast_de_sig %>%
+  dplyr::mutate(deg_direction = if_else(avg_log2FC > 0, "Up", "Down")) |>
+  dplyr::group_by(celltype, deg_direction) %>%
+  dplyr::summarise(list_of_columns = list(hgnc_symbol))
+genes_mast <- genes_sum$list_of_columns
+names(genes_mast) <- paste0(genes_sum$celltype, "_", genes_sum$deg_direction)
+```
+
+## Jaccard similarity matrix
+
+Want to do a Jaccard similarity matrix for each celltype between MAST and pseudobulk DEGs
+
+```{r}
+# Example dataframes
+df1 <- data.frame(celltype = c("A", "A", "B", "B"), genes = c("gene1", "gene2", "gene3", "gene4"))
+df2 <- data.frame(celltype = c("A", "A", "B", "B"), genes = c("gene2", "gene3", "gene5", "gene6"))
+
+# Function to calculate Jaccard similarity
+jaccard_similarity <- function(set1, set2) {
+  intersection <- length(intersect(set1, set2))
+  union <- length(union(set1, set2))
+  return(intersection / union)
+}
+
+# Extract gene sets by cell type
+celltypes <- intersect(unique(res_sig$celltype), unique(mast_de_sig$celltype))
+sets1 <- split(res_sig$gene, res_sig$celltype)
+sets2 <- split(mast_de_sig$hgnc_symbol, mast_de_sig$celltype)
+
+# Ensure both lists have the same cell types
+common_celltypes <- intersect(names(sets1), names(sets2))
+sets1 <- sets1[common_celltypes]
+sets2 <- sets2[common_celltypes]
+
+# Compute Jaccard similarity matrix using purrr::map2
+jaccard_values <- map2(sets1, sets2, jaccard_similarity)
+
+# Convert the result to a matrix
+jaccard_matrix <- matrix(unlist(jaccard_values), nrow = length(common_celltypes), 
+                         ncol = length(common_celltypes), 
+                         dimnames = list(common_celltypes, common_celltypes))
+
+# Plot heatmap
+hmap <- Heatmap(jaccard_matrix, name = "Jaccard Similarity",
+        col = circlize::colorRamp2(c(0, 1), c("white", "red")),
+        cluster_rows = FALSE, cluster_columns = FALSE)
+# Save plots
+png(here::here("05_figures/990_shared_figures/",
+      "mast_pseudobulk_jaccard_heatmap.png"), width = 4000, height = 4000, res = 300)
+hmap
+dev.off()
+```
+
+
+```{r}
+#| eval: false
+#| include: false
+# Zam wants vascular celltype DEGs for report
+vascular_celltypes_level2 <- c('T-Pericyte', 'M-Pericyte', 'Pericyte', 
+                               'Pericyte-2', 'Vascular-SMC', 'Arteriolar-SMC', 
+                               'Vascular-SMC-LINC00486', 'Trans-Endo-to-mural', 
+                               'Perivascular-FB-KAZN2', 'Perivascular-FB', 
+                               'Meningeal-FB', 'Artirial-FB', 'Pericyte-FB', 
+                               'Capillary', 'Arterial', 'Venous', 
+                               'T-cell-vascular', 'T-cell-mixed', 
+                               'Microglia-vascular')
+vascular_sig_degs <- res_sig |>
+  dplyr::filter(celltype %in% vascular_celltypes_level2)
+readr::write_csv(vascular_sig_degs, here::here("vascular_degs.csv"))
+```
+
+## Complement gene list
+
+```{r}
+complement_gene_list <- read_excel(here("03_data/991_external_data/complement_gene_list.xlsx")) |>
+  janitor::clean_names() |>
+  dplyr::mutate(gene_name_cap = toupper(gene_name))
+
+sig_complement_genes <- res_sig |>
+  dplyr::filter(gene %in% complement_gene_list$gene_name_cap)
+# Save data
+if(include_apoe) {
+  readr::write_csv(
+    sig_complement_genes,
+    here(
+      "03_data/991_external_data/sig_complement_genes_apoe.csv"
+    )
+  )
+} else {
+  readr::write_csv(
+    sig_complement_genes,
+    here(
+      "03_data/991_external_data/sig_complement_genes_no-apoe.csv"
+    )
+  )
+}
+```
+
+## Save for IPA
+
+Caleb mentioned it can be useful to see what IPA pulls out in terms of pathways and such, but I need to save the data in a csv first
+
+```{r}
+# save data for IPA
+# Define a function to save each subset as a CSV file
+save_celltype_df <- function(cell_type, df, file_name_root) {
+  # Subset the dataframe for the current cell type
+  celltype_df <- df %>% dplyr::filter(celltype == cell_type) |>
+    # Select relevant columns
+    dplyr::select(gene, log2FoldChange, padj) |>
+    # Help IPA figure the columns out
+    rename(pvalue_adjust = padj)
+  
+  # Create a filename based on the cell type
+  filename <- paste0(file_name_root, "_", cell_type, ".csv")
+  
+  # Save the subset dataframe to a CSV file
+  readr::write_csv(celltype_df, filename)
+}
+
+# Use map to iterate over each unique cell type and save a file
+if(include_apoe) {
+  map(unique(res$celltype),
+      ~ save_celltype_df(
+        .x,
+        res,
+        here::here(
+          "03_data/990_processed_data/001_snrnaseq/08_pseudobulk/01_ipa_data/pseudobulk_ad-vs-control_deseq2_subtype-annotated_apoe"
+        )
+      ))
+} else {
+  map(unique(res$celltype),
+      ~ save_celltype_df(
+        .x,
+        res,
+        here::here(
+          "03_data/990_processed_data/001_snrnaseq/08_pseudobulk/01_ipa_data/pseudobulk_ad-vs-control_deseq2_subtype-annotated_no-apoe"
+        )
+      ))
+}
+```
+
+So apparently IPA is too stupid to handle more than 20 observations.
+I love it when extremely expensive closed-source software barely usable garbage!
+
+```{r}
+# Step 1: Prepare the data
+# Get a list of all unique cell types
+all_celltypes <- unique(res$celltype)
+# remove unneeded ones
+all_celltypes <- all_celltypes[!all_celltypes %in% c("low-feature-cells", "ambiguous")]
+
+# Split the list of cell types into two groups of 20
+celltypes_group1 <- all_celltypes[1:20]
+celltypes_group2 <- all_celltypes[21:40]
+
+res |> 
+  dplyr::filter(celltype %in% celltypes_group1) |>
+  dplyr::select(gene, log2FoldChange, pvalue, padj, celltype) |>
+  pivot_wider(names_from = celltype, values_from = c(log2FoldChange, pvalue, padj)) |>
+  readr::write_csv(here::here("03_data/990_processed_data/001_snrnaseq/08_pseudobulk/01_ipa_data/pseudobulk_ad-vs-control_deseq2_subtype-annotated_wide_group1.csv"))
+res |> 
+  dplyr::filter(celltype %in% celltypes_group2) |>
+  dplyr::select(gene, log2FoldChange, pvalue, padj, celltype) |>
+  pivot_wider(names_from = celltype, values_from = c(log2FoldChange, pvalue, padj)) |>
+  readr::write_csv(here::here("03_data/990_processed_data/001_snrnaseq/08_pseudobulk/01_ipa_data/pseudobulk_ad-vs-control_deseq2_subtype-annotated_wide_group2.csv"))
+```
+
+
+```{r}
+#| eval: false
+# Copy the gene names straight to the clipboard
+# Note this only works on MacOS, Windows/Linux would need adapted versions
+write.table(unique(res_sig$gene) |> paste0(collapse = ","), pipe("pbcopy"), sep = "")
+```
+
+
+
+<!-- There are a quite a lot of unique pairwise comparisons when looking at 2 factors (fraction and disease status in this case), and the cross groups can probably be dropped for now to prioritise the most interesting comparisons. -->
+<!-- In this case, I'd think the most interesting comparisons are within the same fraction across disease status, and across fractions within the same disease state. -->
+
+# Bar plots
+
+Let's make some simple bar plots to show the number sig DEGs per celltype
+
+```{r}
+# Create a list of plots, one for each celltype
+plots <- lapply(unique(res_sig$celltype), function(celltype) {
+  # subset to celltype
+  df <- res_sig[res_sig$celltype == celltype, ]
+  # order genes based on the foldchange
+  df$gene <- factor(df$gene, levels = df$gene[order(df$log2FoldChange)])
+  # make barplot
+  ggplot(df, aes(x = gene, y = log2FoldChange)) +
+    geom_bar(stat = "identity", aes(fill = log2FoldChange > 0)) +
+    scale_fill_manual(values = c("red", "blue"),
+                      labels = c("Down", "Up")) +
+    labs(
+      title = paste("Significant DEGs for ", celltype),
+      x = "Gene",
+      y = expression(Log[2] ~ "Fold Change"),
+      fill = ""
+    ) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))
+})
+names(plots) <- unique(res_sig$celltype)
+plots$`Microglia-activated`
+
+map_dbl(plots, ~ .x$data |> nrow())
+# Save plots
+map2(plots, names(plots), ~ {
+  
+  # There's a need to adjust the width of the plot based on the number of genes
+  n_genes <- nrow(.x$data)
+  if(n_genes < 30) {
+    plot_width <- 8
+  } else if (n_genes < 100) {
+    plot_width <- 15
+  } else if (n_genes < 300) {
+    plot_width <- 25
+  } else {
+    plot_width <- 45
+  }
+  svg(here::here(
+    "05_figures/990_shared_figures/002_pseudobulk",
+    paste0(.y, "_sig_deg_barplot.svg")), width = plot_width)
+  print(.x)
+  dev.off()
+})
+```
+
+# Hypergeometric enrichment
+
+Need to get all the genes in the object as a universe
+
+```{r}
+tar_load(gene_ids)
+```
+
+```{r}
+plan("multisession", workers = parallel::detectCores() - 1)
+go_results_all <- future_map(genes, ~ enrichGO(gene = .x, OrgDb = "org.Hs.eg.db", 
+                                    keyType = "SYMBOL", ont = "ALL",
+                                    universe = gene_ids$gene), 
+                            .options = furrr_options(seed = 123))
+```
+
+```{r}
+# exclude cases where no pathways were found
+go_results_filtered <- go_results_all |>
+  purrr::keep(~ !is.null(.)) |>
+  purrr::keep(~ nrow(.) > 0)
+
+# Apply pairwise_termism where possible
+go_results_filtered <- map(go_results_filtered, ~{
+  if(length(.x$ID) >= 2) {
+    pairwise_termsim(.x)
+  } else {
+    .x
+  }
+})
+
+if(include_apoe) {
+file <-
+  here::here(
+    "03_data/990_processed_data/001_snrnaseq/09_pathway_analysis/go-hypergeometic_subtypes_apoe_deg_direction.qs"
+  )
+} else {
+file <-
+  here::here(
+    "03_data/990_processed_data/001_snrnaseq/09_pathway_analysis/go-hypergeometic_subtypes_no-apoe_deg_direction.qs"
+  )
+}
+qs::qsave(go_results_filtered, file)
+#go_results_filtered <- qs::qread(file)
+if(include_apoe) {
+file <-
+  here::here(
+    "03_data/990_processed_data/001_snrnaseq/09_pathway_analysis/go-hypergeometic_subtypes_apoe_deg_direction.rds"
+  )
+} else {
+file <-
+  here::here(
+    "03_data/990_processed_data/001_snrnaseq/09_pathway_analysis/go-hypergeometic_subtypes_no-apoe_deg_direction.rds"
+  )
+}
+readr::write_rds(go_results_filtered, file)
+#go_results_filtered <- qs::qread(file)
+
+# dotplots
+dotplots <-
+  map2(
+    go_results_filtered,
+    names(go_results_filtered),
+    ~ dotplot(.x, showCategory = 20, split = "ONTOLOGY") + facet_grid(. ~ ONTOLOGY) +
+      ggtitle(paste0(.y, " - Sig genes only"))
+  )
+map2(dotplots, names(dotplots), ~ {
+  if (include_apoe) {
+    png(
+      here::here(
+        "05_figures/990_shared_figures/002_pseudobulk/go_sig_genes_only",
+        paste0(.y, "_apoe.png")
+      ), height = 18, width = 10, units = "in", res = 300
+    )
+  } else {
+    png(
+      here::here(
+        "05_figures/990_shared_figures/002_pseudobulk/go_sig_genes_only",
+        paste0(.y, "_no-apoe.png")
+      ), height = 18, width = 10, units = "in", res = 300
+    )
+  }
+  print(.x)
+  dev.off()
+})
+```
+
+## EndoMT
+
+EndoMT has a nice result here of pericyte 2 have pericyte differentiation up-regulated.
+There're two genes, NOTCH1 and CD34
+
+```{r}
+go_results_filtered$`EndoMT-2_Up`
+```
+
+## MAST hypergeomtric pathways
+
+```{r}
+go_results_all_mast <- future_map(genes_mast, ~ enrichGO(gene = .x, OrgDb = "org.Hs.eg.db", 
+                                    keyType = "SYMBOL", ont = "ALL",
+                                    universe = gene_ids$gene), 
+                            .options = furrr_options(seed = 123))
+```
+
+
+```{r}
+go_results_filtered <- go_results_all_mast |>
+  # exclude cases where no pathways were found
+  purrr::keep(~ !is.null(.)) |>
+  # filter out instances where the number of genes in a pathway is 1
+  imap(function(enrichResult, name) {
+    old_count <- nrow(enrichResult@result)
+    enrichResult@result <- enrichResult@result[enrichResult@result$Count > 1, ]
+    new_count <- nrow(enrichResult@result)
+    if (new_count == 0) {
+      message(paste("Removing", name, "- all pathways filtered out"))
+    } else if (new_count < old_count) {
+      message(paste("Filtered", name, ":", old_count - new_count, "pathways removed"))
+    }
+    enrichResult
+  }) |>
+  # remove any empty elements after the filter
+  purrr::keep(~ nrow(.) > 0)
+
+# Apply pairwise_termism where possible
+go_results_filtered <- map(go_results_filtered, ~{
+  if(length(.x$ID) >= 2) {
+    pairwise_termsim(.x)
+  } else {
+    .x
+  }
+})
+
+file <-
+  here::here(
+    "03_data/990_processed_data/001_snrnaseq/09_pathway_analysis"
+  )
+if(mast_level != "level1" & !filter_logfc) {
+  qs::qsave(go_results_filtered, here::here(file, "go-hypergeometic_subtypes_deg_direction_mast_level2.qs"))
+} else if(mast_level == "level1" & !filter_logfc) {
+  qs::qsave(go_results_filtered, here::here(file, "go-hypergeometic_subtypes_deg_direction_mast_level1.qs"))
+} else if (mast_level != "level1" & filter_logfc) {
+  qs::qsave(go_results_filtered, here::here(file, "go-hypergeometic_subtypes_deg_direction_mast_level2_logfc_filter.qs"))
+} else {
+  qs::qsave(go_results_filtered, here::here(file, "go-hypergeometic_subtypes_deg_direction_mast_level1_logfc_filter.qs"))
+}
+#go_results_filtered <- qs::qread(file)
+
+# dotplots
+dotplots <-
+  map2(
+    go_results_filtered,
+    names(go_results_filtered),
+    ~ dotplot(.x, showCategory = 20, split = "ONTOLOGY") + facet_grid(. ~ ONTOLOGY) +
+      ggtitle(paste0(.y, " - Sig genes only"))
+  )
+map2(dotplots, names(dotplots), ~ {
+  if (include_apoe & mast_level != "level1" & !filter_logfc) {
+    png(
+      here::here(
+        "05_figures/990_shared_figures/002_pseudobulk/go_sig_genes_only_mast/level2",
+        paste0(.y, "_apoe.png")
+      ), height = 18, width = 10, units = "in", res = 300
+    )
+  } else if (include_apoe & mast_level == "level1" & !filter_logfc) {
+    png(
+      here::here(
+        "05_figures/990_shared_figures/002_pseudobulk/go_sig_genes_only_mast/level1",
+        paste0(.y, "_apoe.png")
+      ), height = 18, width = 10, units = "in", res = 300
+    )
+  } else if (!include_apoe & mast_level != "level1" & !filter_logfc) {
+    png(
+      here::here(
+        "05_figures/990_shared_figures/002_pseudobulk/go_sig_genes_only_mast/level2",
+        paste0(.y, "_no-apoe.png")
+      ), height = 18, width = 10, units = "in", res = 300
+    )
+  } else if (!filter_logfc) {
+    png(
+      here::here(
+        "05_figures/990_shared_figures/002_pseudobulk/go_sig_genes_only_mast/level1",
+        paste0(.y, "_no-apoe.png")
+      ), height = 18, width = 10, units = "in", res = 300
+    )
+  }
+  print(.x)
+  dev.off()
+})
+```
+
+## EndoMT pathways
+
+- Get the genes in the EndoMT pathway genes for endothelial development/migration - get avg expression in endo, endomt, pericyte between cases and controls
+
+```{r}
+endomt_pathways <- go_results_filtered$`EndoMT-1_Up`@result |>
+  dplyr::filter(ONTOLOGY == "BP" & p.adjust < 0.05) |>
+  dplyr::arrange(p.adjust)
+
+endothelial_pathways <- endomt_pathways |>
+  dplyr::filter(grepl("endotheli", Description, ignore.case = TRUE))
+
+# Split the gene names by "/"
+split_genes <- strsplit(endomt_pathways$geneID, "/")
+
+# Unlist the resulting list to create a single vector of gene names
+all_genes <- unlist(split_genes)
+unique_genes <- unique(all_genes)
+```
+
+-NOTES - Axel meeting
+- END1 -> being down reged in AD doesn't seem nonsense -> could be compensentatory mechanism -> pericytes die in constricted positions so brain want to downreg END1 to reduce constriction to compensate
+
+- RGS5
+- ACTA2
+- Muscle mysoin -> shouldn 't express in persicyte but shoudl be in SMCs
+-   MYH11
+
+- differential gene expression with age as outcome? look at vascular genes with age
+
+```{r}
+tar_load(sce)
+avg_cases <- AggregateExpression(sce, group.by = c("ident", "diagnosis"))
+
+tar_load(translated_id)
+
+end1 <- avg_cases$RNA |>
+  as.data.frame() |>
+  rownames_to_column("ensembl_gene_id") |>
+  #dplyr::filter(gene == "ENSG00000078401") |>
+  pivot_longer(!ensembl_gene_id, names_to = "celltype", 
+               values_to = "pseudobulk_counts") |>
+  separate_wider_delim(celltype, delim = "_", names = c("celltype", 
+                                                        "diagnosis")) |>
+  # Subset to celltypes of interest
+  dplyr::filter(celltype %in% c("M-Pericyte", "T-Pericyte", "Pericyte", 
+                                "Pericyte-2", "EndoMT-2", "EndoMT-1", 
+                                "Arterial", "Capillary", "Venous", 
+                                "Vascular-SMC", "Arteriolar-SMC")) |>
+  dplyr::left_join(translated_id, by = "ensembl_gene_id")
+
+# Subset to unique genes in pathways
+end1 <- end1 |>
+  dplyr::filter(hgnc_symbol %in% unique_genes)
+
+# Use separate_rows to expand the dataframe
+expanded_df <- endomt_pathways %>% 
+  separate_rows(geneID, sep = "/") |>
+  dplyr::select(ID:GeneRatio, Count, geneID)
+
+end1 |>
+  dplyr::left_join(expanded_df, by = join_by(hgnc_symbol == geneID)) |>
+  readr::write_csv(here::here("03_data/990_processed_data/001_snrnaseq/09_pathway_analysis/endomt1_up_pathway_gene_expression.csv"))
+end1 |>
+  dplyr::left_join(expanded_df, by = join_by(hgnc_symbol == geneID)) |>
+  dplyr::filter(grepl("endotheli", Description, ignore.case = TRUE)) |>
+  readr::write_csv(here::here("03_data/990_processed_data/001_snrnaseq/09_pathway_analysis/endomt1_up_pathway_gene_expression_endeothelial_subset.csv"))
+```
+
+# Gene set enrichment analysis (GSEA)
+
+- Note that GSEA takes pval and foldchange into account when computing the enrichment, so we don't filter the gene list
+
+```{r}
+#| eval: false
+#| include: false
+
+# Note this is for more complex contrasts
+# nest data by celltype
+gsea_df <- res %>%
+  # group by celltype
+  dplyr::group_by(celltype, contrast) %>%
+  tidyr::nest() %>%
+  dplyr::mutate(celltype_contrast = paste0(celltype, "_", contrast))
+```
+
+```{r}
+# nest data by celltype
+gsea_df <- res |>
+  # group by celltype
+  dplyr::group_by(celltype) |>
+  tidyr::nest() 
+```
+
+
+```{r}
+#| message: false
+#| warning: false
+# Function: Adjacency matrix to list -------------------------
+matrix_to_list <- function(pws){
+  pws.l <- list()
+  for (pw in colnames(pws)) {
+    pws.l[[pw]] <- rownames(pws)[as.logical(pws[, pw])]
+  }
+  return(pws.l)
+}
+
+## Function: prepare_gmt --------------------------------------
+prepare_gmt <- function(gmt_file, genes_in_data, savefile = FALSE) {
+  # for debug
+  #file <- gmt_files[1]
+  #genes_in_data <- df$gene_symbol
+  
+  # Read in gmt file
+  gmt <- gmtPathways(gmt_file)
+  hidden <- unique(unlist(gmt))
+  
+  # Convert gmt file to a matrix with the genes as rows and for each go annotation (columns) the values are 0 or 1
+  mat <- matrix(
+    NA,
+    dimnames = list(hidden, names(gmt)),
+    nrow = length(hidden),
+    ncol = length(gmt)
+  )
+  for (i in 1:dim(mat)[2]) {
+    mat[, i] <- as.numeric(hidden %in% gmt[[i]])
+  }
+  
+  #Subset to the genes that are present in our data to avoid bias
+  hidden1 <- intersect(genes_in_data, hidden)
+  mat <-
+    mat[hidden1, colnames(mat)[which(colSums(mat[hidden1, ]) > 5)]] # filter for gene sets with more than 5 genes annotated
+  # And get the list again
+  final_list <-
+    matrix_to_list(mat) # for this we use the function we previously defined
+  
+  if (savefile) {
+    saveRDS(final_list, file = paste0(
+      gsub('.gmt', '', gmt_file),
+      '_subset_',
+      format(Sys.time(), '%d%m'),
+      '.RData'
+    ))
+  }
+  
+  print('Wohoo! .gmt conversion successfull!:)')
+  return(final_list)
+}
+
+# Get all the genes in dataset and assign them to my_genes 
+my_genes <- res$gene
+
+# Download gene sets .gmt files
+#https://www.gsea-msigdb.org/gsea/msigdb/human/collections.jsp
+# I've downloaded several background sets to try
+gmt_files <- list.files(here::here("03_data/991_external_data"), pattern = "\\.gmt$", full.names = TRUE)
+
+gmt <- map(gmt_files, ~ prepare_gmt(.x, my_genes))
+```
+
+```{r}
+#| eval: false
+#| include: false
+
+# This is the per celltype version - not using fgsea at the moment so I'll skip
+# this for now
+# Get all the genes in your dataset and assign them to my_genes 
+my_genes <- map(gsea_df$data, ~ .x$gene) %>%
+  purrr::set_names(gsea_df$celltype)
+
+gmt <- map(gmt_files, function(gmt) {
+  map(my_genes, function(genes) {
+    prepare_gmt(gmt, genes)
+  }
+)})
+```
+
+Get the gene rankings
+
+```{r}
+# Genes need to be ranked for GSEA as named gene list
+# Here I'll use use the signed p values from spatial DGE as ranking
+
+# Function to sort rankings
+sort_rankings <- function(log2fc, pvals, gene_names, group, plot = FALSE) {
+  rankings <- sign(log2fc) * (-log10(pvals))
+  # genes as names
+  names(rankings) <- gene_names
+  head(rankings)
+  
+  # sort genes by ranking
+  rankings <- sort(rankings, decreasing = TRUE)
+  if (plot) {
+    plot(rankings, main = group)
+  }
+  
+  # Some genes have such low p values that the signed pval is +- inf, we need to
+  # change it to the maximum * constant to avoid problems with fgsea
+  max_ranking <- max(rankings[is.finite(rankings)])
+  min_ranking <- min(rankings[is.finite(rankings)])
+  # change any inf values to 10 times the min/max non-inf value
+  rankings <-
+    replace(rankings, rankings > max_ranking, max_ranking * 10)
+  rankings <-
+    replace(rankings, rankings < min_ranking, min_ranking * 10)
+  rankings <-
+    sort(rankings, decreasing = TRUE) # sort genes by ranking
+  
+  return(rankings)
+}
+
+```
+
+```{r}
+#| eval: false
+#| include: false
+
+# Again for more complex contrasts
+rankings <-
+  map2(gsea_df$data, gsea_df$celltype_contrast, ~ (sort_rankings(.x$log2FoldChange,
+                                                        .x$pvalue,
+                                                        .x$gene,
+                                                        .y))) %>%
+  purrr::set_names(gsea_df$celltype_contrast)
+```
+
+```{r}
+rankings <-
+  map2(gsea_df$data, gsea_df$celltype, ~ (sort_rankings(.x$log2FoldChange,
+                                                        .x$pvalue,
+                                                        .x$gene,
+                                                        .y))) %>%
+  purrr::set_names(gsea_df$celltype)
+```
+
+
+
+```{r}
+ggplot(data.frame(
+  gene_symbol = names(rankings$Arterial)[1:50],
+  ranks = rankings$Arterial[1:50]
+),
+aes(gene_symbol, ranks)) +
+  geom_point() +
+  theme_classic() +
+  theme(axis.text.x = element_text(
+    angle = 90,
+    vjust = 0.5,
+    hjust = 1
+  )) +
+  ggtitle("Arterial top 50 ranked genes",
+          subtitle = "Control VS AD")
+```
+
+## Run GSEA
+
+```{r}
+#| message: false
+#| results: hide
+## Run GSEA ---------------------------------------------------------------
+gsea_res <- map(gmt, function(pathway) {
+  map(rankings, function(rank) {
+    fgsea(
+      pathways = pathway,
+      # List of gene sets to check
+      stats = rank,
+      # in this case we have both pos and neg rankings. if only pos or neg, set
+      # to 'pos', 'neg'
+      scoreType = 'std',
+      minSize = 10,
+      maxSize = 500,
+      # for parallelisation
+      nproc = parallel::detectCores() - 1
+    )
+  })
+}) %>%
+  purrr::set_names(basename(gmt_files))
+```
+
+
+```{r}
+# get log2 FC as a vector with the respective gene names, sorted in decreasing 
+# order
+named_vectors <- res_sig %>%
+  dplyr::group_by(celltype) %>%
+  tidyr::nest() %>%
+  dplyr::mutate(gene_list = map(data, ~setNames(.x$log2FoldChange, .x$gene) %>%
+                                  sort(decreasing = TRUE)))
+```
+
+## Gene Ontology
+
+```{r}
+# Define the file path to save the resulting object
+if(include_apoe) {
+file <-
+  here::here(
+    "03_data/990_processed_data/001_snrnaseq/09_pathway_analysis/gene-set-enrichment_go_subtypes_apoe.qs"
+  )
+} else {
+file <-
+  here::here(
+    "03_data/990_processed_data/001_snrnaseq/09_pathway_analysis/gene-set-enrichment_go_subtypes_no-apoe.qs"
+  )
+}
+
+# Check if the file exists
+#if (!file.exists(result_file)) {
+#  # Code for your time-consuming analysis
+#  gse <-
+#    map(
+#      rankings,
+#      ~ gseGO(
+#        .x,
+#        OrgDb = "org.Hs.eg.db",
+#        ont = "ALL",
+#        keyType = "SYMBOL"
+#      )
+#    ) 
+#  
+#  # Save the resulting object
+#  readr::write_rds(gse, result_file)
+#} else {
+#  # Load the existing resulting object
+#  gse <- readr::read_rds(result_file)
+#}
+if (!file.exists(file)) {
+  plan("multisession", workers = parallel::detectCores() - 1)
+  result_list_bp <- future_map(
+    rankings,
+    ~ gseGO(
+      gene          = .x,
+      OrgDb         = org.Hs.eg.db,
+      keyType       = "SYMBOL",
+      # "BP" for biological process, "MF" for molecular function, "CC" for cellular component
+      ont           = "BP",
+      pAdjustMethod = "BH"
+    ), .options = furrr_options(seed = 123)
+  ) |>
+    set_names(paste0(names(rankings), "_BP"))
+  result_list_cc <- future_map(
+    rankings,
+    ~ gseGO(
+      gene          = .x,
+      OrgDb         = org.Hs.eg.db,
+      keyType       = "SYMBOL",
+      ont           = "CC",
+      pAdjustMethod = "BH"
+    ), .options = furrr_options(seed = 123)
+  ) |>
+    set_names(paste0(names(rankings), "_CC"))
+  result_list_mf <- future_map(
+    rankings,
+    ~ gseGO(
+      gene          = .x,
+      OrgDb         = org.Hs.eg.db,
+      keyType       = "SYMBOL",
+      ont           = "MF",
+      pAdjustMethod = "BH"
+    ), .options = furrr_options(seed = 123)
+  ) |>
+    set_names(paste0(names(rankings), "_MF"))
+  result_list <- c(result_list_bp, result_list_mf, result_list_cc)
+  rm(result_list_bp, result_list_cc, result_list_mf)
+  
+  qs::qsave(result_list, file)
+} else {
+  result_list <- qs::qread(file)
+}
+
+
+# Remove any NULL entries
+result_list <- result_list[!sapply(result_list, is.null)]
+# Assert that there are no nulls in list
+assertthat::see_if(sum(map_lgl(result_list, is.null)) == 0)
+# Filter the list to keep only elements where the 'result' slot has rows
+#result_list <- result_list[sapply(result_list, function(x) nrow(x@result) > 0)]
+# Filter to only those wtih sig enrichments
+#result_list <- result_list[sapply(result_list, function(x) sum(x@result$p.adjust < 0.05) > 0)]
+```
+
+```{r}
+# remove any with no pathways found
+gse <- result_list %>%
+  purrr::keep(~ nrow(.) > 0)
+```
+
+### Insulin pathways
+
+Zam is interested in pathways related to insulin, so I'll filter to celltypes where such terms are present
+
+```{r}
+# Function to check for the presence of 'insulin' in the pathway description
+find_insulin <- function(df) {
+  df <- as_tibble(df)
+  grepl("insulin", df$Description, ignore.case = TRUE)
+}
+
+# Apply the function to each dataframe in the list
+insulin_related <- lapply(gse, find_insulin)
+
+# Now, determine which celltypes have any insulin-related pathways
+celltypes_with_insulin <- names(insulin_related)[sapply(insulin_related, any)]
+
+# Print the celltypes with insulin-related pathways
+print(celltypes_with_insulin)
+
+# Remove ambiguous
+celltypes_with_insulin <-
+  celltypes_with_insulin[!celltypes_with_insulin == "ambiguous"]
+
+print("Celltype with 'insulin' in pathway description:")
+paste0(celltypes_with_insulin, collapse = ", ")
+```
+
+Get the genes of these celltypes too
+
+```{r}
+#| eval: false
+
+# Save the dotplots of this subset
+insulin_pathways <- gse[names(gse) %in% celltypes_with_insulin]
+dotplots <-
+  map2(
+    insulin_pathways,
+    names(insulin_pathways),
+    ~ dotplot(.x, showCategory = 10, split = ".sign") + facet_grid(. ~ .sign) +
+      ggtitle(.y)
+  )
+
+# Specify the filename for the PDF
+if(include_apoe) {
+pdf_file <- here::here("insulin_celltype_dotplots_apoe.pdf")
+} else {
+pdf_file <- here::here("insulin_celltype_dotplots_no-apoe.pdf")
+}
+# Open the PDF device
+pdf(pdf_file)
+dotplots
+# Close the PDF device
+dev.off()
+
+insulin_genes <- map2(insulin_pathways, names(insulin_pathways), ~ {
+  df <- .x@result |>
+    dplyr::filter(grepl("insulin", Description) & p.adjust < 0.05)
+  
+  insulin_pathway_genes <- strsplit(df$core_enrichment, "/") |> unlist() |> unique()
+  insulin_genes <- .x@geneList[names(.x@geneList) %in% insulin_pathway_genes] |> names()
+  
+  res_sig |>
+    dplyr::filter(celltype == str_sub(.y, end = -4) & gene %in% insulin_genes)
+}) |>
+  list_rbind()
+
+if(include_apoe) {
+readr::write_csv(insulin_genes, here::here("insulin_celltypes_sig_genes_apoe.csv"))
+} else {
+readr::write_csv(insulin_genes, here::here("insulin_celltypes_sig_genes_no-apoe.csv"))
+}
+
+insulin_genes <- map2(insulin_pathways, names(insulin_pathways), ~ {
+  df <- .x@result |>
+    dplyr::filter(grepl("insulin", Description) & p.adjust < 0.05)
+  
+  insulin_pathway_genes <- strsplit(df$core_enrichment, "/") |> unlist() |> unique()
+  insulin_genes <- .x@geneList[names(.x@geneList) %in% insulin_pathway_genes] |> names()
+  
+  res |>
+    dplyr::filter(celltype == str_sub(.y, end = -4) & gene %in% insulin_genes)
+}) |>
+  list_rbind() |>
+  # Zam only want the non-sig genes for capilary
+  dplyr::filter(celltype == "Capillary")
+
+if(include_apoe) {
+readr::write_csv(insulin_genes, here::here("insulin_celltypes_all_genes_apoe_capillary.csv"))
+} else {
+readr::write_csv(insulin_genes, here::here("insulin_celltypes_all_genes_no-apoe_capillary.csv"))
+}
+
+insulin_genes <- res_sig |>
+  dplyr::filter(celltype %in% celltypes_with_insulin)
+insulin_genes |> dplyr::filter(celltype == "Capillary") |> dim()
+if(include_apoe) {
+readr::write_csv(insulin_genes, here::here("insulin_celltypes_sig_genes_apoe.csv"))
+} else {
+readr::write_csv(insulin_genes, here::here("insulin_celltypes_sig_genes_no-apoe.csv"))
+}
+```
+
+### Plots
+
+```{r}
+dotplots <-
+  map2(
+    gse,
+    names(gse),
+    ~ dotplot(.x, showCategory = 10, split = ".sign") + facet_grid(. ~ .sign) +
+      ggtitle(paste0(.y, " - GSEA"))
+  )
+
+dotplots
+if(include_apoe) {
+readr::write_rds(dotplots, here::here("03_data/990_processed_data/001_snrnaseq/09_pathway_analysis/go-dotplots_subtypes_apoe.rds"))
+} else{
+readr::write_rds(dotplots, here::here("03_data/990_processed_data/001_snrnaseq/09_pathway_analysis/go-dotplots_subtypes_no-apoe.rds"))
+}
+```
+
+```{r}
+# Use the sub function to extract the substring before the first underscore
+celltypes <- sub("_.*", "", names(dotplots)) |> unique()
+
+merge_plots <- function(celltype, dotplot_list) {
+  # subset to relevant plots
+  plots <- dotplot_list[grepl(paste0("^", celltype, "_"), names(dotplot_list))]
+  # Merge plots
+  #plot <- plots[[1]] + plots[[2]] + plots[[3]]
+    # Check if there are any plots available
+  if (length(plots) > 0) {
+    # Use Reduce to combine the plots
+    final_plot <- Reduce(`+`, plots)
+  } else {
+    warning("No plots available for the specified celltype.")
+    final_plot <- NULL
+  }
+  
+  return(final_plot)
+}
+
+plots <- map(celltypes, merge_plots, dotplots) |> set_names(celltypes)
+
+plots
+
+# Save plots
+map2(plots, names(plots), ~ ggsave(here::here("05_figures/990_shared_figures/002_pseudobulk/gsea", paste0(.y, ".png")), plot = .x, width = 18, height = 10))
+```
+
+
+```{r}
+#| eval: false
+#| include: false
+map2(gse,
+     names(gse),
+     ~ emapplot(.x, showCategory = 10) +
+                  ggtitle(.y))
+```
+
+```{r}
+map2(gse,
+     names(gse),
+     ~ ridgeplot(.x) +
+       labs(x = "enrichment distribution") +
+                  ggtitle(.y))
+```
+
+Note, one can change which pathway is plotted here by setting the title and `geneSetID` accordingly
+
+```{r}
+map2(gse,
+     names(gse),
+     ~ gseaplot(.x, by = "all", title = .x$Description[1], geneSetID = 1))
+```
+
