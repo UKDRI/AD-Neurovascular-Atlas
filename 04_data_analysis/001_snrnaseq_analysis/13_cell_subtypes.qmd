@@ -2,7 +2,6 @@
 title: Annotate cell subtypes
 execute:
   eval: true
-#self-contained: true
 code-fold: true
 bibliography: references.bib
 ---
@@ -18,24 +17,18 @@ source(here::here("04_data_analysis/990_code_libraries/02_library-calls-for-renv
 ```
 
 Here I'll try clustering the higher level cell types separately to identify sub-clusters.
-These may be a bit tricky to annotate as I've already used the Yang 2022 markers[@yang_human_2022], but I guess we'll see.
-
-# TODO
-
-- check Alan brain institutes annotations
 
 # Read in data
 
 ```{r}
 #| eval: true
 # read data
-#sce <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-sce-annotated.rds"))
 sce <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-sce-annotated-highlevel.rds"))
 ```
 
 Note that since I switched from ensembl IDs to gene symbols as rownames, there are duplicate names which causes issues when trying to subset the object.
 See the issue [here](https://github.com/satijalab/seurat/issues/1401) for some details.
-I did filter to genes that didn't map, but forgot to filter out duplicate genes - note that I'm not sure if the best approach to filter them out would just be to take the first occurrence of a duplicated gene symbol as well...
+I did filter to genes that didn't map, but forgot to filter out duplicate genes
 
 ```{r}
 # Make donor column
@@ -58,8 +51,6 @@ DotPlot(sce, features = hope_markers$gene,
 ```
 
 Since I already have some subtypes, and the scFlow auto-annotations are pretty highlevel, I'll just tweak those and use that as a bases for the initial subclustering.
-
-Not sure if I should merge the oligodendrocytes and their precursors into one label?
 
 ```{r}
 # Add higher level annotations 
@@ -201,127 +192,10 @@ subcluster <-
 ```
 
 ```{r}
-#| eval: false
-
-sec_endo <- subsets$Endothelial
-head(rownames(sec_endo))
-
-
-      # Step 1: Subset the Seurat object for each cell type
-      subsets <-
-        map(celltypes, ~ subset(sce, idents = .x)) |>
-        purrr::set_names(celltypes)
-      
-      # Step 2: Cluster to the subsets
-      subsets <- map(subsets, ~ FindNeighbors(., dims = 1:dims))
-      subsets <-
-        map(subsets, ~ FindClusters(., resolution = resolution))
-      
-      # Step 4: Run UMAP
-      subsets <- map(subsets, ~ RunUMAP(., dims = 1:20))
-      
-      # Reduce size but keep reductions and graphs
-      reductions <- map(subsets, ~ names(.x@reductions))
-      graphs <- map(subsets, ~ names(.x@graphs))
-      
-      args <-
-        list("object" = subsets,
-             "dimreducs" = reductions,
-             "graphs" = graphs)
-      subsets <- purrr::pmap(args, DietSeurat)
-      
-      # Find markers
-      cluster_markers <-
-        map(subsets,
-            ~ FindAllMarkers(
-              .x,
-              only.pos = TRUE,
-              min.pct = 0.2,
-              logfc.threshold = 0.5
-            ))
-      
-      # Save subsets and cluster markers to a tibble
-      subsets <-
-        tibble(
-          "celltype" = celltypes,
-          "seurat_obj" = subsets,
-          "cluster_markers" = cluster_markers
-        )
-      # save object
-      readr::write_rds(subsets, result_file)
-```
-
-```{r}
-# Step 1: Subset the Seurat object for each cell type
 celltypes <- unique(sce$highlevel_manual_annotations)
 Idents(sce) <- sce$highlevel_manual_annotations
-#celltypes <- unique(sce$highlevel_celltypes)
-#Idents(sce) <- sce$highlevel_celltypes
 
-# # get the gene and ensembl IDs from the rownames
-# split_parts <- strsplit(rownames(sce), "_")
-# # Create a dataframe with the extracted parts
-# df <- data.frame(gene_symbol = sapply(split_parts, "[", 1), ensembl = sapply(split_parts, "[", 2))
-# rownames(sce@assays$RNA@data) <- df$ensembl
 df <- data.frame(gene = rownames(sce@assays$RNA@data), ensembl = rownames(sce@assays$RNA@counts))
-rownames(sce@assays$RNA@data) <- df$ensembl
-```
-
-It'd be interested to compare the markers between the mystery cluster and the SMC/Pericytes and the endothelial cells
-Use `FindMarkers`:
-
-```{r}
-#| eval: false
-result_file <- here::here("03_data/990_processed_data/001_snrnaseq/10_cell_subtypes/mystery_cluster_markers.csv")
-
-if (!file.exists(result_file)) {
-  # Get the markers from the mystery cluster relative to the Endothelial SMC and Pericyte clusters
-  markers_mystery <-
-    FindMarkers(sce,
-                ident.1 = "mystery-cluster",
-                ident.2 = c("Endothelial", "SMC", "Pericyte")) |>
-    rownames_to_column(var = "gene")
-  readr::write_csv(markers_mystery, result_file)
-} else {
-  markers_mystery <- readr::read_csv(result_file)
-}
-
-# Get the unique markers
-unique_markers <-
-  subset(markers_mystery, p_val_adj < 0.05 & avg_log2FC > 0)
-
-# Create a volcano plot
-ggplot(unique_markers, aes(x = avg_log2FC, y = -log10(p_val))) +
-  geom_point(aes(color = as.factor(gene), size = pct.1), alpha = 0.7) +
-  scale_color_discrete() +  # Use a discrete color scale
-  labs(title = "Upregulated Markers in Cluster of Interest",
-       x = "Average Log-Fold Change",
-       y = "-log10(p-value)",
-       size = "Percentage in Mystery cluster") +
-  theme_minimal()
-
-markers_mystery |>
-  ggplot(aes(x = avg_log2FC, y = -log10(p_val))) +
-  geom_point(aes(color = as.factor(gene), size = pct.1), alpha = 0.7) +
-  geom_hline(
-    yintercept = -log10(0.05),
-    linetype = "dashed",
-    color = "red"
-  ) +
-  scale_color_discrete() +  # Use a discrete color scale
-  labs(title = "Upregulated Markers in Cluster of Interest",
-       x = "Average Log-Fold Change",
-       y = "-log10(p-value)",
-       size = "Percentage in Mystery cluster") +
-  theme_minimal()
-```
-
-```{r}
-#| eval: false
-# plot markers - need to swap rownames to plot
-rownames(sce@assays$RNA@data) <- df$gene
-DotPlot(sce, features = as.character(unique(top20$gene))) + coord_flip()
-DotPlot(sce, features = unique(markers_mystery$gene)) + coord_flip()
 rownames(sce@assays$RNA@data) <- df$ensembl
 ```
 
@@ -348,8 +222,6 @@ cat("Percentage of parenchymal cells expressing", gene_of_interest, ":", percent
 #DotPlot(sce, features = gene_of_interest, group.by = "prep")
 rownames(sce@assays$RNA@data) <- df$gene
 ```
-
-
 
 ```{r}
 subsets <-
@@ -693,20 +565,6 @@ oligo_a_marker_expression <- map(oligo_a_features[-4], ~ subsets$seurat_obj$Olig
   purrr::set_names(oligo_a_features[-4])
 oligo_b_marker_expression <- map(oligo_b_features, ~ subsets$seurat_obj$Oligo@assays$RNA@data[.x, oligo_b_cells]) |>
   purrr::set_names(oligo_b_features)
-```
-
-```{r}
-#| eval: false
-#| include: false
-save_top_genes(top10$Oligo,
-               sub_celltypes,
-               subsets$seurat_obj$Oligo,
-               "oligo", 10)
-save_top_genes(top10$Oligo,
-               sub_celltypes,
-               subsets$seurat_obj$Oligo,
-               "oligo-label", 
-               10, label)
 ```
 
 ### Endothelial cells
@@ -1192,63 +1050,6 @@ save_top_genes(top10$Astro,
                "astrocyte-label", 8, label)
 ```
 
-Given that there are quite a few non-astrocytes in this supposed astrocyte subcluster, I'll try removing them and leaving just the "astrocytes"
-
-```{r}
-#| eval: false
-# check that the gene symbol order matches
-sum(rownames(subsets$seurat_obj$Astro) != df$gene)
-
-# change gene labels to ensembl to able to subset
-rownames(subsets$seurat_obj$Astro@assays$RNA@data) <- df$ensembl
-
-subcluster <- subset(subsets$seurat_obj$Astro, 
-                     idents = c("Astrocyte-activated", "Astrocyte-quiescent"))
-subcluster
-# Remove any remaining low features in the new subset
-subcluster <- subset(subcluster, subset = nFeature_RNA > 200)
-      
-# Step 2: Cluster to the subcluster
-subcluster <- FindNeighbors(subcluster, dims = 1:20)
-subcluster <- FindClusters(subcluster, resolution = 0.4)
-      
-# Step 4: Run UMAP
-subcluster <- RunUMAP(subcluster, dims = 1:20)
-      
-# Reduce size but keep reductions and graphs
-reductions <- names(subcluster@reductions)
-graphs <- names(subcluster@graphs)
-      
-subcluster <- DietSeurat(object = subcluster, dimreducs = reductions, graphs = graphs)
-      
-# Find markers
-cluster_markers <-
-  FindAllMarkers(
-    subcluster,
-    only.pos = TRUE,
-    min.pct = 0.2,
-    logfc.threshold = 0.5
-  )
-# convert back to gene symbols
-sum(rownames(subcluster) != df$ensembl)
-rownames(subcluster@assays$RNA@data) <- df$gene
-```
-
-```{r}
-#| eval: false
-DimPlot(subcluster, reduction = "umap", label = TRUE)
-DimPlot(subcluster, reduction = "umap", group.by = "diagnosis")
-DimPlot(subcluster, reduction = "umap", group.by = "sex")
-DimPlot(subcluster, reduction = "umap", group.by = "prep")
-DimPlot(subcluster, reduction = "umap", group.by = "donor")
-DimPlot(subcluster, reduction = "umap", group.by = "donor_31")
-DimPlot(subcluster, reduction = "umap", group.by = "donor_subset")
-
-FeaturePlot(subcluster, features = c("C3", "GFAP", "S100B", "AQP4"))
-FeaturePlot(subcluster, features = c("ALDH1L1", "SLC1A2"))
-FeaturePlot(subcluster, features = c("ALDOC", "APOE", "VIM", "FABP7"))
-```
-
 ### Pericytes
 
 ```{r}
@@ -1263,7 +1064,7 @@ DimPlot(subsets$seurat_obj$Pericyte, reduction = "umap", group.by = "donor_subse
 ```
 
 Cluster 3 doesn't seem to have a strong expression profile of anything...
-Cluster 3 looks kinda like m-pericytes and SMCs as well
+Cluster 5 looks kinda like m-pericytes and SMCs as well
 
 Cluster 7 is again a seeminly rouge oligodendrocyte cluster... And again it looks to be mostly parenchymal
 
@@ -1325,8 +1126,6 @@ FeaturePlot(
 ) +
   patchwork::plot_annotation(title = "Classic astrocyte markers")
 ```
-
-- TODO: doublecheck Astro marker expression for pericytes
 
 ```{r}
 endo_cluster_7 <- get_specific_marker_epression(subsets$seurat_obj$Pericyte, astrocyte_features, 7)
@@ -1572,49 +1371,6 @@ Cluster 14 looks kinda like inhibitory neurons confusingly...
 Cluster 5 doesn't seem to have any strong markers - on closer inspection it has really low features, I should recluster with a stricter filter
 
 ```{r}
-#| eval: false
-# check that the gene symbol order matches
-sum(rownames(subsets$seurat_obj$Neuron_ex) != df$gene)
-
-# change gene labels to ensembl to able to subset
-rownames(subsets$seurat_obj$Neuron_ex@assays$RNA@data) <- df$ensembl
-
-# Remove any remaining low features in the new subset
-subcluster <- subset(subsets$seurat_obj$Neuron_ex, subset = nFeature_RNA > 1000)
-                     
-subcluster
-      
-# Step 2: Cluster to the subcluster
-subcluster <- FindNeighbors(subcluster, dims = 1:20)
-subcluster <- FindClusters(subcluster, resolution = 0.4)
-      
-# Step 4: Run UMAP
-subcluster <- RunUMAP(subcluster, dims = 1:20)
-      
-# Reduce size but keep reductions and graphs
-reductions <- names(subcluster@reductions)
-graphs <- names(subcluster@graphs)
-      
-subcluster <- DietSeurat(object = subcluster, dimreducs = reductions, graphs = graphs)
-      
-# Find markers
-cluster_markers <-
-  FindAllMarkers(
-    subcluster,
-    only.pos = TRUE,
-    min.pct = 0.2,
-    logfc.threshold = 0.5
-  )
-# convert back to gene symbols
-sum(rownames(subcluster) != df$ensembl)
-rownames(subcluster@assays$RNA@data) <- df$gene   
-
-FeaturePlot(subcluster, reduction = "umap", features = "nFeature_RNA")
-DimPlot(subcluster)
-```
-
-
-```{r}
 #| fig-width: 9
 #| fig-height: 9
 sub_celltypes <- c("0" = "Ex-Neuron-L2-3-CBLN2-LINC02306-CUX2", "1" = "Ex-Neuron-L2-3-CBLN2-LINC02306-CUX2", 
@@ -1634,18 +1390,6 @@ subsets$seurat_obj$Neuron_ex <-
   RenameIdents(subsets$seurat_obj$Neuron_ex, sub_celltypes)
 
 DimPlot(subsets$seurat_obj$Neuron_ex, reduction = "umap", label = TRUE)
-```
-
-```{r}
-#| eval: false
-save_top_genes(top10$Neuron_ex,
-               sub_celltypes,
-               subsets$seurat_obj$Neuron_ex,
-               "neuron-ex", 3)
-save_top_genes(top10$Neuron_ex,
-               sub_celltypes,
-               subsets$seurat_obj$Neuron_ex,
-               "neuron-ex-label", 5, label)
 ```
 
 ### Microglia
@@ -1921,14 +1665,6 @@ subsets$seurat_obj$OPC <-
 DimPlot(subsets$seurat_obj$OPC, reduction = "umap", label = TRUE)
 ```
 
-```{r}
-#| eval: false
-save_top_genes(top10$OPC,
-               sub_celltypes,
-               subsets$seurat_obj$OPC,
-               "opc", 10)
-```
-
 ### Fibroblasts
 
 ```{r}
@@ -1964,7 +1700,6 @@ oligo_expression_comparison(oligo_expression, endo_cluster_7)
 rm(endo_cluster_7)
 ```
 
-
 Cluster 5 could be a pericyte or SMC subtype.
 
 ```{r}
@@ -1990,20 +1725,6 @@ labels <- as.data.frame(sub_celltypes) |>
   rownames_to_column("cluster") 
 subsets$cluster_markers$Fibroblast <- 
   left_join(subsets$cluster_markers$Fibroblast, labels)
-
-#write_csv(subsets$cluster_markers$Fibroblast, here::here("fibroblast_subclusters.csv"))
-```
-
-```{r}
-#| eval: false
-save_top_genes(top10$Fibroblast,
-               sub_celltypes,
-               subsets$seurat_obj$Fibroblast,
-               "fibroblast", 6)
-save_top_genes(top10$Fibroblast,
-               sub_celltypes,
-               subsets$seurat_obj$Fibroblast,
-               "fibroblast-label", 6, label)
 ```
 
 ### SMC
@@ -2035,18 +1756,6 @@ subsets$seurat_obj$SMC <-
 DimPlot(subsets$seurat_obj$SMC, reduction = "umap", label = TRUE)
 ```
 
-```{r}
-#| eval: false
-save_top_genes(top10$SMC,
-               sub_celltypes,
-               subsets$seurat_obj$SMC,
-               "smc", 10)
-save_top_genes(top10$SMC,
-               sub_celltypes,
-               subsets$seurat_obj$SMC,
-               "smc-label", 10, label)
-```
-
 ## Save updated annotations
 
 This is an important chunk so I'd like to control it's execution explicitly
@@ -2064,31 +1773,3 @@ map(subsets$seurat_obj, Idents) |>
   )
 ```
 
-<!-- # Use Yang 2022 data to query cell types -->
-
-<!-- The Seurat package has functions for querying celltype data from one dataset to another -->
-
-```{r}
-#| eval: false
-gds <- getGEO("GSE163577")
-
-show(pData(phenoData(gds[[1]]))[1:5,c(1,6,8)])
-
-expr_matrix <- exprs(gds$GSE163577_series_matrix.txt.gz)
-seurat_obj <- CreateSeuratObject(counts = expr_matrix)
-AddMetaData(object = seurat_obj, metadata = gds$GSE163577_series_matrix.txt.gz$`brain region:ch1`, col.name = "brain_region")
-AddMetaData(object = seurat_obj, metadata = gds$GSE163577_series_matrix.txt.gz$`disease:ch1`, col.name = "disease_status")
-```
-
-<!-- # Azimuth annotation -->
-
-<!-- The Seurat folk have a package for annotating celltypes -->
-
-```{r}
-#| eval: false
-#| include: false
-library(Azimuth)
-sce <- RunAzimuth(sce, reference = "humancortexref")
-DimPlot(sce, group.by = "predicted.celltype.l2", label = TRUE, label.size = 3)
-astrocytes <- RunAzimuth(subsets$seurat_obj$Astrocytes, reference = "humancortexref")
-```
