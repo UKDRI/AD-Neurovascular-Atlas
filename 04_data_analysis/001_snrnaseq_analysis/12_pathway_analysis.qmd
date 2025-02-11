@@ -1,0 +1,466 @@
+---
+title: Perform pathway analysis
+execute:
+  eval: true
+#self-contained: true
+code-fold: true
+bibliography: references.bib
+---
+
+```{r}
+here::i_am("04_data_analysis/001_snrnaseq_analysis/12_pathway_analysis.qmd")
+```
+
+# Load packages
+
+```{r}
+source(here::here("04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"))
+```
+
+# Read in data
+
+First we'll read in the DESeq2 results.
+Note that all the DESeq2 fold changes were done per celltype and across controls and cases (AD).
+
+```{r}
+use_apoe <- FALSE
+```
+
+```{r}
+if(use_apoe) {
+res <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/08_pseudobulk/pseudobulk_ad-vs-control_deseq2_apoe.rds")) |>
+  na.omit()
+} else {
+res <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/08_pseudobulk/pseudobulk_ad-vs-control_deseq2_noapoe.rds")) |>
+  na.omit()
+}
+```
+
+# Data prep
+
+I'll start by grabbing the to significant genes per celltype
+
+```{r}
+# filter to sig genes
+res_sig <- dplyr::filter(res, padj < 0.05)
+
+# get gene names per celltype
+genes <- res_sig |>
+  dplyr::group_by(celltype) |>
+  dplyr::summarise(list_of_columns = list(gene)) |>
+  dplyr::pull(list_of_columns)
+names(genes) <- unique(res_sig$celltype)
+```
+
+# Hypergeometric enrichment
+
+```{r}
+go_results <- map(genes, ~ enrichGO(gene = .x, OrgDb = "org.Hs.eg.db", 
+                                    keyType = "SYMBOL", ont = "BP"))
+```
+
+```{r}
+# exclude cases where no pathways were found
+go_results_filtered <- go_results |>
+  purrr::keep(~ !is.null(.)) |>
+  purrr::keep(~ nrow(.) > 0)
+
+# barplot
+fit <- map(go_results_filtered, ~ plot(barplot(.x, showCategory = 20)))
+fit
+```
+
+# Gene set enrichment analysis (GSEA)
+
+- Note that GSEA takes pval and foldchange into account when computing the enrichment, so we don't filter the gene list
+
+```{r}
+# nest data by celltype
+gsea_df <- res |>
+  # group by celltype
+  dplyr::group_by(celltype) |>
+  tidyr::nest() 
+```
+
+```{r}
+#| message: false
+#| warning: false
+# Function: Adjacency matrix to list -------------------------
+matrix_to_list <- function(pws){
+  pws.l <- list()
+  for (pw in colnames(pws)) {
+    pws.l[[pw]] <- rownames(pws)[as.logical(pws[, pw])]
+  }
+  return(pws.l)
+}
+
+## Function: prepare_gmt --------------------------------------
+prepare_gmt <- function(gmt_file, genes_in_data, savefile = FALSE) {
+  # for debug
+  #file <- gmt_files[1]
+  #genes_in_data <- df$gene_symbol
+  
+  # Read in gmt file
+  gmt <- gmtPathways(gmt_file)
+  hidden <- unique(unlist(gmt))
+  
+  # Convert gmt file to a matrix with the genes as rows and for each go annotation (columns) the values are 0 or 1
+  mat <- matrix(
+    NA,
+    dimnames = list(hidden, names(gmt)),
+    nrow = length(hidden),
+    ncol = length(gmt)
+  )
+  for (i in 1:dim(mat)[2]) {
+    mat[, i] <- as.numeric(hidden %in% gmt[[i]])
+  }
+  
+  #Subset to the genes that are present in our data to avoid bias
+  hidden1 <- intersect(genes_in_data, hidden)
+  mat <-
+    mat[hidden1, colnames(mat)[which(colSums(mat[hidden1, ]) > 5)]] # filter for gene sets with more than 5 genes annotated
+  # And get the list again
+  final_list <-
+    matrix_to_list(mat) # for this we use the function we previously defined
+  
+  if (savefile) {
+    saveRDS(final_list, file = paste0(
+      gsub('.gmt', '', gmt_file),
+      '_subset_',
+      format(Sys.time(), '%d%m'),
+      '.RData'
+    ))
+  }
+  
+  print('Wohoo! .gmt conversion successfull!:)')
+  return(final_list)
+}
+
+# Get all the genes in dataset and assign them to my_genes 
+my_genes <- res$gene
+
+# Download gene sets .gmt files
+#https://www.gsea-msigdb.org/gsea/msigdb/human/collections.jsp
+# I've downloaded several background sets to try
+gmt_files <- list.files(here::here("03_data/991_external_data"), pattern = "\\.gmt$", full.names = TRUE)
+
+gmt <- map(gmt_files, ~ prepare_gmt(.x, my_genes))
+```
+
+```{r}
+#| eval: false
+#| include: false
+
+# This is the per celltype version - not using fgsea at the moment so I'll skip
+# this for now
+# Get all the genes in your dataset and assign them to my_genes 
+my_genes <- map(gsea_df$data, ~ .x$gene) |>
+  purrr::set_names(gsea_df$celltype)
+
+gmt <- map(gmt_files, function(gmt) {
+  map(my_genes, function(genes) {
+    prepare_gmt(gmt, genes)
+  }
+)})
+```
+
+Get the gene rankings
+
+```{r}
+# Genes need to be ranked for GSEA as named gene list
+# Here I'll use use the signed p values from spatial DGE as ranking
+
+# Function to sort rankings
+sort_rankings <- function(log2fc, pvals, gene_names, group) {
+  rankings <- sign(log2fc) * (-log10(pvals))
+  # genes as names
+  names(rankings) <- gene_names
+  head(rankings)
+  
+  # sort genes by ranking
+  rankings <- sort(rankings, decreasing = TRUE)
+  plot(rankings, main = group)
+  
+  # Some genes have such low p values that the signed pval is +- inf, we need to
+  # change it to the maximum * constant to avoid problems with fgsea
+  max_ranking <- max(rankings[is.finite(rankings)])
+  min_ranking <- min(rankings[is.finite(rankings)])
+  # change any inf values to 10 times the min/max non-inf value
+  rankings <-
+    replace(rankings, rankings > max_ranking, max_ranking * 10)
+  rankings <-
+    replace(rankings, rankings < min_ranking, min_ranking * 10)
+  rankings <-
+    sort(rankings, decreasing = TRUE) # sort genes by ranking
+  
+  return(rankings)
+}
+
+rankings <-
+  map2(gsea_df$data, gsea_df$celltype, ~ (sort_rankings(.x$log2FoldChange,
+                                                        .x$pvalue,
+                                                        .x$gene,
+                                                        .y))) |>
+  purrr::set_names(gsea_df$celltype)
+```
+
+```{r}
+ggplot(data.frame(
+  gene_symbol = names(rankings$Astro)[1:50],
+  ranks = rankings$Astro[1:50]
+),
+aes(gene_symbol, ranks)) +
+  geom_point() +
+  theme_classic() +
+  theme(axis.text.x = element_text(
+    angle = 90,
+    vjust = 0.5,
+    hjust = 1
+  )) +
+  ggtitle("Astrocyte top 50 ranked genes")
+```
+
+## Run GSEA
+
+```{r}
+#| message: false
+#| results: hide
+## Run GSEA ---------------------------------------------------------------
+gsea_res <- map(gmt, function(pathway) {
+  map(rankings, function(rank) {
+    fgsea(
+      pathways = pathway,
+      # List of gene sets to check
+      stats = rank,
+      # in this case we have both pos and neg rankings. if only pos or neg, set to 'pos', 'neg'
+      scoreType = 'std',
+      minSize = 10,
+      maxSize = 500,
+      # for parallelisation
+      nproc = 8
+    )
+  })
+}) |>
+  purrr::set_names(basename(gmt_files))
+```
+
+
+```{r}
+# get log2 FC as a vector with the respective gene names, sorted in decreasing 
+# order
+named_vectors <- res_sig |>
+  dplyr::group_by(celltype) |>
+  tidyr::nest() |>
+  dplyr::mutate(gene_list = map(data, ~setNames(.x$log2FoldChange, .x$gene) |>
+                                  sort(decreasing = TRUE)))
+```
+
+## Gene Ontology
+
+```{r}
+# Define the file path to save the resulting object
+result_file <-
+  here::here(
+    "03_data/990_processed_data/001_snrnaseq/09_pathway_analysis/gene-set-enrichment_go.rds"
+  )
+
+# Check if the file exists
+if (!file.exists(result_file)) {
+  # Code for your time-consuming analysis
+  gse <-
+    map(
+      rankings,
+      ~ gseGO(
+        .x,
+        OrgDb = "org.Hs.eg.db",
+        ont = "ALL",
+        keyType = "SYMBOL"
+      )
+    ) 
+  
+  # Save the resulting object
+  readr::write_rds(gse, result_file)
+} else {
+  # Load the existing resulting object
+  gse <- readr::read_rds(result_file)
+}
+```
+
+```{r}
+# remove any with no pathways found
+gse <- gse |>
+  purrr::keep(~ nrow(.) > 0)
+```
+
+### Plots
+
+As a reminder, the directionality here is controls vs AD, so an activated pathway should be elevated in the controls.
+
+```{r}
+dotplots <-
+  map2(
+    gse,
+    names(gse),
+    ~ dotplot(.x, showCategory = 10, split = ".sign") + facet_grid(. ~ .sign) +
+      ggtitle(.y)
+  )
+
+dotplots
+readr::write_rds(dotplots, here::here("03_data/990_processed_data/001_snrnaseq/09_pathway_analysis/go-dotplots.rds"))
+```
+
+Caleb wants plots for the vascular celltypes
+
+```{r}
+#| eval: false
+plot_layout <- (dotplots$Endothelial | dotplots$Pericyte) / plot
+ggsave("combined_go_plot.png", plot_layout, width = 15, height = 16, dpi = 300)
+```
+
+
+```{r}
+#| eval: false
+#| include: false
+map2(gse,
+     names(gse),
+     ~ emapplot(.x, showCategory = 10) +
+                  ggtitle(.y))
+```
+
+```{r}
+map2(gse,
+     names(gse),
+     ~ ridgeplot(.x) +
+       labs(x = "enrichment distribution") +
+                  ggtitle(.y))
+```
+
+Note, one can change which pathway is plotted here by setting the title and `geneSetID` accordingly
+
+```{r}
+map2(gse,
+     names(gse),
+     ~ gseaplot(.x, by = "all", title = .x$Description[1], geneSetID = 1))
+```
+
+#### PubMed trend of enriched terms
+
+```{r}
+#| cache: true
+#| eval: false
+terms <- gse$`Neuron-ex`$Description[1:10]
+pmcplot(terms, 2010:2022, proportion = FALSE)
+```
+
+## KEGG
+
+```{r}
+# Convert gene IDs for gseKEGG function
+# We will lose some genes here because not all IDs will be converted
+ids <-
+  map(
+    named_vectors$gene_list,
+    ~ bitr(
+      names(.x),
+      fromType = "SYMBOL",
+      toType = "ENTREZID",
+      OrgDb = "org.Hs.eg.db"
+    )
+  ) |>
+  purrr::list_rbind()
+ # remove duplicate IDS 
+dedup_ids = ids[!duplicated(ids[c("SYMBOL")]),]
+
+# join entrezids to dataframe
+res_entrez <- res |>
+  dplyr::left_join(dedup_ids, by = join_by(gene == SYMBOL)) |>
+  # remove cases that couldn't be matched
+  dplyr::filter(!is.na(ENTREZID))
+
+# get log2 FC as a vector with the respective gene names, sorted in decreasing 
+# order
+named_vectors <- res_entrez |>
+  dplyr::group_by(celltype) |>
+  tidyr::nest() |>
+  dplyr::mutate(gene_list = map(
+    data,
+    ~ setNames(.x$log2FoldChange, .x$ENTREZID) |>
+      sort(decreasing = TRUE)
+  ))
+```
+
+```{r}
+kegg_organism = "hsa"
+
+# Define the file path to save the resulting object
+result_file <-
+  here::here(
+    "03_data/990_processed_data/001_snrnaseq/09_pathway_analysis/gene-set-enrichment_kegg.rds"
+  )
+
+# Check if the file exists
+if (!file.exists(result_file)) {
+  # Code for your time-consuming analysis
+kk2 <-
+  map(
+    named_vectors$gene_list,
+    ~ gseKEGG(.x, organism = kegg_organism, keyType = "ncbi-geneid")
+  ) |>
+  set_names(named_vectors$celltype)
+  
+  # Save the resulting object
+  readr::write_rds(kk2, result_file)
+} else {
+  # Load the existing resulting object
+  kk2 <- readr::read_rds(result_file)
+}
+
+names(kk2) <- named_vectors$celltype
+```
+
+### Plots
+
+```{r}
+map2(
+  kk2,
+  names(kk2),
+  ~ {
+    # add a check if the dataframe is empty and return null if so
+    if(nrow(.x) > 0) {
+      dotplot(
+        .x,
+        showCategory = 10,
+        title = .y,
+        split = ".sign"
+      ) +
+      facet_grid(. ~ .sign)
+    } else {
+      return(NULL)
+    }
+  }
+)
+```
+
+```{r}
+#| eval: false
+#| include: false
+map2(kk2, names(kk2),  ~ emapplot(.x) + ggtitle(.y))
+```
+
+```{r}
+map2(kk2,
+     names(kk2),
+     ~ {
+       # add a check if the dataframe is empty and return null if so
+       if (nrow(.x) > 0) {
+         ridgeplot(.x) +
+           labs(x = "enrichment distribution") +
+           ggtitle(.y)
+       } else {
+         return(NULL)
+       }
+     }
+)
+```
+
+#### Pathview
