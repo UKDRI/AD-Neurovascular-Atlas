@@ -1,0 +1,1994 @@
+---
+title: Analysis scFlow results
+execute:
+  eval: true
+#self-contained: true
+#code-fold: true
+bibliography: references.bib
+---
+
+# Goals
+
+-   Check scFlow output
+-   Annotate celltypes
+
+-   programuline + receptor - check in DE
+-   order cellchat plots - vascualr and parenchymal
+-   Do overlap for the MAST/PSEudoDEs 
+-   Get nuclie numbers/celltype proportions from Yang/Mattews and rosmap
+# Load packages
+
+```{r}
+source(here::here("04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"))
+```
+
+# Read in data
+
+First we'll read in the scFlow output to a sce
+
+```{r}
+#| eval: false
+# read data
+sce <- scFlow::read_sce(here::here("03_data/990_processed_data/001_snrnaseq/06_scflow/scflow-results/results/final/SCE/final_sce"))
+# save data to avoid having to read in again
+readr::write_rds(sce, here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-sce.rds"))
+```
+
+```{r}
+#| eval: false
+# load data
+sce <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-sce.rds"))
+```
+
+```{r}
+#| eval: false
+# check metadata
+meta_check <- as.data.frame(head(colData(sce)))
+# see celltypes
+unique(sce$cluster_celltype)
+# see groups
+unique(sce$group)
+```
+
+Convert to Seurat object
+
+```{r}
+#| eval: false
+# convert to Seurat
+seurat <-
+  CreateSeuratObject(counts = assays(sce)$counts,
+                     meta.data = as.data.frame(colData(sce)))
+# save object to prevent having to read in again
+readr::write_rds(seurat, here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-seurat.rds"))
+```
+
+```{r}
+# load object
+seurat <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-seurat.rds"))
+# check object
+seurat
+```
+
+Hannah isn't seeing some genes she's interested in, I'll get the average expression before any post-scflow processing for her to compare.
+I think the missing genes were resolved as they labels had changed and most were present once this was corrected for.
+
+```{r}
+seurat$donor <- paste0("donor-", seurat$individual)
+```
+
+```{r}
+sce <- NormalizeData(seurat)
+avg_exp <- AverageExpression(sce, group.by = c("clusters", "donor"))
+avg_exp <- avg_exp$RNA
+ 
+avg_exp <- as.data.frame(avg_exp) |> 
+  rownames_to_column(var = "gene")
+
+# pivot longer such that celltypes are separated out
+avg_exp <- avg_exp %>%
+  pivot_longer(
+    cols = !gene,
+    names_to = c("cluster", ".value"),
+    names_pattern = "(.*)_(.*)"
+  )
+ 
+file_out <- here::here("03_data/990_processed_data/001_snrnaseq/08_pseudobulk/avg-expression-per-cluster-per-donor_scflow-output.csv")
+readr::write_csv(avg_exp, file_out)
+ 
+rm(sce, avg_exp)
+```
+
+# Check filtering
+
+scFlow already performed filtering, but for our sanity/interest let's check with some standard QC plots
+
+```{r}
+# Get percent mitochondrial and ribosomal genes
+seurat[["pct_mito"]] <- PercentageFeatureSet(seurat, pattern = "^MT-")
+ribo_genes <- grep(pattern = "^RPL|^RPS", x = rownames(x = seurat[["RNA"]]), value = TRUE)
+seurat[["pct_ribo"]] <- PercentageFeatureSet(seurat, features = ribo_genes)
+```
+
+```{r}
+#| fig-width: 7
+#| fig-height: 12
+VlnPlot(seurat, features = c("nFeature_RNA", "nCount_RNA", "pct_mito", "pct_ribo"), ncol = 1, group.by = "manifest", pt.size = 0)
+VlnPlot(seurat, features = c("nFeature_RNA", "nCount_RNA"), ncol = 1, group.by = "donor", pt.size = 0)
+VlnPlot(seurat, features = c("nFeature_RNA", "nCount_RNA"), ncol = 1, pt.size = 0, group.by = "manifest")
+```
+
+```{r}
+VlnPlot(seurat, features = c("nFeature_RNA", "nCount_RNA", "pct_mito", "pct_ribo"), ncol = 1, group.by = "prep", pt.size = 0)
+VlnPlot(seurat, features = c("nFeature_RNA", "nCount_RNA", "pct_mito", "pct_ribo"), ncol = 1, group.by = c("prep", "diagnosis"), pt.size = 0)
+```
+
+
+Same plots as above on log scale
+
+```{r}
+#| fig-width: 7
+#| fig-height: 12
+plot <- VlnPlot(seurat, features = c("nFeature_RNA", "nCount_RNA"), ncol = 1, group.by = "manifest", log = TRUE, pt.size = 0)
+plot
+VlnPlot(seurat, features = c("nFeature_RNA", "nCount_RNA"), ncol = 1, group.by = "donor", log = TRUE, pt.size = 0)
+
+ggsave(here::here("05_figures/990_shared_figures/scflow_qc_metrics_manifest_no-points_log.png"), plot, device = "png")
+```
+
+V13 looks very different, I'll check the number of cells
+
+```{r}
+num_cells <- table(seurat$manifest) |> as.data.frame()
+num_cells
+```
+
+V13 has only 52 cells...
+Guess I should remove it
+
+```{r}
+meta_data <- data.table(seurat@meta.data)
+
+cat("Total nuclei: \n")
+meta_data[pct_mito >= 0, .N, by = "manifest"]
+
+cat("Nuclei with more than 5% mitochondrial counts: \n")
+meta_data[pct_mito > 5, .N, by = "manifest"]
+
+cat("Nuclei with < 200  features: \n")
+meta_data[nFeature_RNA < 200, .N, by = "manifest"]
+
+cat("Nuclei with < 500  features: \n")
+meta_data[nFeature_RNA < 500, .N, by = "manifest"]
+
+cat("Nuclei with > 2500 features: \n")
+meta_data[nFeature_RNA > 2500, .N, by = "manifest"]
+
+cat("Nuclei with > 5000 features: \n")
+meta_data[nFeature_RNA > 5000, .N, by = "manifest"]
+
+cat("Nuclei with > 8000 features: \n")
+meta_data[nFeature_RNA > 7000, .N, by = "manifest"]
+```
+
+```{r}
+cat("Nuclei with < 1000 features: \n")
+meta_data[nCount_RNA < 1000, .N, by = "manifest"]
+```
+
+
+Donors 20, 29, and 39 look rather low in counts and are causing strange clustering.
+The parenchymal fraction of donor 39 had to be filtered out earlier as the fastq was essentially empty, so perhaps there was an issue with this donor generally.
+I'll try a somewhat aggressive subset on the nFeature_RNA to see if that resolves this without throwing out the samples.
+
+Donor 29 looks bad for the parenchymal fraction, but okay for the vascular fraction.
+
+```{r}
+before_filter <- ncol(seurat)
+seurat <- subset(seurat, subset = nFeature_RNA > 300 & nFeature_RNA < 7500 & nCount_RNA > 1000)
+
+# donors to exclude
+seurat <- subset(seurat, subset = donor %in% c("donor-20", "donor-29", "donor-39") == FALSE)
+seurat <- subset(seurat, subset = manifest %in% c("V13") == FALSE)
+after_filter <- ncol(seurat)
+
+print(paste0("Num cells removed = ", before_filter - after_filter))
+print(paste0("Total cells remaining = ", after_filter))
+```
+
+```{r}
+# Save data prior to processing
+#readr::write_rds(seurat, here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-seurat-preprocessing.rds"))
+readr::write_rds(seurat, here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-seurat-preprocessing_donors-excluded.rds"))
+```
+
+```{r}
+rm(list = ls())
+```
+
+# Seurat processing
+
+Note that I ran this part of the code on the HPC as the function for scaling data massively inflates the objects size to over 100G.
+The scaled data is mainly used for the dimensionality reduction (PCA/UMAP), so once those are computed I remove the scaled data and save the object to be read back in.
+
+You can find the job script submitted on the HPC [here](/04_data_analysis/990_code_libraries/run-scflow-processing.sh) and the actual full R script [here](/04_data_analysis/990_code_libraries/scflow-seurat-processing.R)
+
+```{r}
+## cutoff for adjusted p-value
+p_val_cutoff <- 0.05
+```
+
+```{r}
+# Read processed data in
+#seurat <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-seurat-postprocessing.rds"))
+#seurat <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-seurat-postprocessing-filtered.rds"))
+#seurat <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-seurat-postprocessing_donors-excluded.rds"))
+seurat <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-seurat-postprocessing_donors-excluded-updated.rds"))
+# Version with extra dims
+#seurat <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-seurat-postprocessing_35-dims.rds"))
+```
+
+## Check for doublets
+
+Expected doublet rates on 10X site [here](https://kb.10xgenomics.com/hc/en-us/articles/360001378811-What-is-the-maximum-number-of-cells-that-can-be-profiled).
+Note the code for running `DoubletFinder` is in the `_targets.R` file.
+
+
+```{r}
+#| eval: false
+tar_load(seurat_doublets)
+
+# join celltype labels from filtered sce to this one and check singlet numbers
+table(Idents(seurat_doublets))
+
+x = merge(sce@meta.data, seurat_doublets@meta.data, by = "row.names")
+table(x$highlevel_manual_annotations, x$doublet_estimation)
+```
+
+
+```{r}
+#| eval: false
+## pK Identification (no ground-truth) ---------------------------------------------------------------------------------------
+sweep_res_list <- paramSweep_v3(seurat, PCs = 1:35, sct = TRUE, num.cores = 6)
+sweep_stats <- summarizeSweep(sweep_res_list, GT = FALSE)
+bcmvn <- find.pK(sweep_stats)
+
+# get best pK value
+pK <- bcmvn %>%
+  dplyr::filter(BCmetric == max(BCmetric)) %>%
+  dplyr::select(pK)
+pK <- as.numeric(as.character(pK[[1]]))
+
+## pK Identification (ground-truth) ------------------------------------------------------------------------------------------
+# sweep_res_list <- paramSweep_v3(seu_kidney, PCs = 1:10, sct = FALSE)
+# gt.calls <- seu_kidney@meta.data[rownames(sweep_res_list[[1]]), "GT"].   ## GT is a vector containing "Singlet" and "Doublet" calls recorded using sample multiplexing classification and/or in silico geneotyping results 
+# sweep_stats <- summarizeSweep(sweep_res_list, GT = TRUE, GT.calls = gt.calls)
+# bcmvn_kidney <- find.pK(sweep_stats)
+
+## Homotypic Doublet Proportion Estimate -------------------------------------------------------------------------------------
+homotypic.prop <- modelHomotypic(Idents(seurat))  
+nExp_poi <- round(0.075*nrow(seurat@meta.data))  ## Assuming 7.5% doublet formation rate - tailor for your dataset
+nExp_poi.adj <- round(nExp_poi*(1-homotypic.prop))
+
+# run doubletFinder
+seurat <- doubletFinder_v3(seurat,
+                           PCs = 1:35,
+                           pn = 0.25,
+                           pK = pK,
+                           nExp = nExp_poi.adj,
+                           reuse.pANN = FALSE, sct = FALSE)
+```
+
+```{r}
+#| eval: false
+library(Azimuth)
+sce <- RunAzimuth(seurat, reference = "humancortexref")
+DimPlot(sce, group.by = "predicted.celltype.l2", label = TRUE, label.size = 3)
+astrocytes <- RunAzimuth(subsets$seurat_obj$Astrocytes, reference = "humancortexref")
+```
+
+## Check plots
+
+Let's see the PCA and UMAP plots
+
+### PCA
+
+```{r}
+ElbowPlot(seurat, ndims = 50)
+pca_diag <- DimPlot(seurat, reduction = "pca", group.by = "diagnosis", 
+                    raster = FALSE)
+pca_prep <- DimPlot(seurat, reduction = "pca", group.by = "prep", raster = FALSE)
+pca_diag
+pca_prep
+
+## save plots
+ggsave(here::here("05_figures/990_shared_figures/scflow_pca_diagnosis.png"), pca_diag, device = "png")
+ggsave(here::here("05_figures/990_shared_figures/scflow_pca_prep.png"), pca_prep, device = "png")
+
+rm(pca_diag, pca_prep)
+```
+
+### UMAP
+
+```{r}
+my_cols = brewer.pal(8,"Dark2")
+# plot by diagnosis
+umap_diag <- DimPlot(seurat, reduction = "umap", group.by = "diagnosis", 
+                     cols = ggplot2::alpha(my_cols, 0.2), raster = FALSE)
+umap_diag
+# Check there isn't a bias for diagnosis and prep
+print("Table of Diagnosis and prep:")
+table(seurat$diagnosis, seurat$prep)
+# plot by cell population
+umap_prep <- DimPlot(seurat, reduction = "umap", group.by = "prep", raster = FALSE)
+umap_prep
+FeaturePlot(seurat, features = "nFeature_RNA")
+# plot by scflow annotation
+umap_celltype <- DimPlot(seurat, reduction = "umap", group.by = "cluster_celltype", raster = FALSE)
+umap_celltype
+# plot by sex
+DimPlot(seurat, reduction = "umap", group.by = "sex", 
+                     cols = ggplot2::alpha(my_cols, 0.2), raster = FALSE)
+# plot by sample
+DimPlot(seurat, reduction = "umap", group.by = "donor", raster = FALSE)
+umap_batch <- DimPlot(seurat, group.by = 'batch', cols = alpha(my_cols, 0.66), pt.size = 1)
+umap_batch
+# plot umap clusters
+umap_clusters <- DimPlot(seurat, reduction = "umap", label = TRUE, raster = FALSE)
+umap_clusters
+
+ggsave(here::here("05_figures/990_shared_figures/scflow_umap_diagnosis.png"), umap_diag, device = "png")
+ggsave(here::here("05_figures/990_shared_figures/scflow_umap_prep.png"), umap_prep, device = "png")
+ggsave(here::here("05_figures/990_shared_figures/scflow_umap_celltype.png"), umap_celltype, device = "png")
+ggsave(here::here("05_figures/990_shared_figures/scflow_umap_batch.png"), umap_batch, device = "png")
+ggsave(here::here("05_figures/990_shared_figures/scflow_umap_clusters.png"), umap_clusters, device = "png")
+# clean up plots
+rm(umap_diag, umap_prep, umap_celltype, umap_batch, umap_clusters)
+```
+
+```{r}
+#| include: false
+#| eval: false
+seurat$donor_1 <- ifelse(seurat$donor == "donor-1", "donor-1", "other-donors")
+seurat$donor_16 <- ifelse(seurat$donor == "donor-16", "donor-16", "other-donors")
+seurat$donor_17 <- ifelse(seurat$donor == "donor-17", "donor-17", "other-donors")
+seurat$donor_17 <- ifelse(seurat$donor == "donor-17", "donor-17", "other-donors")
+seurat$donor_18 <- ifelse(seurat$donor == "donor-18", "donor-18", "other-donors")
+seurat$donor_19 <- ifelse(seurat$donor == "donor-19", "donor-19", "other-donors")
+seurat$donor_35 <- ifelse(seurat$donor == "donor-35", "donor-35", "other-donors")
+seurat$donor_36 <- ifelse(seurat$donor == "donor-36", "donor-36", "other-donors")
+seurat$donor_31 <- ifelse(seurat$donor == "donor-31", "donor-31", "other-donors")
+# DimPlot(seurat, reduction = "umap", group.by = "donor_35")
+DimPlot(seurat, reduction = "umap", group.by = "donor_31")
+seurat$donor_31 <- ifelse(seurat$donor == "donor-9", "donor-1", "other-donors")
+# DimPlot(seurat, reduction = "umap", group.by = "donor_39")
+# DimPlot(seurat, reduction = "umap", group.by = "donor_15")
+# DimPlot(seurat, reduction = "umap", group.by = "donor")
+```
+
+```{r}
+seurat$donor_subset <- seurat$donor
+seurat$donor_subset[!seurat$donor %in% c("donor-1", "donor-16", "donor-17", 
+                                         "donor-18", "donor-19", "donor-21", 
+                                         "donor-22", "donor-25", "donor-35", 
+                                         "donor-36", "donor-31")] <- "Not Selected"
+
+unique_donors <- unique(seurat$donor_subset)
+colors <- setNames(rainbow(length(unique_donors) - 1),
+                   unique_donors[unique_donors != "Not Selected"])
+colors["Not Selected"] <- "grey"
+
+DimPlot(seurat, reduction = "umap", group.by = "donor_subset", cols = colors)
+DimPlot(seurat, reduction = "pca", group.by = "donor")
+DimPlot(seurat, reduction = "pca", group.by = "donor_subset")
+```
+
+
+So the parenchyma and vascular components separate nicely, but case and controls less so
+
+## Clustering
+
+```{r}
+cluster_dt <- data.table(cluster = Idents(seurat))
+cluster_size <- cluster_dt[, .N, by = "cluster"][order(cluster)]
+
+n_all <- sum(cluster_size$N)
+cluster_size <- cluster_size[, pct_nuclei := round(N * 100 / n_all, 2)]
+
+setnames(cluster_size, "N", "nuclei")
+
+## nuclei per sample group
+cluster_size_sample <- as.data.frame.matrix(table(Idents(seurat), seurat$manifest))
+
+## percentage across all nuclei
+## cluster_size_sample_pct <- as.data.frame.matrix(prop.table(table(Idents(seurat), seurat$sample)) * 100)
+
+# add sample counts per cluster
+cluster_size <- cbind(cluster_size, cluster_size_sample)
+
+# add percentage within cluster
+cluster_size <- cluster_size %>%
+  dplyr::mutate(across(P01:V40, ~ round(. * 100 / nuclei, 1), 
+                       .names = "percentage_{.col}"))
+
+# Get the total for vascular and parenchymal cells
+cluster_size <- cluster_size %>%
+  dplyr::mutate(v_all = rowSums(across(V01:V40)),
+         p_all = rowSums(across(P01:P40))) %>%
+  # add the percentage
+  dplyr::mutate(percentage_v_all = round(v_all * 100 / nuclei, 1),
+                percentage_p_all = round(p_all * 100 / nuclei, 1))
+```
+
+Here's a count table of nuclei per sample
+
+```{r}
+#| tbl-cap: !expr 'paste0("Clusters found in: ", n_all, " nuclei:")'
+
+cluster_size %>% DT::datatable(
+  escape = F,
+  rownames = F,
+  extensions = 'Buttons',
+  options = list(
+    dom = 'Blfrtip',
+    buttons = list(
+      'colvis',
+      list(
+        extend = 'copy',
+        exportOptions = list(columns = ':visible')
+      ),
+      list(
+        extend = 'csv',
+        exportOptions = list(columns = ':visible')
+      ),
+      list(
+        extend = 'excel',
+        exportOptions = list(columns = ':visible')
+      )
+    )
+  )
+)
+```
+
+# Cell type identity
+
+-   find genes up-regulated in every cluster compared to all other cells
+-   i.e. find cluster-enriched genes
+-   default test: 'wilcox' (non-parameteric Wilcoxon rank sum test)
+-   min.pct = 0.25 (test genes detected in a minimum fraction of 25% cells in either of the two populations)
+-   logfc.threshold = 0.25 (test genes which show, on average, at least 0.25-fold difference (log-scale) between the two groups of cells)
+-   note, previous default in previous Seurat versions was 'bimod'
+
+```{r}
+#| eval: true
+#cluster_markers <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/cluter_markers.rds"))
+#cluster_markers <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/cluter_markers_donors-excluded.rds"))
+cluster_markers <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/cluter_markers_donors-excluded_updated.rds"))
+#cluster_markers <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/cluter_markers_35-dims.rds"))
+```
+
+We have ensembl gene IDs at the minute, let's get the hgnc symbol and descriptions for them
+
+```{r}
+#| eval: true
+# Get the unique Ensembl IDs from your Seurat object
+ensembl_ids <- rownames(seurat@assays$RNA@counts)
+
+ensembl <- useMart("ensembl")
+dataset <- useDataset("hsapiens_gene_ensembl", mart = ensembl)
+attributes <- c("ensembl_gene_id", "hgnc_symbol", "description")
+
+# Retrieve the gene symbols using Ensembl IDs
+gene_info <- getBM(attributes = attributes, filters = "ensembl_gene_id", values = ensembl_ids, mart = dataset)
+
+# Create a mapping dataframe with Ensembl IDs and gene symbols
+ensembl_to_symbol <- gene_info %>% 
+  dplyr::distinct(ensembl_gene_id, .keep_all = TRUE)
+
+# There are several missing genes that appear to be novel transcripts
+# as there's only a few of them, I'll just remove them for now
+missing_ids <-
+  rownames(seurat@assays$RNA@data)[which(!rownames(seurat@assays$RNA@data) %in% gene_info$ensembl_gene_id)]
+print(paste0("THERE ARE ", length(missing_ids), " MISSING GENES"))
+print(paste0("MISSING IDs: ", paste0(missing_ids, collapse = ", ")))
+
+# Filter to genes that were matched
+filtered_genes <- rownames(seurat) %in% gene_info$ensembl_gene_id
+seurat <- seurat[filtered_genes, ]
+
+# Update the row names in the assay matrix
+#rownames(seurat@assays$RNA@counts) <- ensembl_to_symbol$hgnc_symbol
+rownames(seurat@assays$RNA@data) <- ensembl_to_symbol$hgnc_symbol
+```
+
+```{r}
+#| eval: false
+#| include: false
+
+# This is an example of manually entering some of the missing gene entries
+# Add missing genes
+missing_genes <-
+  data.frame(
+    "ensembl_gene_id" = c(
+      "ENSG00000232295",
+      "ENSG00000259820",
+      "ENSG00000267637",
+      "ENSG00000272267"
+    ),
+    "hgnc_symbol" = c(
+      "OGFRL1-antisense",
+      "MIR30DHG",
+      "VMP1-intronic",
+      "TNKS-antisense"
+    ),
+    "description" = c(
+      "novel transcript, antisense OGFRL1",
+      "novel transcript",
+      "Novel Transcript, Sense Intronic To VMP1",
+      "Novel Transcript, Antisense To TNKS"
+    )
+  )
+```
+
+```{r}
+#| eval: true
+#| label: get gene ids and descriptions
+gene_info <- getBM(attributes = attributes, filters = "ensembl_gene_id", values = cluster_markers$gene, mart = dataset) 
+# add gene info back in
+cluster_markers <- merge(cluster_markers, unique(gene_info), by.x = "gene", by.y = "ensembl_gene_id", all.x = TRUE)
+```
+
+I don't want to keep slamming the ensembl servers every time I compile this, so I'll save the cluster markers and seurat objects with the updated gene names/descriptions.
+
+```{r}
+#| eval: false
+readr::write_rds(seurat, here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-sce-updated.rds"))
+readr::write_rds(cluster_markers, here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/cluster_markers-updated.rds"))
+#readr::write_csv(cluster_markers, here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/cluster_markers.csv"))
+#readr::write_rds(seurat, here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-sce-updated_dim-35.rds"))
+#readr::write_rds(cluster_markers, here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/cluster_markers-updated_dim-35.rds"))
+```
+
+```{r}
+#| eval: false
+# read in updated data
+seurat <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-sce-updated.rds"))
+cluster_markers <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/cluster_markers-updated.rds"))
+```
+
+```{r}
+#| eval: false
+# make sure all the genes in the clusters are still there in the seurat
+dim(seurat@assays$RNA@data)
+cluster_markers %>%
+  dplyr::filter(hgnc_symbol %in% rownames(seurat@assays$RNA@data)) %>%
+  dim()
+```
+
+Dotplot of the top 5 markers per cluster
+
+```{r}
+#| fig-width: 25
+#| fig-height: 25
+# get top 5 genes per cluster
+top5 <- cluster_markers %>%
+  dplyr::filter(hgnc_symbol != "") %>%
+  group_by(cluster) %>% 
+  slice_max(n = 5, order_by = avg_log2FC)
+top10 <- cluster_markers %>%
+  dplyr::filter(hgnc_symbol != "") %>%
+  group_by(cluster) %>% 
+  slice_max(n = 10, order_by = avg_log2FC)
+bottom10 <- cluster_markers %>%
+  dplyr::filter(hgnc_symbol != "") %>%
+  group_by(cluster) %>% 
+  slice_min(n = 10, order_by = avg_log2FC)
+
+to_plot <- unique(top5$hgnc_symbol)
+plot <- DotPlot(seurat, features = to_plot) + coord_flip()
+plot
+```
+
+# Manual cell annotation
+
+So cell annotation seems more an art than science to my plebian mind...
+
+There's a [nice shiny app](https://twc-stanford.shinyapps.io/human_bbb/) for the [Yang 2022](https://www.nature.com/articles/s41586-021-04369-3) dataset, so I think I'll plot the top 5 cluster markers and then check those markers against the Yang data as that's annotated, and use that as a basis.[@yang_human_2022] 
+Ideally, I'd also have a wealth of domain specific knowledge on what markers are commonly reported, in pericytes specifically for instance, to complement this approach.
+That's gonna take a lot of reading on my part to be built up though, so this'll serve for now.
+
+Automated methods would want a reference panel anyway, and the Yang paper is the probably the best reference in this space at the minute anyway.
+Frank also suggested this, and seemed to be working off of markers from the Yang paper when it was a preprint based on his code.
+
+```{r}
+# nest top5 markers by cluster
+top5 <- nest(top5)
+
+# to get points to appear with raster = T, increase point size
+#FeaturePlot(seurat, features = markers, pt.size = 1.5)
+sce_markers_plot <- map2(top5$data, top5$cluster, ~ FeaturePlot(seurat, features = .x$hgnc_symbol, raster = FALSE) +
+                          patchwork::plot_annotation(title = paste0("Seurat cluster: ", .y))) %>%
+  set_names(paste0("cluster_", top5$cluster))
+```
+
+Cluster 0 looks nicely like oligodendrocytes.
+
+```{r}
+sce_markers_plot$cluster_0
+```
+
+Cluster 1 looks like either venous or capillary.
+I'll go with capillary for now.
+
+```{r}
+sce_markers_plot$cluster_1
+```
+
+Cluster 2 looks nicely like pericytes of some flavour.
+Seems to align best with the solute transport-pericytes in the Yang data.
+
+```{r}
+sce_markers_plot$cluster_2
+```
+
+Cluster 3 looks strongly like astrocytes.
+Aligns best with cortex astrocytes in the Yang data.
+
+```{r}
+sce_markers_plot$cluster_3
+```
+
+Cluster 4 looks nicely like arterial cells.
+THSD4 is most abundant in Meningeal Fibroblasts in the Yang data, but second most in arterial.
+
+```{r}
+sce_markers_plot$cluster_4
+```
+
+Cluster 5 matches with vascular smooth muscle.
+PDE3A is most abundant in ECM-regulating pericytes in Yang.
+
+```{r}
+sce_markers_plot$cluster_5
+```
+
+Cluster 6 looks like neurons.
+MEG3 is abundant in Menigeal firbroblasts
+
+```{r}
+sce_markers_plot$cluster_6
+```
+
+Cluster 7 is vascular, either capillary or venous, not super clear.
+
+```{r}
+sce_markers_plot$cluster_7
+```
+
+Cluster 8 is oligodendrocyte precursors
+
+```{r}
+sce_markers_plot$cluster_8
+```
+
+Cluster 9 looks like microglia
+
+```{r}
+sce_markers_plot$cluster_9
+```
+
+Cluster 10 mostly looks like neurons, but has some oligodendrocyte precursor overlap
+
+```{r}
+sce_markers_plot$cluster_10
+```
+
+Similar to 10, cluster 11 mostly looks like neurons, but has some oligodendrocyte precursor overlap
+
+```{r}
+sce_markers_plot$cluster_11
+```
+
+Cluster 12 looks decently like oligodendrocytes
+
+```{r}
+sce_markers_plot$cluster_12
+```
+
+Similar to 10/11, cluster 12 looks like neurons with some oligodendrocyte precursor mixed in
+
+```{r}
+sce_markers_plot$cluster_13
+```
+
+Cluster 14 looks like neurons
+
+```{r}
+sce_markers_plot$cluster_14
+```
+
+Cluster 15 looks nicely like Perivascular Fibroblasts
+
+```{r}
+sce_markers_plot$cluster_15
+```
+
+Cluster 16 is astrocytes, cortex astrocytes in the Yang data
+
+```{r}
+sce_markers_plot$cluster_16
+```
+
+Cluster 17 is either venous or capillary, looks more like capillary
+
+```{r}
+sce_markers_plot$cluster_17
+```
+
+18 is pretty inconclusive.
+Even the top 5 markers are defuse.
+In the Yang data, EYS is only really present in Meningeal Fibroblasts.
+LINC02055 is only in Ependymal cells, but the other markers are also evenly spread across the clusters...
+
+```{r}
+sce_markers_plot$cluster_18
+```
+
+Cluster 19 looks like neurons.
+
+```{r}
+sce_markers_plot$cluster_19
+```
+
+20 seems to be either oligodendrocytes or microglia, it's inconclusive
+
+```{r}
+sce_markers_plot$cluster_20
+```
+
+21 looks strongly like T-cells
+
+```{r}
+sce_markers_plot$cluster_21
+```
+
+22 looks like astrocytes
+
+```{r}
+sce_markers_plot$cluster_22
+```
+
+23 looks mainly like neurons
+
+```{r}
+sce_markers_plot$cluster_23
+```
+
+24 looks like pericytes, but not clear if solute transport or ECM-regulating
+
+```{r}
+sce_markers_plot$cluster_24
+```
+
+## Neuronal subtypes
+
+Hannah is keen to get excitatory and inhibitory neuronal subtypes annotated.
+I'll use the top markers from Franks prior annotation and see how they map.
+
+I'll start by focusing on the top 10 markers that are exclusively found in each subtype.
+If those uniquely map so some neuronal clusters but not others then that'd be nice evidence of their type.
+
+```{r}
+#| label: plot inhibitory neuronal markers
+#| fig-width: 9
+#| fig-height: 7
+# get franks clusters
+frank_annotation <- readxl::read_excel(here::here("03_data/990_processed_data/001_snrnaseq/91_data_from_frank/Cell Markers - Frank - First 20.xlsx"))
+head(frank_annotation)
+unique(frank_annotation$cluster)
+neuro_i <- frank_annotation %>%
+  # filter to inhibitory neuron makrers that aren't in excitatory group
+  dplyr::filter(cluster %in% c("NI") & !grepl("NE", in_cluster)) %>%
+  # get top 10 markers by fold change
+  dplyr::top_n(n = 10, wt = avg_log2FC)
+
+neuron_i_plot <- FeaturePlot(seurat, features = neuro_i$gene, raster = TRUE) +
+                          patchwork::plot_annotation(title = "Inhibitory neuronal markers")
+neuron_i_plot
+DotPlot(seurat, features = neuro_i$gene) +
+  patchwork::plot_annotation(title = "Inhibitory neuronal markers") +
+  coord_flip()
+```
+
+Clusters 11 and 13 look likes they've good expression for ERBB4 and ADARB2 in particular, so I'd say they're inhibitory neurons.
+
+```{r}
+#| label: plot excitatory neuronal markers
+#| fig-width: 9
+#| fig-height: 7
+neuro_e <- frank_annotation %>%
+  # filter to inhibitory neuron makrers that aren't in excitatory group
+  dplyr::filter(cluster %in% c("NE") & !grepl("NI", in_cluster)) %>%
+  # get top 10 markers by fold change
+  dplyr::top_n(n = 10, wt = avg_log2FC)
+
+neuron_e_plot <- FeaturePlot(seurat, features = neuro_e$gene, raster = TRUE) +
+                          patchwork::plot_annotation(title = "Excitatory neuronal markers")
+neuron_e_plot
+DotPlot(seurat, features = neuro_e$gene) +
+  patchwork::plot_annotation(title = "Excitatory neuronal markers") +
+  coord_flip()
+```
+
+Clusters 10 and 14 has pretty much all the markers expressed quite nicely and most aren't too defuse to other clusters, so they're our excitatory neurons.
+
+From these marker plots and the Yang data, here are the manual annotations.
+Clusters 18 and 20 are pretty inconclusive from the top markers, but having looked at the cluster markers, Hannah thinks 18 looks neuronal and 20 definitely looks like astrocytes.
+Those labels also fit nicely with the neighbouring clusters.
+We may want to exclude cluster 18 from the pseudobulk though as it still doesn't cleanly annotate.
+
+Clusters 6 doesn't easily fall into excitatory or inhibitory neurons based on Franks unique markers, but Hannah has labelled them as excitatory and would like them all neuronal clusters in one category or the other, so I'll update the annotations accordingly.
+
+```{r}
+#| include: false
+# annotations for the clusters prior to donor exclution
+celltypes <- c("0" = "Oligo", "1" = "Capillary", "2" = "T-Peri", "3" = "Astro", 
+               "4" = "Arterial", "5" = "aSMC", "6" = "Neuron_ex", "7" = "Vas/cap", 
+               "8" = "Oligo-pre", "9" = "Microglia", "10" = "Neuron_ex", 
+               "11" = "Neuron_in", "12" = "Oligo", "13" = "Neuron_in", "14" = "Neuron_ex",
+               "15" = "Peri-Fibro", "16" = "Astro", "17" = "Capillary", 
+               "18" = "ambiguous", "19" = "Neuron_ex", "20" = "Astro",
+               "21" = "T-cell", "22" = "Astro", "23" = "Neuron_ex", "24" = "T-Peri")
+```
+
+```{r}
+top_genes <- top10 |> 
+  dplyr::filter(cluster == 32)
+DotPlot(seurat, features = top_genes$hgnc_symbol) + coord_flip()
+```
+
+Cluster 9 is an odd one, `SLC38A11` is a marker that isn't expressed in endothelial cells at all in Yang 2022 but is in SMCs, but several of the other top markers are not very expressed in SMCs...
+I guess I'll label it as capillary for now since more markers are expressed in them.
+
+Cluster 14 looks like neurons, but doesn't fit super well into either of my inhibitory or excitatory neurons.
+It looks slightly more like excitatory neurons and the cluster is closer to them, so I'll apply that label for now.
+
+Cluster 29 is kinda between astrocytes and microglia curiously.
+The cluster is physically closer to the other astrocyte clusters so I'll use that label for now.
+
+```{r}
+smc_markers <- c("ACTA2", "MYH11", "TAGLN")
+endo_markers <- c("PECAM1", "CD31", "CDH5", "VWF")
+capilliary <- c("ESM1", "DLL4")
+venous <- c("NRP2", "NR2F2")
+
+FeaturePlot(seurat, smc_markers) +
+  patchwork::plot_annotation(title = "SMC markers")
+FeaturePlot(seurat, endo_markers)
+FeaturePlot(seurat, venous)
+FeaturePlot(seurat, capilliary)
+```
+
+```{r}
+celltypes <- c("0" = "Oligo", "1" = "Capillary", "2" = "T-Peri", "3" = "Astro", 
+               "4" = "Arterial", "5" = "aSMC", "6" = "Oligo", "7" = "OPC", 
+               "8" = "Micoglia", "9" = "Venous", "10" = "Neuron_ex", 
+               "11" = "Astro", "12" = "Venous", "13" = "Neuron_in", "14" = "Neuron_ex",
+               "15" = "Neuron_in", "16" = "Astro", "17" = "Peri-Fibro", 
+               "18" = "Capillary", "19" = "Neuron_ex", "20" = "Neuron_ex",
+               "21" = "Neuron_in", "22" = "Neuron_ex", "23" = "Neuron_ex", 
+               "24" = "Neuron_in", "25" = "T-cell", "26" = "Meningeal-Fibro", 
+               "27" = "OPC", "28" = "Neuron_ex", "29" = "Astro", "30" = "OPC",
+               "31" = "T-Peri", "32" = "Capillary")
+```
+
+```{r}
+top_genes <- top10 |>
+  dplyr::filter(cluster == 33)
+DotPlot(seurat, features = top_genes$hgnc_symbol) +
+  coord_flip()
+```
+
+```{r}
+tip_cell_markers <- c("HSPH1", "LAMB1", "PLAUR", "ADM", "ANGPT2", "APLN", 
+                      "COL9A3", "CTGF", "CXCR4", "LXN", "LY6H", "TIMP1")
+mitotic_endothelial_markers <- c("BIRC5", "CENPF", "HMGB2", "HMGN2", "NUSAP1", 
+                                 "TOP2A", "TUBA1B", "UBE2C")
+smc_markers <- c("ACTA2", "CTGF", "HSPA2", "IGFBP2", "MYL9", "SDC2", "TAGLN", 
+                 "TPM1", "TPM2", "VIM")
+aaSMC_markers <- c("CTNNA3", "SLIT3")
+DotPlot(seurat, features = tip_cell_markers) +
+  coord_flip()
+DotPlot(seurat, features = mitotic_endothelial_markers) +
+  coord_flip()
+DotPlot(seurat, features = smc_markers) +
+  coord_flip()
+DotPlot(seurat, features = aaSMC_markers) +
+  coord_flip()
+```
+
+Cluster 7 looks half like endothelial and half like SMC...
+Cluster 28 looks like a mix of neurons and astrocytes.
+
+```{r}
+celltypes <- c("0" = "Oligo", "1" = "Capillary", "2" = "T-Peri", "3" = "Arterial", 
+               "4" = "Astro", "5" = "vascular-SMC", "6" = "Oligo", "7" = "Trans-Endo-to-mural", 
+               "8" = "OPC", "9" = "Neuron_ex", "10" = "Microglia", 
+               "11" = "Astro", "12" = "Venous", "13" = "Neuron_in", 
+               "14" = "Neuron_in", "15" = "Ependymal-donor31", "16" = "Astro", 
+               "17" = "Neuron_ex", "18" = "Neuron_ex", "19" = "Peri-Fibro", 
+               "20" = "Neuron_ex", "21" = "Astro-donor31", "22" = "Neuron_in", 
+               "23" = "Neuron_ex",  "24" = "Microglia", "25" = "T-cell", 
+               "26" = "Neuron_in", "27" = "Meningeal-Fibro", "28" = "Neuron_ex", 
+               "29" = "Neuron_in", "30" = "OPC", "31" = "OPC", "32" = "T-Peri", 
+               "33" = "Capillary")
+```
+
+Cluster 7 is rather odd, and Hope from Zams group also found a strange in-between cluster of mural/endothelial cells.
+Seems like it could either be an artefact of the prep, or a novel celltype assuming they're the same cells.
+I'll save the markers for that cluster to send to Hope:
+
+```{r}
+cluster_markers |>
+  dplyr::filter(cluster == 7) |>
+  write_csv(here::here(
+    "03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/cluster7_markers.csv"
+  ))
+```
+
+## Overview
+
+-   `DEG` number of differentially expressed genes identified
+-   `DEG_uniq` genes found only as differentially expressed for that particular cluster
+-   `pct_DEG_uniq` percentage of DEGs found only for that particular cluster
+-   `pct_nuclei` percentage of total nuclei found for particular cluster
+
+------------------------------------------------------------------------
+
+```{r}
+#| label: cluster markers table 1
+
+cluster_markers_dt <- data.table(data.frame(cluster_markers))
+
+## select by adjusted p-value cut-off
+cluster_markers_dt <- cluster_markers_dt[p_val_adj <= p_val_cutoff, ]
+
+#########################
+## add cell type identity
+## make celltype df
+celltypes_types <- data.frame(cluster = names(celltypes), type = celltypes)
+## left join into datatable
+cluster_markers_dt <-
+  merge(
+    cluster_markers_dt,
+    celltypes_types,
+    by.x = "cluster",
+    by.y = "cluster",
+    all.x = TRUE
+  )
+#########################
+
+## DEGs per cluster
+cluster_markers_num <- cluster_markers_dt[, .N, by = "cluster"][order(cluster)]
+
+## report number of unique DEGs: i.e. not found as DEG for any other cluster
+cluster_markers_gene_count <- cluster_markers_dt[, .N, by = "gene"]
+cluster_markers_unique <-
+  cluster_markers_dt[gene %in% cluster_markers_gene_count[N == 1, gene],]
+cluster_markers_unique_num <-
+  cluster_markers_unique[, .N, by = "cluster"][order(cluster)]
+setnames(cluster_markers_unique_num, "N", "DEG_uniq")
+
+## NOTE, some clusters can have zero unique DEGs:
+cluster_markers_unique_num_zeros <-
+  data.table(cluster = cluster_markers_num[, cluster], dummy = 0)
+cluster_markers_unique_num <-
+  merge(
+    cluster_markers_unique_num_zeros,
+    cluster_markers_unique_num,
+    by = "cluster",
+    all.x = T
+  )
+cluster_markers_unique_num <-
+  cluster_markers_unique_num[is.na(DEG_uniq), DEG_uniq := 0]
+cluster_markers_unique_num <- cluster_markers_unique_num[, dummy := NULL]
+
+cluster_markers_num <-
+  merge(cluster_markers_num, cluster_markers_unique_num, by = "cluster")
+cluster_markers_num <-
+  cluster_markers_num[, pct_DEG_uniq := round(DEG_uniq * 100 / N, 2)]
+
+## merge all information
+cluster_info_all <- copy(data.table(celltypes_types))
+cluster_info_all <- merge(cluster_info_all, cluster_size, by = "cluster")
+cluster_info_all <- merge(cluster_info_all, cluster_markers_num, by = "cluster")
+setnames(cluster_info_all, "N", "DEG")
+
+## column cluster is a factor
+## add 'Cluster_' prefix for easier search in marker table
+cluster_info_all <- cluster_info_all[, cluster := as.numeric(cluster)]
+cluster_info_all <-
+  cluster_info_all[, cluster := paste0("cluster_", formatC(cluster, 
+                                                           width = 2, 
+                                                           flag = '0'))]
+
+```
+
+```{r}
+#| tbl-cap: "Overview of clusters"
+cluster_info_all %>% DT::datatable(
+  escape = F,
+  rownames = F,
+  extensions = 'Buttons',
+  options = list(
+    pageLength = nrow(cluster_info_all),
+    dom = 'Blfrtip',
+    buttons = list(
+      'colvis',
+      list(
+        extend = 'copy',
+        exportOptions = list(columns = ':visible')
+      ),
+      list(
+        extend = 'csv',
+        exportOptions = list(columns = ':visible')
+      ),
+      list(
+        extend = 'excel',
+        exportOptions = list(columns = ':visible')
+      )
+    )
+  )
+)
+```
+
+------------------------------------------------------------------------
+
+## Main cell types
+
+```{r}
+#| label: overview main types
+#| fig-width: 12
+#| fig-height: 8
+#| layout-ncol: 2
+
+#names(cluster_info_all)
+nuclei_all <- sum(cluster_info_all$nuclei)
+
+plot_data <- cluster_info_all %>%
+  dplyr::select(type:nuclei, P01:V40) %>%
+  dplyr::rename(nuclei_total = nuclei) %>%
+  pivot_longer(P01:V40, names_to = "sample", values_to = "nuclei") %>%
+  # get sample prep
+  dplyr::mutate(prep = str_sub(sample, end = 1)) %>%
+  # get the sum of nuclei per celltype and prep
+  dplyr::group_by(type, prep) %>%
+  dplyr::mutate(nuclei_total = sum(nuclei)) %>%
+  dplyr::ungroup() %>%
+  dplyr::select(!sample:nuclei) %>%
+  unique() %>%
+  dplyr::rename(nuclei = nuclei_total) %>%
+  # group by cluster to get total nuclei per cluster
+  dplyr::group_by(type) %>%
+  dplyr::mutate(nuclei_total = sum(nuclei)) %>%
+  # get percentage per prep
+  dplyr::group_by(prep) %>%
+  dplyr::mutate(pct = nuclei / nuclei_total * 100) %>%
+  dplyr::ungroup() 
+
+p_nuclei <- ggplot(plot_data, aes(x=type, y=nuclei, fill=prep)) +
+  geom_bar(stat="identity", position=position_dodge()) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  #scale_fill_brewer(palette = "RdYlBu")
+  scale_fill_viridis(discrete = TRUE, option = "D")
+p_pct <- ggplot(plot_data, aes(x=type, y=pct, fill=prep)) +
+  geom_bar(stat="identity") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.text = element_text(size = 12)) +
+  scale_fill_viridis(discrete = TRUE, option = "D") +
+  labs(x = "", y = "%")
+
+p_nuclei
+p_pct
+
+ggsave(
+  here::here(
+    "05_figures/990_shared_figures/celltype_percent_enrichment.svg"
+  ),
+  p_pct,
+  device = "svg"
+)
+```
+
+```{r}
+#| fig-width: 9
+#| fig-height: 7
+#| layout-ncol: 2
+
+# make data wide format
+plot_data <- plot_data %>%
+  pivot_wider(names_from = prep, values_from = c(nuclei, pct)) %>%
+  dplyr::mutate(pct_total = nuclei_total / sum(nuclei_total) * 100)
+
+# plot total number per celltypes
+p_nuclei <-
+  ggplot(plot_data, aes(
+    x = reorder(type, dplyr::desc(nuclei_total)),
+    y = nuclei_total,
+    fill = type
+  )) +
+  geom_bar(stat = "identity") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_fill_viridis(discrete = TRUE, option = "D") +
+  geom_text(
+    aes(label = nuclei_total),
+    vjust = 1.6,
+    position = position_dodge(0.9),
+    size = 2
+  )
+
+p_pct <-
+  ggplot(plot_data, aes(
+    x = reorder(type, dplyr::desc(pct_total)),
+    y = pct_total,
+    fill = type
+  )) +
+  geom_bar(stat = "identity") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_fill_viridis(discrete = TRUE, option = "D") +
+  geom_text(
+    aes(label = round(pct_total, 1)),
+    vjust = 1.6,
+    position = position_dodge(0.9),
+    size = 2
+  )
+
+p_nuclei
+p_pct
+```
+
+```{r}
+#| label: overview main types table per prep
+#| tbl-cap: "Main cell types"
+plot_data %>%
+  DT::datatable(
+    escape = F,
+    rownames = F,
+    extensions = 'Buttons',
+    options = list(
+      dom = 'Blfrtip',
+      buttons = list(
+        'colvis',
+        list(
+          extend = 'copy',
+          exportOptions = list(columns = ':visible')
+        ),
+        list(
+          extend = 'csv',
+          exportOptions = list(columns = ':visible')
+        ),
+        list(
+          extend = 'excel',
+          exportOptions = list(columns = ':visible')
+        )
+      )
+    )
+  )
+```
+
+```{r}
+#| label: cluster markers table 2
+
+## include info how many times this gene was found as a marker
+cluster_markers_dt <-
+  merge(cluster_markers_dt, cluster_markers_gene_count, by = "gene")
+## setnames(cluster_markers_dt, "N", "N_found")
+
+## add column listing all clusters
+in_cluster_dt <-
+  cluster_markers_dt[, list(in_cluster = paste(cluster, collapse = "|")), 
+                     by = "gene"]
+cluster_markers_dt <- merge(cluster_markers_dt, in_cluster_dt, by = "gene")
+
+#cluster_markers_dt <- merge(cluster_markers_dt, t2g_genes[, .(ext_gene, gene_type, desc)], by.x = "gene", by.y = "ext_gene", all.x = T)
+#setnames(cluster_markers_dt, "desc", "__________________description__________________")
+
+cluster_markers_dt <-
+  cluster_markers_dt[, c("p_val", "p_val_adj") := list(signif(p_val, 3), 
+                                                       signif(p_val_adj, 3))]
+cluster_markers_dt <- cluster_markers_dt[, avg_log2FC := round(avg_log2FC, 4)]
+
+cluster_markers_dt <- cluster_markers_dt[order(cluster, -avg_log2FC)]
+
+## column cluster is a factor
+## converting to number starts with 1 instead of 0!?
+## add 'Cluster_' prefix for easier search in marker table
+cluster_markers_dt <- cluster_markers_dt[, cluster := as.numeric(cluster)]
+cluster_markers_dt <-
+  cluster_markers_dt[, cluster := paste0("cluster_", formatC(cluster, 
+                                                             width = 2, 
+                                                             flag = '0'))]
+
+## remove p_val column, adjusted pval is enough to report
+## setnames(cluster_markers_dt, "p_val", "p_value")
+cluster_markers_dt <- cluster_markers_dt[, p_val := NULL]
+
+### cluster_markers_dt %>% group_by(cluster) %>% top_n(n = 10, wt = avg_log2FC) %>% DT::datatable(caption="Differential cluster markers, top 10 of each cluster", escape = F, rownames = F, extensions = 'Buttons', options = list(dom = 'Blfrtip', buttons = list('colvis', list(extend = 'copy', exportOptions = list(columns=':visible')), list(extend = 'csv', exportOptions = list(columns=':visible')), list(extend = 'excel', exportOptions = list(columns=':visible')))))
+```
+
+------------------------------------------------------------------------
+
+## All cluster markers
+
+-   report all DEGs indentified
+-   note, some genes currently have no gene description in this table
+
+------------------------------------------------------------------------
+
+```{r}
+#| label: cluster markers table 3
+#| tbl-cap: "Differential cluster markers"
+
+## report only unique markers listed, found in >= 1 cluster, i.e. genes found in several clusters only listed once
+## cluster_markers_dt_print <- copy(unique(cluster_markers_dt, by = "gene"))
+
+cluster_markers_dt %>% DT::datatable(
+  escape = F,
+  rownames = F,
+  extensions = 'Buttons',
+  options = list(
+    dom = 'Blfrtip',
+    buttons = list(
+      'colvis',
+      list(
+        extend = 'copy',
+        exportOptions = list(columns = ':visible')
+      ),
+      list(
+        extend = 'csv',
+        exportOptions = list(columns = ':visible')
+      ),
+      list(
+        extend = 'excel',
+        exportOptions = list(columns = ':visible')
+      )
+    )
+  )
+)
+```
+
+------------------------------------------------------------------------
+
+## UMAP Annotated
+
+```{r}
+#| label: plot annotated umap
+#| fig-width: 9
+#| fig-height: 7
+
+sdata_endo <- RenameIdents(seurat, celltypes)
+
+DimPlot(sdata_endo, reduction = "umap", label = T, raster = "FALSE", 
+        cols = pals::cols25(n = 25))
+DimPlot(seurat, reduction = "umap", label = T, raster = "FALSE") + 
+  NoLegend()
+umap_annotated <- DimPlot(sdata_endo, reduction = "umap", label = T, raster = "FALSE", 
+        cols = pals::cols25(n = 23), repel = T) +  NoLegend()
+umap_annotated
+
+ggsave(here::here("05_figures/990_shared_figures/scflow_umap_manually_annotated.png"), umap_annotated, device = "png")
+# clean up plots
+rm(umap_annotated)
+```
+
+------------------------------------------------------------------------
+
+## Main cell types by sample
+
+```{r}
+
+# sdata_endo_meta <- sdata_endo@meta.data
+# saveRDS(sdata_endo_meta, "/scratch/c.mpmfw/Endo_10X_main/Analysis/Notebooks/sdata_endo_meta_V.rds", compress = T)
+# 
+# dt_V <- data.table(cluster = Idents(sdata_endo), sample = sdata_endo$sample)
+# saveRDS(dt_V, "/scratch/c.mpmfw/Endo_10X_main/Analysis/Notebooks/dt_V.rds", compress = T)
+# 
+# ## nuclei per sample group
+# cluster_size_sample <- as.data.frame.matrix(table(Idents(sdata_endo), sdata_endo$sample))
+# saveRDS(cluster_size_sample, "/scratch/c.mpmfw/Endo_10X_main/Analysis/Notebooks/cluster_size_sample_V.rds", compress = T)
+```
+
+```{r}
+#| label: cell types per sample
+#| fig-width: 14
+#| fig-height: 11
+
+dt <- data.table(cluster = Idents(sdata_endo), sample = sdata_endo$manifest)
+
+dt <- dt[, type := gsub("_.*", "", cluster)] ## underscores were used for subtypes and also neuro_e and neuro_i, i.e. all exc. and inh. neurons merged
+##########
+dt <- dt[type %like% "endo", type := "endo"]
+dt <- dt[type %like% "fibro", type := "fibro"]
+dt <- dt[type %like% "peri", type := "peri"]
+dt <- dt[type %like% "Microglia", type := "Microflia"]
+##########
+
+n_sample <- dt[, .N, by = c("sample")]
+setnames(n_sample, "N", "n_total")
+dt_per_sample <- dt[, .N, by = c("sample", "type")]
+dt_per_sample <- merge(dt_per_sample, n_sample, by = "sample")
+dt_per_sample <- dt_per_sample[, pct := round(N / n_total * 100, 1)]
+
+## exclude "unknown" from plot
+### dt_per_sample <- dt_per_sample[type != "unknown", ]
+
+## plot totals
+p <- ggplot(dt_per_sample, aes(x=sample, y=N, fill=type))
+p <- p + geom_bar(stat="identity", position=position_dodge())
+p <- p + facet_wrap( ~ type, ncol = 3, scales = "free_y")
+## p <- p + scale_fill_manual(values = scater:::.get_palette("tableau10medium"))
+p <- p + scale_fill_manual(values = scater:::.get_palette("tableau20"))
+p <- p + xlab(NULL) + ylab("Number of nuclei")
+p <- p + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+p <- p + theme(legend.position="null")
+p <- p + geom_text(aes(label=N), vjust=1.6, position = position_dodge(0.9), size = 2)
+p
+
+p <- ggplot(dt_per_sample, aes(x=sample, y=N, fill=type))
+p <- p + geom_bar(stat="identity", position=position_dodge())
+p <- p + facet_wrap( ~ type, ncol = 3)
+## p <- p + scale_fill_manual(values = scater:::.get_palette("tableau10medium"))
+p <- p + scale_fill_manual(values = scater:::.get_palette("tableau20"))
+p <- p + xlab(NULL) + ylab("Number of nuclei")
+p <- p + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+p <- p + theme(legend.position="null")
+p <- p + geom_text(aes(label=N), vjust=1.6, position = position_dodge(0.9), size = 2)
+p
+
+## plot percents
+p <- ggplot(dt_per_sample, aes(x=sample, y=pct, fill=type))
+p <- p + geom_bar(stat="identity", position=position_dodge())
+p <- p + facet_wrap( ~ type, ncol = 3, scales = "free_y")
+## p <- p + scale_fill_manual(values = scater:::.get_palette("tableau10medium"))
+p <- p + scale_fill_manual(values = scater:::.get_palette("tableau20"))
+p <- p + xlab(NULL) + ylab("Percent of nuclei")
+p <- p + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+p <- p + theme(legend.position="null")
+p <- p + geom_text(aes(label=pct), vjust=1.6, position = position_dodge(0.9), size = 2)
+p
+
+p <- ggplot(dt_per_sample, aes(x=sample, y=pct, fill=type))
+p <- p + geom_bar(stat="identity", position=position_dodge())
+p <- p + facet_wrap( ~ type, ncol = 3)
+## p <- p + scale_fill_manual(values = scater:::.get_palette("tableau10medium"))
+p <- p + scale_fill_manual(values = scater:::.get_palette("tableau20"))
+p <- p + xlab(NULL) + ylab("Percent of nuclei")
+p <- p + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+p <- p + theme(legend.position="null")
+p <- p + geom_text(aes(label=pct), vjust=1.6, position = position_dodge(0.9), size = 2)
+p
+
+```
+
+------------------------------------------------------------------------
+
+```{r}
+#| label: cell types per sample table
+#| tbl-cap: "Main cell types per sample"
+
+dt_per_sample %>% DT::datatable(
+  escape = F,
+  rownames = F,
+  extensions = 'Buttons',
+  options = list(
+    dom = 'Blfrtip',
+    buttons = list(
+      'colvis',
+      list(
+        extend = 'copy',
+        exportOptions = list(columns = ':visible')
+      ),
+      list(
+        extend = 'csv',
+        exportOptions = list(columns = ':visible')
+      ),
+      list(
+        extend = 'excel',
+        exportOptions = list(columns = ':visible')
+      )
+    )
+  )
+)
+```
+
+------------------------------------------------------------------------
+
+<!-- ## Main cell types merged -->
+
+```{r}
+#| label: cell types per sample merged
+#| fig-width: 7.5
+#| fig-height: 3
+#| eval: false
+#| include: false
+
+dt_per_sample_merge <- copy(dt_per_sample)
+
+dt_per_sample_merge <- dt_per_sample_merge[type == "endo", type := "endo_peri_SMC"]
+dt_per_sample_merge <- dt_per_sample_merge[type == "peri", type := "endo_peri_SMC"]
+dt_per_sample_merge <- dt_per_sample_merge[type == "SMC", type := "endo_peri_SMC"]
+dt_per_sample_merge <- dt_per_sample_merge[type != "endo_peri_SMC", type := "rest"]
+
+n_sample_2 <- dt_per_sample_merge[, list(n_total = sum(N)), by = c("sample")]
+plot_data <- dt_per_sample_merge[, list(N = sum(N)), by = c("sample", "type")]
+plot_data <- merge(plot_data, n_sample_2, by = "sample")
+plot_data <- plot_data[, pct := round(N / n_total * 100, 1)]
+
+## plot totals
+p <- ggplot(plot_data, aes(x = sample, y = N, fill = type))
+p <- p + geom_bar(stat="identity", position=position_dodge())
+p <- p + facet_wrap( ~ type, ncol = 2)
+## p <- p + scale_fill_manual(values = scater:::.get_palette("tableau10medium"))
+p <- p + scale_fill_manual(values = scater:::.get_palette("tableau20"))
+p <- p + xlab(NULL) + ylab("Number of nuclei")
+p <- p + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+p <- p + theme(legend.position="null")
+p <- p + geom_text(aes(label=N), vjust=1.6, position = position_dodge(0.9), size = 2)
+p
+
+## plot percents
+p <- ggplot(plot_data, aes(x=sample, y=pct, fill=type))
+p <- p + geom_bar(stat="identity", position=position_dodge())
+p <- p + facet_wrap( ~ type, ncol = 3)
+## p <- p + scale_fill_manual(values = scater:::.get_palette("tableau10medium"))
+p <- p + scale_fill_manual(values = scater:::.get_palette("tableau20"))
+p <- p + xlab(NULL) + ylab("Percent of nuclei")
+p <- p + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+p <- p + theme(legend.position="null")
+p <- p + geom_text(aes(label=pct), vjust=1.6, position = position_dodge(0.9), size = 2)
+p
+
+```
+
+------------------------------------------------------------------------
+
+```{r}
+#| label: cell types per sample merged table
+#| eval: false
+#| include: false
+#| tbl-cap: "Main cell types per sample, merged"
+
+plot_data %>% DT::datatable(
+  escape = F,
+  rownames = F,
+  extensions = 'Buttons',
+  options = list(
+    dom = 'Blfrtip',
+    buttons = list(
+      'colvis',
+      list(
+        extend = 'copy',
+        exportOptions = list(columns = ':visible')
+      ),
+      list(
+        extend = 'csv',
+        exportOptions = list(columns = ':visible')
+      ),
+      list(
+        extend = 'excel',
+        exportOptions = list(columns = ':visible')
+      )
+    )
+  )
+)
+```
+
+------------------------------------------------------------------------
+
+## Totals
+
+```{r}
+#| label: n per samples
+#| fig-width: 8
+#| fig-height: 3
+
+n_all <- sum(n_sample$n_total)
+n_sample <- n_sample[, pct := round(n_total / n_all * 100, 1)]
+plot_data <- melt(n_sample, id.vars = "sample")
+
+p <- ggplot(plot_data, aes(x=sample, y=value, fill="blue"))
+p <- p + geom_bar(stat="identity", position=position_dodge())
+p <- p + facet_wrap( ~ variable, scales = "free_y", nrow = 1)
+## p <- p + scale_fill_manual(values = scater:::.get_palette("tableau10medium"))
+p <- p + scale_fill_manual(values = scater:::.get_palette("tableau20"))
+p <- p + xlab(NULL) + ylab(NULL)
+p <- p + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+p <- p + theme(legend.position="null")
+p <- p + geom_text(aes(label=value), vjust=1.6, position = position_dodge(0.9), size = 2)
+p
+
+
+plot_data <- plot_data[, prep := "P"]
+plot_data <- plot_data[sample %like% "V", prep := "V"]
+
+p <- ggplot(plot_data, aes(x=sample, y=value, fill=prep))
+p <- p + geom_bar(stat="identity", position=position_dodge())
+p <- p + facet_wrap( ~ variable, scales = "free_y", nrow = 1)
+## p <- p + scale_fill_manual(values = scater:::.get_palette("tableau10medium"))
+p <- p + scale_fill_manual(values = scater:::.get_palette("tableau20"))
+p <- p + xlab(NULL) + ylab(NULL)
+p <- p + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+p <- p + theme(legend.position="null")
+p <- p + geom_text(aes(label=value), vjust=1.6, position = position_dodge(0.9), size = 2)
+p
+```
+
+------------------------------------------------------------------------
+
+# Sex check
+
+```{r}
+#| label: sex check
+#| fig-width: 8
+#| fig-height: 14
+
+## plot_markers <- c("XIST", "USP9Y", "UTY", "NLGN4Y", "ZFY", "RPS4Y1", "TXLNGY")
+## TXLNGY!?
+plot_markers <- c("XIST", "USP9Y", "UTY", "NLGN4Y", "ZFY", "RPS4Y1", "DDX3Y", "KDM5D")
+print(plot_markers)
+
+VlnPlot(sdata_endo, features = plot_markers, ncol = 1, group.by = "manifest")
+VlnPlot(sdata_endo, features = plot_markers, ncol = 1, group.by = "manifest", pt.size = 0)
+
+table(seurat$manifest, seurat$sex) %>%
+  as.data.frame() %>%
+  dplyr::rename(sample = Var1, sex = Var2) %>%
+  dplyr::filter(Freq != 0) %>%
+  dplyr::select(!Freq) %>%
+  dplyr::mutate(sample = str_sub(sample, start = 2)) %>%
+  unique() %>%
+  dplyr::arrange(sample) %>%
+  gt::gt()
+```
+
+------------------------------------------------------------------------
+
+# Targets
+
+## Initial BBB targets
+
+-   (SLC3A2 - apparently needed for SLC7A1 function)
+-   selected for follow-up experiments: APCDD1, ATP10A, SLC7A1
+
+```{r}
+#| label: bbb targets
+#| fig-width: 9
+#| fig-height: 14
+
+## from curated list
+BBB_targets <-
+  sort(
+    c(
+      "APCDD1",
+      "LRRN3",
+      "PROM1",
+      "SEMA7A",
+      "SLC16A4",
+      "ATP10A",
+      "ELOVL7",
+      "SLC7A1",
+      "SLC3A2"
+    )
+  )
+print(BBB_targets)
+
+## re-level cell identities
+# new_levels <- c("endo_1", "endo_2", "endo_3", "peri", "SMC", "oligo_1", 
+#                 "oligo_2", "astro_1", "astro_2", "neuro_e_1", "neuro_e_2", 
+#                 "neuro_e_3", "neuro_e_4", "neuro_e_5", "neuro_e_6", 
+#                 "neuro_i_1", "neuro_i_2", "micro", "fibro", 
+#                 "OPC", "T-cell", "hybrid")
+# 
+# Idents(sdata_endo) <- factor(x = Idents(sdata_endo), levels = new_levels)
+
+VlnPlot(sdata_endo, features = BBB_targets, ncol = 2)
+bbb_marker_plot <- VlnPlot(sdata_endo, features = BBB_targets, ncol = 2, pt.size = 0)
+bbb_marker_plot
+ggsave(here::here("05_figures/990_shared_figures/bbb_marker_expression_levelone.png"), bbb_marker_plot, device = "png", height = 18)
+```
+
+Three of the candidate genes look good, check the expression in cases VS controls for those three
+
+```{r}
+# Vector of promising targets based on celltype expression
+promising_targets <- c("SLC7A1", "ELOVL7", "ATP10A")
+
+# Plot cases VS control
+bbb_marker_plot <- VlnPlot(sdata_endo, features = promising_targets, ncol = 2, pt.size = 0, split.by = "diagnosis") + 
+  theme(legend.position = "right")
+bbb_marker_plot
+ggsave(here::here("05_figures/990_shared_figures/bbb_marker_subset_expression_levelone_case_vs_control.png"), bbb_marker_plot, device = "png")
+```
+
+------------------------------------------------------------------------
+
+```{r}
+#| label: bbb targets 2
+#| fig-width: 14
+#| fig-height: 9
+VlnPlot(sdata_endo, features = BBB_targets, ncol = 3, pt.size = 0)
+```
+
+# Final counts
+
+Here're the final counts of the celltypes.
+I'll start with the subtypes included, and then do counts for the main types.
+
+Note that Hannah is after the unified samples, so this is merging the vascular and parenchyma fractions.
+
+```{r}
+#| tbl-cap: Total counts per celltype
+# show cell numbers
+cluster_counts <- table(Idents(sdata_endo))
+cluster_counts <- data.frame(as.list(cluster_counts), row.names = "counts") %>% 
+  t() %>%
+  as_tibble(rownames = "cell_type")
+
+cluster_counts %>% DT::datatable(
+  escape = F,
+  rownames = F,
+  extensions = 'Buttons',
+  options = list(
+    dom = 'Blfrtip',
+    buttons = list(
+      'colvis',
+      list(
+        extend = 'copy',
+        exportOptions = list(columns = ':visible')
+      ),
+      list(
+        extend = 'csv',
+        exportOptions = list(columns = ':visible')
+      ),
+      list(
+        extend = 'excel',
+        exportOptions = list(columns = ':visible')
+      )
+    )
+  )
+)
+```
+
+```{r}
+# counts by samples
+cluster_count_by_sample <- table(Idents(sdata_endo), sdata_endo$individual) %>%
+ as.data.frame() %>%
+  dplyr::mutate(Var2 = as.numeric(Var2)) %>%
+  dplyr::arrange(Var2) %>%
+  dplyr::mutate(Var2 = paste0("sample_", Var2)) %>%
+  pivot_wider(names_from = Var2, values_from = Freq) %>%
+  dplyr::rename(cell_type = Var1)
+
+cluster_count_by_sample %>% DT::datatable(
+  escape = F,
+  rownames = F,
+  extensions = 'Buttons',
+  options = list(
+    dom = 'Blfrtip',
+    buttons = list(
+      'colvis',
+      list(
+        extend = 'copy',
+        exportOptions = list(columns = ':visible')
+      ),
+      list(
+        extend = 'csv',
+        exportOptions = list(columns = ':visible')
+      ),
+      list(
+        extend = 'excel',
+        exportOptions = list(columns = ':visible')
+      )
+    )
+  )
+)
+```
+
+```{r}
+# counts by samples per cluster
+cluster_count_by_sample <- table(sdata_endo$seurat_clusters, sdata_endo$individual) %>%
+ as.data.frame() %>%
+  dplyr::mutate(Var2 = as.numeric(Var2)) %>%
+  dplyr::arrange(Var2) %>%
+  dplyr::mutate(Var2 = paste0("sample_", Var2)) %>%
+  pivot_wider(names_from = Var2, values_from = Freq) %>%
+  dplyr::rename(cluster = Var1)
+
+cluster_count_by_sample %>% DT::datatable(
+  escape = F,
+  rownames = F,
+  extensions = 'Buttons',
+  options = list(
+    dom = 'Blfrtip',
+    buttons = list(
+      'colvis',
+      list(
+        extend = 'copy',
+        exportOptions = list(columns = ':visible')
+      ),
+      list(
+        extend = 'csv',
+        exportOptions = list(columns = ':visible')
+      ),
+      list(
+        extend = 'excel',
+        exportOptions = list(columns = ':visible')
+      )
+    )
+  )
+)
+```
+
+<!-- Remove the ambiguous cells - they could well be doublets and there aren't enough of them to worry about keeping them. -->
+
+```{r}
+#| include: false
+#| eval: false
+sdata_endo
+rownames(sdata_endo@assays$RNA@data) <- ensembl_to_symbol$ensembl_gene_id
+sdata_endo <- subset(sdata_endo, idents = "ambiguous", invert=TRUE)
+# paste ensembl id and gene id to keep unique rownames
+rownames(sdata_endo@assays$RNA@data) <-
+  paste0(ensembl_to_symbol$hgnc_symbol,
+         "_",
+         ensembl_to_symbol$ensembl_gene_id)
+sdata_endo
+```
+
+Now the same for the higher-level celltypes
+
+```{r}
+current_labels <- levels(Idents(sdata_endo))
+new_labels <- str_replace_all(current_labels, "Capillary|Venous|Arterial", "Endothelial") %>%
+  str_replace_all("T-Peri", "Pericyte") %>%
+  str_replace_all("vascular-SMC", "SMC") %>%
+  str_replace_all("Oligo-pre", "OPC") %>%
+  str_replace_all("Trans-Endo-to-mural", "mystery-cluster") %>%
+  str_replace_all("Peri-Fibro|Meningeal-Fibro", "Fibroblast")
+
+names(new_labels) <- current_labels
+sdata_endo$manual_annotations <- Idents(sdata_endo)
+sce <- RenameIdents(sdata_endo, new_labels)
+sdata_endo$highlevel_manual_annotations <- Idents(sdata_endo)
+```
+
+```{r}
+# counts by samples
+cluster_count_by_sample <- table(Idents(sce), sce$donor) %>%
+ as.data.frame() %>%
+  pivot_wider(names_from = Var2, values_from = Freq) %>%
+  dplyr::rename(cell_type = Var1)
+
+cluster_count_by_sample %>% DT::datatable(
+  escape = F,
+  rownames = F,
+  extensions = 'Buttons',
+  options = list(
+    dom = 'Blfrtip',
+    buttons = list(
+      'colvis',
+      list(
+        extend = 'copy',
+        exportOptions = list(columns = ':visible')
+      ),
+      list(
+        extend = 'csv',
+        exportOptions = list(columns = ':visible')
+      ),
+      list(
+        extend = 'excel',
+        exportOptions = list(columns = ':visible')
+      )
+    )
+  )
+)
+```
+
+# Update APOE status
+
+I have the genotyped data now and have computed the APOE status from the probes.
+Note that the data isn't precise on which allele is which, so there is an instance of an unknown that is almost certainly due to the alleles being different for each of the two SNPs, so that will need to be corrected
+
+```{r}
+# read in apoe status table
+apoe_status <- readr::read_csv(here::here("03_data/992_genotyping_data/apoe_status.csv"))
+
+# Correct case of unknown apoe status
+apoe_status <- apoe_status |>
+  dplyr::mutate(apoe_status = ifelse(rs7412 == "0/1" & rs429358 == "0/1", "E2/E4", apoe_status))
+# check numbers
+table(apoe_status$apoe_status)
+
+# Check repeated samples
+# the unique sample ID is between the first and second _
+apoe_status$unique_id <- sapply(strsplit(as.character(apoe_status$sample_name), "_"), function(x) x[2])
+
+apoe_status %>%
+  group_by(unique_id) %>%
+  mutate(count = n()) %>%
+  #ungroup() %>%
+  filter(count > 1) %>%
+  dplyr::arrange(unique_id) |>
+  gt()
+```
+
+So it seems there's disagreement for sample NP160...
+Having checked the VCF files for each, I can see that one probe is 1/1 and the other ./. (denoting uncertainty) for `3_NP160_13`, whereas both probes from `23_NP160_13R` are 0/1.
+Given that E3 is more common, it seems more reasonable to assume this sample is E3/E4.
+
+```{r}
+apoe_status <- apoe_status |>
+  # remove inaccurate replicate
+  dplyr::filter(sample_name != "3_NP160_13") |>
+  # keep one of the remaining replicates
+  dplyr::distinct(unique_id, .keep_all = TRUE) |>
+  # remove the "E" from the apoe status to match the current meta.data format
+  dplyr::mutate(apoe_status = gsub("E", "", apoe_status))
+```
+
+Now I need the sample IDs of the neurochips to match the APOE status to the sce meta.data
+
+```{r}
+# Get sample IDs
+neurochip_ids <- readr::read_csv(here::here("03_data/990_processed_data/001_snrnaseq/90_sample_info/neurchip_sample_ids.csv")) |>
+  dplyr::mutate(donor = paste0("donor-", str_extract(fraction_donor, "(?<=_).*"))) |>
+  dplyr::select(-fraction_donor) |>
+  dplyr::distinct()
+
+apoe_status <- apoe_status |>
+  dplyr::left_join(neurochip_ids, by = c("sample_name" = "neurochip")) 
+
+apoe_status <- apoe_status |>
+  # select only the apoe_status and donor columns to merge
+  dplyr::select(apoe_status, donor)
+
+# Merge the new APOE status information with the existing meta.data
+# Use all.x = TRUE to keep all samples in the original meta.data
+updated_meta <- merge(sce@meta.data, apoe_status, by.x = "donor", by.y = "donor", all.x = TRUE)
+updated_meta <- dplyr::left_join(sce@meta.data, apoe_status, by = "donor")
+# Lost rownames, add them back
+# First check that order of rows hasn't changed
+assertthat::assert_that(sum(sce@meta.data$nCount_RNA != updated_meta$nCount_RNA) == 0)
+rownames(updated_meta) <- rownames(sce@meta.data)
+# merge the two apoe columns
+updated_meta <- updated_meta %>%
+  mutate(apoe_status = coalesce(APOE, apoe_status)) %>%
+# remove old column
+  select(-APOE)  
+
+# update meta.data
+sce@meta.data <- updated_meta
+rm(updated_meta, apoe_status, neurochip_ids)
+```
+
+# Save data
+
+```{r}
+#| label: save annotated seurat obj
+
+## main object with hybrid removed and super-clusters annotated
+## what about the sub-clusters e.g. neurons!?!? - keep that info - HOW!?
+# readr::write_rds(
+#   sdata_endo,
+#   here::here(
+#     "03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-sce-annotated.rds"
+#   )
+# )
+readr::write_rds(
+  sce,
+  here::here(
+    "03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-sce-annotated-highlevel.rds"
+  )
+)
+```
+
+```{r}
+# Empty environment
+rm(list = ls())
+```
+
+------------------------------------------------------------------------
+
+# Hannah annotations
+
+Hannah has done her own annotations of the sce objects with 35 dimensions.
+She wants the cell counts for these cell types, and I'll plot them out of curiosity.
+
+```{r}
+# read in sce
+sce <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-sce-updated_dim-35.rds"))
+# read in hannahs annotations
+hannah_annotations <-
+  readxl::read_excel(
+    here::here(
+      "03_data/990_processed_data/001_snrnaseq/92_data_from_hannah/hannah_cluster_annotations.xlsx"
+    ),
+    sheet = "cluster_annotations"
+  )
+
+# counts per cluster
+cluster_count_by_sample <- table(Idents(sce), sce$individual) %>%
+ as.data.frame() %>%
+  dplyr::mutate(Var2 = as.numeric(Var2)) %>%
+  dplyr::arrange(Var2) %>%
+  dplyr::mutate(Var2 = paste0("sample_", Var2)) %>%
+  pivot_wider(names_from = Var2, values_from = Freq) %>%
+  dplyr::rename(cell_type = Var1)
+
+cluster_count_by_sample %>% DT::datatable(
+  escape = F,
+  rownames = F,
+  extensions = 'Buttons',
+  options = list(
+    dom = 'Blfrtip',
+    buttons = list(
+      'colvis',
+      list(
+        extend = 'copy',
+        exportOptions = list(columns = ':visible')
+      ),
+      list(
+        extend = 'csv',
+        exportOptions = list(columns = ':visible')
+      ),
+      list(
+        extend = 'excel',
+        exportOptions = list(columns = ':visible')
+      )
+    )
+  )
+)
+
+celltypes <- hannah_annotations$Cell
+names(celltypes) <- as.character(hannah_annotations$cluster)
+
+sce <- RenameIdents(sce, celltypes)
+DimPlot(sce, reduction = "umap", label = TRUE, raster = FALSE)
+
+# counts per celltype
+cluster_count_by_sample <- table(Idents(sce), sce$individual) %>%
+ as.data.frame() %>%
+  dplyr::mutate(Var2 = as.numeric(Var2)) %>%
+  dplyr::arrange(Var2) %>%
+  dplyr::mutate(Var2 = paste0("sample_", Var2)) %>%
+  pivot_wider(names_from = Var2, values_from = Freq) %>%
+  dplyr::rename(cell_type = Var1)
+
+cluster_count_by_sample %>% DT::datatable(
+  escape = F,
+  rownames = F,
+  extensions = 'Buttons',
+  options = list(
+    dom = 'Blfrtip',
+    buttons = list(
+      'colvis',
+      list(
+        extend = 'copy',
+        exportOptions = list(columns = ':visible')
+      ),
+      list(
+        extend = 'csv',
+        exportOptions = list(columns = ':visible')
+      ),
+      list(
+        extend = 'excel',
+        exportOptions = list(columns = ':visible')
+      )
+    )
+  )
+)
+
+```
