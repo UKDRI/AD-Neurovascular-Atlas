@@ -2,7 +2,6 @@
 title: LDScore - Generate ldcts file
 execute:
   eval: true
-#self-contained: true
 ---
 
 To compute the LDScore regression one needs a file that has a row per genelist (celltype in our case) followed by a space, the path to the scored gene list ending in a `.` (to get all the chromosomes), then a `,` and the path to the background gene list, also ending in a `.`

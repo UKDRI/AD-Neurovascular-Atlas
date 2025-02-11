@@ -2,7 +2,6 @@
 title: LDScore - Analyse results
 execute:
   eval: true
-#self-contained: true
 ---
 
 # Load packages
@@ -133,11 +132,6 @@ make_heatmap <- function(heatmap_data, plot_title) {
     column_names_max_height = max_text_height(colnames(heatmap_data),
                                               gp = gpar(fontsize = 500)),
     column_title = plot_title
-    # Add a border around the cells
-    #border_color = "grey50",
-    # Additional options like margins
-    #bottom_annotation_height = unit(2, "cm"),
-    #left_annotation_width = unit(2, "cm")
   )
   
   return(plot)

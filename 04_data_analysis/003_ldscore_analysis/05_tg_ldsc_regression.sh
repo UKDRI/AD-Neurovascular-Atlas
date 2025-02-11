@@ -7,8 +7,6 @@
 #SBATCH --account=scw1329
 #SBATCH -o /scratch/c.mpmgb/hawk_output/%x_out_%A_%a_%J.txt
 #SBATCH -e /scratch/c.mpmgb/hawk_output/%x_err_%A_%a_%J.txt
-#SBATCH --mail-type=END,FAIL
-#SBATCH --mail-user=bernardo-harringtong@cardiff.ac.uk
 
 echo "*****************************************************************"
 echo "All jobs in this array have:"
