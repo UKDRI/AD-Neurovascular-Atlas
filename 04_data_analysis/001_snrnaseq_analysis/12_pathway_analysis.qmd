@@ -2,7 +2,6 @@
 title: Perform pathway analysis
 execute:
   eval: true
-#self-contained: true
 code-fold: true
 bibliography: references.bib
 ---
@@ -309,24 +308,6 @@ dotplots
 readr::write_rds(dotplots, here::here("03_data/990_processed_data/001_snrnaseq/09_pathway_analysis/go-dotplots.rds"))
 ```
 
-Caleb wants plots for the vascular celltypes
-
-```{r}
-#| eval: false
-plot_layout <- (dotplots$Endothelial | dotplots$Pericyte) / plot
-ggsave("combined_go_plot.png", plot_layout, width = 15, height = 16, dpi = 300)
-```
-
-
-```{r}
-#| eval: false
-#| include: false
-map2(gse,
-     names(gse),
-     ~ emapplot(.x, showCategory = 10) +
-                  ggtitle(.y))
-```
-
 ```{r}
 map2(gse,
      names(gse),
@@ -341,15 +322,6 @@ Note, one can change which pathway is plotted here by setting the title and `gen
 map2(gse,
      names(gse),
      ~ gseaplot(.x, by = "all", title = .x$Description[1], geneSetID = 1))
-```
-
-#### PubMed trend of enriched terms
-
-```{r}
-#| cache: true
-#| eval: false
-terms <- gse$`Neuron-ex`$Description[1:10]
-pmcplot(terms, 2010:2022, proportion = FALSE)
 ```
 
 ## KEGG
@@ -442,12 +414,6 @@ map2(
 ```
 
 ```{r}
-#| eval: false
-#| include: false
-map2(kk2, names(kk2),  ~ emapplot(.x) + ggtitle(.y))
-```
-
-```{r}
 map2(kk2,
      names(kk2),
      ~ {
@@ -463,4 +429,3 @@ map2(kk2,
 )
 ```
 
-#### Pathview
