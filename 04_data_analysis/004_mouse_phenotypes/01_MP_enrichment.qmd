@@ -1,0 +1,452 @@
+---
+title: "MP enrichment analysis"
+execute:
+  eval: true
+#self-contained: true
+---
+
+```{r}
+#| label: setup
+
+library(simona)
+library(stringr)
+library(ggplot2)
+library(ggsci)
+library(dplyr)
+library(purrr)
+library(tidyr)
+library(data.table)
+```
+
+# MPO annotation obo
+
+```{r}
+mp_obo <- simona::import_obo(file = here::here("03_data/996_mouse_phenotype_inputs/MPheno_OBO.ontology"))
+```
+
++ Using the MP annotation in obo format downloaded from [MGI](https://www.informatics.jax.org/downloads/reports/index.html).
+
++ Version `r mp_obo@source`.
+
+## Select MP terms 
+
++ i.e. based on shortest distance from root.
+
+```{r}
+# Get the distance from the root
+dfr <- dag_shortest_dist_from_root(mp_obo)
+summary(dfr)
+
+# Select terms based on distance from the root
+mp_selected <- names(dfr)[which(dfr <= 1)]
+
+# Select based on specific terms 
+# mp_selected <- str_detect(mp_obo@elementMetadata$name, "pain")
+```
+
+
+# MPI annotations
+
++ MP_MGI_20240207_DeepAnot is a two file tab separated file:
+
++ Contains **deep** MP annotations (propagated to the ancestors of a term(. If a gene is annotated to a MP term is also annotated to the MP ancestor terms.
+
++ **Column 1** contains MP IDs.
+
++ **Column 2** contains all the MGI genes annotated to the MP term.
+
+```{r}
+# MP deep annotation 
+# MP term and MGI (comma separated)
+mp_anot <- read.table(here::here("03_data/996_mouse_phenotype_inputs/MP_MGI_20240207_DeepAnot.txt"), sep = "\t", header = FALSE)
+colnames(mp_anot) <- c("MP_ID", "MGI_IDS")
+
+# Background population # all annotated genes with at least one MP term
+bg <- unique(unlist(str_split(mp_anot$MGI_IDS, ",")))
+# n = 22665 MGIs 
+
+# Check that selected MP are in the MP annotation
+mp_selected <- intersect(mp_selected, mp_anot$MP_ID)
+```
+
+## Select terms based on gene length
+
+```{r}
+# Based on the number of genes annotated in each term
+nterms <- sapply(mp_anot$MGI_IDS, FUN = function(x) {
+    a <- unlist(str_split(string = x, pattern = ","))
+    b <- length(a)
+    return(b)
+})
+names(nterms) <- mp_anot$MP_ID
+```
+
+```{r}
+gene_length_term_selection = TRUE
+
+if (gene_length_term_selection) {
+  # Select from 10 to 200, n = 5087
+  mp_selected <-
+    names(nterms)[intersect(which(nterms > 10), which(nterms < 200))]
+  
+  # Check that selected MP are in the MP annotation
+  mp_selected <- intersect(mp_selected, mp_anot$MP_ID)
+}
+```
+
+# Genes of interest
+
+Here's code to get the mouse ensembl homolog IDs to then get the MGI IDs
+
+```{r}
+#| eval: false
+sce <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq",
+                                  "11_cell_network_interactions",
+                                  "scflow-sce-annotated.rds"))
+
+df <- data.frame(gene = rownames(sce@assays$RNA@data), ensembl = rownames(sce@assays$RNA@counts))
+
+ensembl <- useMart("ensembl", dataset = "hsapiens_gene_ensembl")
+listAttributes(ensembl)[grepl("mmusculus", listAttributes(ensembl)$name, ignore.case = T),]
+
+mouse_orthologs <- getBM(attributes = c('ensembl_gene_id', 'mmusculus_homolog_ensembl_gene'),
+                         filters = 'ensembl_gene_id',
+                         values = df$ensembl,
+                         mart = ensembl)
+
+library(org.Mm.eg.db)
+mgis <- AnnotationDbi::mapIds(org.Mm.eg.db, unique(mouse_orthologs$mmusculus_homolog_ensembl_gene), "MGI","ENSEMBL")
+mgis <- mgis[!is.na(mgis)] |> unlist()
+mgis <- tibble(mouse_ensembl = names(x), mgi = x)
+mouse_orthologs <- left_join(mgis, mouse_orthologs, by = join_by(mouse_ensembl == mmusculus_homolog_ensembl_gene))
+# Add gene symbols
+mouse_orthologs <- left_join(mouse_orthologs, df, by = join_by(ensembl_gene_id == ensembl))
+
+# For some reason there double "MGI:" in the IDs, need to remove this
+mouse_orthologs$mgi <- str_remove(mouse_orthologs$mgi, "MGI:")
+
+# Get entrez IDs as well for MAGMA genes
+entrez_ids <- getBM(attributes = c('ensembl_gene_id', 'entrezgene_id'),
+                         filters = 'ensembl_gene_id',
+                         values = mouse_orthologs$ensembl_gene_id,
+                         mart = ensembl)
+
+mouse_orthologs <- left_join(mouse_orthologs, entrez_ids, by = join_by(ensembl_gene_id))
+# Save ID translations
+readr::write_tsv(mouse_orthologs, here::here("03_data/996_mouse_phenotype_inputs/mouse_ortholog_ids.tsv"))
+```
+
+```{r}
+# Get ID translator
+id_translate <- readr::read_tsv(here::here("03_data/996_mouse_phenotype_inputs/mouse_ortholog_ids.tsv"))
+# Read in differential genes with no APOE
+res <- readr::read_csv(here::here("03_data/990_processed_data/001_snrnaseq/08_pseudobulk/pseudobulk_ad-vs-control_deseq2_subtype-annotated_no-apoe.csv")) %>%
+  na.omit() |>
+  dplyr::filter(padj < 0.05) |>
+  dplyr::filter(!celltype %in% c("ambiguous", "low-feature-cells")) |>
+  dplyr::left_join(id_translate, by = join_by(gene))
+
+# Get sig genes per celltype as a named list
+genes_sig <- split(res$mgi, res$celltype)
+names(genes_sig) <- paste0(names(genes_sig), "_pseudobulk")
+```
+
+```{r}
+# Get sig MAGMA celltype sig genes
+magma_sig <-
+  readr::read_tsv(here::here(
+    "03_data/994_magma_inputs/results/sig_celltype_sig_genes.tsv"
+  )) |>
+  janitor::clean_names() |>
+  dplyr::rename(entrezgene_id = gene) |>
+  # Exclude the top one percents
+  dplyr::filter(!percent == "top-one-percent") |>
+  # Filter to level 2
+  #dplyr::filter(celltype_level == "level2") |>
+  dplyr::filter(input_gene_list == "all_controls") |>
+  dplyr::filter(padj < 0.05) |>
+  dplyr::left_join(id_translate, by = join_by(entrezgene_id))
+
+# get gene lists per celltype, gwas and percent
+magma_list <- magma_sig |>
+  dplyr::group_by(gwas_background, input_gene_list, percent, set_name, 
+                  celltype_level) |>
+  tidyr::nest()
+
+magma_list <-
+  map(magma_list$data, ~ dplyr::pull(.x, mgi) |> unique()) |>
+  set_names(
+    paste(
+      magma_list$set_name,
+      magma_list$celltype_level,
+      magma_list$gwas_background,
+      magma_list$percent,
+      sep = "_"
+    )
+  )
+```
+
+Merge pseudobulk differential gene list and the MAGMA sig celltype gene lists
+
+```{r}
+genes_sig <- c(genes_sig, magma_list)
+```
+
+# Enrichment analysis
+
++ Based on hypergeometric test.
+
+```{r}
+perform_hypergeometric_test <- function(mp_selected, mp_obo, mp_anot, genelist, bg) {
+  # Retrieve MP names based on selected MP IDs
+  mp_names <- mp_obo@elementMetadata$name[match(x = mp_selected, table = mp_obo@elementMetadata$id)]
+  
+  # Define a function to perform the operations for each MP term
+  process_mp_term <- function(mpi) {
+    mpi_gene_set <- mp_anot$MGI_IDS[mp_anot$MP_ID %in% mpi]
+    mpi_gene_set <- unlist(str_split(string = mpi_gene_set, pattern = ","))
+    
+    # Calculate values
+    size_gene_list <- length(genelist)
+    size_mp_term <- length(mpi_gene_set)
+    genes_in_mp_term <- length(intersect(genelist, mpi_gene_set))
+    p_value <- phyper(q = genes_in_mp_term - 1, 
+                      m = size_mp_term,
+                      n = length(bg) - size_mp_term,
+                      k = size_gene_list, lower.tail = FALSE)
+    
+    # A dataframe with the required values
+    df <- data.frame(
+    SizeGeneList = size_gene_list,
+    SizeMPterm = size_mp_term,
+    GenesInMPterm = genes_in_mp_term,
+    p_value = p_value)
+    return(df)
+  }
+  
+  # Apply the function to each MP term
+  results <- map_dfr(mp_selected, process_mp_term)
+  
+  # Bind the results into a dataframe
+  output <- data.frame(
+    MP_ID = mp_selected,
+    MP_name = mp_names
+  )
+  output <- cbind(output, results)
+  
+  # Adjust p-values for multiple testing
+  output$p_value_adj <- p.adjust(output$p_value, method = "BH")
+  
+  return(output)
+}
+
+# You would call this function with the appropriate arguments:
+results <- map2(genes_sig, names(genes_sig), ~ perform_hypergeometric_test(mp_selected, mp_obo, mp_anot, .x, bg) |>
+                 dplyr::mutate(celltype = .y))
+```
+
+# Overview results table
+
+Check which celltypes have any significant terms
+
+```{r}
+res <- list_rbind(results)
+sig_phenos <- res |>
+  dplyr::group_by(celltype) |>
+  summarise(sig_phenos = sum(p_value_adj < 0.05)) |>
+  dplyr::filter(sig_phenos > 0)
+gt::gt(sig_phenos)
+```
+
++ Showing MP terms with at least 2 genes of interest annotated to them.
+
+```{r}
+#| fig-height: 5
+#| fig-width: 8
+
+plot_phenotypes <- function(output, min_genes = 2) {
+  # Order by p value
+  output <- output[order(output$p_value, decreasing = FALSE),]
+  output$MP_name <-
+    factor(output$MP_name, levels = rev(output$MP_name))
+  
+  # Show terms with at least min_genes genes
+  output <- output[which(output$GenesInMPterm >= min_genes),]
+  output <- output[output$p_value_adj < 0.1,]
+  
+  g1 <- ggplot(
+    data = output,
+    mapping = aes(
+      y = MP_name,
+      x = -log10(p_value_adj),
+      size = GenesInMPterm,
+      color = -log10(p_value_adj)
+    )
+  ) +
+    geom_point() +
+    theme_classic() +
+    scale_color_gradient2(low = "snow",
+                          mid = "blue",
+                          high = "red") +
+    geom_vline(
+      xintercept = -log10(0.05),
+      linetype = "dashed",
+      color = "grey"
+    ) +
+    ggtitle(output$celltype)
+  
+  return(g1)
+}
+
+sig_celltypes <- results[names(results) %in% sig_phenos$celltype]
+
+if(gene_length_term_selection) {
+  plots <- map(sig_celltypes, plot_phenotypes, 2)
+} else {
+  plots <- map(sig_celltypes, plot_phenotypes)
+}
+plots
+
+save_plots <- function(plot, label, gene_length_term_selection = TRUE) {
+  if(gene_length_term_selection) {
+  extra_label <- "_gene_length_term_selection"
+  } else {
+    extra_label <- ""
+  }
+  
+  png(
+    here::here(
+      "05_figures/990_shared_figures/mouse_phenotypes",
+      paste0(label, extra_label, ".png")
+    ),
+    width = 9,
+    height = 8,
+    units = 'in',
+    res = 300
+  )
+  # Draw concatenated heatmaps
+  print(plot)
+  # Close the graphics device to save the image
+  dev.off()
+}
+
+if(gene_length_term_selection) {
+  map2(plots, names(plots), save_plots)
+} else {
+  map2(plots, names(plots), save_plots, FALSE)
+}
+```
+
+```{r}
+celltypes_of_interest <- results[names(results) %in% c("Microglia-activated_level2_EUROPEUKBB_35k10k_top-ten-percent", "Pericyte-2_level2_EUROPEUKBB_35k10k_top-ten-percent", "Perivascular-FB-KAZN2_level2_EUROPEUKBB_35k10k_top-ten-percent")] |>
+  list_rbind() |>
+  # Show terms with at least min_genes genes
+  dplyr::filter(p_value_adj < 0.05 & GenesInMPterm >= 2) |>
+  dplyr::arrange(p_value) |>
+  dplyr::mutate(celltype = str_replace(celltype, "_EUROPEUKBB_35k10k_top-ten-percent", ""))
+  #dplyr::mutate(MP_name = factor(MP_name, levels = rev(MP_name)))
+
+readr::write_tsv(celltypes_of_interest, here::here("05_figures/990_shared_figures/003_final_figures/001_data_for_plots/mpo_data.tsv"))
+```
+
+# Save results
+
++ Save MP enrichment results
+
+```{r}
+readr::write_tsv(res, here::here("03_data/996_mouse_phenotype_inputs/mp_enrichment_degs_root1.tsv"))
+```
+
+# Check genes in terms of interest
+
+Interested in the genes that make up some the sig terms
+
+```{r}
+mp_ids <- res |>
+  dplyr::filter(celltype %in% c("Microglia-activated_level2_EUROPEUKBB_35k10k_top-ten-percent", "Pericyte-2_level2_EUROPEUKBB_35k10k_top-ten-percent", "Perivascular-FB-KAZN2_level2_EUROPEUKBB_35k10k_top-ten-percent") & p_value_adj < 0.05) |>
+  dplyr::select(MP_ID, MP_name) |>
+  dplyr::distinct() |>
+  dplyr::left_join(mp_anot, by = c("MP_ID")) |>
+  mutate(mgi = strsplit(as.character(MGI_IDS), ",")) |>
+  unnest(mgi) |>
+  dplyr::select(!MGI_IDS)
+
+celltypes_of_interest <- c("Microglia-activated", "Pericyte-2", "Perivascular-FB-KAZN2")
+
+celltype_genes <- magma_sig |>
+  dplyr::filter(set_name %in% celltypes_of_interest & percent == "top-ten-percent" & gwas_background == "EUROPEUKBB_35k10k") |>
+  left_join(mp_ids, by = "mgi") |>
+  dplyr::filter(!is.na(MP_name))
+```
+
+```{r}
+genes_per_phenotype <- celltype_genes |>
+  dplyr::select(set_name, MP_name, hgnc_symbol) |>
+  dplyr::distinct() |>
+  dplyr::arrange(hgnc_symbol, set_name)
+genes_per_phenotype
+fwrite(genes_per_phenotype, here::here("03_data/996_mouse_phenotype_inputs/genes_per_phenotype_per_celltype_of_interest.csv"))
+```
+
+```{r}
+overall_overlap <- mp_ids %>%
+  group_by(mgi) %>%
+  mutate(overlap_count = n()) %>%
+  ungroup() %>%
+  group_by(MP_name) %>%
+  summarise(
+    unique_genes = sum(overlap_count == 1),
+    overlapping_genes = sum(overlap_count > 1),
+    total_genes_in_term = n()
+  )
+fwrite(overall_overlap, here::here("03_data/996_mouse_phenotype_inputs/overall_overlap_in_terms_of_interest.csv"))
+
+# Assuming your dataframe is named df and has columns: genes, celltypes, phenotype_terms
+
+# Count the number of overlapping genes per celltype and phenotype term
+overlap_counts <- celltype_genes %>%
+  group_by(set_name, MP_name) %>%
+  summarise(overlap = n_distinct(hgnc_symbol)) %>%
+  ungroup()
+
+# Spread the counts into a wide format with celltypes as rows and phenotype terms as columns
+wide_format <- overlap_counts %>%
+  pivot_wider(names_from = MP_name, values_from = overlap, values_fill = list(overlap = 0))
+
+print(wide_format)
+```
+
+```{r}
+# Assuming your dataframe is named df and has columns: genes, celltypes, phenotype_terms
+# First, we create a list of all unique combinations of celltype and phenotype term
+combinations <- expand.grid(celltype = unique(celltype_genes$set_name), phenotype_term = unique(celltype_genes$MP_name))
+
+# Then, we count the number of overlapping genes for each combination
+overlap_counts <- combinations %>%
+  rowwise() %>%
+  mutate(
+    overlap = list(intersect(celltype_genes$hgnc_symbol[celltype_genes$set_name == celltype & !duplicated(celltype_genes$hgnc_symbol)], 
+                             celltype_genes$hgnc_symbol[celltype_genes$MP_name == phenotype_term & !duplicated(celltype_genes$hgnc_symbol)]))
+  ) %>%
+  ungroup() %>%
+  mutate(overlap_count = lengths(overlap))
+
+# To find unique genes per term per celltype, we can do a group_by and filter
+unique_genes <- celltype_genes %>%
+  group_by(set_name, MP_name) %>%
+  filter(!hgnc_symbol %in% celltype_genes$hgnc_symbol[celltype_genes$MP_name != MP_name]) %>%
+  ungroup()
+
+# To see which genes are unique per term per celltype
+unique_genes_list <- unique_genes %>%
+  group_by(set_name, MP_name) %>%
+  summarise(unique_genes = list(unique(hgnc_symbol)), 
+            unique_count = n_distinct(hgnc_symbol)) %>%
+  ungroup()
+
+# Output the results
+print(overlap_counts)
+print(unique_genes_list)
+```
+
+
