@@ -1,0 +1,148 @@
+---
+title: Genotyping checks
+execute: 
+  warning: false
+  cache: true
+---
+
+
+```{r}
+library(knitr)
+library(data.table)
+### library(scater)   ## scater:::.get_palette
+library(DT)
+library(ggpubr)
+library(dplyr)
+
+knitr::opts_chunk$set(cache=TRUE,echo=FALSE,message=FALSE,warning=FALSE,cache.lazy=FALSE)
+
+## white background theme for all plots
+theme_set(theme_bw())
+```
+
+There're 2 RNA files in the code from Frank, I'll just check the DNA and RNA file for now.
+
+```{r}
+samples_meta_file <- here::here("03_data/990_processed_data/001_snrnaseq/90_sample_info/samples_meta_merged_final.txt")
+
+# GT_RNA_RNA_file <- "/Users/frankwessely/Desktop/Documents/Projects/BBB/Endo_10X_Main/Analysis/Genotyping/Comparisons/Compare_40_samples_RNA_RNA_raw/gtcheck_RNA_RNA_raw.txt"
+ 
+# GT_RNA_RNA_filtered_file <- "/Users/frankwessely/Desktop/Documents/Projects/BBB/Endo_10X_Main/Analysis/Genotyping/Comparisons/Compare_40_samples_RNA_RNA_filtered/gtcheck_RNA_RNA_DP_20_800_qual_20.txt"
+ 
+# GT_DNA_RNA_file <- "/Users/frankwessely/Desktop/Documents/Projects/BBB/Endo_10X_Main/Analysis/Genotyping/Comparisons/Compare_40_samples_DNA_RNA_filtered/gtcheck_40_samples_DP_20_800_qual_20.txt"
+GT_DNA_RNA_file <- here::here("03_data/992_genotyping_data/04_compare_samples_dna_rna_filtered/gtcheck_40_samples_DP_20_800_qual_20.txt")
+```
+
+# Samples table
+
+```{r}
+#| label: samples_table
+
+samples_meta <- fread(samples_meta_file, colClasses = c(donor = "character"))
+
+samples_meta_print <- copy(samples_meta)
+setnames(samples_meta_print, "Diagnosis", "______________________________Diagnosis______________________________")
+
+samples_meta_print %>% DT::datatable(caption="Samples overview", escape=F, rownames = F, extensions = 'Buttons', options = list(dom = 'Blfrtip', buttons = list('colvis', list(extend = 'copy', exportOptions = list(columns=':visible')), list(extend = 'csv', exportOptions = list(columns=':visible')), list(extend = 'excel', exportOptions = list(columns=':visible')))))
+```
+
+# Genotyping: DNA vs RNA
+
+* compare SNPs from 40 RNA BAM files to SNPs from donor Neurochip data
+* percentage values indicate the percentage of SNPs matched based on gtcheck
+
+***
+
+```{r}
+#| label: genotyping_DNA_RNA
+#| fig-width: 9
+#| fig-height: 7
+
+GT <- fread(GT_DNA_RNA_file)
+setnames(GT, c("S1", "S2", "n_1", "n_2", "n_different", "n_compared"))
+GT <- GT[, pct_identity := 100 * (n_compared - n_different) / n_compared]
+
+GT <- GT[, S1 := gsub("_var_raw", "", S1)]
+GT <- GT[, S2 := gsub("_var_raw", "", S2)]
+
+# samples_DNA <- c("1_NP002_2019","2_NP032_2018","3_NP070_2019","4_NP177_2013","5_NP003_2019","6_NP034_2014","7_NP076_2014","8_NP150_2014","9_NP008_2015","10_NP041_2019","11_NP077_2018","12_NP002_2019_R","13_NP011_2019","14_NP058_2019","15_NP080_2014","16_NP003_2019_R","17_NP016_2017","18_NP063_2019","19_NP128_2017","20_NP008_2015_R","21_NP018_2019","22_NP067_2019","23_NP142_2014","24_NP011_2019_R")
+# 
+# GT <- GT[, S1 := factor(S1, levels = samples_DNA)]
+# GT <- GT[, S2 := factor(S2, levels = samples_order)]
+# Extract parts of the sample labels
+samples_order <- GT |>
+  dplyr::select(S2) |>
+  mutate(Prefix = substr(S2, 1, 1),
+         NumericPart = as.integer(substr(S2, 3, nchar(S2)))) |>
+  dplyr::distinct() |>
+  dplyr::arrange(NumericPart) |>
+  dplyr::pull(S2)
+
+order_s1 <- GT %>%
+  dplyr::group_by(S2) %>%
+  dplyr::arrange(desc(pct_identity)) %>%
+  dplyr::slice_head(n = 1) %>%
+  dplyr::ungroup() |>
+  dplyr::pull(S1)
+
+GT <- GT |> 
+  mutate(S2 = factor(S2, levels = samples_order))
+
+# Reorder levels of S1 based on the calculated order
+custom_order <- GT %>%
+  mutate(S1 = factor(S1, levels = unique(order_s1)))
+ 
+p <- ggplot(GT, aes(S1, S2))
+p <- p + geom_tile(aes(fill = pct_identity))
+p <- p + geom_text(aes(label = round(pct_identity)), colour="grey", size = 2.5)
+p <- p + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 0))
+p <- p + xlab(NULL) + ylab(NULL)
+p <- p + theme(legend.position="top")
+p
+```
+
+Make ID dataframe to match neurchips to samples
+
+```{r}
+sample_ids <- data.frame(fraction_donor = samples_order, neurochip = order_s1)
+
+# save sample IDs
+readr::write_csv(sample_ids, here::here("03_data/990_processed_data/001_snrnaseq/90_sample_info/neurchip_sample_ids.csv"))
+```
+
+
+***
+
+* same as above, reorder DNA donor samples on x-axis
+
+***
+
+```{r genotyping_DNA_RNA_2, fig.width=9, fig.height=7}
+p <- ggplot(custom_order, aes(S1, S2))
+p <- p + geom_tile(aes(fill = pct_identity))
+p <- p + geom_text(aes(label = round(pct_identity)), colour="grey", size = 2.5)
+p <- p + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 0))
+p <- p + xlab(NULL) + ylab(NULL)
+p <- p + theme(legend.position="top")
+p
+```
+
+
+***
+
+```{r genotyping_DNA_RNA_table, cache=F}
+
+GT %>% DT::datatable(caption="Genotyping, pairwise comparison, donor DNA (NeuroChip) vs RNA", escape=F, rownames = F, extensions = 'Buttons', options = list(dom = 'Blfrtip', buttons = list('colvis', list(extend = 'copy', exportOptions = list(columns=':visible')), list(extend = 'csv', exportOptions = list(columns=':visible')), list(extend = 'excel', exportOptions = list(columns=':visible')))))
+```
+
+
+
+***
+
+# SessionInfo
+
+```{r session_info, cache=F}
+
+devtools::session_info()
+```
+

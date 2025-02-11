@@ -1,0 +1,67 @@
+---
+title: "Cell Ranger metrics set 1, R2 full length"
+author: "Frank Wessely"
+output:
+  html_document:
+    code_folding: hide
+    number_sections: yes
+    toc: yes
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+---
+
+# Notes
+
+* liftover NeuroChip positions from hg19 to hg38
+
+
+```{r setup, include=FALSE}
+
+library(knitr)
+library(data.table)
+library(rtracklayer)
+
+knitr::opts_chunk$set(cache=TRUE,echo=FALSE,message=FALSE,warning=FALSE,cache.lazy=FALSE)
+```
+
+
+```{r files}
+
+## extracted via bash command from NeuroChip manifest Neuro_Consortium_v1-1_20015375_A1.csv
+## cut -d',' -f10,11 Neuro_Consortium_v1-1_20015375_A1.csv | tail -n +9 | sort -t ',' -V | tr ',' '\t' | grep -v '0\t0\|XY\|Controls' | grep '\S' > NeuroChip_v1_grch37_positions.txt
+pos_file <- "/Users/frankwessely/Desktop/Documents/Projects/BBB/Endo_10X_Main/Analysis/Genotyping/NeuroChip_manifest/NeuroChip_v1_grch37_positions.txt"
+
+## http://hgdownload.soe.ucsc.edu/goldenPath/hg19/liftOver/
+chain_file <- "/Users/frankwessely/Desktop/Documents/Projects/BBB/Endo_10X_Main/Analysis/Genotyping/Liftover/hg19ToHg38.over.chain"
+
+## new liftover positions
+out_file <- "/Users/frankwessely/Desktop/Documents/Projects/BBB/Endo_10X_Main/Analysis/Genotyping/NeuroChip_manifest/NeuroChip_v1_positions_liftover_GRCh38.txt"
+```
+
+
+```{r liftover}
+
+chain_object <- rtracklayer::import.chain(chain_file)
+
+pos_dt <- fread(pos_file)
+setnames(pos_dt, c("seq", "pos"))
+pos_dt <- pos_dt[, seq := paste0("chr", seq)]
+pos_dt <- pos_dt[seq == "chrMT", seq := "chrM"]
+
+gr <- GRanges(seqnames = pos_dt$seq, ranges = IRanges(start = pos_dt$pos, end = pos_dt$pos))
+res_liftover <- data.table(as.data.frame(rtracklayer::liftOver(gr, chain_object)))
+
+## write file
+write.table(res_liftover[, .(seqnames, start)], out_file, sep = "\t", quote = F, row.names = F, col.names = F)
+```
+
+***
+
+# SessionInfo
+
+```{r session_info, cache=F}
+
+sessionInfo()
+```
+
