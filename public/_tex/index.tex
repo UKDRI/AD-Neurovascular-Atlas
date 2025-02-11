@@ -1,0 +1,2141 @@
+\documentclass[
+  man,
+  longtable,
+  nolmodern,
+  notxfonts,
+  notimes,
+  colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{apa7}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+
+
+
+\RequirePackage{longtable}
+\RequirePackage{threeparttablex}
+
+\makeatletter
+\renewcommand{\paragraph}{\@startsection{paragraph}{4}{\parindent}%
+	{0\baselineskip \@plus 0.2ex \@minus 0.2ex}%
+	{-.5em}%
+	{\normalfont\normalsize\bfseries\typesectitle}}
+
+\renewcommand{\subparagraph}[1]{\@startsection{subparagraph}{5}{0.5em}%
+	{0\baselineskip \@plus 0.2ex \@minus 0.2ex}%
+	{-\z@\relax}%
+	{\normalfont\normalsize\bfseries\itshape\hspace{\parindent}{#1}\textit{\addperi}}{\relax}}
+\makeatother
+
+
+
+
+\usepackage{longtable, booktabs, multirow, multicol, colortbl, hhline, caption, array, float, xpatch}
+\setcounter{topnumber}{2}
+\setcounter{bottomnumber}{2}
+\setcounter{totalnumber}{4}
+\renewcommand{\topfraction}{0.85}
+\renewcommand{\bottomfraction}{0.85}
+\renewcommand{\textfraction}{0.15}
+\renewcommand{\floatpagefraction}{0.7}
+
+\usepackage{tcolorbox}
+\tcbuselibrary{listings,theorems, breakable, skins}
+\usepackage{fontawesome5}
+
+\definecolor{quarto-callout-color}{HTML}{909090}
+\definecolor{quarto-callout-note-color}{HTML}{0758E5}
+\definecolor{quarto-callout-important-color}{HTML}{CC1914}
+\definecolor{quarto-callout-warning-color}{HTML}{EB9113}
+\definecolor{quarto-callout-tip-color}{HTML}{00A047}
+\definecolor{quarto-callout-caution-color}{HTML}{FC5300}
+\definecolor{quarto-callout-color-frame}{HTML}{ACACAC}
+\definecolor{quarto-callout-note-color-frame}{HTML}{4582EC}
+\definecolor{quarto-callout-important-color-frame}{HTML}{D9534F}
+\definecolor{quarto-callout-warning-color-frame}{HTML}{F0AD4E}
+\definecolor{quarto-callout-tip-color-frame}{HTML}{02B875}
+\definecolor{quarto-callout-caution-color-frame}{HTML}{FD7E14}
+
+%\newlength\Oldarrayrulewidth
+%\newlength\Oldtabcolsep
+
+
+\usepackage{hyperref}
+
+
+
+
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\usepackage{longtable,booktabs,array}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+
+\usepackage{graphicx}
+\makeatletter
+\newsavebox\pandoc@box
+\newcommand*\pandocbounded[1]{% scales image to fit in text height/width
+  \sbox\pandoc@box{#1}%
+  \Gscale@div\@tempa{\textheight}{\dimexpr\ht\pandoc@box+\dp\pandoc@box\relax}%
+  \Gscale@div\@tempb{\linewidth}{\wd\pandoc@box}%
+  \ifdim\@tempb\p@<\@tempa\p@\let\@tempa\@tempb\fi% select the smaller of both
+  \ifdim\@tempa\p@<\p@\scalebox{\@tempa}{\usebox\pandoc@box}%
+  \else\usebox{\pandoc@box}%
+  \fi%
+}
+% Set default figure placement to htbp
+\def\fps@figure{htbp}
+\makeatother
+
+
+% definitions for citeproc citations
+\NewDocumentCommand\citeproctext{}{}
+\NewDocumentCommand\citeproc{mm}{%
+  \begingroup\def\citeproctext{#2}\cite{#1}\endgroup}
+\makeatletter
+ % allow citations to break across lines
+ \let\@cite@ofmt\@firstofone
+ % avoid brackets around text for \cite:
+ \def\@biblabel#1{}
+ \def\@cite#1#2{{#1\if@tempswa , #2\fi}}
+\makeatother
+\newlength{\cslhangindent}
+\setlength{\cslhangindent}{1.5em}
+\newlength{\csllabelwidth}
+\setlength{\csllabelwidth}{3em}
+\newenvironment{CSLReferences}[2] % #1 hanging-indent, #2 entry-spacing
+ {\begin{list}{}{%
+  \setlength{\itemindent}{0pt}
+  \setlength{\leftmargin}{0pt}
+  \setlength{\parsep}{0pt}
+  % turn on hanging indent if param 1 is 1
+  \ifodd #1
+   \setlength{\leftmargin}{\cslhangindent}
+   \setlength{\itemindent}{-1\cslhangindent}
+  \fi
+  % set entry spacing
+  \setlength{\itemsep}{#2\baselineskip}}}
+ {\end{list}}
+\usepackage{calc}
+\newcommand{\CSLBlock}[1]{\hfill\break\parbox[t]{\linewidth}{\strut\ignorespaces#1\strut}}
+\newcommand{\CSLLeftMargin}[1]{\parbox[t]{\csllabelwidth}{\strut#1\strut}}
+\newcommand{\CSLRightInline}[1]{\parbox[t]{\linewidth - \csllabelwidth}{\strut#1\strut}}
+\newcommand{\CSLIndent}[1]{\hspace{\cslhangindent}#1}
+
+
+
+
+
+\usepackage{newtx}
+
+\defaultfontfeatures{Scale=MatchLowercase}
+\defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+
+
+
+
+
+\title{BBB in AD}
+
+
+\shorttitle{BBB in AD}
+
+
+\usepackage{etoolbox}
+
+
+
+
+
+
+
+
+
+\authorsnames[{1,2},{3},{1,2},{3},{4},{4},{4},{4},{1,2},{3}]{Gabriel
+Mateus Bernardo Harrington,Hannah Sleven,Jimena Monzón-Sandoval,Lara
+Robinson,Michal Rokicki,Joanne Morgan,Ngoc-Nga Vinh,Quenten
+Schwarz,Caleb Webber,Zameel Cader}
+
+
+
+
+
+
+
+\authorsaffiliations{
+{Cardiff University},{UK Dementia Research Institue},{Oxford
+University},{Centre for Neuropsychiatric Genetics and Genomics, Division
+of Psychological Medicine and Clinical Neurosciences, School of
+Medicine, Cardiff University, Cardiff, United Kingdom}}
+
+
+
+
+\leftheader{Harrington, Sleven, Monzón-Sandoval, Robinson, Rokicki, Morgan, Vinh, Schwarz, Webber and Cader}
+
+\date{2025-02-05}
+
+
+\abstract{The blood brain barrier, it's important, probably in AD even }
+
+\keywords{Alzheimer's diesease, Blood brain barrier}
+
+\authornote{\par{\addORCIDlink{Gabriel Mateus Bernardo
+Harrington}{0000-0001-6075-3619}} 
+
+\par{       Author roles were classified using the Contributor Role Taxonomy (CRediT; https://credit.niso.org/) as follows: Gabriel
+Mateus Bernardo Harrington:   formal analysis, software, writing --
+original draft, visualization, data curation, conceptualization; Hannah
+Sleven:   method, investigation; Jimena Monzón-Sandoval:   writing --
+original draft, formal
+analysis, software, visualization, conceptualization; Lara
+Robinson:   method, investigation, writing -- original draft; Michal
+Rokicki:   investigation; Joanne Morgan:   investigation; Ngoc-Nga
+Vinh:   investigation; Quenten Schwarz:   investigation; Caleb
+Webber:   writing -- original draft, writing -- review \&
+editing, project administration, supervision, conceptualization, funding
+acquisition; Zameel Cader:   writing -- original draft, writing --
+review \& editing, project
+administration, supervision, conceptualization, funding acquisition}
+\par{Correspondence concerning this article should be addressed
+to Gabriel Mateus Bernardo
+Harrington, Email: bernardo-harringtong@cardiff.ac.ukCaleb Webber}
+}
+
+\makeatletter
+\let\endoldlt\endlongtable
+\def\endlongtable{
+\hline
+\endoldlt
+}
+\makeatother
+\RequirePackage{longtable}
+\DeclareDelayedFloatFlavor{longtable}{table}
+
+\urlstyle{same}
+
+
+
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{wrapfig}
+\usepackage{float}
+\usepackage{colortbl}
+\usepackage{pdflscape}
+\usepackage{tabu}
+\usepackage{threeparttable}
+\usepackage{threeparttablex}
+\usepackage[normalem]{ulem}
+\usepackage{makecell}
+\usepackage{xcolor}
+\makeatletter
+\@ifpackageloaded{float}{}{\usepackage{float}}
+\floatstyle{plain}
+\@ifundefined{c@chapter}{\newfloat{suppfig}{h}{losuppfig}}{\newfloat{suppfig}{h}{losuppfig}[chapter]}
+\floatname{suppfig}{Figure S}
+\newcommand*\quartosuppfigref[1]{Figure \hyperref[#1]{S\ref{#1}}}
+\@ifpackageloaded{caption}{}{\usepackage{caption}}
+\DeclareCaptionLabelFormat{quartosuppfigreflabelformat}{#1#2}
+\captionsetup[suppfig]{labelformat=quartosuppfigreflabelformat}
+\newcommand*\listofsuppfigs{\listof{suppfig}{List of Supplementary Figures}}
+\makeatother
+\makeatletter
+\@ifpackageloaded{float}{}{\usepackage{float}}
+\floatstyle{plain}
+\@ifundefined{c@chapter}{\newfloat{supptbl}{h}{losupptbl}}{\newfloat{supptbl}{h}{losupptbl}[chapter]}
+\floatname{supptbl}{Table S}
+\newcommand*\quartosupptblref[1]{Table \hyperref[#1]{S\ref{#1}}}
+\@ifpackageloaded{caption}{}{\usepackage{caption}}
+\DeclareCaptionLabelFormat{quartosupptblreflabelformat}{#1#2}
+\captionsetup[supptbl]{labelformat=quartosupptblreflabelformat}
+\newcommand*\listofsupptbls{\listof{supptbl}{List of Supplementary Tables}}
+\makeatother
+\makeatletter
+\@ifpackageloaded{caption}{}{\usepackage{caption}}
+\AtBeginDocument{%
+\ifdefined\contentsname
+  \renewcommand*\contentsname{Table of contents}
+\else
+  \newcommand\contentsname{Table of contents}
+\fi
+\ifdefined\listfigurename
+  \renewcommand*\listfigurename{List of Figures}
+\else
+  \newcommand\listfigurename{List of Figures}
+\fi
+\ifdefined\listtablename
+  \renewcommand*\listtablename{List of Tables}
+\else
+  \newcommand\listtablename{List of Tables}
+\fi
+\ifdefined\figurename
+  \renewcommand*\figurename{Figure}
+\else
+  \newcommand\figurename{Figure}
+\fi
+\ifdefined\tablename
+  \renewcommand*\tablename{Table}
+\else
+  \newcommand\tablename{Table}
+\fi
+}
+\@ifpackageloaded{float}{}{\usepackage{float}}
+\floatstyle{ruled}
+\@ifundefined{c@chapter}{\newfloat{codelisting}{h}{lop}}{\newfloat{codelisting}{h}{lop}[chapter]}
+\floatname{codelisting}{Listing}
+\newcommand*\listoflistings{\listof{codelisting}{List of Listings}}
+\makeatother
+\makeatletter
+\makeatother
+\makeatletter
+\@ifpackageloaded{caption}{}{\usepackage{caption}}
+\@ifpackageloaded{subcaption}{}{\usepackage{subcaption}}
+\makeatother
+
+% From https://tex.stackexchange.com/a/645996/211326
+%%% apa7 doesn't want to add appendix section titles in the toc
+%%% let's make it do it
+\makeatletter
+\xpatchcmd{\appendix}
+  {\par}
+  {\addcontentsline{toc}{section}{\@currentlabelname}\par}
+  {}{}
+\makeatother
+
+%% Disable longtable counter
+%% https://tex.stackexchange.com/a/248395/211326
+
+\usepackage{etoolbox}
+
+\makeatletter
+\patchcmd{\LT@caption}
+  {\bgroup}
+  {\bgroup\global\LTpatch@captiontrue}
+  {}{}
+\patchcmd{\longtable}
+  {\par}
+  {\par\global\LTpatch@captionfalse}
+  {}{}
+\apptocmd{\endlongtable}
+  {\ifLTpatch@caption\else\addtocounter{table}{-1}\fi}
+  {}{}
+\newif\ifLTpatch@caption
+\makeatother
+
+\begin{document}
+
+\maketitle
+
+
+\setcounter{secnumdepth}{5}
+
+\setlength\LTleft{0pt}
+
+
+\subsection{Summary}\label{summary}
+
+The interactions between brain parenchymal cells including neurons and
+glia with brain vascular cells, is crucial for brain homeostasis and is
+disrupted in Alzheimer's disease (AD) pathogenesis. We developed a
+method to efficiently isolate parenchymal and vascular nuclei from in
+post-mortem human brains, achieving over 90\% vascular cell enrichment.
+Using single-nuclei sequencing from 40 samples (20 control and 20 AD
+cases), we identified risk associations with AD in pericyte and
+perivascular fibroblast subtypes, as well as in activated microglia.
+These cells have unique risk signatures linked to amyloid, suggesting a
+an independent but convergent role in AD risk. Additionally, we
+discovered EndoMT cells, transitioning from endothelial to mural cells,
+not previously documented in vascular atlases. This study provides a
+valuable resource for understanding neurovascular unit composition and
+dynamics in AD, highlighting potential cellular targets for therapeutic
+intervention and offering new insights into the cellular interactions
+associated with amyloid and AD risk.
+
+\subsection{Introduction}\label{introduction}
+
+\begin{itemize}
+\tightlist
+\item
+  Role of BBB in AD
+\item
+  Prior vascular atlases (Yang), their methods, shortcomings and how our
+  method addresses them
+\end{itemize}
+
+The interface between blood and brain is central to brain function. It
+serves as both a barrier (the blood-brain-barrier, BBB) {[}ref{]} and as
+a nexus for homeostatic signalling (the neurovascular unit, NVU)
+{[}ref{]}. The BBB protects the brain by preventing harmful substances,
+such as toxins and pathogens, from entering the central nervous system.
+It regulates the transport of essential nutrients and aids in the
+removal of waste products thereby maintaining the brain's stable
+environment, essential for proper neural function. The concept of the
+NVU emphasizes the intimate relationship between brain parenchymal and
+vascular cells for example ensuring sufficient supply of oxygen and
+glucose to meet the metabolic demands of neurons and
+glia.(\citeproc{ref-Iadecola2017}{Iadecola, 2017})
+
+Alzheimer's disease (AD), the most prevalent type of dementia, is
+pathologically hallmarked by extracellular β-amyloid (Aβ) deposits,
+intracellular neurofibrillary tangles (NFTs) and neurodegeneration. The
+brain's microvasculature, particularly the BBB, plays a crucial role in
+AD pathophysiology. Endothelial cells (ECs) contribute to the clearance
+of Aβ and other toxins, regulate the exclusion of harmful blood
+proteins, and facilitate immune cell
+trafficking.(\citeproc{ref-Amersfoort2022}{Amersfoort et al., 2022};
+\citeproc{ref-Daneman2015}{Daneman \& Prat, 2015};
+\citeproc{ref-Zhang2022}{Su et al., 2022}) Both ECs and pericytes (PCs)
+are essential for maintaining brain perfusion, endothelial permeability,
+and immune activation.(\citeproc{ref-Brown2019}{Brown et al., 2019};
+\citeproc{ref-Procter2021}{Procter et al., 2021}) The BBB's integrity is
+often compromised in AD, which contributes to disease
+progression.(\citeproc{ref-Storck2022}{Storck et al., 2020};
+\citeproc{ref-Sweeney2018}{Sweeney et al., 2018}) Evidence from imaging,
+neuropathological studies, and preclinical models indicates chronic
+tissue hypoxia, impaired cerebral blood flow regulation, and BBB
+integrity loss in early AD stages, often linked to increased Aβ
+levels.(\citeproc{ref-Korte2020}{Korte et al., 2020};
+\citeproc{ref-Nehra2022}{Nehra et al., 2022})
+
+Knowledge of gene expression levels in brain cell types has transformed
+the interpretation of AD genetic risk and our understanding of AD
+molecular pathology (PMIDs). However, despite similar numbers of glia
+and vascular cells within the brain(\citeproc{ref-Keller2018}{Keller et
+al., 2018}), the processes of extracting nuclei from human post-mortem
+tissue has favoured retrieval of parenchymal nuclei over those of the
+neurovascular unit (NVU) resulting in a significant underrepresentation
+of NVU cell types. The first human brain single nuclei atlases examining
+AD at scale obtained less than a few hundred endothelial cell nuclei as
+compared to tens of thousands from parenchymal cells, which precluded
+analyses of the NVU.(\citeproc{ref-Grubman2019}{Grubman et al., 2019};
+\citeproc{ref-Mathys2019}{Mathys et al., 2019}) However, the development
+of extraction approaches focussed on the NVU has recently enabled the
+study of these cell types. Enrichment approaches have focussed on
+specifically isolating the neurovasculature from brain samples via
+mechanical approaches yielding \textasciitilde50\% enrichment of NVU
+cell type nuclei(\citeproc{ref-Tsartsalis2024}{Tsartsalis et al., 2024};
+\citeproc{ref-yang2022}{Yang et al., 2022}) which revealed AD-associated
+impaired angiogenesis and inflammation. Furthermore, both studies
+highlight potential roles for NVU cell types in mediating the AD genetic
+risk.
+
+{[}Paragraph on our work once finished -- highlighting having the cell
+types in the room delivers better cell type specificity, amyloidosis
+genetic risk pathways in pericytes, perivascular fibroblasts, activated
+microglia{]} plus DEG processes of interest.{]}
+
+\subsection{Results}\label{results}
+
+\subsubsection{Isolating the neurovascular
+unit}\label{isolating-the-neurovascular-unit}
+
+Single-cell and single-nuclei RNA sequencing (snRNAseq) has yielded
+significant insights into health and disease, particularly brain
+disorders. Traditionally the brain vasculature has been highly
+challenging to isolate but recent studies have started to examine
+neurovascular biology through vascular enrichment (Yang et al.; Stergios
+..). Whilst a significant advance, the reported vascular nuclei
+isolation protocols remain relatively inefficient and achieve this
+enrichment at the expense of parenchymal cells, thereby losing the
+opportunity to examine whole tissue brain biology. We developed a novel
+method for the simultaneous isolation of highly pure microvascular
+nuclei with high-quality parenchymal nuclei from human post-mortem brain
+tissue in a single procedure.
+
+We identified poor removal of meningeal tissue, poor control of
+dissection and loss of valuable tissue mass when traditional 4°C
+dissection of brain tissue was performed using current protocols. We
+developed a simple unit to enable dissection whilst maintaining tissue
+temperature at \textasciitilde-80°C outside of the freezer allowing,
+careful removal of meninges and other contaminants.\\
+We further created a 3D printed tissue chopper (Fig1A, Supplementary Fig
+1) to perform rapid and precise dissection of ultra-cold frozen tissue
+from solid brain matter into a coarse powder optimal for nuclei
+isolation, which can then be stored at -80°C until the day of isolation.
+
+Brain vessels are typically lost in standard isolation protocols through
+under- or over-homogenisation.\\
+We therefore designed 3D printed pestle to allow multiple rounds of
+large-volume pestle-driven homogenisation combined with low speed
+centrifugation, enabling efficient release of vessels whilst minimising
+vessel damage (Fig 1B). This yield vascular pellets and a vessel-free
+supernatant for parenchymal isolation. Purification of the vascular
+fraction begins with two multi-layer dextran gradient centrifugation
+steps to trap contaminants whilst allowing vascular transfer. The
+resulting vessel suspension is then filtered through a 100\(\mu\)m nylon
+filter to remove unwanted larger vessels, and vessel capture on
+40\(\mu\)m PET filters allows depletion of residual contaminating
+particles. Purified vessels are then transferred onto 20\(\mu\)m PET
+filters for collagenase II digestion of the basement membrane of the
+vasculature. After the enzyme and released final debris are removed with
+a wash step, the 20\(\mu\)m filter is placed into the 3D printed funnel
+assembly (supp Fig x ) and a hand-held homogeniser is used with a 3D
+printed flat base pestle to grind the nuclei out of the vessels.\\
+Nuclei after staining with DAPI are isolated using FACS.\\
+The parenchymal supernatant extracted previously is processed to nuclei
+using standard protocols and similarly FACS isolated.\\
+Extracted and isolated nuclei can then be used with the single-nuclei
+RNA-seq platform of choice (here 10x Genomics) for transcriptomic
+analysis.
+
+\begin{figure}
+
+\caption{\label{fig-method}(A) Neurovascular unit isolation method. (B)}
+
+\centering{
+
+\pandocbounded{\includegraphics[keepaspectratio]{05_figures/990_shared_figures/003_final_figures/figure1.png}}
+
+}
+
+\end{figure}%
+
+\begin{itemize}
+\tightlist
+\item
+  Explain isolation (or refer to pre-print if it's ready?)
+\item
+  The quality/purity of the enrichment
+\item
+  The cohort details/summary?
+\item
+  Celltype annotation?
+\item
+  Compare method directly to Yang atlas paper
+\end{itemize}
+
+\subsubsection{Cohort}\label{cohort}
+
+\begin{itemize}
+\tightlist
+\item
+  NOTE: this might get merged into the prior section, but I'll write
+  something for now so it's here. I've already writing some brief stuff
+  in the methods too, not sure how much to add here
+\end{itemize}
+
+We performed single nuclei RNA sequencing on samples from 40
+individuals, divided into two groups: 20 AD cases and 20 controls. For
+each individual, we analysed two fractions: vascular and parenchymal,
+both sourced from the prefrontal cortex. This resulted in a total of 80
+samples (40 vascular and 40 parenchymal).
+
+We obtained 474357 nuclei which was subset to 396103 nuclei after QC (3
+donors were also remove in QC) with a median number of genes per nucleus
+of 2353 post-QC (See Section~\ref{sec-seq-qc} for QC details). Nuclei
+were annotated into 12 main celltypes which were further subdivided into
+44 subtypes based on published markers.(\citeproc{ref-yang2022}{Yang et
+al., 2022})
+
+\subsubsection{Differential cell
+populations}\label{differential-cell-populations}
+
+\begin{itemize}
+\tightlist
+\item
+  NOTE: I'll add this here but might be worth moving around to be with
+  section on EndoMT
+
+  \begin{itemize}
+  \tightlist
+  \item
+    Also may need to update the figure number/panel reference if things
+    move around
+  \end{itemize}
+\end{itemize}
+
+As expected, most cell types were preferentially detected in either the
+vascular or the parenchymal fractions (Figure~\ref{fig-method} D) and
+all cell types were detected among cases and controls
+(Figure~\ref{fig-method} E). However, we observed a reduction in AD
+cases of proportion of two excitatory neurons subtypes (Ex-Neuro-1
+\textasciitilde75\% reduction, p = 0.001, FDR = 0.008, Ex-Neuro-5
+\textasciitilde50\% reduction, p = 0.001, FDR = 0.02) and a subtype of
+endothelial cells (NA, \textasciitilde50\% reduction, p = 0.012, FDR =
+0.244; Figure~\ref{fig-method} F).
+
+\subsubsection{Risk section summary}\label{risk-section-summary}
+
+\begin{itemize}
+\tightlist
+\item
+  TODO:
+\item
+  Expand on the level 1 T-cell stuff, most of the celltypes have
+  t-cell/lymphocyte GO pathways
+\item
+  Add LD Score risk strip to panel A
+\item
+  update the PPI network plots - probably need to use cytoscape
+\end{itemize}
+
+\begin{figure}
+
+\caption{\label{fig-risk}(A) figure legend stuff}
+
+\centering{
+
+\pandocbounded{\includegraphics[keepaspectratio]{05_figures/990_shared_figures/003_final_figures/figure2.png}}
+
+}
+
+\end{figure}%
+
+\subsubsection{Cell type specific Genetic Risk
+Associations}\label{cell-type-specific-genetic-risk-associations}
+
+Having a fuller picture of the parenchymal and vascular fractions of the
+PFC, we sought to understand which cell types were associated with the
+genetic risk of AD. To this end, we employed Multi-marker Analysis of
+GenoMic Annotation (MAGMA) along with the latest Genome-Wide Association
+Study (GWAS) for AD(\citeproc{ref-bellenguez2022}{Bellenguez et al.,
+2022}) and the top 10\% cell type specific markers from nuclei of
+control individuals (see Methods). At the main cell type level and after
+correcting for multiple testing, our analysis identified microglia,
+fibroblasts, pericytes, and T-cells associated with AD genetic risk
+(Figure~\ref{fig-risk} A).
+
+Further analysis at the subtype level, implicated, in particular,
+activated microglia (Microglia A), pericyte-2 and perivascular
+fibroblast 2 (FB-2) with AD genetic risk. While microglia plays a
+crucial role in the brain immune response and has been implicated before
+with AD genetic risk, we observed novel associations with pericytes,
+involved in BBB maintenance and cerebral blood flow regulation, and
+perivascular fibroblast, essential for the structural integrity of the
+blood-brain barrier and extracellular matrix composition.
+
+\paragraph{Conditional Analysis.}\label{conditional-analysis}
+
+We conducted conditional analysis to assess the independence of the risk
+signals from each cell subtype. The results showed significant
+enrichment for each of the three cell types even when conditioned on the
+other two cell types, indicating that the observed signals are unique
+and not confounded by the other cell types.\textless NOTE: refer to
+figure panel of conditional analysis here\textgreater{}
+
+\paragraph{Gene Ontology (GO) Enrichment
+Analysis.}\label{gene-ontology-go-enrichment-analysis}
+
+To further understand the biological implications of the AD genetic risk
+genetic associations, we performed Gene Ontology (GO) enrichment
+analysis on the significant genes identified by MAGMA for each of the
+aforementioned cell types. The GO analysis revealed several enriched
+pathways, prominently featuring several amyloid-related processes. The
+enrichment of genes involved in amyloid precursor protein (APP)
+processing, amyloid-beta (Aβ) formation, and amyloid plaque clearance
+was particularly notable (Figure~\ref{fig-risk} B). This finding aligns
+with the well-established role of amyloid pathology in AD. Additionally,
+for microglia-A and pericyte-2 cell types, significant GO terms related
+to T-cell and lymphocyte regulation were identified, suggesting an
+immune regulatory component in AD risk, especially given the significant
+risk association of T-cells in the main cell type analysis.
+
+\paragraph{Protein-Protein Interaction (PPI)
+Networks.}\label{protein-protein-interaction-ppi-networks}
+
+We extracted known protein-protein interaction networks for the
+significant genes identified in each cell type. The PPI networks all had
+significantly more interactions than expected by chance. Subsequent
+Louvain clustering of these networks revealed modules associated with
+amyloid-related processes (via GO enrichment analysis) across all three
+cell types (Figure~\ref{fig-risk} \textless NOTE: subfig label
+here\textgreater). This suggests a coordinated risk association
+involving amyloid processing among microglia-A, pericyte-2, and
+perivascular-FB-2.
+
+We extracted known protein-protein interaction networks for the
+significant genes identified in each cell type. The PPI networks all had
+significantly more interactions than expected by chance. Subsequent
+Louvain clustering of these networks revealed modules associated with
+amyloid-related processes (via GO enrichment analysis) across all three
+cell types (Figure 2D?). This suggests a coordinated risk association
+involving amyloid processing among microglia-A, pericyte-2, and
+perivascular-FB-2.
+
+\paragraph{Mouse Phenotype Ontology Enrichment
+Analysis.}\label{mouse-phenotype-ontology-enrichment-analysis}
+
+To further validate our findings, we used the Mouse Phenotype Ontology
+(MPO) to investigate the functional implications of the significant
+genes that have one to one orthologs. We subset the database to terms
+with more than 10 and less than 200 genes and look for more overlap in a
+term than we would expect by chance. For microglia-A, significant
+associations were found with the abnormal cell chemotaxis and hematoma
+terms. Pericyte-2 showed significant associations with amyloidosis and
+tau protein deposits. However, no significant associations were
+identified for perivascular-FB-2.
+
+\paragraph{Cell-cell communication.}\label{cell-cell-communication}
+
+\begin{figure}[H]
+
+\caption{(A) Heatmap of differential number and strength of
+interactions. (B)}
+
+{\centering \pandocbounded{\includegraphics[keepaspectratio]{05_figures/990_shared_figures/003_final_figures/figure4.png}}
+
+}
+
+\end{figure}%
+
+We used \texttt{CellChat} to interrogate cell-cell communications and
+found substantial differences in known ligand-receptor abundances
+between AD and controls.(\citeproc{ref-CellChat}{Jin, 2024}) Signalling
+pathways showing the greatest overall difference in strength of
+signalling included Progranulin (GRN), chemokine (CXCL), Tumor necrosis
+factor-related apoptosis-inducing ligand (TRAIL) and Annexin. These
+pathways were strongly present in AD and relatively absent in controls.
+Conversely CALCR and TAC were present in controls and relatively absent
+in AD. Progranulin, encoded by the gene GRN, is a secreted growth factor
+which binds to the sortilin receptor (SORT1). Mutations in GRN, which
+typically lead to reduced progranulin levels (Ward and Mille, 2011) are
+a cause of fronto-temporal dementia and progranulin is considered a
+neuroprotective neurotrophic factor. SORT1 polymorphisms are an
+important AD risk factor and ablation of SORT1 increases progranulin
+levels. Although not included in the CellChat interactions, progranulin
+is an antagonist at the TNFa receptor(\citeproc{ref-Tang2011}{Tang et
+al., 2011}) and is anti-inflammatory. Interestingly we find that the
+dominant source of progranulin appears to be activated microglia, which
+is strongly present in AD and absent in controls. Many cells from AD
+samples but not controls appear to be upregulated incoming signalling to
+progranulin, but in particular oligodendrocytes, vascular cells and
+T-cells -- suggesting that progranulin effects in AD may act on
+non-neuronal cells to exert trophic and anti-inflammatory effects.
+
+The CXCLs are family of secreted small molecules that bind to G-protein
+coupled receptors to recruit leukocytes and therefore a critical part of
+innate immunity. We find an upregulation of chemokine signalling in AD.
+It is interesting that the perivascular fibroblast population in AD
+appears to be dominant cell type for outgoing signalling, with receivers
+being T-cells. TRAIL (also called TNFS10) has been proposed as an
+important mediator of amyloid-beta induced
+toxicity.(\citeproc{ref-Cantarella2003}{Cantarella et al., 2003};
+\citeproc{ref-Cantarella2015}{Cantarella et al., 2014}) Its upregulation
+may suggest its contribution to AD progression. The source appears to be
+arterial endothelial cells and the responder cells are also endothelial
+cells which may promote vascular inflammation in AD. In mouse AD models,
+neutrailising TRAIL antibodies was associated with cognitive improvement
+and reduced inflammation. Annexin A1, which is anti-inflammatory, showed
+increased signalling in our dataset, and this has previously been shown
+to be upregulated in Alzheimer's Disease.(\citeproc{ref-Chua2022}{Chua
+et al., 2022}) Treatment with recombinant Annexin A1 can improve
+neurovascular dysfunction, reduce BBB leakage and improve cognitive
+function.(\citeproc{ref-Ries2021}{Ries et al., 2021})
+
+Overall the examination of cell-cell interactions suggests that in AD
+there is an upregulation of factors involved in immune signalling. In
+the case progranulin and Annexin A, the expected effect is to counter
+inflammation whilst chemokines and TRAIL may promote inflammation.
+
+We also specifically examined changes in cell-cell communication between
+activated microglia, pericyte-2 and perivascular fibroblasts-KAZN. We
+find communication in pericyte-2 and microglia-A via Transforming Growth
+Factor \(\beta\) 1 (TGF\(\beta1\)) as a ligand in pericyte-2 to
+TGF\(\beta\) Receptor (TGF\(\beta\)R) 1/2 and Activin A Receptor Type 1
+(ACVR1) in microglia-A for cases but not controls, suggesting more
+activation of microglia by pericytes.\textless NOTE: refs
+needed\textgreater{}
+
+\begin{itemize}
+\tightlist
+\item
+  NOTES on cellchat ligand receptor pairs:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    Pericyte-2 -\textgreater{} Microglia-A (all in cases but not
+    controls):
+
+    \begin{itemize}
+    \tightlist
+    \item
+      PTN (Pleiotrophin) -\textgreater{} NCL (Nucleolin) - roles in
+      neuroprotection, neuronal growth and repair - modulating microglia
+      survival/activation?
+    \item
+      IL34 -\textgreater{} CSF1R (Colony Stimulating Factor 1 receptor)
+      - similarly likely activating microglia more
+    \item
+      BMP6 (Bone morphogenetic protein 6) -\textgreater{}
+      BMPR1A/BMPR2/ACVR1 - again development/activation
+    \end{itemize}
+  \item
+    Microglia-A -\textgreater{} Pericyte-2 (most present in both case
+    and control)
+
+    \begin{itemize}
+    \tightlist
+    \item
+      WNT5A -\textgreater{} MCAM - cell adhesion, migration and polarity
+      (BBB integrity?)
+    \item
+      TGFB1 -\textgreater{} TGFRB1/2 + ACVR1 (\textbf{cases only}) -
+      pericyte activation
+    \item
+      SPP1 -\textgreater{} CD44 + ITGAV + ITGB5 + ITGB1 - cell
+      adhesion/migration/survival (BBB/ injury response)
+    \item
+      PDGFB -\textgreater{} PDGFRB - pericyte proliferation, survival
+      and recruitment to blood vessels (response to vascular damage?)
+    \item
+      LGALS9 -\textgreater{} CD44 - again, adhesion things
+    \item
+      GRN -\textgreater{} SORT1 (\textbf{cases only}) - inflammatory
+      things
+    \item
+      GAS6 -\textgreater{} MERTK + AXL - cell survival (apoptosis?) -
+      anti-inflammatory
+    \end{itemize}
+  \end{itemize}
+\end{itemize}
+
+\paragraph{Interpretation.}\label{interpretation}
+
+The identification of these specific cell types and the enrichment of
+amyloid-related processes underscore the complex interplay between
+various cellular components in the brain and AD pathology. Microglia-A,
+pericyte-2, and perivascular-FB-2 may contribute to disease mechanisms
+through their roles in immune response, vascular integrity, and amyloid
+processing, respectively. The independence of these signals, as shown by
+conditional analysis, highlights the unique contributions of each cell
+type. Additionally, the PPI network analysis suggests a coordinated risk
+association involving amyloid-related processes across these cell types.
+Mouse ontology data further supports these findings, particularly
+highlighting the roles of microglia-A and pericyte-2 cells in AD-related
+pathologies.
+
+These findings provide new insights into potential cellular targets for
+therapeutic intervention in Alzheimer's disease.
+
+\subsubsection{Differential Expression
+Analysis}\label{differential-expression-analysis}
+
+\begin{figure}[H]
+
+\caption{(A) Counts of DEGs. (B)}
+
+{\centering \pandocbounded{\includegraphics[keepaspectratio]{05_figures/990_shared_figures/003_final_figures/figure3.png}}
+
+}
+
+\end{figure}%
+
+\begin{itemize}
+\tightlist
+\item
+  ex-neuron 5 - interesting DEGs and sig proportion difference
+\end{itemize}
+
+Using a pseudobulk approach we performed differential gene expression
+analysis (see Methods) and found the greatest burden of changes on
+astrocytes, oligodendrocytes and vascular cells -- in particular
+T-pericytes and endothelial cells. Interestingly more genes are
+upregulated than downregulated in AD in almost all cell types. The cells
+showing the greatest transcription dysregulation are different to the
+cell types we found enriched for AD GWAS risk loci. This suggests that
+the risk loci in these cells may have imparted pathogenic effects
+earlier in life that are no longer evident. The AD brain instead seems
+to be dominated by compensatory changes to the disease process or
+activation of pathways that contribute to ongoing disease progression.
+
+Quiescent astrocytes were the cell type with the most gene changes, with
+over 600 genes upregulated and approximately 500 genes downregulated.
+Astrocytes, contact many other cell types including neurons and blood
+vessels, and have a wide-range of functions from modulating synapse
+function to being an integral part of the BBB. Using Gene Ontolgoy
+enrichment analysis we find upregulation of transport pathways and
+synaptic signalling and support as well as cell adhesion. This is
+consistent with astrocytes provide trophic support for adjacent neurons
+amid the ongoing neuro-degeneration. Activated or reactive astrocytes
+are a feature of many pathological conditions and can have either pro-
+or anti-inflammatory actions. The majority of genes in reactive
+astrocytes are upregulated, with pathways involved developmental
+biological processes. Genes involved in synaptic function are again
+enriched but unlike quiescent astrocytes, the small number of genes
+involved (?how many) are downregulated.
+
+Oligodendrocyte precursor cells (OPCs) migrate to a region of injury and
+differentiate into oligodendrocytes (Ols) that form myelin sheaths for
+axonal fibres. GSEA of OLs shows suppression of genes associated with
+the cilium. The primary cilium is an organelle found in almost all cells
+and serves a signalling centre to regulate developmental processes. OPCs
+lose their cilium as they differentiate in OLs. The observed
+downregulation of cilium genes in OLs in AD may indicate that OLs have
+recently formed perhaps from OPCs that have reacted to AD associated
+white matter injury. Another common pathway we detected across DEGs in
+OL subtypes, was the cholesterol metabolism, which has been previously
+associated with late AD pathology gene expression changes in
+OL.(\citeproc{ref-Mathys2023}{Mathys et al., 2023}) The upregulated
+genes are enriched for immune pathways, suggesting that OLs may be a
+part of the complex immune environment in AD or responding to immune
+challenge.
+
+We found one subtype of excitatory neurons exhibiting a large number of
+differentially expressed genes. Based on the cell identity markers, this
+excitatory neurons aligned with a deep layer cortical excitatory
+neurons, that has previously been identified as selectively vulnerable
+in AD.(\citeproc{ref-leng2021}{Leng et al., 2021}) Upregulated genes
+were enriched for genes involved in response to acetylcholine, a
+neurotransmitter which is deficient in AD {[}ref{]} and which
+acetylcholinesterase inhibitors used for symptomatic treatment in early
+AD try to restore {[}ref{]}. Further compensatory responses in these
+neurons is evident in the upregulation of synaptic genes.
+
+In capillary endothelium, a striking upregulated pathway enrichment is
+the cellular response to insulin. Insulin resistance in AD has been
+proposed as a key pathogenic mechanism(\citeproc{ref-talbot2012}{Talbot
+et al., 2012}), and potentially induced by amyloid. The upregulation of
+genes involved in insulin signalling may reflect the endothelial
+response to reducing insulin sensitivity in AD.
+
+T-pericytes, a subtype defined by a previous single cell study of the
+brain vasculature(\citeproc{ref-yang2022}{Yang et al., 2022}) also
+exhibits a large number of differentially expressed genes. T-pericytes
+were so called due to higher expression of small molecule transporters
+but in our study we found that gene set enrichment of upregulated genes
+in AD highlighted T-cell and leukocyte activation pathways. Notably,
+SLC4A11 was among the top upregulated genes in T-pericytes and
+M-pericytes, increased expression of SLC4A11 reduces reactive oxygen
+species(\citeproc{ref-Guha2017}{Guha et al., 2017}), and could be
+another compensatory mechanism observed in pericytes, or could denote
+the location of these pericytes,as has been recently proposed as a
+marker for arteriolar pericytes. In Microglia-A we observed
+\textasciitilde60/70 DEGs, similar to other cell types, most of them
+upregulated, including genes like Translocator Protein (TSPO), which has
+been previously associated with AD
+severity.(\citeproc{ref-Garland2023}{Garland et al., 2023})
+
+\subsection{Discussion}\label{discussion}
+
+\subsection{Acknowledgments}\label{acknowledgments}
+
+This work is supported by the UK Dementia Research Institute {[}award
+number UK DRI-3005{]} through UK DRI Ltd, principally funded by the
+Medical Research Council. Part of this work was performed using the
+computational facilities of the Advance Research Computing @ Cardiff
+(ARCCA) Division, Cardiff University.
+
+\subsection{Author contributions}\label{author-contributions}
+
+\subsection{Declaration of interests}\label{declaration-of-interests}
+
+\subsection{Figure titles and legends}\label{figure-titles-and-legends}
+
+\subsection{Tables with title and
+legends}\label{tables-with-title-and-legends}
+
+\subsection{STAR Methods}\label{star-methods}
+
+Link to info on this here: \url{https://www.cell.com/star-authors-guide}
+
+And a pdf guide
+\href{https://www.cell.com/pb-assets/journals/research/cell/methods/Methods_Guide_Cell-1678470557763.pdf}{here}
+
+\begin{itemize}
+\tightlist
+\item
+  Plan to make the code available on GitHub and make a docker image with
+  the R environment for all the downstream processing - The seurat
+  object from scflow could be included in this image - This could go on
+  ADDI as well?
+\item
+  Raw data will go on GEO I guess
+\end{itemize}
+
+\subsubsection{Key resoures table}\label{key-resoures-table}
+
+\begin{table}
+
+{\caption{{Key resources table}{\label{tbl-key-resources}}}
+\vspace{-20pt}}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.1500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2778}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2778}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2944}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+group
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+REAGENT or RESOURCE
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+SOURCE
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+IDENTIFIER
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Critical commercial assays & 10X Genomics Chromium Single Cell 3'
+Reagent Kits & 10X Genomics & PN- \\
+Deposited data & Raw and analysed data & This paper & GEO: \\
+Software and algorithms & Cellranger v7.1.0 & 10X Genomics &
+https://www.10xgenomics.com/software \\
+Software and algorithms & Nextflow v23.04.1.5866 &
+https://doi.org/10.1038/nbt.3820 & https://www.nextflow.io/ \\
+Software and algorithms & scFow pipeline v0.7.2 &
+https://doi.org/10.22541/au.162912533.38489960/v1 &
+https://github.com/combiz/nf-core-scflow/tree/dev-nf \\
+Software and algorithms & R v4.4.1 & R Foundation for Statistical
+Computing & https://www.R-project.org/ \\
+Software and algorithms & Seurat v5.1.0 &
+https://doi.org/10.1038/s41587-023-01767-y & NA \\
+Software and algorithms & Data analysis code & This paper & doi for code
+goes here \\
+\end{longtable}
+
+\end{table}
+
+\subsubsection{Resource availability}\label{resource-availability}
+
+\paragraph{Lead contact.}\label{lead-contact}
+
+Further information and requests for resources and reagents should be
+directed to and will be fulfilled by the lead contact,
+\texttt{name\ here} (\texttt{email\ here}).
+
+\paragraph{Materials availability.}\label{materials-availability}
+
+No unique reagents were generated for this study.
+
+\paragraph{Data and code
+availability.}\label{data-and-code-availability}
+
+\begin{itemize}
+\tightlist
+\item
+  All raw data are available in the GEO database under the accession
+  number GEO:
+\item
+  The Seurat object generated from the scFlow pipeline is included in
+  the Docker image with the R environment used for analysis here:
+\item
+  All original code has been deposited at Zenodo and is publicly
+  available as of the date of publication. DOIs are listed in the key
+  resources table.
+\end{itemize}
+
+\subsubsection{Experimental model and study participant
+details}\label{experimental-model-and-study-participant-details}
+
+\paragraph{Post-mortem tissue donors.}\label{post-mortem-tissue-donors}
+
+Post-mortem pre-frontal cortex from 20 controls and 20 AD brain donors
+were collected from \texttt{brain\ bank\ here} under
+\texttt{ethics\ details\ here}. The clinicopathological parameters were
+collected and summarized in \quartosupptblref{supptbl-donor-metadata},
+including gender, age, diagnosis, APOE status, ethnicity and Braak
+stage. 3 donors were excluded in QC and of the remaining 37 donors, 23
+were female and 14 were male with a median age of 87 (range 48-101). Sex
+and age were included as a covariates in pseudobulk differential gene
+expression analysis.
+
+\subsubsection{Method details}\label{method-details}
+
+\paragraph{Sample prep/neurovascular unit
+isolation.}\label{sample-prepneurovascular-unit-isolation}
+
+\paragraph{RNA sequencing.}\label{rna-sequencing}
+
+\subsubsection{Quantification and statistical
+analysis}\label{quantification-and-statistical-analysis}
+
+\paragraph{Data Processing.}\label{data-processing}
+
+The raw sequencing data was processed using CellRanger (version 7.1.0,
+10X Genomics), which performed initial alignment, filtering, barcode
+counting, and UMI counting. An updated reference genome (Ensembl version
+109 and Gencode version 43 annotations for GRCh38) was generated for use
+with CellRanger. The resulting gene-barcode matrices were then further
+processed using the scFlow pipeline implemented in
+Nextflow.(\citeproc{ref-ditommaso2017}{Di Tommaso et al., 2017};
+\citeproc{ref-khozoie2021}{Khozoie et al., 2021})
+
+\paragraph{Quality Control.}\label{sec-seq-qc}
+
+The processed data were read into R (version 4.4.0) using the Seurat
+package (version 5.1.0).(\citeproc{ref-Seurat}{Hao et al., 2023a};
+\citeproc{ref-base}{2024}) In addition to the filtering performed by
+scFlow, cells with low feature/RNA counts were filtered out (between
+\textless300 \& \textless7500 for features and \textgreater1000 for
+RNA), and donors with an insufficient number of high-quality cells were
+excluded from further analysis, resulting in 3 donors (both fractions),
+and the vascular fraction from 1 addition donor being excluded.
+
+\paragraph{Clustering.}\label{clustering}
+
+A standard Seurat workflow was followed including normalisation, finding
+variable features, scaling and PCA. For the UMAP 35 dimensions and a
+resolution of 0.6 was used.
+
+\paragraph{Cell Type Annotation.}\label{cell-type-annotation}
+
+Cell types were annotated based on canonical marker genes identified
+from the literature, Yang et al. (\citeproc{ref-yang2022}{2022}) in
+particular. The expression levels of these marker genes were used to
+classify cells into distinct main cell types. These higher level cell
+types were then subclustered with 20 dimensions and a resolution of 0.4
+to identify cell subtypes. This annotation process was validated by
+comparing the identified cell types to known cell type distributions in
+similar datasets.
+
+\paragraph{Differences in cell
+proportions.}\label{differences-in-cell-proportions}
+
+To analyse differences in cell type proportions between case and control
+groups, we utilized the propeller function from the speckle R package
+(version 1.4.0) on the vascular and parenchymal fractions
+separately.(\citeproc{ref-speckle}{Phipson et al., 2022}) This method
+employs a robust linear modelling framework to test for significant
+differences in cell type proportions across experimental conditions,
+while accounting for the compositional nature of the data and potential
+variability between samples.
+
+\paragraph{Pseudobulk differential gene
+expression.}\label{pseudobulk-differential-gene-expression}
+
+Gene expression data was aggregated by cell type, donor and diagnosis,
+to create pseudobulk utilising \texttt{AggregateExpression} from
+\texttt{Seurat}. \texttt{DESeq2} (version 1.44.0) was employed to run
+the differential expression, with age and sex as
+covariates.(\citeproc{ref-DESeq2}{Love et al., 2014}) This was then used
+to perform hypergeometric GO enrichment analysis by filtering to
+significantly differentially expressed genes (DEGs) (adjusted p-value
+\textless{} 0.05) and running \texttt{enrichGO} from
+\texttt{clusterProfiler} (version 4.12.0) with all genes identified in
+this dataset used a background.(\citeproc{ref-clusterProfiler}{Wu et
+al., 2021})
+
+\paragraph{Mammalian Phenotype Ontology
+enrichment.}\label{mammalian-phenotype-ontology-enrichment}
+
+We use the Jackson Laboratory Mammalian Phenotype Ontology
+database(\citeproc{ref-Smith2009}{Smith \& Eppig, 2009}) (release
+2024-02-07 ) to test for enrichment of gene lists in phenotypic terms.
+Given the directed acyclic graph structure of the ontology, we used
+Simona(\citeproc{ref-gu2023}{Gu, 2023}) (version 1.0.10) to annotate
+child (more specific) terms to their ancestors (more general) terms,
+creating a deeply annotated set. We further subset the database to terms
+with more than 10 and less than 200 genes and tested for gene enrichment
+using an hypergeometric test. We adjusted the p-values using the
+Benjamini-Hochberg method to account for multiple testing.
+
+\paragraph{Cell-cell communication.}\label{cell-cell-communication-1}
+
+To investigate cell-cell communication we employed \texttt{CellChat}
+(version 2.1.2).(\citeproc{ref-CellChat}{Jin, 2024}) A \texttt{CellChat}
+object was created for cases and controls separately using the
+``Secreted Signalling'' ligand-receptor interaction database. A standard
+\texttt{CellChat} was then followed to identify over expressed
+genes/ligands and contrast these in cases and controls.
+
+\paragraph{Protein-protein interaction
+networks.}\label{protein-protein-interaction-networks}
+
+We created a combined protein-protein interaction network by combining
+the following resources:
+APID(\citeproc{ref-Alonso-Luxf3pez2019}{Alonso-López et al., 2019}),
+BIOGRID(\citeproc{ref-Oughtred2021}{Oughtred et al., 2020}),
+BIOPLEX(\citeproc{ref-Huttlin2021}{Huttlin et al., 2021}),
+CORUM(\citeproc{ref-Tsitsiridis2023}{Tsitsiridis et al., 2022}),
+HITPREDICT(\citeproc{ref-Luxf3pez2015}{López et al., 2015}),
+HuRi(\citeproc{ref-Luck2020}{Luck et al., 2020}),
+INTACT(\citeproc{ref-Orchard2014}{Orchard et al., 2013}),
+MINT(\citeproc{ref-Licata2012}{Licata et al., 2011}),
+REACTOME(\citeproc{ref-Gillespie2022}{Gillespie et al., 2021}) and only
+protein physical links from
+STRING(\citeproc{ref-Szklarczyk2023}{Szklarczyk et al., 2022}). All
+datasets were mapped to Ensembl Gene ID from either Entrez, Uniprot or
+Ensembl Protein IDs using org.Hs.eg.db. All duplicated and
+self-interactions were removed. For any gene set of interest we tested
+if we observed more interactions than expected by chance. A 10,000
+randomizations were used to obtain an empiric p value, reflecting the
+number of times that equally sized random samples of genes (with similar
+degree and gene lenght) had more interactions than our gene set of
+interest.
+
+\paragraph{Disease risk enrichment.}\label{disease-risk-enrichment}
+
+To investigate enrichment for disease risk we employed both MAGMA
+(version 1.10) and LD score (version
+1.0.1).(\citeproc{ref-bulik-sullivan2015}{Bulik-Sullivan et al., 2015};
+\citeproc{ref-leeuw2015}{Leeuw et al., 2015}) We subset to control
+samples and identified celltype-specific marker genes using
+\texttt{FindAllMarkers} from the Seurat
+package.(\citeproc{ref-Seurat-2}{Hao et al., 2023b}) Only genes that are
+detected in a minimum of 25\% of cells in either of the two populations
+are considered and a minimum log fold change of 0.01 were used. This
+function was used to apply a Wilcoxon Rank Sum test to compare each
+cluster against all other clusters identifying differentially expressed
+gene. From this list of genes, the top ten percent of the total number
+of genes in the dataset (27459 genes in total) which had the lowest
+p-values from this test were selected as the celltype specific genes.
+
+The 1000 Genomes Project (Phase 3) was used as a reference in
+combination with the NCBI37 (GRCh37) genome build as an annotation
+file.(\citeproc{ref-auton2015}{Auton et al., 2015};
+\citeproc{ref-sayers2022}{Sayers et al., 2022}) Genes were annotated
+with a window 35Kb and 10Kb up/downstream respectively.
+
+\subsection{Supplemental information titles and
+legends}\label{supplemental-information-titles-and-legends}
+
+\begin{supptbl}
+
+\caption{\label{supptbl-donor-metadata}Clinical Information. Clinical
+characteristics of the cohort and samples included in the multi-omics
+analysis.}
+
+\centering{
+
+\begin{longtable*}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 18\tabcolsep) * \real{0.0625}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 18\tabcolsep) * \real{0.0227}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 18\tabcolsep) * \real{0.0227}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 18\tabcolsep) * \real{0.0568}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 18\tabcolsep) * \real{0.0739}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 18\tabcolsep) * \real{0.0795}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 18\tabcolsep) * \real{0.0966}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 18\tabcolsep) * \real{0.0739}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 18\tabcolsep) * \real{0.4432}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 18\tabcolsep) * \real{0.0682}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+donor\_id
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+sex
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+age
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+diagnosis
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+braak\_tangle
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+pH\_cerebellum
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+ethnicity
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+brain\_weight
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+diagnosis\_details
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+apoe\_status
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+NP011/2019 & M & 94 & Control & II & 6.04 & White (European) & 1386 &
+Low level AD Braak II, Abnormal deposition of pTDP-43 in medial temporal
+lobe & 2/4 \\
+NP041/2019 & F & 87 & Case & V & 5.57 & Black Caribbean & 1034 & AD,
+LATE & 3/4 \\
+NP067/2018 & M & 81 & Case & VI & 6.43 & unknown & 1172 & AD, LBD, CVD,
+Hippocampal sclerosis & 4/4 \\
+NP076/2014 & F & 95 & Case & V & 5.94 & unknown & 934 & AD & 3/4 \\
+NP032/2018 & F & 86 & Control & III & 5.62 & unknown & 1330 & Abnormal
+deposition of tau protein & 2/3 \\
+NP150/2014 & F & 95 & Control & II & 5.17 & unknown & 1317 & Normal aged
+brain & 3/3 \\
+NP077/2018 & M & 82 & Control & II & 5.90 & unknown & 1400 & Normal aged
+control, low level AD change & 3/4 \\
+NP090/17 & M & 70 & Control & II & NA & NA & NA & Aged brain Braak II &
+3/3 \\
+NP102/17 & F & 81 & Control & II & NA & NA & NA & Normal aged Brain
+Braak II & 3/3 \\
+NP093/13 & F & 90 & Case & V & NA & NA & NA & Alzheimer's disease, Braak
+V, CVD & 3/3 \\
+NP018/14 & F & 85 & Case & VI & NA & NA & NA & AD Braak VI & 3/4 \\
+NP406/16 & F & 81 & Case & VI & NA & NA & NA & AD Braak VI & 2/4 \\
+NP096/13 & F & 92 & Control & II & NA & NA & NA & Normal aged brain
+Braak II & 3/3 \\
+NP127/14 & F & 89 & Case & IV & NA & NA & NA & AD Braak IV & 4/4 \\
+NP080/15 & M & 71 & Control & I & NA & NA & NA & Normal aged brain Braak
+I & 3/3 \\
+NP054/17 & F & 73 & Case & VI & NA & NA & NA & AD Braak VI & 3/4 \\
+NP109/17 & F & 77 & Control & I & NA & NA & NA & Normal aged brain Braak
+I & 3/3 \\
+NP048/19 & M & 71 & Control & I & NA & NA & NA & Aged brain Braak I &
+3/3 \\
+NP011/14 & F & 93 & Control & III & NA & NA & NA & Normal aged brain .
+Braak III & 3/3 \\
+NP160/13 & F & 88 & Case & IV & NA & NA & NA & AD Braak IV, CVD & 3/4 \\
+NP024/17 & M & 74 & Control & II & NA & NA & NA & Control with low level
+AD Braak II & 3/3 \\
+NP092/19 & M & 98 & Case & IV & NA & NA & NA & AD, LATE, CVD Braak IV &
+3/4 \\
+NP103/13 & F & 48 & Control & NA & NA & NA & NA & Control & 3/3 \\
+NP037/18 & F & 101 & Case & V & NA & NA & NA & AD, CVD Braak V & 3/4 \\
+NP016/2017 & F & 89 & Control & II & 5.67 & unknown & 1366 & Aged brain,
+CVD & 3/3 \\
+NP163/13 & F & 89 & Case & IV & NA & NA & NA & AD Braak IV, CVD & 3/4 \\
+NP034/2014 & F & 87 & Case & VI & 5.95 & unknown & 1060 & AD & 2/4 \\
+NP008/2015 & F & 87 & Control & II & 6.86 & unknown & 1101 & Normal aged
+brain & 3/3 \\
+NP002/2019 & M & 88 & Case & VI & 5.63 & unknown & 1151 & AD, CVD &
+4/4 \\
+NP070/2019 & M & 85 & Control & II & 6.03 & unknown & 1367 & Control
+with low level AD change Braak II & 3/3 \\
+NP128/2017 & M & 87 & Control & I & 6.10 & unknown & 1368 & Control, CVD
+& 3/3 \\
+NP080/2014 & F & 89 & Case & V & 6.67 & unknown & 1101 & AD, LBD, CVD &
+3/3 \\
+NP018/2019 & M & 87 & Case & V & 5.93 & unknown & 1154 & AD Braak V &
+3/4 \\
+NP142/2014 & M & 85 & Case & VI & 6.22 & unknown & 1372 & AD Braak VI &
+3/3 \\
+NP058/2019 & M & 89 & Control & II & 5.58 & unknown & 1141 & Low level
+AD & 3/3 \\
+NP177/2013 & F & 90 & Case & V & 5.58 & unknown & 1153 & AD, LBD &
+3/3 \\
+NP063/2019 & F & 89 & Control & II & 5.69 & White (European) & 1280 &
+Aged brainLow level AD & 3/3 \\
+\end{longtable*}
+
+}
+
+\end{supptbl}%
+
+\begin{supptbl}
+
+\caption{\label{supptbl-r-packages}R packages used}
+
+\centering{
+
+\begin{longtable*}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.2721}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.1103}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.6176}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+package
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+loadedversion
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+source
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+AnnotationDbi & 1.66.0 & Bioconductor 3.19 (R 4.4.0) \\
+AnnotationFilter & 1.28.0 & Bioconductor 3.19 (R 4.4.0) \\
+AnnotationHub & 3.12.0 & Bioconductor 3.19 (R 4.4.0) \\
+BSgenome & 1.72.0 & Bioconductor 3.19 (R 4.4.0) \\
+BSgenome.Hsapiens.1000genomes.hs37d5 & 0.99.1 & Bioconductor \\
+BSgenome.Hsapiens.NCBI.GRCh38 & 1.3.1000 & Bioconductor \\
+Biobase & 2.64.0 & Bioconductor 3.19 (R 4.4.0) \\
+BiocFileCache & 2.12.0 & Bioconductor 3.19 (R 4.4.0) \\
+BiocGenerics & 0.50.0 & Bioconductor 3.19 (R 4.4.0) \\
+BiocIO & 1.14.0 & Bioconductor 3.19 (R 4.4.0) \\
+BiocManager & 1.30.25 & RSPM (R 4.4.1) \\
+BiocNeighbors & 1.22.0 & Bioconductor 3.19 (R 4.4.0) \\
+BiocParallel & 1.38.0 & Bioconductor 3.19 (R 4.4.0) \\
+BiocSingular & 1.20.0 & Bioconductor 3.19 (R 4.4.0) \\
+BiocVersion & 3.19.1 & Bioconductor 3.19 (R 4.4.0) \\
+Biostrings & 2.72.1 & Bioconductor 3.19 (R 4.4.1) \\
+CellChat & 2.1.2 & Github
+(jinworks/CellChat@b05405af0f4f2cac99f2211e888d42de4c5a9d59) \\
+ComplexHeatmap & 2.20.0 & Bioconductor 3.19 (R 4.4.0) \\
+DBI & 1.2.3 & RSPM (R 4.4.1) \\
+DESeq2 & 1.44.0 & Bioconductor 3.19 (R 4.4.0) \\
+DEoptimR & 1.1-3 & CRAN (R 4.4.0) \\
+DOSE & 3.30.5 & Bioconductor 3.19 (R 4.4.1) \\
+DT & 0.33 & CRAN (R 4.4.0) \\
+DelayedArray & 0.30.1 & Bioconductor 3.19 (R 4.4.0) \\
+DelayedMatrixStats & 1.26.0 & Bioconductor 3.19 (R 4.4.0) \\
+DirichletReg & 0.7-1 & RSPM (R 4.4.0) \\
+DoubletFinder & 2.0.4 & Github
+(chris-mcginnis-ucsf/DoubletFinder@03e9f37f891ef76a23cc55ea69f940c536ae8f9f) \\
+DropletUtils & 1.24.0 & Bioconductor 3.19 (R 4.4.0) \\
+EWCE & 1.12.0 & Bioconductor 3.19 (R 4.4.0) \\
+EnsDb.Hsapiens.v79 & 2.99.0 & Bioconductor \\
+ExperimentHub & 2.12.0 & Bioconductor 3.19 (R 4.4.0) \\
+FNN & 1.1.4.1 & RSPM (R 4.4.1) \\
+Formula & 1.2-5 & RSPM (R 4.4.0) \\
+GEOquery & 2.72.0 & Bioconductor 3.19 (R 4.4.0) \\
+GO.db & 3.19.1 & Bioconductor \\
+GOSemSim & 2.30.2 & Bioconductor 3.19 (R 4.4.1) \\
+GenomeInfoDb & 1.40.1 & Bioconductor 3.19 (R 4.4.1) \\
+GenomeInfoDbData & 1.2.12 & Bioconductor \\
+GenomicAlignments & 1.40.0 & Bioconductor 3.19 (R 4.4.0) \\
+GenomicFeatures & 1.56.0 & Bioconductor 3.19 (R 4.4.0) \\
+GenomicFiles & 1.40.0 & Bioconductor 3.19 (R 4.4.0) \\
+GenomicRanges & 1.56.2 & Bioconductor 3.19 (R 4.4.1) \\
+GetoptLong & 1.0.5 & CRAN (R 4.4.0) \\
+GlobalOptions & 0.1.2 & CRAN (R 4.4.0) \\
+HDF5Array & 1.32.1 & Bioconductor 3.19 (R 4.4.1) \\
+HGNChelper & 0.8.14 & RSPM (R 4.4.0) \\
+IRanges & 2.38.1 & Bioconductor 3.19 (R 4.4.1) \\
+KEGGREST & 1.44.1 & Bioconductor 3.19 (R 4.4.1) \\
+KEGGgraph & 1.64.0 & Bioconductor 3.19 (R 4.4.0) \\
+KernSmooth & 2.23-26 & CRAN (R 4.4.2) \\
+MASS & 7.3-64 & CRAN (R 4.4.2) \\
+MAST & 1.30.0 & Bioconductor 3.19 (R 4.4.0) \\
+Matrix & 1.7-2 & CRAN (R 4.4.2) \\
+MatrixGenerics & 1.16.0 & Bioconductor 3.19 (R 4.4.0) \\
+MungeSumstats & 1.12.2 & Bioconductor 3.19 (R 4.4.1) \\
+NLP & 0.3-1 & CRAN (R 4.4.2) \\
+NMF & 0.28 & RSPM (R 4.4.1) \\
+PCAtools & 2.16.0 & Bioconductor 3.19 (R 4.4.0) \\
+Polychrome & 1.5.1 & CRAN (R 4.4.0) \\
+ProtGenerics & 1.36.0 & Bioconductor 3.19 (R 4.4.0) \\
+R.methodsS3 & 1.8.2 & CRAN (R 4.4.0) \\
+R.oo & 1.27.0 & RSPM (R 4.4.2) \\
+R.utils & 2.12.3 & CRAN (R 4.4.0) \\
+R6 & 2.5.1 & CRAN (R 4.4.0) \\
+RANN & 2.6.2 & RSPM (R 4.4.1) \\
+RApiSerialize & 0.1.4 & RSPM (R 4.4.1) \\
+RColorBrewer & 1.1-3 & CRAN (R 4.4.0) \\
+RCurl & 1.98-1.16 & RSPM (R 4.4.1) \\
+RNOmni & 1.0.1.2 & RSPM (R 4.4.0) \\
+ROCR & 1.0-11 & CRAN (R 4.4.0) \\
+RSQLite & 2.3.7 & RSPM (R 4.4.0) \\
+RSpectra & 0.16-2 & RSPM (R 4.4.1) \\
+Rcpp & 1.0.13-1 & RSPM (R 4.4.2) \\
+RcppAnnoy & 0.0.22 & CRAN (R 4.4.0) \\
+RcppHNSW & 0.6.0 & CRAN (R 4.4.0) \\
+RcppParallel & 5.1.9 & CRAN (R 4.4.1) \\
+ResidualMatrix & 1.14.1 & Bioconductor 3.19 (R 4.4.1) \\
+Rgraphviz & 2.48.0 & Bioconductor 3.19 (R 4.4.0) \\
+Rhdf5lib & 1.26.0 & Bioconductor 3.19 (R 4.4.0) \\
+Rsamtools & 2.20.0 & Bioconductor 3.19 (R 4.4.0) \\
+Rtsne & 0.17 & CRAN (R 4.4.0) \\
+S4Arrays & 1.4.1 & Bioconductor 3.19 (R 4.4.1) \\
+S4Vectors & 0.42.1 & Bioconductor 3.19 (R 4.4.1) \\
+SC3 & 1.32.0 & Bioconductor 3.19 (R 4.4.0) \\
+SNPlocs.Hsapiens.dbSNP155.GRCh37 & 0.99.24 & Bioconductor \\
+SNPlocs.Hsapiens.dbSNP155.GRCh38 & 0.99.24 & Bioconductor \\
+ScaledMatrix & 1.12.0 & Bioconductor 3.19 (R 4.4.0) \\
+Seurat & 5.1.0 & RSPM (R 4.4.0) \\
+SeuratObject & 5.0.2 & RSPM (R 4.4.2) \\
+SeuratWrappers & 0.3.5 & Github
+(satijalab/seurat-wrappers@8d46d6c47c089e193fe5c02a8c23970715918aa9) \\
+SingleCellExperiment & 1.26.0 & Bioconductor 3.19 (R 4.4.0) \\
+SnowballC & 0.7.1 & CRAN (R 4.4.0) \\
+SparseArray & 1.4.8 & Bioconductor 3.19 (R 4.4.1) \\
+SparseM & 1.84-2 & RSPM (R 4.4.1) \\
+SummarizedExperiment & 1.34.0 & Bioconductor 3.19 (R 4.4.0) \\
+UCSC.utils & 1.0.0 & Bioconductor 3.19 (R 4.4.0) \\
+UpSetR & 1.4.0 & RSPM (R 4.4.0) \\
+VariantAnnotation & 1.50.0 & Bioconductor 3.19 (R 4.4.0) \\
+WebGestaltR & 0.4.6 & RSPM (R 4.4.0) \\
+WriteXLS & 6.7.0 & RSPM (R 4.4.1) \\
+XML & 3.99-0.17 & RSPM (R 4.4.1) \\
+XVector & 0.44.0 & Bioconductor 3.19 (R 4.4.0) \\
+abind & 1.4-8 & RSPM (R 4.4.1) \\
+alabaster.base & 1.4.2 & Bioconductor 3.19 (R 4.4.1) \\
+alabaster.matrix & 1.4.2 & Bioconductor 3.19 (R 4.4.1) \\
+alabaster.ranges & 1.4.2 & Bioconductor 3.19 (R 4.4.1) \\
+alabaster.sce & 1.4.0 & Bioconductor 3.19 (R 4.4.0) \\
+alabaster.schemas & 1.4.0 & Bioconductor 3.19 (R 4.4.0) \\
+alabaster.se & 1.4.1 & Bioconductor 3.19 (R 4.4.1) \\
+apcluster & 1.4.13 & RSPM (R 4.4.0) \\
+ape & 5.8 & CRAN (R 4.4.0) \\
+aplot & 0.2.3 & RSPM (R 4.4.1) \\
+askpass & 1.2.1 & RSPM (R 4.4.1) \\
+assertthat & 0.2.1 & CRAN (R 4.4.0) \\
+babelgene & 22.9 & RSPM (R 4.4.0) \\
+backports & 1.5.0 & RSPM (R 4.4.0) \\
+base64enc & 0.1-3 & CRAN (R 4.4.0) \\
+base64url & 1.4 & RSPM (R 4.4.0) \\
+batchelor & 1.20.0 & Bioconductor 3.19 (R 4.4.0) \\
+beachmat & 2.20.0 & Bioconductor 3.19 (R 4.4.0) \\
+beeswarm & 0.4.0 & CRAN (R 4.4.0) \\
+bib2df & 1.1.2.0 & Github
+(ropensci/bib2df@de0838da561544361d9be6ff20192d0d1c794cde) \\
+biomaRt & 2.60.1 & Bioconductor 3.19 (R 4.4.1) \\
+bit & 4.5.0 & RSPM (R 4.4.1) \\
+bit64 & 4.5.2 & RSPM (R 4.4.1) \\
+bitops & 1.0-9 & RSPM (R 4.4.1) \\
+blob & 1.2.4 & CRAN (R 4.4.0) \\
+bluster & 1.14.0 & Bioconductor 3.19 (R 4.4.0) \\
+boot & 1.3-31 & CRAN (R 4.4.2) \\
+broom & 1.0.7 & RSPM (R 4.4.1) \\
+bslib & 0.8.0 & CRAN (R 4.4.1) \\
+cachem & 1.1.0 & CRAN (R 4.4.0) \\
+callr & 3.7.6 & CRAN (R 4.4.0) \\
+car & 3.1-3 & CRAN (R 4.4.1) \\
+carData & 3.0-5 & CRAN (R 4.4.0) \\
+cellity & 1.32.0 & Bioconductor 3.19 (R 4.4.0) \\
+cellranger & 1.1.0 & CRAN (R 4.4.0) \\
+circlize & 0.4.16 & CRAN (R 4.4.0) \\
+class & 7.3-23 & CRAN (R 4.4.2) \\
+cli & 3.6.3 & RSPM (R 4.4.1) \\
+clue & 0.3-66 & CRAN (R 4.4.2) \\
+cluster & 2.1.8 & CRAN (R 4.4.2) \\
+clusterProfiler & 4.12.6 & Bioconductor 3.19 (R 4.4.1) \\
+coda & 0.19-4.1 & RSPM (R 4.4.0) \\
+codetools & 0.2-19 & CRAN (R 4.2.2) \\
+colorspace & 2.1-1 & RSPM (R 4.4.1) \\
+corrgram & 1.14 & CRAN (R 4.4.0) \\
+cowplot & 1.1.3 & CRAN (R 4.4.0) \\
+crayon & 1.5.3 & RSPM (R 4.4.1) \\
+crosstalk & 1.2.1 & CRAN (R 4.4.0) \\
+curl & 6.0.0 & RSPM (R 4.4.2) \\
+data.table & 1.16.2 & RSPM (R 4.4.1) \\
+dbplyr & 2.5.0 & CRAN (R 4.4.0) \\
+deldir & 2.0-4 & CRAN (R 4.4.0) \\
+dichromat & 2.0-0.1 & CRAN (R 4.4.0) \\
+digest & 0.6.37 & CRAN (R 4.4.1) \\
+doParallel & 1.0.17 & CRAN (R 4.4.0) \\
+doRNG & 1.8.6 & CRAN (R 4.4.0) \\
+dotCall64 & 1.2 & RSPM (R 4.4.1) \\
+downlit & 0.4.4 & RSPM (R 4.4.1) \\
+dplyr & 1.1.4 & CRAN (R 4.4.0) \\
+dqrng & 0.4.1 & RSPM (R 4.4.0) \\
+e1071 & 1.7-16 & RSPM (R 4.4.1) \\
+edgeR & 4.2.2 & Bioconductor 3.19 (R 4.4.1) \\
+emmeans & 1.10.5 & RSPM (R 4.4.1) \\
+english & 1.2-6 & RSPM (R 4.4.0) \\
+enrichR & 3.2 & RSPM (R 4.4.0) \\
+enrichplot & 1.24.4 & Bioconductor 3.19 (R 4.4.1) \\
+ensembldb & 2.28.1 & Bioconductor 3.19 (R 4.4.1) \\
+estimability & 1.5.1 & RSPM (R 4.4.0) \\
+europepmc & 0.4.3 & CRAN (R 4.4.0) \\
+evaluate & 1.0.1 & RSPM (R 4.4.1) \\
+ewceData & 1.12.0 & Bioconductor 3.19 (R 4.4.0) \\
+fansi & 1.0.6 & CRAN (R 4.4.0) \\
+farver & 2.1.2 & CRAN (R 4.4.0) \\
+fastDummies & 1.7.4 & RSPM (R 4.4.1) \\
+fastmap & 1.2.0 & RSPM (R 4.4.0) \\
+fastmatch & 1.1-4 & CRAN (R 4.4.0) \\
+fftw & 1.0-9 & RSPM (R 4.4.1) \\
+fgsea & 1.30.0 & Bioconductor 3.19 (R 4.4.0) \\
+filelock & 1.0.3 & CRAN (R 4.4.0) \\
+fitdistrplus & 1.2-1 & RSPM (R 4.4.1) \\
+forcats & 1.0.0 & CRAN (R 4.4.0) \\
+foreach & 1.5.2 & CRAN (R 4.4.0) \\
+formattable & 0.2.1 & RSPM (R 4.4.0) \\
+fs & 1.6.5 & RSPM (R 4.4.2) \\
+furrr & 0.3.1 & CRAN (R 4.4.0) \\
+future & 1.34.0 & CRAN (R 4.4.1) \\
+future.apply & 1.11.3 & RSPM (R 4.4.2) \\
+gage & 2.54.0 & Bioconductor 3.19 (R 4.4.0) \\
+gageData & 2.42.0 & Bioconductor 3.19 (R 4.4.0) \\
+gargle & 1.5.2 & CRAN (R 4.4.0) \\
+generics & 0.1.3 & CRAN (R 4.4.0) \\
+ggalluvial & 0.12.5 & CRAN (R 4.4.0) \\
+ggbeeswarm & 0.7.2 & CRAN (R 4.4.0) \\
+ggdendro & 0.2.0 & RSPM (R 4.4.0) \\
+ggforce & 0.4.2 & CRAN (R 4.4.0) \\
+ggfun & 0.1.7 & RSPM (R 4.4.2) \\
+ggnetwork & 0.5.13 & RSPM (R 4.4.0) \\
+ggplot2 & 3.5.1 & CRAN (R 4.4.0) \\
+ggplotify & 0.1.2 & CRAN (R 4.4.0) \\
+ggpubr & 0.6.0 & CRAN (R 4.4.0) \\
+ggraph & 2.2.1 & CRAN (R 4.4.0) \\
+ggrepel & 0.9.6 & RSPM (R 4.4.1) \\
+ggridges & 0.5.6 & CRAN (R 4.4.0) \\
+ggsci & 3.2.0 & RSPM (R 4.4.1) \\
+ggsignif & 0.6.4 & CRAN (R 4.4.0) \\
+ggtree & 3.12.0 & Bioconductor 3.19 (R 4.4.0) \\
+ggvenn & 0.1.10 & CRAN (R 4.4.0) \\
+globals & 0.16.3 & CRAN (R 4.4.0) \\
+glue & 1.8.0 & RSPM (R 4.4.1) \\
+goftest & 1.2-3 & CRAN (R 4.4.0) \\
+googleAuthR & 2.0.2 & RSPM (R 4.4.0) \\
+gprofiler2 & 0.2.3 & RSPM (R 4.4.0) \\
+graph & 1.82.0 & Bioconductor 3.19 (R 4.4.0) \\
+graphlayouts & 1.2.0 & RSPM (R 4.4.1) \\
+gridBase & 0.4-7 & CRAN (R 4.4.0) \\
+gridExtra & 2.3 & CRAN (R 4.4.0) \\
+gridGraphics & 0.5-1 & CRAN (R 4.4.0) \\
+grr & 0.9.5 & RSPM (R 4.4.0) \\
+gson & 0.1.0 & CRAN (R 4.4.0) \\
+gt & 0.11.1 & RSPM (R 4.4.1) \\
+gtable & 0.3.6 & RSPM (R 4.4.2) \\
+gypsum & 1.0.1 & Bioconductor 3.19 (R 4.4.0) \\
+haven & 2.5.4 & CRAN (R 4.4.0) \\
+here & 1.0.1 & CRAN (R 4.4.0) \\
+hms & 1.1.3 & CRAN (R 4.4.0) \\
+homologene & 1.4.68.19.3.27 & RSPM (R 4.4.0) \\
+htmltools & 0.5.8.1 & CRAN (R 4.4.0) \\
+htmlwidgets & 1.6.4 & CRAN (R 4.4.0) \\
+httpuv & 1.6.15 & CRAN (R 4.4.0) \\
+httr & 1.4.7 & CRAN (R 4.4.0) \\
+httr2 & 1.0.6 & RSPM (R 4.4.2) \\
+humaniformat & 0.6.0 & RSPM (R 4.4.0) \\
+ica & 1.0-3 & CRAN (R 4.4.0) \\
+igraph & 2.1.1 & RSPM (R 4.4.1) \\
+irlba & 2.3.5.1 & CRAN (R 4.4.0) \\
+iterators & 1.0.14 & CRAN (R 4.4.0) \\
+janeaustenr & 1.0.0 & CRAN (R 4.4.0) \\
+janitor & 2.2.0 & CRAN (R 4.4.0) \\
+jquerylib & 0.1.4 & CRAN (R 4.4.0) \\
+jsonlite & 1.8.9 & RSPM (R 4.4.1) \\
+kBET & 0.99.6 & Github
+(theislab/kBET@afc5f431bcbefd73267acc066a0f2e4eaa10a355) \\
+kableExtra & 1.4.0 & CRAN (R 4.4.0) \\
+knitr & 1.49 & RSPM (R 4.4.2) \\
+labelled & 2.13.0 & CRAN (R 4.4.0) \\
+later & 1.3.2 & CRAN (R 4.4.0) \\
+lattice & 0.22-5 & CRAN (R 4.3.1) \\
+lazyeval & 0.2.2 & CRAN (R 4.4.0) \\
+leaflet & 2.2.2 & RSPM (R 4.4.0) \\
+leiden & 0.4.3.1 & CRAN (R 4.4.0) \\
+lifecycle & 1.0.4 & CRAN (R 4.4.0) \\
+limma & 3.60.6 & Bioconductor 3.19 (R 4.4.1) \\
+listenv & 0.9.1 & CRAN (R 4.4.0) \\
+lme4 & 1.1-35.5 & RSPM (R 4.4.2) \\
+lmtest & 0.9-40 & CRAN (R 4.4.0) \\
+locfit & 1.5-9.10 & RSPM (R 4.4.1) \\
+lubridate & 1.9.3 & CRAN (R 4.4.0) \\
+magrittr & 2.0.3 & CRAN (R 4.4.0) \\
+mapproj & 1.2.11 & CRAN (R 4.4.0) \\
+maps & 3.4.2.1 & RSPM (R 4.4.2) \\
+matrixStats & 1.4.1 & RSPM (R 4.4.1) \\
+maxLik & 1.5-2.1 & RSPM (R 4.4.0) \\
+memoise & 2.0.1 & CRAN (R 4.4.0) \\
+metapod & 1.12.0 & Bioconductor 3.19 (R 4.4.0) \\
+mime & 0.12 & CRAN (R 4.4.0) \\
+miniUI & 0.1.1.1 & CRAN (R 4.4.0) \\
+minqa & 1.2.8 & RSPM (R 4.4.1) \\
+miscTools & 0.6-28 & RSPM (R 4.4.0) \\
+monocle3 & 1.3.7 & Github
+(cole-trapnell-lab/monocle3@98402ed0c10cac020524bebbb9300614a799f6d1) \\
+munsell & 0.5.1 & CRAN (R 4.4.0) \\
+mvoutlier & 2.1.1 & CRAN (R 4.4.0) \\
+mvtnorm & 1.3-2 & RSPM (R 4.4.2) \\
+network & 1.18.2 & RSPM (R 4.4.0) \\
+nlme & 3.1-167 & CRAN (R 4.4.2) \\
+nloptr & 2.1.1 & RSPM (R 4.4.1) \\
+openssl & 2.2.2 & RSPM (R 4.4.1) \\
+org.Hs.eg.db & 3.19.1 & Bioconductor \\
+org.Mm.eg.db & 3.19.1 & Bioconductor \\
+orthogene & 1.10.0 & Bioconductor 3.19 (R 4.4.0) \\
+paletteer & 1.6.0 & RSPM (R 4.4.0) \\
+pals & 1.9 & RSPM (R 4.4.1) \\
+parallelly & 1.39.0 & RSPM (R 4.4.2) \\
+patchwork & 1.3.0 & RSPM (R 4.4.1) \\
+pathview & 1.44.0 & Bioconductor 3.19 (R 4.4.0) \\
+pbapply & 1.7-2 & CRAN (R 4.4.0) \\
+pcaPP & 2.0-5 & CRAN (R 4.4.1) \\
+pheatmap & 1.0.12 & CRAN (R 4.4.0) \\
+pillar & 1.9.0 & CRAN (R 4.4.0) \\
+pkgconfig & 2.0.3 & CRAN (R 4.4.0) \\
+plotly & 4.10.4.9000 & Github
+(ropensci/plotly@cc49ee5db384bdd927b57241b40bf05cdca45438) \\
+plyr & 1.8.9 & CRAN (R 4.4.0) \\
+png & 0.1-8 & CRAN (R 4.4.0) \\
+polyclip & 1.10-7 & RSPM (R 4.4.1) \\
+preprocessCore & 1.66.0 & Bioconductor 3.19 (R 4.4.0) \\
+presto & 1.0.0 & Github
+(immunogenomics/presto@7636b3d0465c468c35853f82f1717d3a64b3c8f6) \\
+prettyunits & 1.2.0 & CRAN (R 4.4.0) \\
+processx & 3.8.4 & CRAN (R 4.4.0) \\
+progress & 1.2.3 & CRAN (R 4.4.0) \\
+progressr & 0.15.0 & RSPM (R 4.4.2) \\
+promises & 1.3.0 & CRAN (R 4.4.0) \\
+proxy & 0.4-27 & CRAN (R 4.4.0) \\
+ps & 1.8.1 & RSPM (R 4.4.2) \\
+purrr & 1.0.2 & CRAN (R 4.4.0) \\
+qs & 0.27.2 & RSPM (R 4.4.1) \\
+qusage & 2.38.0 & Bioconductor 3.19 (R 4.4.0) \\
+qvalue & 2.36.0 & Bioconductor 3.19 (R 4.4.0) \\
+rappdirs & 0.3.3 & CRAN (R 4.4.0) \\
+readr & 2.1.5 & CRAN (R 4.4.0) \\
+readxl & 1.4.3 & CRAN (R 4.4.0) \\
+registry & 0.5-1 & CRAN (R 4.4.0) \\
+rematch2 & 2.1.2 & CRAN (R 4.4.0) \\
+remotes & 2.5.0 & CRAN (R 4.4.0) \\
+reshape & 0.8.9 & CRAN (R 4.4.0) \\
+reshape2 & 1.4.4 & CRAN (R 4.4.0) \\
+restfulr & 0.0.15 & CRAN (R 4.4.0) \\
+reticulate & 1.39.0 & RSPM (R 4.4.1) \\
+rhdf5 & 2.48.0 & Bioconductor 3.19 (R 4.4.0) \\
+rhdf5filters & 1.16.0 & Bioconductor 3.19 (R 4.4.0) \\
+rjson & 0.2.23 & RSPM (R 4.4.1) \\
+rlang & 1.1.4 & RSPM (R 4.4.1) \\
+rliger & 2.1.0 & RSPM (R 4.4.2) \\
+rmarkdown & 2.29 & RSPM (R 4.4.2) \\
+rngtools & 1.5.2 & CRAN (R 4.4.0) \\
+robustbase & 0.99-4-1 & RSPM (R 4.4.1) \\
+rprojroot & 2.0.4 & CRAN (R 4.4.0) \\
+rrcov & 1.7-6 & CRAN (R 4.4.1) \\
+rrvgo & 1.16.0 & Bioconductor 3.19 (R 4.4.0) \\
+rstatix & 0.7.2 & CRAN (R 4.4.0) \\
+rstudioapi & 0.17.1 & CRAN (R 4.4.1) \\
+rsvd & 1.0.5 & CRAN (R 4.4.0) \\
+rtracklayer & 1.64.0 & Bioconductor 3.19 (R 4.4.0) \\
+sandwich & 3.1-1 & RSPM (R 4.4.1) \\
+sass & 0.4.9 & CRAN (R 4.4.0) \\
+scFlow & 0.7.4 & Github
+(neurogenomics/scFlow@065bc13dacee707a0437fb65e006647660fc13c7) \\
+scProportionTest & 0.0.0.9000 & Github
+(rpolicastro/scProportionTest@37a04900be1c991428da15af7f9aa7b0ad84661e) \\
+scRNAseq & 2.18.0 & Bioconductor 3.19 (R 4.4.0) \\
+scales & 1.3.0 & CRAN (R 4.4.0) \\
+scater & 1.32.1 & Bioconductor 3.19 (R 4.4.1) \\
+scattermore & 1.2 & CRAN (R 4.4.0) \\
+scatterpie & 0.2.4 & RSPM (R 4.4.1) \\
+scatterplot3d & 0.3-44 & CRAN (R 4.4.0) \\
+scran & 1.32.0 & Bioconductor 3.19 (R 4.4.0) \\
+sctransform & 0.4.1 & CRAN (R 4.4.0) \\
+scuttle & 1.14.0 & Bioconductor 3.19 (R 4.4.0) \\
+secretbase & 1.0.3 & RSPM (R 4.4.1) \\
+sessioninfo & 1.2.2 & RSPM (R 4.4.0) \\
+sgeostat & 1.0-27 & CRAN (R 4.4.0) \\
+shadowtext & 0.1.4 & RSPM (R 4.4.1) \\
+shape & 1.4.6.1 & CRAN (R 4.4.0) \\
+shiny & 1.9.1 & RSPM (R 4.4.1) \\
+simona & 1.2.0 & Bioconductor 3.19 (R 4.4.0) \\
+slam & 0.1-55 & CRAN (R 4.4.2) \\
+sna & 2.8 & RSPM (R 4.4.1) \\
+snakecase & 0.11.1 & CRAN (R 4.4.0) \\
+sp & 2.1-4 & CRAN (R 4.4.0) \\
+spam & 2.11-0 & RSPM (R 4.4.1) \\
+sparseMatrixStats & 1.16.0 & Bioconductor 3.19 (R 4.4.0) \\
+spatstat.data & 3.1-2 & RSPM (R 4.4.1) \\
+spatstat.explore & 3.3-3 & CRAN (R 4.4.1) \\
+spatstat.geom & 3.3-3 & RSPM (R 4.4.1) \\
+spatstat.random & 3.3-2 & RSPM (R 4.4.1) \\
+spatstat.sparse & 3.1-0 & RSPM (R 4.4.1) \\
+spatstat.univar & 3.1-1 & RSPM (R 4.4.2) \\
+spatstat.utils & 3.1-1 & RSPM (R 4.4.2) \\
+speckle & 1.4.0 & Bioconductor 3.19 (R 4.4.0) \\
+splitstackshape & 1.4.8 & RSPM (R 4.4.0) \\
+statmod & 1.5.0 & CRAN (R 4.4.0) \\
+statnet.common & 4.10.0 & RSPM (R 4.4.1) \\
+stringfish & 0.16.0 & RSPM (R 4.4.0) \\
+stringi & 1.8.4 & RSPM (R 4.4.0) \\
+stringr & 1.5.1 & CRAN (R 4.4.0) \\
+survival & 3.8-3 & CRAN (R 4.4.2) \\
+svglite & 2.1.3 & CRAN (R 4.4.0) \\
+systemfonts & 1.1.0 & RSPM (R 4.4.0) \\
+targets & 1.8.0 & RSPM (R 4.4.1) \\
+tensor & 1.5 & CRAN (R 4.4.0) \\
+threejs & 0.3.3 & RSPM (R 4.4.0) \\
+tibble & 3.2.1 & CRAN (R 4.4.0) \\
+tidygraph & 1.3.1 & CRAN (R 4.4.0) \\
+tidyr & 1.3.1 & CRAN (R 4.4.0) \\
+tidyselect & 1.2.1 & CRAN (R 4.4.0) \\
+tidytext & 0.4.2 & CRAN (R 4.4.0) \\
+tidytree & 0.4.6 & CRAN (R 4.4.0) \\
+timechange & 0.3.0 & CRAN (R 4.4.0) \\
+tm & 0.7-14 & RSPM (R 4.4.1) \\
+tokenizers & 0.3.0 & CRAN (R 4.4.0) \\
+topGO & 2.56.0 & Bioconductor 3.19 (R 4.4.0) \\
+treeio & 1.28.0 & Bioconductor 3.19 (R 4.4.0) \\
+treemap & 2.4-4 & CRAN (R 4.4.0) \\
+triebeard & 0.4.1 & CRAN (R 4.4.0) \\
+tweenr & 2.0.3 & CRAN (R 4.4.0) \\
+tzdb & 0.4.0 & CRAN (R 4.4.0) \\
+umap & 0.2.10.0 & CRAN (R 4.4.0) \\
+urltools & 1.7.3 & CRAN (R 4.4.0) \\
+utf8 & 1.2.4 & CRAN (R 4.4.0) \\
+uwot & 0.2.2 & RSPM (R 4.4.0) \\
+vctrs & 0.6.5 & CRAN (R 4.4.0) \\
+vipor & 0.4.7 & CRAN (R 4.4.0) \\
+viridis & 0.6.5 & CRAN (R 4.4.0) \\
+viridisLite & 0.4.2 & CRAN (R 4.4.0) \\
+vroom & 1.6.5 & CRAN (R 4.4.0) \\
+wesanderson & 0.3.7 & CRAN (R 4.4.0) \\
+whisker & 0.4.1 & RSPM (R 4.4.0) \\
+withr & 3.0.2 & RSPM (R 4.4.2) \\
+wordcloud & 2.6 & CRAN (R 4.4.0) \\
+xfun & 0.49 & RSPM (R 4.4.2) \\
+xml2 & 1.3.6 & CRAN (R 4.4.0) \\
+xtable & 1.8-4 & CRAN (R 4.4.0) \\
+yaml & 2.3.10 & RSPM (R 4.4.1) \\
+yulab.utils & 0.1.8 & RSPM (R 4.4.2) \\
+zlibbioc & 1.50.0 & Bioconductor 3.19 (R 4.4.0) \\
+zoo & 1.8-12 & CRAN (R 4.4.0) \\
+\end{longtable*}
+
+}
+
+\end{supptbl}%
+
+\subsection{References}\label{references}
+
+\phantomsection\label{refs}
+\begin{CSLReferences}{1}{0}
+\bibitem[\citeproctext]{ref-Alonso-Luxf3pez2019}
+Alonso-López, D., Campos-Laborie, F. J., Gutiérrez, M. A., Lambourne,
+L., Calderwood, M. A., Vidal, M., \& De Las Rivas, J. (2019). APID
+database: redefining protein{\textendash}protein interaction
+experimental evidences and binary interactomes. \emph{Database},
+\emph{2019}. \url{https://doi.org/10.1093/database/baz005}
+
+\bibitem[\citeproctext]{ref-Amersfoort2022}
+Amersfoort, J., Eelen, G., \& Carmeliet, P. (2022). Immunomodulation by
+endothelial cells {\textemdash} partnering up with the immune system?
+\emph{Nature Reviews Immunology}, \emph{22}(9), 576--588.
+\url{https://doi.org/10.1038/s41577-022-00694-4}
+
+\bibitem[\citeproctext]{ref-auton2015}
+Auton, A., Abecasis, G. R., Altshuler, D. M., Durbin, R. M., Abecasis,
+G. R., Bentley, D. R., Chakravarti, A., Clark, A. G., Donnelly, P.,
+Eichler, E. E., Flicek, P., Gabriel, S. B., Gibbs, R. A., Green, E. D.,
+Hurles, M. E., Knoppers, B. M., Korbel, J. O., Lander, E. S., Lee, C.,
+\ldots{} National Eye Institute, N. (2015). A global reference for human
+genetic variation. \emph{Nature}, \emph{526}(7571), 68--74.
+\url{https://doi.org/10.1038/nature15393}
+
+\bibitem[\citeproctext]{ref-bellenguez2022}
+Bellenguez, C., Küçükali, F., Jansen, I. E., Kleineidam, L.,
+Moreno-Grau, S., Amin, N., Naj, A. C., Campos-Martin, R., Grenier-Boley,
+B., Andrade, V., Holmans, P. A., Boland, A., Damotte, V., Lee, S. J. van
+der, Costa, M. R., Kuulasmaa, T., Yang, Q., Rojas, I. de, Bis, J. C.,
+\ldots{} Lambert, J.-C. (2022). New insights into the genetic etiology
+of Alzheimer{'}s disease and related dementias. \emph{Nature Genetics},
+\emph{54}(4), 412--436. \url{https://doi.org/10.1038/s41588-022-01024-z}
+
+\bibitem[\citeproctext]{ref-Brown2019}
+Brown, L. S., Foster, C. G., Courtney, J.-M., King, N. E., Howells, D.
+W., \& Sutherland, B. A. (2019). Pericytes and neurovascular function in
+the healthy and diseased brain. \emph{Frontiers in Cellular
+Neuroscience}, \emph{13}. \url{https://doi.org/10.3389/fncel.2019.00282}
+
+\bibitem[\citeproctext]{ref-bulik-sullivan2015}
+Bulik-Sullivan, B. K., Loh, P.-R., Finucane, H. K., Ripke, S., Yang, J.,
+Patterson, N., Daly, M. J., Price, A. L., \& Neale, B. M. (2015). LD
+Score regression distinguishes confounding from polygenicity in
+genome-wide association studies. \emph{Nature Genetics}, \emph{47}(3),
+291--295. \url{https://doi.org/10.1038/ng.3211}
+
+\bibitem[\citeproctext]{ref-Cantarella2015}
+Cantarella, G., Di Benedetto, G., Puzzo, D., Privitera, L., Loreto, C.,
+Saccone, S., Giunta, S., Palmeri, A., \& Bernardini, R. (2014).
+Neutralization of TNFSF10 ameliorates functional outcome in a murine
+model of Alzheimer{'}s disease. \emph{Brain}, \emph{138}(1), 203--216.
+\url{https://doi.org/10.1093/brain/awu318}
+
+\bibitem[\citeproctext]{ref-Cantarella2003}
+Cantarella, G., Uberti, D., Carsana, T., Lombardo, G., Bernardini, R.,
+\& Memo, M. (2003). Neutralization of TRAIL death pathway protects human
+neuronal cell line from β-amyloid toxicity. \emph{Cell Death {\&}
+Differentiation}, \emph{10}(1), 134--141.
+\url{https://doi.org/10.1038/sj.cdd.4401143}
+
+\bibitem[\citeproctext]{ref-Chua2022}
+Chua, X. Y., Chong, J. R., Cheng, A. L., Lee, J. H., Ballard, C.,
+Aarsland, D., Francis, P. T., \& Lai, M. K. P. (2022). Elevation of
+inactive cleaved annexin A1 in the neocortex is associated with amyloid,
+inflammatory and apoptotic markers in neurodegenerative dementias.
+\emph{Neurochemistry International}, \emph{152}, 105251.
+\url{https://doi.org/10.1016/j.neuint.2021.105251}
+
+\bibitem[\citeproctext]{ref-Daneman2015}
+Daneman, R., \& Prat, A. (2015). The Blood{\textendash}Brain Barrier.
+\emph{Cold Spring Harbor Perspectives in Biology}, \emph{7}(1), a020412.
+\url{https://doi.org/10.1101/cshperspect.a020412}
+
+\bibitem[\citeproctext]{ref-ditommaso2017}
+Di Tommaso, P., Chatzou, M., Floden, E. W., Barja, P. P., Palumbo, E.,
+\& Notredame, C. (2017). Nextflow enables reproducible computational
+workflows. \emph{Nature Biotechnology}, \emph{35}(4), 316--319.
+\url{https://doi.org/10.1038/nbt.3820}
+
+\bibitem[\citeproctext]{ref-Garland2023}
+Garland, E. F., Dennett, O., Lau, L. C., Chatelet, D. S., Bottlaender,
+M., Nicoll, J. A. R., \& Boche, D. (2023). The mitochondrial protein
+TSPO in Alzheimer{'}s disease: relation to the severity of AD pathology
+and the neuroinflammatory environment. \emph{Journal of
+Neuroinflammation}, \emph{20}(1).
+\url{https://doi.org/10.1186/s12974-023-02869-9}
+
+\bibitem[\citeproctext]{ref-Gillespie2022}
+Gillespie, M., Jassal, B., Stephan, R., Milacic, M., Rothfels, K.,
+Senff-Ribeiro, A., Griss, J., Sevilla, C., Matthews, L., Gong, C., Deng,
+C., Varusai, T., Ragueneau, E., Haider, Y., May, B., Shamovsky, V.,
+Weiser, J., Brunson, T., Sanati, N., \ldots{} D'Eustachio, P. (2021).
+The reactome pathway knowledgebase 2022. \emph{Nucleic Acids Research},
+\emph{50}(D1), D687--D692. \url{https://doi.org/10.1093/nar/gkab1028}
+
+\bibitem[\citeproctext]{ref-Grubman2019}
+Grubman, A., Chew, G., Ouyang, J. F., Sun, G., Choo, X. Y., McLean, C.,
+Simmons, R. K., Buckberry, S., Vargas-Landin, D. B., Poppe, D.,
+Pflueger, J., Lister, R., Rackham, O. J. L., Petretto, E., \& Polo, J.
+M. (2019). A single-cell atlas of entorhinal cortex from individuals
+with Alzheimer{'}s disease reveals cell-type-specific gene expression
+regulation. \emph{Nature Neuroscience}, \emph{22}(12), 2087--2097.
+\url{https://doi.org/10.1038/s41593-019-0539-4}
+
+\bibitem[\citeproctext]{ref-gu2023}
+Gu, Z. (2023). \emph{{\emph{simona:}}a comprehensive r package for
+semantic similarity analysis on bio-ontologies}.
+\url{http://dx.doi.org/10.1101/2023.12.03.569758}
+
+\bibitem[\citeproctext]{ref-Guha2017}
+Guha, S., Chaurasia, S., Ramachandran, C., \& Roy, S. (2017). SLC4A11
+depletion impairs NRF2 mediated antioxidant signaling and increases
+reactive oxygen species in human corneal endothelial cells during
+oxidative stress. \emph{Scientific Reports}, \emph{7}(1).
+\url{https://doi.org/10.1038/s41598-017-03654-4}
+
+\bibitem[\citeproctext]{ref-Seurat}
+Hao, Y., Stuart, T., Kowalski, M. H., Choudhary, S., Hoffman, P.,
+Hartman, A., Srivastava, A., Molla, G., Madad, S., Fernandez-Granda, C.,
+\& Satija, R. (2023a). \emph{Dictionary learning for integrative,
+multimodal and scalable single-cell analysis}.
+\url{https://doi.org/10.1038/s41587-023-01767-y}
+
+\bibitem[\citeproctext]{ref-Seurat-2}
+Hao, Y., Stuart, T., Kowalski, M. H., Choudhary, S., Hoffman, P.,
+Hartman, A., Srivastava, A., Molla, G., Madad, S., Fernandez-Granda, C.,
+\& Satija, R. (2023b). \emph{Dictionary learning for integrative,
+multimodal and scalable single-cell analysis}.
+\url{https://doi.org/10.1038/s41587-023-01767-y}
+
+\bibitem[\citeproctext]{ref-Huttlin2021}
+Huttlin, E. L., Bruckner, R. J., Navarrete-Perea, J., Cannon, J. R.,
+Baltier, K., Gebreab, F., Gygi, M. P., Thornock, A., Zarraga, G., Tam,
+S., Szpyt, J., Gassaway, B. M., Panov, A., Parzen, H., Fu, S., Golbazi,
+A., Maenpaa, E., Stricker, K., Guha Thakurta, S., \ldots{} Gygi, S. P.
+(2021). Dual proteome-scale networks reveal cell-specific remodeling of
+the human interactome. \emph{Cell}, \emph{184}(11), 3022--3040.e28.
+\url{https://doi.org/10.1016/j.cell.2021.04.011}
+
+\bibitem[\citeproctext]{ref-Iadecola2017}
+Iadecola, C. (2017). The Neurovascular Unit Coming of Age: A Journey
+through Neurovascular Coupling in Health and Disease. \emph{Neuron},
+\emph{96}(1), 17--42. \url{https://doi.org/10.1016/j.neuron.2017.07.030}
+
+\bibitem[\citeproctext]{ref-CellChat}
+Jin, S. (2024). \emph{CellChat: Inference and analysis of cell-cell
+communication from single-cell and spatially resolved transcriptomics
+data}. \url{https://github.com/jinworks/CellChat}
+
+\bibitem[\citeproctext]{ref-Keller2018}
+Keller, D., Erö, C., \& Markram, H. (2018). Cell densities in the mouse
+brain: A systematic review. \emph{Frontiers in Neuroanatomy}, \emph{12}.
+\url{https://doi.org/10.3389/fnana.2018.00083}
+
+\bibitem[\citeproctext]{ref-khozoie2021}
+Khozoie, C., Fancy, N., Marjaneh, M., Murphy, A., Matthews, P., \&
+Skene, N. (2021). \emph{scFlow: A scalable and reproducible analysis
+pipeline for single-cell RNA sequencing dat}.
+\url{https://doi.org/10.22541/au.162912533.38489960/v2}
+
+\bibitem[\citeproctext]{ref-Korte2020}
+Korte, N., Nortley, R., \& Attwell, D. (2020). Cerebral blood flow
+decrease as an early pathological mechanism in Alzheimer's disease.
+\emph{Acta Neuropathologica}, \emph{140}(6), 793--810.
+\url{https://doi.org/10.1007/s00401-020-02215-w}
+
+\bibitem[\citeproctext]{ref-leeuw2015}
+Leeuw, C. A. de, Mooij, J. M., Heskes, T., \& Posthuma, D. (2015).
+MAGMA: Generalized Gene-Set Analysis of GWAS Data. \emph{PLOS
+Computational Biology}, \emph{11}(4), e1004219.
+\url{https://doi.org/10.1371/journal.pcbi.1004219}
+
+\bibitem[\citeproctext]{ref-leng2021}
+Leng, K., Li, E., Eser, R., Piergies, A., Sit, R., Tan, M., Neff, N.,
+Li, S. H., Rodriguez, R. D., Suemoto, C. K., Leite, R. E. P., Ehrenberg,
+A. J., Pasqualucci, C. A., Seeley, W. W., Spina, S., Heinsen, H.,
+Grinberg, L. T., \& Kampmann, M. (2021). Molecular characterization of
+selectively vulnerable neurons in Alzheimer{'}s disease. \emph{Nature
+Neuroscience}, \emph{24}(2), 276--287.
+\url{https://doi.org/10.1038/s41593-020-00764-7}
+
+\bibitem[\citeproctext]{ref-Licata2012}
+Licata, L., Briganti, L., Peluso, D., Perfetto, L., Iannuccelli, M.,
+Galeota, E., Sacco, F., Palma, A., Nardozza, A. P., Santonico, E.,
+Castagnoli, L., \& Cesareni, G. (2011). MINT, the molecular interaction
+database: 2012 update. \emph{Nucleic Acids Research}, \emph{40}(D1),
+D857--D861. \url{https://doi.org/10.1093/nar/gkr930}
+
+\bibitem[\citeproctext]{ref-Luxf3pez2015}
+López, Y., Nakai, K., \& Patil, A. (2015). HitPredict version 4:
+comprehensive reliability scoring of physical
+protein{\textendash}protein interactions from more than 100 species.
+\emph{Database}, \emph{2015}, bav117.
+\url{https://doi.org/10.1093/database/bav117}
+
+\bibitem[\citeproctext]{ref-DESeq2}
+Love, M. I., Huber, W., \& Anders, S. (2014). \emph{Moderated estimation
+of fold change and dispersion for RNA-seq data with DESeq2}. \emph{15},
+550. \url{https://doi.org/10.1186/s13059-014-0550-8}
+
+\bibitem[\citeproctext]{ref-Luck2020}
+Luck, K., Kim, D.-K., Lambourne, L., Spirohn, K., Begg, B. E., Bian, W.,
+Brignall, R., Cafarelli, T., Campos-Laborie, F. J., Charloteaux, B.,
+Choi, D., Coté, A. G., Daley, M., Deimling, S., Desbuleux, A., Dricot,
+A., Gebbia, M., Hardy, M. F., Kishore, N., \ldots{} Calderwood, M. A.
+(2020). A reference map of the human binary protein interactome.
+\emph{Nature}, \emph{580}(7803), 402--408.
+\url{https://doi.org/10.1038/s41586-020-2188-x}
+
+\bibitem[\citeproctext]{ref-Mathys2019}
+Mathys, H., Davila-Velderrain, J., Peng, Z., Gao, F., Mohammadi, S.,
+Young, J. Z., Menon, M., He, L., Abdurrob, F., Jiang, X., Martorell, A.
+J., Ransohoff, R. M., Hafler, B. P., Bennett, D. A., Kellis, M., \&
+Tsai, L.-H. (2019). Single-cell transcriptomic analysis of Alzheimer{'}s
+disease. \emph{Nature}, \emph{570}(7761), 332--337.
+\url{https://doi.org/10.1038/s41586-019-1195-2}
+
+\bibitem[\citeproctext]{ref-Mathys2023}
+Mathys, H., Peng, Z., Boix, C. A., Victor, M. B., Leary, N., Babu, S.,
+Abdelhady, G., Jiang, X., Ng, A. P., Ghafari, K., Kunisky, A. K.,
+Mantero, J., Galani, K., Lohia, V. N., Fortier, G. E., Lotfi, Y., Ivey,
+J., Brown, H. P., Patel, P. R., \ldots{} Tsai, L.-H. (2023). Single-cell
+atlas reveals correlates of high cognitive function, dementia, and
+resilience to Alzheimer{'}s disease pathology. \emph{Cell},
+\emph{186}(20), 4365--4385.e27.
+\url{https://doi.org/10.1016/j.cell.2023.08.039}
+
+\bibitem[\citeproctext]{ref-Nehra2022}
+Nehra, G., Bauer, B., \& Hartz, A. M. S. (2022). Blood-brain barrier
+leakage in Alzheimer{'}s disease: From discovery to clinical relevance.
+\emph{Pharmacology {\&} Therapeutics}, \emph{234}, 108119.
+\url{https://doi.org/10.1016/j.pharmthera.2022.108119}
+
+\bibitem[\citeproctext]{ref-Orchard2014}
+Orchard, S., Ammari, M., Aranda, B., Breuza, L., Briganti, L.,
+Broackes-Carter, F., Campbell, N. H., Chavali, G., Chen, C., del-Toro,
+N., Duesbury, M., Dumousseau, M., Galeota, E., Hinz, U., Iannuccelli,
+M., Jagannathan, S., Jimenez, R., Khadake, J., Lagreid, A., \ldots{}
+Hermjakob, H. (2013). The MIntAct project{\textemdash}IntAct as a common
+curation platform for 11 molecular interaction databases. \emph{Nucleic
+Acids Research}, \emph{42}(D1), D358--D363.
+\url{https://doi.org/10.1093/nar/gkt1115}
+
+\bibitem[\citeproctext]{ref-Oughtred2021}
+Oughtred, R., Rust, J., Chang, C., Breitkreutz, B.-J., Stark, C.,
+Willems, A., Boucher, L., Leung, G., Kolas, N., Zhang, F., Dolma, S.,
+Coulombe-Huntington, J., Chatr-aryamontri, A., Dolinski, K., \& Tyers,
+M. (2020). The BioGRID database: A comprehensive biomedical resource of
+curated protein, genetic, and chemical interactions. \emph{Protein
+Science}, \emph{30}(1), 187--200. \url{https://doi.org/10.1002/pro.3978}
+
+\bibitem[\citeproctext]{ref-speckle}
+Phipson, B., Sim, C. B., Porrello, E. R., Hewitt, A. W., Powell, J., \&
+Oshlack, A. (2022). \emph{Propeller: Testing for differences in cell
+type proportions in single cell data}. \emph{38}, --6.
+\url{https://doi.org/10.1093/bioinformatics/btac582}
+
+\bibitem[\citeproctext]{ref-Procter2021}
+Procter, T. V., Williams, A., \& Montagne, A. (2021). Interplay between
+Brain Pericytes and Endothelial Cells in Dementia. \emph{The American
+Journal of Pathology}, \emph{191}(11), 1917--1931.
+\url{https://doi.org/10.1016/j.ajpath.2021.07.003}
+
+\bibitem[\citeproctext]{ref-base}
+R Core Team. (2024). \emph{R: A language and environment for statistical
+computing}. \url{https://www.R-project.org/}
+
+\bibitem[\citeproctext]{ref-Ries2021}
+Ries, M., Watts, H., Mota, B. C., Lopez, M. Y., Donat, C. K., Baxan, N.,
+Pickering, J. A., Chau, T. W., Semmler, A., Gurung, B., Aleksynas, R.,
+Abelleira-Hervas, L., Iqbal, S. J., Romero-Molina, C., Hernandez-Mir,
+G., d'Amati, A., Reutelingsperger, C., Goldfinger, M. H., Gentleman, S.
+M., \ldots{} Sastre, M. (2021). Annexin A1 restores cerebrovascular
+integrity concomitant with reduced amyloid-β and tau pathology.
+\emph{Brain}, \emph{144}(5), 1526--1541.
+\url{https://doi.org/10.1093/brain/awab050}
+
+\bibitem[\citeproctext]{ref-sayers2022}
+Sayers, E. W., Bolton, E. E., Brister, J. R., Canese, K., Chan, J.,
+Comeau, D. C., Connor, R., Funk, K., Kelly, C., Kim, S., Madej, T.,
+Marchler-Bauer, A., Lanczycki, C., Lathrop, S., Lu, Z., Thibaud-Nissen,
+F., Murphy, T., Phan, L., Skripchenko, Y., \ldots{} Sherry, S. T.
+(2022). Database resources of the national center for biotechnology
+information. \emph{Nucleic Acids Research}, \emph{50}(D1), D20--D26.
+\url{https://doi.org/10.1093/nar/gkab1112}
+
+\bibitem[\citeproctext]{ref-Smith2009}
+Smith, C. L., \& Eppig, J. T. (2009). The mammalian phenotype ontology:
+enabling robust annotation and comparative analysis. \emph{WIREs Systems
+Biology and Medicine}, \emph{1}(3), 390--399.
+\url{https://doi.org/10.1002/wsbm.44}
+
+\bibitem[\citeproctext]{ref-Storck2022}
+Storck, S. E., Hartz, A. M. S., \& Pietrzik, C. U. (2020). \emph{The
+blood-brain barrier in alzheimer{'}s disease} (pp. 247--266). Springer
+International Publishing. \url{https://doi.org/10.1007/164_2020_418}
+
+\bibitem[\citeproctext]{ref-Zhang2022}
+Su, Q., Guo, J.-H., Zhang, Y.-L., Wang, J., \& Zhang, Z.-N. (2022). The
+relationship between amyloid-beta and brain capillary endothelial cells
+in Alzheimer{'}s disease. \emph{Neural Regeneration Research},
+\emph{17}(11), 2355. \url{https://doi.org/10.4103/1673-5374.335829}
+
+\bibitem[\citeproctext]{ref-Sweeney2018}
+Sweeney, M. D., Sagare, A. P., \& Zlokovic, B. V. (2018).
+Blood{\textendash}brain barrier breakdown in Alzheimer disease and other
+neurodegenerative disorders. \emph{Nature Reviews Neurology},
+\emph{14}(3), 133--150. \url{https://doi.org/10.1038/nrneurol.2017.188}
+
+\bibitem[\citeproctext]{ref-Szklarczyk2023}
+Szklarczyk, D., Kirsch, R., Koutrouli, M., Nastou, K., Mehryary, F.,
+Hachilif, R., Gable, A. L., Fang, T., Doncheva, N., Pyysalo, S., Bork,
+P., Jensen, L., \& von Mering, C. (2022). The STRING database in 2023:
+protein{\textendash}protein association networks and functional
+enrichment analyses for any sequenced genome of interest. \emph{Nucleic
+Acids Research}, \emph{51}(D1), D638--D646.
+\url{https://doi.org/10.1093/nar/gkac1000}
+
+\bibitem[\citeproctext]{ref-talbot2012}
+Talbot, K., Wang, H.-Y., Kazi, H., Han, L.-Y., Bakshi, K. P., Stucky,
+A., Fuino, R. L., Kawaguchi, K. R., Samoyedny, A. J., Wilson, R. S.,
+Arvanitakis, Z., Schneider, J. A., Wolf, B. A., Bennett, D. A.,
+Trojanowski, J. Q., \& Arnold, S. E. (2012). Demonstrated brain insulin
+resistance in Alzheimer{'}s disease patients is associated with IGF-1
+resistance, IRS-1 dysregulation, and cognitive decline. \emph{The
+Journal of Clinical Investigation}, \emph{122}(4), 1316--1338.
+\url{https://doi.org/10.1172/JCI59903}
+
+\bibitem[\citeproctext]{ref-Tang2011}
+Tang, W., Lu, Y., Tian, Q.-Y., Zhang, Y., Guo, F.-J., Liu, G.-Y., Syed,
+N. M., Lai, Y., Lin, E. A., Kong, L., Su, J., Yin, F., Ding, A.-H.,
+Zanin-Zhorov, A., Dustin, M. L., Tao, J., Craft, J., Yin, Z., Feng, J.
+Q., \ldots{} Liu, C. (2011). The Growth Factor Progranulin Binds to TNF
+Receptors and Is Therapeutic Against Inflammatory Arthritis in Mice.
+\emph{Science}, \emph{332}(6028), 478--484.
+\url{https://doi.org/10.1126/science.1199214}
+
+\bibitem[\citeproctext]{ref-Tsartsalis2024}
+Tsartsalis, S., Sleven, H., Fancy, N., Wessely, F., Smith, A. M.,
+Willumsen, N., Cheung, T. K. D., Rokicki, M. J., Chau, V., Ifie, E.,
+Khozoie, C., Ansorge, O., Yang, X., Jenkyns, M. H., Davey, K., McGarry,
+A., Muirhead, R. C. J., Debette, S., Jackson, J. S., \ldots{} Matthews,
+P. M. (2024). A single nuclear transcriptomic characterisation of
+mechanisms responsible for impaired angiogenesis and blood-brain barrier
+function in Alzheimer{'}s disease. \emph{Nature Communications},
+\emph{15}(1). \url{https://doi.org/10.1038/s41467-024-46630-z}
+
+\bibitem[\citeproctext]{ref-Tsitsiridis2023}
+Tsitsiridis, G., Steinkamp, R., Giurgiu, M., Brauner, B., Fobo, G.,
+Frishman, G., Montrone, C., \& Ruepp, A. (2022). CORUM: the
+comprehensive resource of mammalian protein complexes{\textendash}2022.
+\emph{Nucleic Acids Research}, \emph{51}(D1), D539--D545.
+\url{https://doi.org/10.1093/nar/gkac1015}
+
+\bibitem[\citeproctext]{ref-clusterProfiler}
+Wu, T., Hu, E., Xu, S., Chen, M., Guo, P., Dai, Z., Feng, T., Zhou, L.,
+Tang, W., Zhan, L., Fu, xiaochong, Liu, S., Bo, X., \& Yu, G. (2021).
+\emph{clusterProfiler 4.0: A universal enrichment tool for interpreting
+omics data}. \emph{2}, 100141.
+\url{https://doi.org/10.1016/j.xinn.2021.100141}
+
+\bibitem[\citeproctext]{ref-yang2022}
+Yang, A. C., Vest, R. T., Kern, F., Lee, D. P., Agam, M., Maat, C. A.,
+Losada, P. M., Chen, M. B., Schaum, N., Khoury, N., Toland, A.,
+Calcuttawala, K., Shin, H., Pálovics, R., Shin, A., Wang, E. Y., Luo,
+J., Gate, D., Schulz-Schaeffer, W. J., \ldots{} Wyss-Coray, T. (2022). A
+human brain vascular atlas reveals diverse mediators of Alzheimer's
+risk. \emph{Nature}, \emph{603}(7903), 885--892.
+\url{https://doi.org/10.1038/s41586-021-04369-3}
+
+\end{CSLReferences}
+
+
+
+
+
+
+\end{document}
