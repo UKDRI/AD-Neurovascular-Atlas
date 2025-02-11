@@ -5,14 +5,14 @@
 #SBATCH --ntasks=40
 #SBATCH --ntasks-per-node=40
 #SBATCH --array=1-40%14
-##### #SBATCH --mem-per-cpu=8000 # memory limit per core
 #SBATCH --mem=340G # memory limit per compute node for the job
 #SBATCH --time=2-10:00 # maximum job time in D-HH:MM
 #SBATCH --account=scw1329
 #SBATCH -o /scratch/c.mpmgb/hawk_output/%x_out_%A_%a_%J.txt
 #SBATCH -e /scratch/c.mpmgb/hawk_output/%x_err_%A_%a_%J.txt
-#SBATCH --mail-user Bernardo-HarringtonG@cardiff.ac.uk # email on fail
-#SBATCH --mail-type END,FAIL
+
+## Project root variables defined in the following
+source 00_hpc_variables.sh
 
 echo "*****************************************************************"
 echo "All jobs in this array have:"
@@ -32,30 +32,16 @@ echo "Username: "`whoami`
 echo "Started at: "`date`
 echo -e "*****************************************************************\n"
 
-
-## FASTQ files, set 2 with 16 samples, data from 4 runs, sequenced in Oxford
-## NOTE, V_19, only sequenced in 1 run (INPUT_DIR_1)
-## NOTE, V_20, 1 run (INPUT_DIR_2) only with a single read, skip that run
-## handled via if statement below
-INPUT_DIR="/gluster/dri02/rdsmbh/shared/rdsmbh/230327_A00748_0368_AH5CTMDSX5_fastq/"
-
 ## results
-OUTPUT_DIR="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/04_cellranger_count/03_set3"
+OUTPUT_DIR=$PROJECT_ROOT"03_data/990_processed_data/001_snrnaseq/04_cellranger_count/03_set3"
 
 ## original sample IDs, correpond to FASTQ file names
-SAMPLE_ID_FILE="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/90_sample_info/samples_set3.txt"
-
-## CR executable
-CELL_RANGER="/scratch/c.mpmgb/tools/cellranger-7.1.0/bin/cellranger"
+SAMPLE_ID_FILE=$PROJECT_ROOT"03_data/990_processed_data/001_snrnaseq/90_sample_info/samples_set3.txt"
 
 ## CR reference
-## pre-computed and downloaded from CR website as is (refdata-gex-GRCh38-2020-A.tar.gz)
-## based on ensembl v98/gencode v32
-## CR_REF="/scratch/c.mpmfw/Tools/CellRanger/CellRanger_references/refdata-gex-GRCh38-2020-A"
 ## updated CR reference based on ensembl v108 (Gencode v42)
 ## from get_cellranger_reference.sh
-CR_REF="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/03_cellranger_reference/GRCh38"
-
+CR_REF=$PROJECT_ROOT"03_data/990_processed_data/001_snrnaseq/03_cellranger_reference/GRCh38"
 
 #-----------------------------------------------------------------------
 # Cell Ranger count

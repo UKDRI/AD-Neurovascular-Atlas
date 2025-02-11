@@ -5,14 +5,17 @@
 #SBATCH --ntasks=40
 #SBATCH --ntasks-per-node=40
 #SBATCH --array=1-24%12
-##### #SBATCH --mem-per-cpu=8000 # memory limit per core
 #SBATCH --mem=340G # memory limit per compute node for the job
 #SBATCH --time=3-00:00 # maximum job time in D-HH:MM
 #SBATCH --account=scw1329
 #SBATCH -o /scratch/c.mpmgb/hawk_output/%x_out_%A_%a_%J.txt
 #SBATCH -e /scratch/c.mpmgb/hawk_output/%x_err_%A_%a_%J.txt
-#SBATCH --mail-user Bernardo-HarringtonG@cardiff.ac.uk # email on fail
-#SBATCH --mail-type END,FAIL
+
+## Project root variables defined in the following
+## FASTQ files, set 1, 24 samples, sequenced in Cardiff
+## NOTE, R2 length is 150bp, complete length will be used by default
+## alternatively, reads could be trimmed  with Cell Ranger option --r2-length=90
+source 00_hpc_variables.sh
 
 echo "*****************************************************************"
 echo "All jobs in this array have:"
@@ -34,31 +37,21 @@ echo -e "*****************************************************************\n"
 
 #-----------------------------------------------------------------------
 
-## FASTQ files, set 1, 24 samples, sequenced in Cardiff
-## NOTE, R2 length is 150bp, complete length will be used by default
-## alternatively, reads could be trimmed  with Cell Ranger option --r2-length=90
-INPUT_DIR="/gluster/dri02/rdscw/shared/webber/Endo_10X/FASTQ/Set_1/211008_A00748_0157_AHT7TJDSX2_fastq_L2_3_4/"
 
 ## results
-OUTPUT_DIR="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/04_cellranger_count/01_set1"
+OUTPUT_DIR=$PROJECT_ROOT"03_data/990_processed_data/001_snrnaseq/04_cellranger_count/01_set1"
 
 ## original sample IDs, correpond to FASTQ file names
-SAMPLE_ID_FILE="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/90_sample_info/samples_set1_IDs.txt"
+SAMPLE_ID_FILE=$PROJECT_ROOT"03_data/990_processed_data/001_snrnaseq/90_sample_info/samples_set1_IDs.txt"
 
 ## corresponding new sample names to be set by --id
 ## NOTE: some samples will be de-swapped, as they were wrongly labelled during library prep in Oxford
-SAMPLE_ID_NEW_FILE="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/90_sample_info/samples_set1_IDs_swap.txt"
-
-## CR executable
-CELL_RANGER="/scratch/c.mpmgb/tools/cellranger-7.1.0/bin/cellranger"
+SAMPLE_ID_NEW_FILE=$PROJECT_ROOT"03_data/990_processed_data/001_snrnaseq/90_sample_info/samples_set1_IDs_swap.txt"
 
 ## CR reference
-## pre-computed and downloaded from CR website as is (refdata-gex-GRCh38-2020-A.tar.gz)
-## based on ensembl v98/gencode v32
-## CR_REF="/scratch/c.mpmgb/Tools/CellRanger/CellRanger_references/refdata-gex-GRCh38-2020-A"
 ## updated CR reference based on ensembl v109 (Gencode v43)
 ## from get_cellranger_reference.sh
-CR_REF="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/03_cellranger_reference/GRCh38"
+CR_REF=$PROJECT_ROOT"03_data/990_processed_data/001_snrnaseq/03_cellranger_reference/GRCh38"
 
 #-----------------------------------------------------------------------
 # Cell Ranger count

@@ -4,14 +4,15 @@
 #SBATCH --job-name=cellranger_ref_gen_bbb
 #SBATCH --ntasks=40
 #SBATCH --ntasks-per-node=40
-#### SBATCH --mem-per-cpu=30000 # memory limit per core
 #SBATCH --mem=50G # memory limit per compute node for the job
 #SBATCH --time=3-00:00 # maximum job time in D-HH:MM
 #SBATCH --account=scw1329
 #SBATCH -o /scratch/c.mpmgb/hawk_output/%x_out_%J.txt
 #SBATCH -e /scratch/c.mpmgb/hawk_output/%x_err_%J.txt
-#SBATCH --mail-user Bernardo-HarringtonG@cardiff.ac.uk # email on fail
-#SBATCH --mail-type END,FAIL
+
+## Project root variables defined in the following
+## CR v7.1.0 is being used
+source 00_hpc_variables.sh
 
 echo "*****************************************************************"
 echo "job ID: "$SLURM_JOBID
@@ -37,15 +38,12 @@ echo -e "*****************************************************************\n"
 
 #-----------------------------------------------------------------------
 
-## CR v7.1.0
-CELL_RANGER="/scratch/c.mpmgb/tools/cellranger-7.1.0/bin/cellranger"
 
 ## which ensembl and gencode version
 ENSEMBL_VER="109"
 GENCODE_VER="43"
 
-## store reference data
-REF_DIR="/gluster/dri02/rdscw/shared/webber/reference_genomes"
+## Move to location for reference genome to be saved
 cd $REF_DIR
 
 # Genome metadata
@@ -66,7 +64,7 @@ gtf_url="http://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_"${GEN
 gtf_in="${source}/gencode.v"${GENCODE_VER}".primary_assembly.annotation.gtf"
 
 ## compute node dir
-COM_DIR="/scratch/c.mpmgb/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/03_cellranger_reference"
+COM_DIR=$PROJECT_ROOT"03_data/990_processed_data/001_snrnaseq/03_cellranger_reference"
 
 #-----------------------------------------------------------------------
 ## run on login node

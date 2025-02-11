@@ -14,6 +14,9 @@
 #SBATCH --mail-user Bernardo-HarringtonG@cardiff.ac.uk # email on fail
 #SBATCH --mail-type END,FAIL
 
+## Project root variables defined in the following
+source 00_hpc_variables.sh
+
 echo "*****************************************************************"
 echo "All jobs in this array have:"
 echo "- SLURM_ARRAY_JOB_ID: ${SLURM_ARRAY_JOB_ID}"
@@ -37,30 +40,24 @@ echo -e "*****************************************************************\n"
 ## NOTE, V_19, only sequenced in 1 run (INPUT_DIR_1)
 ## NOTE, V_20, 1 run (INPUT_DIR_2) only with a single read, skip that run
 ## handled via if statement below
-INPUT_DIR_1="/gluster/dri02/rdscw/shared/webber/Endo_10X/FASTQ/Set_2/210707_A00711_0393_BHCLTKDSX2/FASTQ/"
-INPUT_DIR_2="/gluster/dri02/rdscw/shared/webber/Endo_10X/FASTQ/Set_2/210721_A00711_0400_BHF2YWDSX2/FASTQ/"
-INPUT_DIR_3="/gluster/dri02/rdscw/shared/webber/Endo_10X/FASTQ/Set_2/210728_A00711_0405_BHF5JLDSX2/FASTQ/"
-INPUT_DIR_4="/gluster/dri02/rdscw/shared/webber/Endo_10X/FASTQ/Set_2/210901_A00711_0420_AHGJJLDSX2/FASTQ/"
+INPUT_DIR_1=$INPUT_DIR_b1s2"210707_A00711_0393_BHCLTKDSX2/FASTQ/"
+INPUT_DIR_2=$INPUT_DIR_b1s2"210721_A00711_0400_BHF2YWDSX2/FASTQ/"
+INPUT_DIR_3=$INPUT_DIR_b1s2"210728_A00711_0405_BHF5JLDSX2/FASTQ/"
+INPUT_DIR_4=$INPUT_DIR_b1s2"210901_A00711_0420_AHGJJLDSX2/FASTQ/"
 
 ## results
-OUTPUT_DIR="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/04_cellranger_count/02_set2"
+OUTPUT_DIR=$PROJECT_ROOT"03_data/990_processed_data/001_snrnaseq/04_cellranger_count/02_set2"
 
 ## original sample IDs, correpond to FASTQ file names
-SAMPLE_ID_FILE="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/90_sample_info/samples_set2_4_runs.txt"
+SAMPLE_ID_FILE=$PROJECT_ROOT"03_data/990_processed_data/001_snrnaseq/90_sample_info/samples_set2_4_runs.txt"
 
 ## corresponding new sample names to be set by --id
-SAMPLE_ID_NEW_FILE="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/90_sample_info/samples_set2_rename.txt"
-
-## CR executable
-CELL_RANGER="/scratch/c.mpmgb/tools/cellranger-7.1.0/bin/cellranger"
+SAMPLE_ID_NEW_FILE=$PROJECT_ROOT"03_data/990_processed_data/001_snrnaseq/90_sample_info/samples_set2_rename.txt"
 
 ## CR reference
-## pre-computed and downloaded from CR website as is (refdata-gex-GRCh38-2020-A.tar.gz)
-## based on ensembl v98/gencode v32
-## CR_REF="/scratch/c.mpmfw/Tools/CellRanger/CellRanger_references/refdata-gex-GRCh38-2020-A"
 ## updated CR reference based on ensembl v108 (Gencode v42)
 ## from get_cellranger_reference.sh
-CR_REF="/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/03_cellranger_reference/GRCh38"
+CR_REF=$PROJECT_ROOT"03_data/990_processed_data/001_snrnaseq/03_cellranger_reference/GRCh38"
 
 
 #-----------------------------------------------------------------------

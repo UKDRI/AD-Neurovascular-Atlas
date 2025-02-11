@@ -6,13 +6,10 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --array=1-144%144
 #SBATCH --mem-per-cpu=5000 # memory limit per core
-#####  #SBATCH --mem=96000 # memory limit per compute node for the job
 #SBATCH --time=1-00:00 # maximum job time in D-HH:MM
 #SBATCH --account=scw1329
-#SBATCH -o /scratch/c.mpmgb/hawk_output/%x_out_%A_%a_%J.txt
-#SBATCH -e /scratch/c.mpmgb/hawk_output/%x_err_%A_%a_%J.txt
-#SBATCH --mail-user Bernardo-HarringtonG@cardiff.ac.uk # email on fail
-#SBATCH --mail-type END,FAIL
+#SBATCH -o sbatch_out_%x_%A_%a_%J.txt
+#SBATCH -e sbatch_err_%x_%A_%a_%J.txt
 
 ## FASTQ file paths and project root variables defined in the following
 source 00_hpc_variables.sh
@@ -35,9 +32,9 @@ echo "Username: "`whoami`
 echo "Started at: "`date`
 echo -e "*****************************************************************\n"
 
-OUTPUT_DIR="/scratch/c.mpmgb/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/01_fastqc/01_set1"
-OUTPUT_DIR2="/scratch/c.mpmgb/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/01_fastqc/02_set2"
-OUTPUT_DIR3="/scratch/c.mpmgb/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/01_fastqc/03_set3"
+OUTPUT_DIR=$PROJECT_ROOT"03_data/990_processed_data/001_snrnaseq/01_fastqc/01_set1"
+OUTPUT_DIR2=$PROJECT_ROOT"03_data/990_processed_data/001_snrnaseq/01_fastqc/02_set2"
+OUTPUT_DIR3=$PROJECT_ROOT"03_data/990_processed_data/001_snrnaseq/01_fastqc/03_set3"
 
 ## Load FastQC module
 module load FastQC

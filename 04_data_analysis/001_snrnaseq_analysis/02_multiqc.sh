@@ -8,8 +8,9 @@
 #SBATCH --account=scw1329
 #SBATCH -o /scratch/c.mpmgb/hawk_output/%x_out_%A_%a_%J.txt
 #SBATCH -e /scratch/c.mpmgb/hawk_output/%x_err_%A_%a_%J.txt
-#SBATCH --mail-user Bernardo-HarringtonG@cardiff.ac.uk # email on fail
-#SBATCH --mail-type END,FAIL
+
+## Project root variables defined in the following
+source 00_hpc_variables.sh
 
 echo "*****************************************************************"
 echo "All jobs in this array have:"
@@ -33,17 +34,17 @@ echo -e "*****************************************************************\n"
 module load multiqc
 
 ## collect MultiQC reports
-OUTPUT_DIR="/scratch/c.mpmgb/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/02_multiqc/"
+OUTPUT_DIR=$PROJECT_ROOT"03_data/990_processed_data/001_snrnaseq/02_multiqc/"
 
 #-----------------------------------------------------------------------
 # FastQC runs
 
 ## Endo 10X Vascular and Parenchymal fraction set 1 - 24 samples
-INPUT_DIR="/scratch/c.mpmgb/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/01_fastqc/01_set1/"
+INPUT_DIR=$PROJECT_ROOT"03_data/990_processed_data/001_snrnaseq/01_fastqc/01_set1/"
 ## Endo 10X Vascular and Parenchymal fraction set 2 - 16 samples
-INPUT_DIR2="/scratch/c.mpmgb/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/01_fastqc/02_set2/"
+INPUT_DIR2=$PROJECT_ROOT"03_data/990_processed_data/001_snrnaseq/01_fastqc/02_set2/"
 ## Endo 10X Vascular and Parenchymal fraction set 3 - 40 samples
-INPUT_DIR3="/scratch/c.mpmgb/blood-brain-barrier-in-ad/03_data/990_processed_data/001_snrnaseq/01_fastqc/03_set3/"
+INPUT_DIR3=$PROJECT_ROOT"03_data/990_processed_data/001_snrnaseq/01_fastqc/03_set3/"
 
 multiqc -o $OUTPUT_DIR"01_set1_reads" \
 --filename "fastqc_endo_10X_set1_reads" \

@@ -49,8 +49,6 @@ Then:
 - call SNPs at specific NeuroChip positions and create VCFs from Cell Ranger BAM files
 - approx. 500K liftover positions from NeuroChip
 
-I thought I'd be able to figure out an elegant way of using this one script with arguments, but realised I need to be able to adjust the array number to the number of samples per set, which I don't see how to do...
-
 ```{r}
 #!/bin/bash
 
@@ -59,16 +57,11 @@ I thought I'd be able to figure out an elegant way of using this one script with
 #SBATCH --ntasks=20
 #SBATCH --ntasks-per-node=20
 #SBATCH --array=1-24%14
-##### #SBATCH --mem-per-cpu=8000 # memory limit per core
 #SBATCH --mem=100GB # memory limit per compute node for the job
 #SBATCH --time=1-00:00 # maximum job time in D-HH:MM
 #SBATCH --account=scw1329
 #SBATCH -o /scratch/c.mpmgb/hawk_output/%x_out_%A_%a_%J.txt
 #SBATCH -e /scratch/c.mpmgb/hawk_output/%x_err_%A_%a_%J.txt
-#SBATCH --mail-user Bernardo-HarringtonG@cardiff.ac.uk # email on fail
-#SBATCH --mail-type END,FAIL
-
-#### SBATCH --mem=740000 # memory limit per compute node for the job
 
 echo "*****************************************************************"
 echo "All jobs in this array have:"

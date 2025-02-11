@@ -31,8 +31,6 @@ It's a little graceless, but I'll purl this script for set 1 and then manually c
 #SBATCH --account=scw1329
 #SBATCH -o sbatch_out_%x_%A_%a_%J.txt
 #SBATCH -e sbatch_err_%x_%A_%a_%J.txt
-#SBATCH --mail-user Bernardo-HarringtonG@cardiff.ac.uk # email on fail
-#SBATCH --mail-type END,FAIL
 
 ## FASTQ file paths and project root variables defined in the following
 source 00_hpc_variables.sh
