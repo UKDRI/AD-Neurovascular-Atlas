@@ -2,7 +2,6 @@
 title: Pathway analysis - subtypes
 execute:
   eval: true
-#self-contained: true
 ---
 
 ```{r}
@@ -28,10 +27,6 @@ include_apoe = FALSE
 ```{r}
 #| eval: true
 # read data
-#res <- readr::read_rds(df, here::here("03_data/990_processed_data/001_snrnaseq/08_pseudobulk/pseudobulk_ad-vs-control-vs-fraction_edger_subtype-annotated.rds"))
-# Get DESeq2 results
-# res <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/08_pseudobulk/pseudobulk_ad-vs-control_deseq2_subtype-annotated.rds")) %>%
-#   na.omit()
 if(include_apoe) {
 res <- readr::read_csv(here::here("03_data/990_processed_data/001_snrnaseq/08_pseudobulk/pseudobulk_ad-vs-control_deseq2_subtype-annotated_apoe.csv")) %>%
   na.omit()
@@ -81,8 +76,6 @@ mast_de |>
 
 # Data prep
 
-- note look at genes for sig pathways in ENdo MT subtypes - marker gene maybe
-
 ```{r}
 # filter to sig genes
 res_sig <- dplyr::filter(res, padj < 0.05) |>
@@ -103,7 +96,6 @@ pseudobulk_de <- res |>
   dplyr::rename(pval = pvalue)
 
 mast_des <- mast_de |>
-  #dplyr::filter(p_val_adj < 0.05) |>
   dplyr::select(hgnc_symbol, p_val_adj, celltype, p_val) |>
   dplyr::rename(gene = hgnc_symbol, padj = p_val_adj, pval = p_val)
 
@@ -259,10 +251,6 @@ names(genes_mast) <- paste0(genes_sum$celltype, "_", genes_sum$deg_direction)
 Want to do a Jaccard similarity matrix for each celltype between MAST and pseudobulk DEGs
 
 ```{r}
-# Example dataframes
-df1 <- data.frame(celltype = c("A", "A", "B", "B"), genes = c("gene1", "gene2", "gene3", "gene4"))
-df2 <- data.frame(celltype = c("A", "A", "B", "B"), genes = c("gene2", "gene3", "gene5", "gene6"))
-
 # Function to calculate Jaccard similarity
 jaccard_similarity <- function(set1, set2) {
   intersection <- length(intersect(set1, set2))
@@ -300,23 +288,6 @@ dev.off()
 ```
 
 
-```{r}
-#| eval: false
-#| include: false
-# Zam wants vascular celltype DEGs for report
-vascular_celltypes_level2 <- c('T-Pericyte', 'M-Pericyte', 'Pericyte', 
-                               'Pericyte-2', 'Vascular-SMC', 'Arteriolar-SMC', 
-                               'Vascular-SMC-LINC00486', 'Trans-Endo-to-mural', 
-                               'Perivascular-FB-KAZN2', 'Perivascular-FB', 
-                               'Meningeal-FB', 'Artirial-FB', 'Pericyte-FB', 
-                               'Capillary', 'Arterial', 'Venous', 
-                               'T-cell-vascular', 'T-cell-mixed', 
-                               'Microglia-vascular')
-vascular_sig_degs <- res_sig |>
-  dplyr::filter(celltype %in% vascular_celltypes_level2)
-readr::write_csv(vascular_sig_degs, here::here("vascular_degs.csv"))
-```
-
 ## Complement gene list
 
 ```{r}
@@ -343,89 +314,6 @@ if(include_apoe) {
   )
 }
 ```
-
-## Save for IPA
-
-Caleb mentioned it can be useful to see what IPA pulls out in terms of pathways and such, but I need to save the data in a csv first
-
-```{r}
-# save data for IPA
-# Define a function to save each subset as a CSV file
-save_celltype_df <- function(cell_type, df, file_name_root) {
-  # Subset the dataframe for the current cell type
-  celltype_df <- df %>% dplyr::filter(celltype == cell_type) |>
-    # Select relevant columns
-    dplyr::select(gene, log2FoldChange, padj) |>
-    # Help IPA figure the columns out
-    rename(pvalue_adjust = padj)
-  
-  # Create a filename based on the cell type
-  filename <- paste0(file_name_root, "_", cell_type, ".csv")
-  
-  # Save the subset dataframe to a CSV file
-  readr::write_csv(celltype_df, filename)
-}
-
-# Use map to iterate over each unique cell type and save a file
-if(include_apoe) {
-  map(unique(res$celltype),
-      ~ save_celltype_df(
-        .x,
-        res,
-        here::here(
-          "03_data/990_processed_data/001_snrnaseq/08_pseudobulk/01_ipa_data/pseudobulk_ad-vs-control_deseq2_subtype-annotated_apoe"
-        )
-      ))
-} else {
-  map(unique(res$celltype),
-      ~ save_celltype_df(
-        .x,
-        res,
-        here::here(
-          "03_data/990_processed_data/001_snrnaseq/08_pseudobulk/01_ipa_data/pseudobulk_ad-vs-control_deseq2_subtype-annotated_no-apoe"
-        )
-      ))
-}
-```
-
-So apparently IPA is too stupid to handle more than 20 observations.
-I love it when extremely expensive closed-source software barely usable garbage!
-
-```{r}
-# Step 1: Prepare the data
-# Get a list of all unique cell types
-all_celltypes <- unique(res$celltype)
-# remove unneeded ones
-all_celltypes <- all_celltypes[!all_celltypes %in% c("low-feature-cells", "ambiguous")]
-
-# Split the list of cell types into two groups of 20
-celltypes_group1 <- all_celltypes[1:20]
-celltypes_group2 <- all_celltypes[21:40]
-
-res |> 
-  dplyr::filter(celltype %in% celltypes_group1) |>
-  dplyr::select(gene, log2FoldChange, pvalue, padj, celltype) |>
-  pivot_wider(names_from = celltype, values_from = c(log2FoldChange, pvalue, padj)) |>
-  readr::write_csv(here::here("03_data/990_processed_data/001_snrnaseq/08_pseudobulk/01_ipa_data/pseudobulk_ad-vs-control_deseq2_subtype-annotated_wide_group1.csv"))
-res |> 
-  dplyr::filter(celltype %in% celltypes_group2) |>
-  dplyr::select(gene, log2FoldChange, pvalue, padj, celltype) |>
-  pivot_wider(names_from = celltype, values_from = c(log2FoldChange, pvalue, padj)) |>
-  readr::write_csv(here::here("03_data/990_processed_data/001_snrnaseq/08_pseudobulk/01_ipa_data/pseudobulk_ad-vs-control_deseq2_subtype-annotated_wide_group2.csv"))
-```
-
-
-```{r}
-#| eval: false
-# Copy the gene names straight to the clipboard
-# Note this only works on MacOS, Windows/Linux would need adapted versions
-write.table(unique(res_sig$gene) |> paste0(collapse = ","), pipe("pbcopy"), sep = "")
-```
-
-
-
-<!-- There are a quite a lot of unique pairwise comparisons when looking at 2 factors (fraction and disease status in this case), and the cross groups can probably be dropped for now to prioritise the most interesting comparisons. -->
-<!-- In this case, I'd think the most interesting comparisons are within the same fraction across disease status, and across fractions within the same disease state. -->
 
 # Bar plots
 
@@ -743,19 +631,6 @@ end1 |>
 - Note that GSEA takes pval and foldchange into account when computing the enrichment, so we don't filter the gene list
 
 ```{r}
-#| eval: false
-#| include: false
-
-# Note this is for more complex contrasts
-# nest data by celltype
-gsea_df <- res %>%
-  # group by celltype
-  dplyr::group_by(celltype, contrast) %>%
-  tidyr::nest() %>%
-  dplyr::mutate(celltype_contrast = paste0(celltype, "_", contrast))
-```
-
-```{r}
 # nest data by celltype
 gsea_df <- res |>
   # group by celltype
@@ -829,23 +704,6 @@ gmt_files <- list.files(here::here("03_data/991_external_data"), pattern = "\\.g
 gmt <- map(gmt_files, ~ prepare_gmt(.x, my_genes))
 ```
 
-```{r}
-#| eval: false
-#| include: false
-
-# This is the per celltype version - not using fgsea at the moment so I'll skip
-# this for now
-# Get all the genes in your dataset and assign them to my_genes 
-my_genes <- map(gsea_df$data, ~ .x$gene) %>%
-  purrr::set_names(gsea_df$celltype)
-
-gmt <- map(gmt_files, function(gmt) {
-  map(my_genes, function(genes) {
-    prepare_gmt(gmt, genes)
-  }
-)})
-```
-
 Get the gene rankings
 
 ```{r}
@@ -880,19 +738,6 @@ sort_rankings <- function(log2fc, pvals, gene_names, group, plot = FALSE) {
   return(rankings)
 }
 
-```
-
-```{r}
-#| eval: false
-#| include: false
-
-# Again for more complex contrasts
-rankings <-
-  map2(gsea_df$data, gsea_df$celltype_contrast, ~ (sort_rankings(.x$log2FoldChange,
-                                                        .x$pvalue,
-                                                        .x$gene,
-                                                        .y))) %>%
-  purrr::set_names(gsea_df$celltype_contrast)
 ```
 
 ```{r}
@@ -975,26 +820,6 @@ file <-
   )
 }
 
-# Check if the file exists
-#if (!file.exists(result_file)) {
-#  # Code for your time-consuming analysis
-#  gse <-
-#    map(
-#      rankings,
-#      ~ gseGO(
-#        .x,
-#        OrgDb = "org.Hs.eg.db",
-#        ont = "ALL",
-#        keyType = "SYMBOL"
-#      )
-#    ) 
-#  
-#  # Save the resulting object
-#  readr::write_rds(gse, result_file)
-#} else {
-#  # Load the existing resulting object
-#  gse <- readr::read_rds(result_file)
-#}
 if (!file.exists(file)) {
   plan("multisession", workers = parallel::detectCores() - 1)
   result_list_bp <- future_map(
@@ -1084,81 +909,6 @@ print("Celltype with 'insulin' in pathway description:")
 paste0(celltypes_with_insulin, collapse = ", ")
 ```
 
-Get the genes of these celltypes too
-
-```{r}
-#| eval: false
-
-# Save the dotplots of this subset
-insulin_pathways <- gse[names(gse) %in% celltypes_with_insulin]
-dotplots <-
-  map2(
-    insulin_pathways,
-    names(insulin_pathways),
-    ~ dotplot(.x, showCategory = 10, split = ".sign") + facet_grid(. ~ .sign) +
-      ggtitle(.y)
-  )
-
-# Specify the filename for the PDF
-if(include_apoe) {
-pdf_file <- here::here("insulin_celltype_dotplots_apoe.pdf")
-} else {
-pdf_file <- here::here("insulin_celltype_dotplots_no-apoe.pdf")
-}
-# Open the PDF device
-pdf(pdf_file)
-dotplots
-# Close the PDF device
-dev.off()
-
-insulin_genes <- map2(insulin_pathways, names(insulin_pathways), ~ {
-  df <- .x@result |>
-    dplyr::filter(grepl("insulin", Description) & p.adjust < 0.05)
-  
-  insulin_pathway_genes <- strsplit(df$core_enrichment, "/") |> unlist() |> unique()
-  insulin_genes <- .x@geneList[names(.x@geneList) %in% insulin_pathway_genes] |> names()
-  
-  res_sig |>
-    dplyr::filter(celltype == str_sub(.y, end = -4) & gene %in% insulin_genes)
-}) |>
-  list_rbind()
-
-if(include_apoe) {
-readr::write_csv(insulin_genes, here::here("insulin_celltypes_sig_genes_apoe.csv"))
-} else {
-readr::write_csv(insulin_genes, here::here("insulin_celltypes_sig_genes_no-apoe.csv"))
-}
-
-insulin_genes <- map2(insulin_pathways, names(insulin_pathways), ~ {
-  df <- .x@result |>
-    dplyr::filter(grepl("insulin", Description) & p.adjust < 0.05)
-  
-  insulin_pathway_genes <- strsplit(df$core_enrichment, "/") |> unlist() |> unique()
-  insulin_genes <- .x@geneList[names(.x@geneList) %in% insulin_pathway_genes] |> names()
-  
-  res |>
-    dplyr::filter(celltype == str_sub(.y, end = -4) & gene %in% insulin_genes)
-}) |>
-  list_rbind() |>
-  # Zam only want the non-sig genes for capilary
-  dplyr::filter(celltype == "Capillary")
-
-if(include_apoe) {
-readr::write_csv(insulin_genes, here::here("insulin_celltypes_all_genes_apoe_capillary.csv"))
-} else {
-readr::write_csv(insulin_genes, here::here("insulin_celltypes_all_genes_no-apoe_capillary.csv"))
-}
-
-insulin_genes <- res_sig |>
-  dplyr::filter(celltype %in% celltypes_with_insulin)
-insulin_genes |> dplyr::filter(celltype == "Capillary") |> dim()
-if(include_apoe) {
-readr::write_csv(insulin_genes, here::here("insulin_celltypes_sig_genes_apoe.csv"))
-} else {
-readr::write_csv(insulin_genes, here::here("insulin_celltypes_sig_genes_no-apoe.csv"))
-}
-```
-
 ### Plots
 
 ```{r}
@@ -1207,15 +957,6 @@ plots
 map2(plots, names(plots), ~ ggsave(here::here("05_figures/990_shared_figures/002_pseudobulk/gsea", paste0(.y, ".png")), plot = .x, width = 18, height = 10))
 ```
 
-
-```{r}
-#| eval: false
-#| include: false
-map2(gse,
-     names(gse),
-     ~ emapplot(.x, showCategory = 10) +
-                  ggtitle(.y))
-```
 
 ```{r}
 map2(gse,
