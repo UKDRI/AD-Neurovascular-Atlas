@@ -1,0 +1,201 @@
+---
+title: LDScore - Analyse results
+execute:
+  eval: true
+#self-contained: true
+---
+
+# Load packages
+
+```{r}
+#| message: false
+source(here::here("04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"))
+```
+
+# Read in files
+
+```{r}
+# List results files
+files <- list.files(here::here("03_data/995_ldsc_inputs/06_ldscore_results_from_emeka/"), 
+                    pattern = "*.txt", full.names = TRUE)
+# Remove top 1% of genes
+files <- files[!grepl("top_one_percent", files)]
+# Read in data and add adjusted pvals
+files <- map(files, ~ readr::read_tsv(.x) |>
+               dplyr::filter(!Name %in% c("ambiguous", "low_feature_cells")) |>
+               dplyr::mutate(padj = p.adjust(Coefficient_P_value, method = "bonferroni"))) |>
+  set_names(basename(files))
+```
+
+```{r}
+celltype_abbrev_df <- readr::read_tsv(here::here("05_figures/990_shared_figures/003_final_figures/001_data_for_plots/celltype_abbreviations.tsv"))
+```
+
+```{r}
+df <- map2(files, names(files), ~ .x |> 
+       dplyr::mutate(level = if_else(grepl("level1", .y), "level1", "level2"),
+                     group = .y) |>
+         dplyr::mutate(percent = case_when(
+           grepl("top_five_percent", group) ~ "top-five-percent",
+           grepl("top_ten_percent", group) ~ "top-ten-percent",
+           grepl("top_one_percent", group) ~ "top-one-percent",
+          .default = NA 
+         ))) |>
+  list_rbind() |>
+  dplyr::mutate(log_p_nominal = -log10(Coefficient_P_value),
+                log_p = -log10(padj)) |>
+  dplyr::mutate(group = str_remove(group, ".cell_type_results.txt") %>%
+                  gsub("_top_.*?_percent", "", .) %>%
+                  gsub("level.*?_", "", .)) |>
+  dplyr::arrange(Name) |>
+  dplyr::mutate(Name = str_replace_all(Name, "_", "-")) |>
+  dplyr::left_join(celltype_abbrev_df, by = join_by(Name == celltype)) |>
+  dplyr::mutate(celltype = if_else(is.na(celltypes_abbrev), Name, celltypes_abbrev)) |>
+  dplyr::group_by(level, percent) |>
+  tidyr::nest()
+
+get_heatmap_data <- function(df, nominal_p = TRUE) {
+  # Prepare the data for the heatmap
+  if(nominal_p) {
+  heatmap_data <- df |>
+    dplyr::select(celltype, log_p_nominal, group) |>
+    pivot_wider(names_from = celltype, values_from = log_p_nominal) |>
+    as.data.frame()
+  } else {
+  heatmap_data <- df |>
+    dplyr::select(celltype, log_p, group) |>
+    pivot_wider(names_from = celltype, values_from = log_p) |>
+    as.data.frame()
+  }
+  
+  rownames(heatmap_data) <- heatmap_data$group
+  # Remove the first column if it contains row names (cell types)
+  heatmap_data <- heatmap_data[, -1]
+  heatmap <- t(heatmap_data)
+  # Replace any NAs with 0
+  #heatmap[is.na(heatmap)] <- 0
+  return(heatmap)
+}
+
+heatmap_data <- map(df$data, get_heatmap_data) |>
+  set_names(paste0(df$level, "_", df$percent))
+```
+
+# Heatmaps
+
+```{r}
+make_heatmap <- function(heatmap_data, plot_title) {
+  # Define significance thresholds
+  sig_threshold1 <- -log10(0.05) # Corresponds to p < 0.05
+  sig_threshold2 <- -log10(0.01) # Corresponds to p < 0.01
+  sig_threshold3 <- -log10(0.001) # Corresponds to p < 0.001
+  
+  # Create an annotation matrix with the same dimensions as 'heatmap'
+  annotation_matrix <-
+    matrix(
+      "",
+      nrow = nrow(heatmap_data),
+      ncol = ncol(heatmap_data)
+    )
+  
+  # Populate the annotation matrix with '*', '**', or '***' based on significance levels
+  annotation_matrix[heatmap_data > sig_threshold3] <-
+    "***"
+  annotation_matrix[heatmap_data > sig_threshold2 &
+                      heatmap_data <= sig_threshold3] <- "**"
+  annotation_matrix[heatmap_data > sig_threshold1 &
+                      heatmap_data <= sig_threshold2] <- "*"
+  
+  # Define a color palette for the heatmap
+  color_palette <- colorRampPalette(c("blue", "white", "red"))(100)
+  
+  # Create the heatmap with customizations
+  plot <- Heatmap(
+    heatmap_data,
+    name = "-log10(p-value)",
+    col = color_palette,
+    # Use the defined color palette
+    cell_fun = function(j, i, x, y, width, height, fill) {
+      if (annotation_matrix[i, j] != "") {
+        grid.text(annotation_matrix[i, j], x, y, gp = gpar(col = "black", fontsize = 10))
+      }
+    },
+    # Adjust the clustering method if necessary
+    cluster_rows = FALSE,
+    cluster_columns = FALSE,
+    # Show row and column names
+    show_row_names = TRUE,
+    show_column_names = TRUE,
+    # Adjust the size of row and column names
+    row_names_gp = gpar(fontsize = 10),
+    #column_names_rot = 45,
+    column_names_gp = gpar(fontsize = 8),
+    column_names_max_height = max_text_height(colnames(heatmap_data),
+                                              gp = gpar(fontsize = 500)),
+    column_title = plot_title
+    # Add a border around the cells
+    #border_color = "grey50",
+    # Additional options like margins
+    #bottom_annotation_height = unit(2, "cm"),
+    #left_annotation_width = unit(2, "cm")
+  )
+  
+  return(plot)
+  
+}
+
+# Get heatmaps
+heatmaps <-
+  map2(heatmap_data,
+         names(heatmap_data),
+       make_heatmap)
+level1_hmap_list <- heatmaps$`level1_top-five-percent` + heatmaps$`level1_top-ten-percent`
+level2_hmap_list <- heatmaps$`level2_top-five-percent` + heatmaps$`level2_top-ten-percent`
+level1_hmap_list
+level2_hmap_list
+
+# Open a graphics device to save the image (e.g., PNG format)
+png(here::here("05_figures", "990_shared_figures", "001_magma", "01_ldscore",
+               "ldscore_heatmap_level1.png"), width = 22, height = 10, 
+    units = 'in', res = 300)
+# Draw concatenated heatmaps
+draw(level1_hmap_list)
+# Close the graphics device to save the image
+dev.off()
+# Open a graphics device to save the image (e.g., PNG format)
+png(here::here("05_figures", "990_shared_figures", "001_magma", "01_ldscore",
+               "ldscore_heatmap_level2.png"), width = 22, height = 10, 
+    units = 'in', res = 300)
+# Draw concatenated heatmaps
+draw(level2_hmap_list)
+# Close the graphics device to save the image
+dev.off()
+```
+
+# Heatmap slice for paper
+
+```{r}
+subset_column <- heatmap_data$`level2_top-ten-percent`[, "Bellenguez_AD_GWAS.all_controls", drop = FALSE]
+colnames(subset_column) <- "Bellenguez_2022"
+head(subset_column)
+heatmap_for_paper <- make_heatmap(subset_column, "")
+heatmap_for_paper
+
+qs::qsave(heatmap_for_paper, here::here("05_figures/990_shared_figures/003_final_figures/ldscore_celltype_heatmap.qs"))
+qs::qsave(subset_column, here::here("05_figures/990_shared_figures/003_final_figures/ldscore_celltype_heatmap_data.qs"))
+```
+
+# Nominal P
+
+```{r}
+heatmap_data <- map(df$data, get_heatmap_data, nominal_p = FALSE) |>
+  set_names(paste0(df$level, "_", df$percent))
+
+heatmaps <-
+  map2(heatmap_data,
+         names(heatmap_data),
+       make_heatmap)
+heatmaps$`level1_top-five-percent` + heatmaps$`level1_top-ten-percent`
+heatmaps$`level2_top-five-percent` + heatmaps$`level2_top-ten-percent`
+```
+
