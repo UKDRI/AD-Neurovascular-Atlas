@@ -6,12 +6,12 @@ author:
     corresponding: true
     email: bernardo-harringtong@cardiff.ac.uk
     role:
-      - investigation: lead
       - formal analysis: lead
       - software: lead
       - writing – original draft: equal
       - visualization: lead
       - data curation: lead
+      - conceptualization: supporting
     affiliations: 
       - ref: cardiff
       - ref: dri
@@ -20,7 +20,9 @@ author:
   - name: Hannah Sleven
     affiliations: 
       - ref: oxford
-    roles: []
+    roles:
+      - method: lead
+      - investigation: lead
     degrees: 
       - PhD
   - name: Jimena Monzón-Sandoval
@@ -31,11 +33,45 @@ author:
       - PhD
     #orcid: 0000-0002-7859-8394
     corresponding: false
-    roles: []
+    roles:
+      - writing – original draft: supporting
+      - formal analysis: supporting
+      - software: supporting
+      - visualization: supporting
+      - conceptualization: supporting
+  - name: Lara Robinson
+    affiliations: 
+      - ref: oxford
+    roles:
+      - method: supporting
+      - investigation: supporting
+      - writing – original draft: supporting
   - name: Michal Rokicki
     affiliations: 
-      - ref: cardiff
-    roles: []
+      - ref: cardiff2
+    roles:
+      - investigation: supporting
+    degrees: 
+      - PhD
+  - name: Joanne Morgan
+    affiliations: 
+      - ref: cardiff2
+    roles:
+      - investigation: supporting
+    degrees: 
+      - PhD
+  - name: Ngoc-Nga Vinh
+    affiliations: 
+      - ref: cardiff2
+    roles:
+      - investigation: supporting
+    degrees: 
+      - PhD
+  - name: Quenten Schwarz
+    affiliations: 
+      - ref: cardiff2
+    roles:
+      - investigation: supporting
     degrees: 
       - PhD
   - name: Caleb Webber
@@ -45,12 +81,24 @@ author:
     degrees: 
       - PhD
     #orcid: 0000-0002-7859-8394
-    corresponding: false
-    roles: []
+    corresponding: true
+    roles:
+      - writing – original draft: supporting
+      - writing – review & editing: lead
+      - project administration: equal
+      - supervision: equal
+      - conceptualization: equal
+      - funding acquisition: equal
   - name: Zameel Cader
     affiliations: 
       - ref: oxford
-    roles: []
+    roles:
+      - writing – original draft: equal
+      - writing – review & editing: supporting
+      - project administration: equal
+      - supervision: equal
+      - conceptualization: equal
+      - funding acquisition: equal
     degrees: 
       - PhD
 affiliations:
@@ -65,6 +113,9 @@ affiliations:
     name: Oxford University
     city: Oxford
     url: https://www.ox.ac.uk/
+  - id: cardiff2
+    name: Centre for Neuropsychiatric Genetics and Genomics, Division of Psychological Medicine and Clinical Neurosciences, School of Medicine, Cardiff University, Cardiff, United Kingdom
+    city: Cardiff
 keywords:
   - Alzheimer's diesease
   - Blood brain barrier
@@ -78,8 +129,8 @@ key-points:
   - EndoMT, they're a thing in the brain, probably
 date: last-modified
 bibliography: references.bib
-citation:
-  container-title: Cell
+#citation:
+#  container-title: Cell
 number-sections: true
 crossref:
   custom:
