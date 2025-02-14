@@ -1,0 +1,546 @@
+---
+title: MAGMA - risk analysis prep
+execute:
+  eval: false
+#self-contained: true
+---
+
+I need to prep the MAGMA inputs, first I'll subset to controls and do differential expression of the celltypes against each other to get the MAGMA input.
+I also need to subset to parenchymal and vascular fractions separately, so three control gene lists as input.
+
+My understanding is the input format should be rows per celltypes and columns as gene IDs
+
+```{r}
+here::i_am("04_data_analysis/007_magma/18_magma_risk_analysis_prep.qmd")
+```
+
+# Load packages
+
+```{r}
+source(here::here("04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"))
+```
+
+# Load data
+
+```{r}
+#| eval: true
+# read data
+tar_load(sce)
+```
+
+```{r}
+celltypes_abbrev <-
+  c(
+    "Astrocyte-activated" = "Astro-A",
+    "Astrocyte-quiescent" = "Astro-Q",
+    "Ex-Neuron-ADARB2-ERBB4" = "Ex-Neuro-1",
+    "Ex-Neuron-CBLN2-NRGN" = "Ex-Neuro-2",
+    "Ex-Neuron-DLC1-HS3ST4" = "Ex-Neuro-3",
+    "Ex-Neuron-L2-3-CBLN2-LINC02306-CUX2" = "Ex-Neuro-4",
+    "Ex-Neuron-L3-5-RORB-PLCH1" = "Ex-Neuro-5",
+    "Ex-Neuron-L4-5-RORB-IL1RAPL2" = "Ex-Neuro-6",
+    "Ex-Neuron-L6-THEMIS-NFIA" = "Ex-Neuro-7",
+    "In-Neuron-ADARB2-GRM7" = "In-Neuro-1",
+    "In-Neuron-ADARB2-IL1RAPL2-CSCL14" = "In-Neuro-2",
+    "In-Neuron-ADARB2-LAMP5-NRG1" = "In-Neuro-3",
+    "In-Neuron-ADARB2-NRG1-RELN" = "In-Neuro-4",
+    "In-Neuron-DPP10-MEF2C" = "In-Neuro-5",
+    "In-Neuron-PRKG1-TBC1D4" = "In-Neuro-6",
+    "In-Neuron-TRHDE-RALYL" = "In-Neuro-7",
+    "Microglia-activated" = "Microglia-A",
+    "Microglia-quiescent" = "Microglia-Q",
+    "Microglia-vascular" = "Microglia-V",
+    "Pericyte" = "Pericyte-1",
+    "Perivascular Macrophage" = "Perivascular-M",
+    "Perivascular-FB" = "Perivascular-FB-1",
+    "Perivascular-FB-KAZN2" = "Perivascular-FB-2",
+    "EndoMT_1" = "EndoMT-1",
+    "EndoMT_2" = "EndoMT-2",
+    "T-cell-parenchymal-1" = "T-cell-P1",
+    "T-cell-parenchymal-2" = "T-cell-P2",
+    "T-cell-vascular" = "T-cell-V",
+    "T-cell-mixed" = "T-cell-M",
+    "Vascular-SMC" = "Vascular-SMC-1",
+    "Vascular-SMC-LINC00486" = "Vascular-SMC-2"
+  )
+
+# Create a new column with abbreviated Idents
+abbreviated_idents <- celltypes_abbrev[as.character(sce$subcelltype_annotations)]
+abbreviated_idents <- if_else(is.na(abbreviated_idents),
+                              sce$subcelltype_annotations,
+                              abbreviated_idents)
+names(abbreviated_idents) <- NULL
+sce$abbreviated_idents <- abbreviated_idents
+unique(sce$abbreviated_idents)
+```
+
+# Data prep
+
+```{r}
+# Gene ensembl IDs
+gene_ensembl_ids <- data.frame(gene = rownames(sce@assays$RNA@data), ensembl = rownames(sce@assays$RNA@counts))
+rownames(sce@assays$RNA@data) <- gene_ensembl_ids$ensembl
+```
+
+Need the total number of genes for subsetting the celltype markers later
+
+```{r}
+total_genes <- nrow(sce[["RNA"]])
+gene_percents <-
+  list(
+    "one" = round(total_genes * 0.01),
+    "five" = round(total_genes * 0.05),
+    "ten" = round(total_genes * 0.1)
+  )
+```
+
+# Set subset
+
+- All control celltypes
+- Control vascular celltypes
+- Control parenchymal celltypes
+
+- Also set level 1 or level 2 celltypes
+
+```{r}
+# Set subset
+subset <- "all_controls"
+#subset <- "controls_parenchymal"
+#subset <- "controls_vascular"
+
+level <- "level1"
+#level <- "level2"
+
+case_or_control = "Control"
+```
+
+```{r}
+# Subset to controls
+sce <- subset(sce, subset = diagnosis == case_or_control)
+
+# Update mystery-cluster label
+update_label <- c("mystery-cluster" = "Trans-Endo-to-mural")
+Idents(sce) <- sce$highlevel_manual_annotations
+sce <- RenameIdents(sce, update_label)
+
+# Get T-Cell numbers
+level1_counts <- table(Idents(sce))
+level2_counts <- table(sce$abbreviated_idents)
+level1_counts[names(level1_counts) %in% "T-cell"]
+level2_counts[grepl("T-cell", names(level2_counts))]
+
+
+# Set celltype level
+if(level == "level2") {
+  Idents(sce) <- sce$abbreviated_idents
+}
+
+if (subset == "controls_parenchymal") {
+  # Subset to controls parenchymal
+  sce <- subset(sce, subset = prep == "P")
+} else if (subset == "controls_vascular") {
+  # Subset to controls vascular
+  sce <- subset(sce, subset = prep == "V")
+}
+```
+
+Given that some of these fraction subsets will have very few of certain celltypes, I should remove these celltypes from the downstream analysis.
+I'll just define a list of celltypes and exclude them from the relevant fraction
+
+- Seperatre out migroglia in level 1 - vascualr to vascular, parenchymal to parenchymal 
+
+```{r}
+# Level 1 vascular celltypes
+vascular_celltypes_level1 <- c("Trans-Endo-to-mural", "Endothelial", "Pericyte", 
+                               "SMC", "Fibroblast", "T-cell")
+vascular_celltypes_level2 <- c('T-Pericyte', 'M-Pericyte', 'Pericyte', 
+                               'Pericyte-2', 'Vascular-SMC', 'Arteriolar-SMC', 
+                               'Vascular-SMC-LINC00486', 'Trans-Endo-to-mural', 
+                               'Perivascular-FB-KAZN2', 'Perivascular-FB', 
+                               'Meningeal-FB', 'Artirial-FB', 'Pericyte-FB', 
+                               'Capillary', 'Arterial', 'Venous', 
+                               'T-cell-vascular')
+vascular_celltypes_level2 <- c('Arterial', 'Arteriolar-SMC', 'Artirial-FB', 'Capillary', 
+              'EndoMT-1', 'EndoMT-2', 'M-Pericyte', 'Meningeal-FB', 
+              'Pericyte-1', 'Pericyte-2', 'Pericyte-FB', 'Perivascular-FB-1', 
+              'Perivascular-FB-2', 'Perivascular-M', 'T-cell-V', 
+              'T-Pericyte', 'Vascular-SMC-1', 'Vascular-SMC-2', 'Venous') |> 
+  sort()
+parencyhmal <- c('Astro-A', 'Astro-Q', 'Ex-Neuro-1', 'Ex-Neuro-2', 
+                 'Ex-Neuro-3', 'Ex-Neuro-4', 'Ex-Neuro-5', 'Ex-Neuro-6', 
+                 'Ex-Neuro-7', 'In-Neuro-1', 'In-Neuro-2', 'In-Neuro-3', 
+                 'In-Neuro-4', 'In-Neuro-5', 'In-Neuro-6', 'In-Neuro-7', 
+                 'Microglia-A', 'Microglia-Q', 'Oligo-A', 'Oligo-B', 'OPC-A', 
+                 'OPC-B', 'T-cell-P1', 'T-cell-P2') |> sort()
+
+# Get celltype counts
+celltype_counts <- table(Idents(sce))
+# Get the names of cell types with counts above the threshold
+if (level == "level1" && subset == "controls_parenchymal") {
+  celltypes_to_keep <-
+    names(celltype_counts)[!names(celltype_counts) %in% vascular_celltypes_level1]
+  # Subset the Seurat object to exclude vascular microglia
+  sce <- subset(sce, subset = abbreviated_idents != "Microglia-V")
+} else if (level == "level1" && subset == "controls_vascular") {
+  celltypes_to_keep <-
+    names(celltype_counts)[names(celltype_counts) %in% vascular_celltypes_level1]
+  # Add microglia back in
+  celltypes_to_keep <- c(celltypes_to_keep, "Microglia")
+  # Subset the Seurat object to exclude parenchymal microglia
+  sce <- subset(sce, subset = abbreviated_idents != "Microglia-Q")
+  sce <- subset(sce, subset = abbreviated_idents != "Microglia-A")
+} else if (level == "level2" && subset == "controls_parenchymal") {
+  celltypes_to_keep <-
+    names(celltype_counts)[!names(celltype_counts) %in% vascular_celltypes_level2]
+} else if (level == "level2" && subset == "controls_vascular") {
+  celltypes_to_keep <-
+    names(celltype_counts)[names(celltype_counts) %in% vascular_celltypes_level2]
+  celltypes_to_keep <- c(celltypes_to_keep, 'Microglia-V', 'T-cell-M')
+} else {
+  celltypes_to_keep <-
+    names(celltype_counts)[!names(celltype_counts) %in% c("ambiguous", "low-feature-cells")]
+}
+
+# Subset the Seurat object to keep only the desired cell types
+sce <- subset(sce, idents = celltypes_to_keep)
+```
+
+## Find celltype markers - normal way
+
+<!-- - Note that I'm using MAST and adding donor as a latent variable to hopefully emulate a pseudobulk analysis -->
+- Note that it probably makes sense to start this with the level 1 celltypes and then do the level two but subsetting to one level 1 celltype at a time to then check if one particular subtype is associated with the disease risk genes. It may also be the case that a highlevel type isn't associated, with the risk, but one of the level 2 types is...
+
+```{r}
+# File to save cluster markers to
+file_name <-
+  here::here("03_data/994_magma_inputs",
+             paste0("cluster_markers_", level, "_", subset, "_", case_or_control, ".tsv"))
+# Only run if needed
+if (!file.exists(file_name)) {
+  # Set up future to use multiple cores
+  plan("multisession", workers = 8)
+  
+  # Now run FindAllMarkers, it will use the future plan for parallel computation
+  #all_markers <- FindAllMarkers(sce, min.pct = 0.25, logfc.threshold = 0.2, test.use = "MAST", latent.vars = "donor")
+  all_markers <-
+    FindAllMarkers(sce, min.pct = 0.25, logfc.threshold = 0.01)
+  
+  # Save data
+  readr::write_tsv(all_markers, file_name)
+} else {
+  all_markers <- readr::read_tsv(file_name)
+}
+```
+
+```{r}
+#| eval: false
+
+head(all_markers)
+
+tar_load(translated_id)
+top_endomt <- all_markers |>
+  dplyr::left_join(translated_id, by = join_by(gene == ensembl_gene_id)) |>
+  dplyr::filter(grepl("EndoMT", cluster) & p_val_adj == 0 & hgnc_symbol != "") |>
+  slice_max(avg_log2FC, n = 5, by = cluster)
+
+rownames(sce@assays$RNA@data) <- gene_ensembl_ids$gene
+plot <- DotPlot(sce, features = top_endomt$hgnc_symbol)
+plot
+ggsave(here::here("05_figures/990_shared_figures/endomt_top_markers.png"), height = 8, width = 12)
+```
+
+Apparently, the standard way of doing this is to take the top 10% of celltype markers by pvalue.
+To my mind it makes more sense to filter to significant markers, and limit on logfc to get a smaller number of more celltype specific genes.
+
+I guess we'll try to standard way first and check with a smaller subset later.
+
+```{r}
+#| eval: false
+#| include: false
+# Step 1: Split the dataframe by celltype
+split_df <- split(all_markers, all_markers$cluster)
+
+# Step 2: Calculate 10% of the number of genes per celltype and store the minimum size
+top_percent <- 0.10
+sizes <- sapply(split_df, function(x) ceiling(nrow(x) * top_percent))
+min_size <- min(sizes)
+
+# Step 3: Order each subset by p-value and select the top entries
+top_genes_per_celltype <- lapply(split_df, function(x) {
+  x <- x[order(x$p_val_adj), ]
+  return(head(x, min_size))
+})
+
+# Step 4: If necessary, truncate each list to have the same number of genes
+top_genes_per_celltype <- lapply(top_genes_per_celltype, function(x) head(x, min_size))
+
+# Step 5: Combine the lists back into a single dataframe
+final_df <- do.call(rbind, top_genes_per_celltype)
+```
+
+Then we need to get the data in a format where each row is a celltype and the columns are gene IDs.
+Examples I've seen have entrez IDs, so will probably use those.
+
+```{r}
+tar_load(translated_id)
+
+# Remove rows with NA Entrez IDs if present
+entrez_ids <- translated_id[!is.na(translated_id$entrezgene_id), ]
+
+# Get unique Ensembl-Entrez pairs by keeping the first occurrence
+entrez_ids <- entrez_ids[!duplicated(entrez_ids$ensembl_gene_id), ]
+
+all_markers <- all_markers |>
+  dplyr::left_join(unique(entrez_ids), by = join_by(gene == ensembl_gene_id))
+```
+
+Now subset to the top genes by p-value.
+I'll try comparing the top 1, 5 and 10% of total genes per celltype.
+
+```{r}
+get_top_gene_subset <- function(df, percent_subset) {
+  df <- df |>
+    # Drop cases where entrez ID is missing
+    dplyr::filter(!is.na(entrezgene_id))
+  
+  # Check if the minimum number of genes in a cellytpe is less than the % needed
+  min_genes <- min(table(df$cluster))
+  # If it is, then use the smallest number of genes possible
+  # Note that I'm disabling this for Cases
+  if (min_genes < percent_subset & case_or_control != "Case") {
+    print("WARNING: There are less genes than the percent subset")
+    print(
+      paste0(
+        "There are: ",
+        percent_subset,
+        " genes needed, but there are only ",
+        min_genes,
+        " in the celltype with the lowest number of genes"
+      )
+    )
+    percent_subset <- min_genes
+  }
+  
+  top_genes_df <- df |>
+    dplyr::group_by(cluster) |>
+    slice_min(order_by = p_val_adj,
+              n = percent_subset,
+              with_ties = FALSE)
+  # Count the number of genes for each celltype
+  counts_per_celltype <- table(top_genes_df$cluster)
+  # Test if all celltypes have the same number of genes if we're not using cases
+  if (case_or_control != "Case") {
+    assertthat::assert_that(all(counts_per_celltype == counts_per_celltype[1]))
+  }
+  return(top_genes_df)
+}
+top_genes <-
+  map(gene_percents, ~ get_top_gene_subset(all_markers, .x))
+```
+
+Save the top 10% for Zam, he's interested in the mircoglia specifically
+
+```{r}
+write_csv(top_genes$ten, here::here("03_data/990_processed_data/007_magma", 
+  paste0("top_10_percent_celltype_markers_", case_or_control, "-", level, ".csv")))
+write_csv(top_genes$five, here::here("03_data/990_processed_data/007_magma", 
+  paste0("top_5_percent_celltype_markers_", case_or_control, "-", level, ".csv")))
+```
+
+```{r}
+#| eval: false
+
+# Look online for list of transition markers and see if they're here or perhaps in their expression?
+trans_endo_mural_markers <- top_genes$ten |> dplyr::filter(cluster == "Trans-Endo-to-mural")
+
+ensembl <- useMart("ensembl", dataset = "hsapiens_gene_ensembl")
+entrez_ids <- getBM(attributes = c('ensembl_gene_id', 'external_gene_name'),
+                    filters = 'ensembl_gene_id',
+                    values = trans_endo_mural_markers$gene,
+                    mart = ensembl)
+# Remove rows with NA Entrez IDs if present
+entrez_ids <- entrez_ids[!is.na(entrez_ids$external_gene_name), ]
+
+# Get unique Ensembl-Entrez pairs by keeping the first occurrence
+entrez_ids <- entrez_ids[!duplicated(entrez_ids$ensembl_gene_id), ]
+
+trans_endo_mural_markers <- trans_endo_mural_markers |>
+  dplyr::left_join(unique(entrez_ids), by = join_by(gene == ensembl_gene_id))
+```
+
+Save the data for LDscore
+
+```{r}
+# Function to extract genes for a given celltype and write them to a file
+write_genes <- function(df, celltype, df_name) {
+  genes <- df$gene[df$cluster == celltype]
+  filename <- here::here("03_data/995_ldsc_inputs/01_celltype_markers",
+                   paste0("ldsc_", celltype, "_", level, "_", subset, "_", 
+                          case_or_control, "_top-", df_name, "-percent.tsv"))
+  writeLines(genes, filename)
+}
+
+# Function to process each dataframe
+process_dataframe <- function(df, df_name) {
+  unique_celltypes <- unique(df$cluster)
+  map(unique_celltypes, ~write_genes(df, .x, df_name))
+}
+
+# Apply the process_dataframe function to each dataframe in the list
+map(names(top_genes), ~process_dataframe(top_genes[[.x]], .x))
+```
+
+### Format data for MAGMA
+
+Now I need to get the actual format for MAGMA.
+It wants a file with no column headers, a row per celltype and space separated entrez gene IDs.
+
+```{r}
+prep_for_magma <- function(df) {
+  # Group by celltype and concatenate the Entrez IDs into a space-separated string
+  formatted_data <- df %>%
+    dplyr::select(cluster, entrezgene_id) |>
+    group_by(cluster) |>
+    summarise(entrez_ids = paste(entrezgene_id, collapse = " "),
+              .groups = 'drop')
+  return(formatted_data)
+}
+
+formatted_data <- map(top_genes, prep_for_magma)
+
+# Write the formatted data to a file with no headers and no row names
+map2(formatted_data, names(formatted_data), ~ readr::write_tsv(.x,
+                 here::here(
+                   "03_data/994_magma_inputs",
+                   paste0("magma_celltypes_", level, "_", subset, "_", 
+                          case_or_control, "_top-", .y, "-percent.magma.txt")
+                 ),
+                 col_names = FALSE))
+```
+
+## DEG genesets
+
+Want to try MAGMA with DEG gene sets separated by up and down
+
+```{r}
+tar_load(translated_id)
+# Read in DEG data for that subset
+res_sig <- readr::read_csv(here::here("03_data/990_processed_data/001_snrnaseq/08_pseudobulk/pseudobulk_ad-vs-control_deseq2_subtype-annotated_no-apoe.csv")) |>
+  na.omit() |>
+  dplyr::filter(padj < 0.05 & !celltype %in% c("ambiguous", "low-feature-cells")) 
+  #dplyr::left_join(celltype_abbrev_df, by = join_by(celltype)) |>
+  #dplyr::mutate(celltypes_abbrev = if_else(is.na(celltypes_abbrev), celltype, celltypes_abbrev))
+
+magma_deg <- res_sig |>
+  dplyr::left_join(translated_id, by = join_by(gene == hgnc_symbol)) |>
+  dplyr::select(celltype, deg_direction, entrezgene_id) |>
+  dplyr::distinct() |>
+  dplyr::summarise(entrez_ids = paste(entrezgene_id, collapse = " "),
+                   .by = c(celltype, deg_direction)) |>
+  dplyr::group_by(deg_direction) |>
+  tidyr::nest()
+
+# Write the formatted data to a file with no headers and no row names
+walk2(magma_deg$data, magma_deg$deg_direction, ~ readr::write_tsv(.x,
+                 here::here(
+                   "03_data/994_magma_inputs",
+                   paste0("magma_celltypes_level2_deg_", .y, ".magma.txt")
+                 ),
+                 col_names = FALSE))
+```
+
+
+## Save sig hits gene sets
+
+Save a line with the gene lists that are significant hits in the level 2 all controls for AD.
+
+```{r}
+if(level == "level2" &
+   subset == "all_controls") {
+  sig_hits <-
+    c("Microglia-activated",
+      "Pericyte-2",
+      "Perivascular-FB-KAZN2")
+  sig_genesets <- map(sig_hits, ~ formatted_data$ten |>
+                        dplyr::filter(cluster == .x)) |>
+    set_names(sig_hits)
+  
+  map2(
+    sig_genesets,
+    names(sig_genesets),
+    ~ readr::write_tsv(
+      .x,
+      here::here(
+        "03_data/994_magma_inputs/sig_genelist",
+        paste0("sig_celltype_", level, "_", subset, "_", case_or_control, "_",
+               .y, ".condition.txt")
+      ),
+      col_names = FALSE
+    )
+  )
+}
+```
+
+# GWAS summary stats
+
+One can search the [Open GWAS Project](https://gwas.mrcieu.ac.uk/) for traits of interest.
+
+```{r}
+#| eval: false
+#### Search for datasets ####
+metagwas <- MungeSumstats::find_sumstats(traits = c("parkinson","alzheimer", "stroke", "schizophrenia", "vascular dementia", "wmh"), 
+                                         min_sample_size = 5000)
+unique(metagwas$trait)
+```
+
+The following takes the IDs of the GWAS data and downloads/formats them, returning a list of the IDs and their relevant formatted summary stats files.
+Note that it saves to `tempdir()` by default, so files will be lost when the R session ends.
+
+```{r}
+#| eval: false
+# There's a fair few, so I'll just get the latest major GWAS for Scz, PD and stroke
+# I'll skip AD and Scz as I've already got those
+ids <- c("ebi-a-GCST006906", "ieu-b-7", "ieu-b-2")
+ids <- c("ubm-b-1437")
+# Get the kunkle et al stats
+ids <- c("ieu-b-2")
+# Check Bellenguez as well - not available....
+#ids <- c("ebi-a-GCST90027158")
+
+datasets <- MungeSumstats::import_sumstats(ids = ids, 
+                                           vcf_download = TRUE, 
+                                           download_method = "axel", 
+                                           nThread = max(2,future::availableCores()-2))
+results_df <- data.frame(id=names(datasets),
+                         path=unlist(datasets))
+results_df
+```
+
+Use `MungeSumstats::format_sumstats` to get rs IDs for the SNPs.
+
+```{r}
+#| eval: false
+MungeSumstats::format_sumstats(here::here("03_data/994_magma_inputs/EADB_release_Feb2020.meta_model_pcs.mac_info_20_GC_OFF.formatted.exc_perc_cases_50.het_5e-8.freq_amp_40.tsv"), ref_genome = "GRCh38", nThread = max(2,future::availableCores()-2))
+```
+
+The latest FTD GWAS might be interesting to check, data can be found [here](https://rdr.ucl.ac.uk/articles/dataset/Genome-wide_analysis_-_Summary_Statistics_of_sporadic_frontotemporal_dementia_cohort/25600692/1)
+
+```{r}
+#| eval: false
+ftd <- data.table::fread(here::here("03_data/994_magma_inputs/ftd_2024_gwas_summary_stats.txt"))
+
+# Function to extract the segment between the second-to-last and last colons
+extract_segment <- function(s) {
+  parts <- unlist(strsplit(s, ":"))
+  return(parts[length(parts) - 1])
+}
+
+# Apply the function to the dataframe
+ftd <- ftd |>
+  dplyr::mutate(A2 = sapply(SNP, extract_segment))
+
+data.table::fwrite(ftd, here::here("03_data/994_magma_inputs/ftd_2024_gwas_summary_stats.a2_added.txt"))
+MungeSumstats::format_sumstats(here::here("03_data/994_magma_inputs/ftd_2024_gwas_summary_stats.a2_added.txt"),
+                               ref_genome = "GRCh37", nThread = max(2,future::availableCores()-2))
+```
+

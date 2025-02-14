@@ -1,0 +1,931 @@
+---
+title: MAGMA - risk results analysis
+execute:
+  eval: true
+#self-contained: true
+---
+
+```{r}
+here::i_am("04_data_analysis/007_magma/20_magma_risk_results_analysis.qmd")
+```
+
+# Load packages
+
+```{r}
+source(here::here("04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"))
+```
+
+# Load data
+
+Some of the files have different numbers of headers, so I'll write a function to figure out how many lines to skip.
+
+```{r}
+#| eval: true
+# List files
+files <- list.files(here::here("03_data/994_magma_inputs/results.bak.2025-01-08"), 
+                    pattern = "*.gsa.out", full.names = TRUE)
+
+# Read data
+parse_magma_set_data <- function(file) {
+  file_lines <- readLines(file)
+  # Get the index of the line judt before the data starts
+  data_starts_index <- grep("^# CONDITIONED_INTERNAL", file_lines)
+  data <- read_table(file, skip = data_starts_index, show_col_types = FALSE)
+  return(data) 
+}
+data <- map(files, parse_magma_set_data)
+
+files_sub <- str_replace(basename(files), "_scz.", "_scz_") |>
+  str_replace("_gene_analysis", "") %>%
+  # Use sub() to remove all characters after the first dot
+  sub("\\..*$", "", .) |>
+  str_replace("magma_celltypes_", "")
+
+process_magma_data <-
+  function(df,
+           filename,
+           celltypes_to_exclude = c("ambiguous", "low-feature-cells")) {
+    df <- df |> dplyr::filter(!VARIABLE %in% celltypes_to_exclude) |>
+      # Add groups and adjusted pvals to data
+      dplyr::mutate(group = filename, p_adj = p.adjust(P, method = "bonferroni"))
+    return(df)
+  }
+df <- map2(data, files_sub, ~ process_magma_data(.x, .y)) |>
+  list_rbind() |>
+  as_tibble()
+df$FULL_NAME <- ifelse(is.na(df$FULL_NAME), df$VARIABLE, df$FULL_NAME)
+df$VARIABLE <- df$FULL_NAME
+magma_heatmap_data <- qs::qread(here::here("05_figures/990_shared_figures/003_final_figures/magma_celltype_heatmap_data.qs"))
+```
+
+```{r}
+#| eval: false
+#| include: false
+df |> dplyr::filter(VARIABLE == "M-Pericyte_sig-magma-sig-genes_stroke_35k10k_controls_vascular_top-five-percent_module1") |> View()
+
+celltype <- sub("([^_]*)_.*", "\\1", df$VARIABLE)
+x <- df[grepl(celltype, df$group),]
+x <- apply(df, 1, function(row) {
+  any(sapply(celltype, function(str) grepl(str, row["group"])))
+})
+```
+
+Remove PPI data
+
+```{r}
+# Get ppi data
+ppi_modules <- dplyr::filter(df, grepl("ppi_", group))
+df <- dplyr::filter(df, !grepl("ppi_", group))
+# check number of sig hits in case/deg results
+df |>
+  dplyr::filter(grepl("_Case_|_deg_", group)) |>
+  dplyr::filter(p_adj < 0.05) |>
+  nrow()
+```
+
+```{r}
+celltype_abbrev_df <- readr::read_tsv(here::here("05_figures/990_shared_figures/003_final_figures/001_data_for_plots/celltype_abbreviations.tsv"))
+df <- df |>
+  dplyr::left_join(celltype_abbrev_df, by = join_by(VARIABLE == celltype)) |>
+  dplyr::mutate(celltype = if_else(is.na(celltypes_abbrev), VARIABLE, celltypes_abbrev)) |>
+  dplyr::mutate(celltype = if_else(celltype == "Perivascular", "Perivascular-M", celltype))
+ppi_modules <- ppi_modules |>
+  dplyr::left_join(celltype_abbrev_df, by = join_by(VARIABLE == celltype)) |>
+  dplyr::mutate(celltype = if_else(is.na(celltypes_abbrev), VARIABLE, celltypes_abbrev)) |>
+  dplyr::mutate(celltype = if_else(celltype == "Perivascular", "Perivascular-M", celltype))
+```
+
+
+```{r}
+# Define the regular expression pattern to match everything between the first and third underscore
+# The pattern is:
+# - [^_]+: Match one or more characters that are not an underscore
+# - _: Match the underscore
+# - ([^_]+_[^_]+): Capture the content after the first underscore and before the third underscore
+pattern <- "^[^_]+_([^_]+_[^_]+)_.*$"
+# Define the regular expression pattern to match everything after the third underscore
+# The pattern is:
+# - (?:[^_]*_){3}: Non-capturing group to skip the first three underscores and their preceding text
+# - (.*)$: Capture everything after the third underscore until the end of the string
+pattern_2 <- "^(?:[^_]*_){4}(.*)$"
+# Regular expression pattern to match the percent of genes used
+pattern_3 <- "top.*?percent"
+
+# Remove the logfc part of the string
+string <- str_replace(df$group, "logfc_threshold_", "") |>
+  str_replace("EUROPEUKBB", "Bellenguez_2022") |>
+  str_replace("AD_", "Kunkle_2019_")
+# Use sub to replace the entire string with the captured group
+df$input_gene_list <- sub(pattern, "\\1", string)
+df$gwas_background <- sub(pattern_2, "\\1", string)
+df$input_filter <- ifelse(grepl("logfc_threshold_", df$group), "logfc_filter", "no_filter")
+df$celltype_level <- ifelse(grepl("level1", df$group), "level1", "level2")
+df$percent <- ifelse(grepl("top-", df$group), regmatches(string, regexpr(pattern_3, string)), NA)
+
+#df$gwas_disease <- ifelse(grepl("scz_", df$gwas_background), "SCZ", "AD")
+```
+
+Remove runs with no APOE and no window
+
+```{r}
+df <- df |>
+  dplyr::filter(!grepl("noAPOE", group)) |>
+  dplyr::filter(!grepl("nowindow", group)) |>
+  # some duplicates got in - should probably check where from, likely old runs 
+  # with different names
+  dplyr::filter(!grepl("celltypes_", group))
+```
+
+```{r}
+#| eval: false
+#| include: false
+# So adjust pval per input list instead
+df <- df |>
+  dplyr::group_by(input_gene_list, celltype_level, input_filter) |>
+  dplyr::mutate(p_adj = p.adjust(P, method = "bonferroni")) |>
+  dplyr::ungroup()
+# Doing this seems to lose pretty much all significance...
+```
+
+Get a table of significant associations
+
+```{r}
+df |>
+  dplyr::filter(p_adj < 0.05) |>
+  dplyr::select(-c(TYPE, FULL_NAME, group)) |>
+  DT::datatable()
+```
+
+# Heatmaps
+
+I have level 1 and level 2 celltypes, and I have a "standard" and more strict filtering on the input celltype markers, so I'll probably make a heatmap for each.
+
+```{r}
+# Transform the p-values to -log10(p-value) to enhance the visualization of small p-values
+df$log_p <- -log10(df$p_adj)
+df$log_p_nominal <- -log10(df$P)
+
+# Cut unneeded parts of group string
+df$group <- str_replace(df$group, "level1_", "")
+df$group <- str_replace(df$group, "level2_", "")
+df$group <- str_replace(df$group, "logfc_threshold_", "")
+df$group <- str_replace(df$group, "top.*?percent_", "") |>
+  str_replace("EUROPEUKBB", "Bellenguez_2022") |>
+  str_replace("AD_", "Kunkle_2019_")
+
+# Nest data on broad groups
+df_nest <- df |> 
+  dplyr::arrange(gwas_background) |>
+  dplyr::group_by(celltype_level, percent) |>
+  tidyr::nest()
+
+get_heatmap_data <- function(df, nominal_p = FALSE) {
+  # Prepare the data for the heatmap
+  if(nominal_p) {
+  heatmap_data <- df |>
+    dplyr::select(celltype, log_p_nominal, group) |>
+    pivot_wider(names_from = celltype, values_from = log_p_nominal) |>
+    as.data.frame()
+  } else {
+  heatmap_data <- df |>
+    dplyr::select(celltype, log_p, group) |>
+    pivot_wider(names_from = celltype, values_from = log_p) |>
+    as.data.frame()
+  }
+  
+  rownames(heatmap_data) <- heatmap_data$group
+  # Remove the first column if it contains row names (cell types)
+  heatmap_data <- heatmap_data[, -1]
+  heatmap <- t(heatmap_data)
+  # Replace any NAs with 0
+  #heatmap[is.na(heatmap)] <- 0
+  return(heatmap)
+}
+heatmap_data <- map(df_nest$data, get_heatmap_data) |>
+  set_names(paste0(df_nest$celltype_level, "_", df_nest$percent))
+```
+
+```{r}
+#| eval: false
+#| include: false
+# Create the heatmap
+pheatmap(heatmap_data$`level1_EUROPEUKBB_35k10k_top-five-percent`, cluster_rows = TRUE, cluster_cols = TRUE, 
+         annotation_colors = RColorBrewer::brewer.pal(n = 7, name = "Reds"))
+```
+
+The T-cell results are interesting.
+There're 903 T-cells in the controls (level 1) and 496 `T-cell-mixed`, 326 `T-cell-vascular`, 63 `T-cellparenchymal-1` and 18 `T-cell-parenchymal-2`.
+
+```{r}
+make_heatmap <- function(heatmap_data, plot_title) {
+  # Define significance thresholds
+  sig_threshold1 <- -log10(0.05) # Corresponds to p < 0.05
+  sig_threshold2 <- -log10(0.01) # Corresponds to p < 0.01
+  sig_threshold3 <- -log10(0.001) # Corresponds to p < 0.001
+  
+  # Create an annotation matrix with the same dimensions as 'heatmap'
+  annotation_matrix <-
+    matrix(
+      "",
+      nrow = nrow(heatmap_data),
+      ncol = ncol(heatmap_data)
+    )
+  
+  # Populate the annotation matrix with '*', '**', or '***' based on significance levels
+  annotation_matrix[heatmap_data > sig_threshold3] <-
+    "***"
+  annotation_matrix[heatmap_data > sig_threshold2 &
+                      heatmap_data <= sig_threshold3] <- "**"
+  annotation_matrix[heatmap_data > sig_threshold1 &
+                      heatmap_data <= sig_threshold2] <- "*"
+  
+  # Define a color palette for the heatmap
+  color_palette <- colorRampPalette(c("blue", "white", "red"))(100)
+  
+  # Create the heatmap with customizations
+  plot <- Heatmap(
+    heatmap_data,
+    name = "-log10(p-value)",
+    col = color_palette,
+    # Use the defined color palette
+    cell_fun = function(j, i, x, y, width, height, fill) {
+      if (annotation_matrix[i, j] != "") {
+        grid.text(annotation_matrix[i, j], x, y, gp = gpar(col = "black", fontsize = 10))
+      }
+    },
+    # Adjust the clustering method if necessary
+    cluster_rows = FALSE,
+    cluster_columns = FALSE,
+    # Show row and column names
+    show_row_names = TRUE,
+    show_column_names = TRUE,
+    # Adjust the size of row and column names
+    row_names_gp = gpar(fontsize = 10),
+    #column_names_rot = 45,
+    column_names_gp = gpar(fontsize = 8),
+    column_names_max_height = max_text_height(colnames(heatmap_data),
+                                              gp = gpar(fontsize = 500)),
+    column_title = plot_title
+    # Add a border around the cells
+    #border_color = "grey50",
+    # Additional options like margins
+    #bottom_annotation_height = unit(2, "cm"),
+    #left_annotation_width = unit(2, "cm")
+  )
+  
+  return(plot)
+  
+}
+
+# Get heatmaps
+heatmaps <-
+  map2(heatmap_data,
+       substr(
+         names(heatmap_data),
+         start = 8,
+         stop = nchar(names(heatmap_data))
+       ),
+       make_heatmap)
+# Print them
+level1_hmap_list <- heatmaps$`level1_top-one-percent` + heatmaps$`level1_top-five-percent` + heatmaps$`level1_top-ten-percent`
+level2_hmap_list <- heatmaps$`level2_top-one-percent` + heatmaps$`level2_top-five-percent` + heatmaps$`level2_top-ten-percent`
+level1_hmap_list
+level2_hmap_list
+
+# Save them to files
+save_heatmaps <- function(heatmap, file_name) {
+  # Construct the full file path
+  file_path <- here::here("05_figures", "990_shared_figures", "001_magma", 
+                          paste0("magma_heatmap_", file_name, ".png"))
+  
+  # Save the heatmap to a file
+  png(file_path, height = 1200, width = 1000)
+  #svg(file_path, height = 15)
+  print(heatmap)
+  dev.off()
+}
+map2(heatmaps, names(heatmaps), ~ save_heatmaps(.x, .y))
+
+# Open a graphics device to save the image (e.g., PNG format)
+png(here::here("05_figures", "990_shared_figures", "001_magma", 
+               "magma_heatmap_level1.png"), width = 22, height = 10, 
+    units = 'in', res = 300)
+# Draw concatenated heatmaps
+draw(level1_hmap_list)
+# Close the graphics device to save the image
+dev.off()
+# Open a graphics device to save the image (e.g., PNG format)
+png(here::here("05_figures", "990_shared_figures", "001_magma", 
+               "magma_heatmap_level2.png"), width = 24, height = 10, 
+    units = 'in', res = 300)
+# Draw concatenated heatmaps
+draw(level2_hmap_list)
+# Close the graphics device to save the image
+dev.off()
+```
+
+```{r}
+# Remove scz data to make plot simpler
+heatmap_data_no_scz <- map(heatmap_data, ~ .x[, !grepl("_scz_", colnames(.x))])
+# Remove top 1 percents
+heatmap_data_no_scz <- heatmap_data_no_scz[!grepl("top-one-percent", names(heatmap_data_no_scz))]
+
+heatmaps <-
+  map2(heatmap_data_no_scz,
+       substr(
+         names(heatmap_data_no_scz),
+         start = 8,
+         stop = nchar(names(heatmap_data_no_scz))
+       ),
+       make_heatmap)
+# Print them
+level1_hmap_list <- heatmaps$`level1_top-five-percent` + heatmaps$`level1_top-ten-percent`
+level2_hmap_list <- heatmaps$`level2_top-five-percent` + heatmaps$`level2_top-ten-percent`
+level1_hmap_list
+level2_hmap_list
+
+
+# Open a graphics device to save the image (e.g., PNG format)
+png(here::here("05_figures", "990_shared_figures", "001_magma", 
+               "magma_heatmap_level1_no_scz.png"), width = 18, height = 10, 
+    units = 'in', res = 300)
+# Draw concatenated heatmaps
+draw(level1_hmap_list)
+# Close the graphics device to save the image
+dev.off()
+# Open a graphics device to save the image (e.g., PNG format)
+png(here::here("05_figures", "990_shared_figures", "001_magma", 
+               "magma_heatmap_level2_no_scz.png"), width = 20, height = 10, 
+    units = 'in', res = 300)
+# Draw concatenated heatmaps
+draw(level2_hmap_list)
+# Close the graphics device to save the image
+dev.off()
+```
+
+```{r}
+subset_column <- heatmap_data_no_scz$`level2_top-ten-percent`[, grepl("_Case_|Bellenguez_2022_35k10k", colnames(heatmap_data_no_scz$`level2_top-ten-percent`))]
+
+heatmap_case <- make_heatmap(subset_column, "")
+# Print them
+heatmap_case
+# Subset just to the bellegnuez full gwas results
+subset_column <- subset_column[, grepl("Bellenguez_2022_35k10k", colnames(subset_column))]
+subset_column <- subset_column[, grepl("all_controls", colnames(subset_column))]
+heatmap_case <- make_heatmap(subset_column, "")
+heatmap_case
+png(here::here("05_figures", "990_shared_figures", "001_magma", 
+               "magma_heatmap_level2_case.png"), width = 6, height = 10, 
+    units = 'in', res = 300)
+draw(heatmap_case)
+dev.off()
+```
+
+```{r}
+subset_column <- heatmap_data_no_scz$`level1_top-ten-percent`[, grepl("_Case_|Bellenguez_2022_35k10k", colnames(heatmap_data_no_scz$`level1_top-ten-percent`))]
+
+heatmap_case <- make_heatmap(subset_column, "")
+# Print them
+heatmap_case
+# Subset just to the bellegnuez full gwas results
+subset_column <- subset_column[, grepl("Bellenguez_2022_35k10k", colnames(subset_column))]
+subset_column <- subset_column[, grepl("all_controls", colnames(subset_column))]
+heatmap_case <- make_heatmap(subset_column, "")
+heatmap_case
+png(here::here("05_figures", "990_shared_figures", "001_magma", 
+               "magma_heatmap_level1_case.png"), width = 6, height = 10, 
+    units = 'in', res = 300)
+draw(heatmap_case)
+dev.off()
+```
+
+```{r}
+heatmap_data_nom <- get_heatmap_data(df_nest$data[[7]], nominal_p = TRUE)
+heatmap_deg_nom <- make_heatmap(heatmap_data_nom, "")
+heatmap_deg_nom
+```
+
+## Subset to risk of interest
+
+The Bellenguez all controls are the risk hits of interest for the paper, subset to just that
+
+```{r}
+subset_column <- heatmap_data_no_scz$`level2_top-ten-percent`[, "all_controls_Control_Bellenguez_2022_35k10k", drop = FALSE]
+colnames(subset_column) <- "Bellenguez_2022"
+subset_column <- subset_column[rownames(subset_column) != "EndoMT", , 
+                               drop = FALSE]
+head(subset_column)
+
+# add nominal pval
+subset_column_nom <- heatmap_data_nom[, "all_controls_Control_Bellenguez_2022_35k10k", drop = FALSE]
+colnames(subset_column_nom) <- "Bellenguez_2022"
+subset_column_nom <- subset_column_nom[rownames(subset_column_nom) != "EndoMT", , 
+                               drop = FALSE]
+head(subset_column_nom)
+
+heatmap_for_paper <- make_heatmap(subset_column, "")
+heatmap_for_paper
+heatmap_for_paper <- make_heatmap(subset_column_nom, "")
+heatmap_for_paper
+
+qs::qsave(subset_column, here::here("05_figures/990_shared_figures/003_final_figures/magma_celltype_heatmap_data_endomt_subtypes.qs"))
+qs::qsave(subset_column_nom, here::here("05_figures/990_shared_figures/003_final_figures/magma_celltype_heatmap_data_endomt_subtypes_nominal.qs"))
+```
+
+```{r}
+heatmap_data_nom <- map(df_nest$data, get_heatmap_data, nominal_p = TRUE) |>
+  set_names(paste0(df_nest$celltype_level, "_", df_nest$percent))
+# Remove scz data to make plot simpler
+heatmap_data_no_scz <- map(heatmap_data_nom, ~ .x[, !grepl("_scz_", colnames(.x))])
+# Remove top 1 percents
+heatmap_data_no_scz <- heatmap_data_no_scz[!grepl("top-one-percent", names(heatmap_data_no_scz))]
+
+heatmaps <-
+  map2(heatmap_data_no_scz,
+       substr(
+         names(heatmap_data_no_scz),
+         start = 8,
+         stop = nchar(names(heatmap_data_no_scz))
+       ),
+       make_heatmap)
+# Print them
+level1_hmap_list <- heatmaps$`level1_top-five-percent` + heatmaps$`level1_top-ten-percent`
+level2_hmap_list <- heatmaps$`level2_top-five-percent` + heatmaps$`level2_top-ten-percent`
+level1_hmap_list
+level2_hmap_list
+
+# Open a graphics device to save the image (e.g., PNG format)
+png(here::here("05_figures", "990_shared_figures", "001_magma", 
+               "magma_heatmap_level1_no_scz_nominal.png"), width = 18, height = 10, 
+    units = 'in', res = 300)
+# Draw concatenated heatmaps
+draw(level1_hmap_list)
+# Close the graphics device to save the image
+dev.off()
+# Open a graphics device to save the image (e.g., PNG format)
+png(here::here("05_figures", "990_shared_figures", "001_magma", 
+               "magma_heatmap_level2_no_scz_nominal.png"), width = 20, height = 10, 
+    units = 'in', res = 300)
+# Draw concatenated heatmaps
+draw(level2_hmap_list)
+# Close the graphics device to save the image
+dev.off()
+```
+
+## Vertical heatmap for paper
+
+```{r}
+make_heatmap_v <- function(heatmap_data, level) {
+  # Define significance thresholds
+  sig_threshold1 <- -log10(0.05) # Corresponds to p < 0.05
+  sig_threshold2 <- -log10(0.01) # Corresponds to p < 0.01
+  sig_threshold3 <- -log10(0.001) # Corresponds to p < 0.001
+  
+  # Create an annotation matrix with the same dimensions as 'heatmap'
+  annotation_matrix <-
+    matrix(
+      "",
+      nrow = nrow(heatmap_data),
+      ncol = ncol(heatmap_data)
+    )
+  
+  # Populate the annotation matrix with '*', '**', or '***' based on significance levels
+  annotation_matrix[heatmap_data > sig_threshold3] <-
+    "***"
+  annotation_matrix[heatmap_data > sig_threshold2 &
+                      heatmap_data <= sig_threshold3] <- "**"
+  annotation_matrix[heatmap_data > sig_threshold1 &
+                      heatmap_data <= sig_threshold2] <- "*"
+  
+  # Define a color palette for the heatmap
+  #color_palette <- colorRampPalette(c("blue", "white", "red"))(100)
+  
+  # Create the heatmap with customizations
+  plot <- Heatmap(
+    heatmap_data,
+    name = "-log10(p-value)",
+    #col = color_palette,
+    # Use the defined color palette
+    cell_fun = function(j, i, x, y, width, height, fill) {
+      if (annotation_matrix[i, j] != "") {
+        grid.text(annotation_matrix[i, j], x, y, gp = gpar(col = "black", fontsize = 10))
+      }
+    },
+    # Adjust the clustering method if necessary
+    cluster_rows = FALSE,
+    cluster_columns = TRUE,
+    # Show row and column names
+    show_row_names = TRUE,
+    show_column_names = TRUE,
+    # Adjust the size of row and column names
+    row_names_gp = gpar(fontsize = 10),
+    #column_names_rot = 45,
+    column_names_gp = gpar(fontsize = 8),
+    column_names_max_height = max_text_height(colnames(heatmap_data),
+                                              gp = gpar(fontsize = 500)),
+    row_title = level
+    # Add a border around the cells
+    #border_color = "grey50",
+    # Additional options like margins
+    #bottom_annotation_height = unit(2, "cm"),
+    #left_annotation_width = unit(2, "cm")
+  )
+  
+  return(plot)
+  
+}
+
+# Get heatmaps
+heatmap_data_no_filter <- heatmap_data[c("level1_top-ten-percent", "level2_top-ten-percent")]
+heatmaps_to_join <- map2(heatmap_data_no_filter, c("Level 1", "Level 2"), make_heatmap_v)
+# Print them
+heatmaps_to_join
+```
+
+```{r}
+#| eval: false
+# Open a graphics device to save the image (e.g., PNG format)
+png(here::here("05_figures", "990_shared_figures", "001_magma", 
+               "magma_heatmap_level1_and_2.png"), width = 8, height = 10, 
+    units = 'in', res = 300)
+
+# Combine heatmaps side-by-side and draw them
+hlist <- heatmaps_to_join$`level1_top-ten-percent` %v% heatmaps_to_join$`level2_top-ten-percent`
+heatmaps_to_join$
+draw(hlist)
+
+# Close the graphics device to save the image
+dev.off()
+```
+
+# PPI modules
+
+```{r}
+ppi_modules$log_p <- -log10(ppi_modules$p_adj)
+ppi_modules <- ppi_modules |> 
+  dplyr::mutate(type = case_when(
+    grepl("pseudobulk", FULL_NAME) ~ "pseudobulk",
+    grepl("sig_magma_sig_genes", group) ~ "sig_magma_sig_genes",
+    .default = NA
+  ))
+# remove noapoe and nowindow
+ppi_modules <- ppi_modules |>
+  dplyr::filter(!grepl("noAPOE", group)) |>
+  dplyr::filter(!grepl("nowindow", group))
+
+ppi_pseudobulk <- dplyr::filter(ppi_modules, type == "pseudobulk")
+# Remove first part of string
+string <- str_replace(ppi_pseudobulk$group, "ppi_sig_modules_", "")
+# Get the gwas background
+ppi_pseudobulk$gwas_background <- sub(".*pseudobulk_(.*)", "\\1", string)
+ppi_pseudobulk$group <- ppi_pseudobulk$gwas_background
+
+heatmap_data <- get_heatmap_data(ppi_pseudobulk)
+```
+
+Not much is significant in the adjusted pvalues...
+I'll try the nominal ones as well.
+
+```{r}
+# Get heatmaps
+ppi_heatmap <- make_heatmap(heatmap_data, "PPI modules - p_adj")
+```
+
+```{r}
+ppi_pseudobulk$log_p <- -log10(ppi_pseudobulk$P)
+heatmap_data <- get_heatmap_data(ppi_pseudobulk)
+ppi_heatmap_noadj <- make_heatmap(heatmap_data, "PPI modules - p_nominal")
+ppi_heatmap_noadj
+joined_plot <- ppi_heatmap + ppi_heatmap_noadj
+joined_plot
+# Open a graphics device to save the image (e.g., PNG format)
+png(here::here("05_figures", "990_shared_figures", "001_magma", 
+               "ppi_magma_heatmap.png"), width = 8, height = 12, units = 'in', 
+    res = 300)
+# Draw concatenated heatmaps
+draw(joined_plot)
+# Close the graphics device to save the image
+dev.off()
+```
+
+## MAGMA gene pvals
+
+```{r}
+ppi_magma <- dplyr::filter(ppi_modules, type == "sig_magma_sig_genes")
+
+# Remove first part of string
+string <- str_replace(ppi_magma$group, "ppi_sig_modules_", "") |>
+  str_replace("EUROPEUKBB", "AD")
+# Get the gwas background
+ppi_magma$gwas_background <- sub(".*sig_magma_sig_genes_(.*)", "\\1", string)
+ppi_magma$percent <- sub(".*(top-.*-percent).*", "\\1", ppi_magma$FULL_NAME)
+ppi_magma$input_gene_list <- sub("^([^_]*_){4}(.*)_top-.*$", "\\2", ppi_magma$FULL_NAME)
+
+# get unique rows
+ppi_magma <- dplyr::distinct(ppi_magma)
+
+# remove rows where the variable doesn't match the group, not sure where these rows are coming from...
+celltype <- sub("([^_]*)_.*", "\\1", ppi_magma$VARIABLE)
+ppi_magma <- ppi_magma[mapply(grepl, celltype, ppi_magma$group),]
+
+ppi_magma$group_no_module <- sub("^(.*)_[^_]*$", "\\1", ppi_magma$VARIABLE)
+ppi_magma$group <- paste0(ppi_magma$gwas_background)
+ppi_magma$VARIABLE <- str_remove(ppi_magma$VARIABLE, "sig-magma-sig-genes_") |>
+  # remove everything between the 3 and 6th _
+  str_replace("(^[^_]*_[^_]*_[^_]*)_[^_]*_[^_]*_[^_]*(_)", "\\1\\2") |>
+  str_replace("EUROPEUKBB", "AD")
+ppi_magma$celltype <- str_extract(ppi_magma$VARIABLE, "^[^_]*")
+ppi_magma$module <- sub(".*_", "", ppi_magma$VARIABLE)
+ppi_magma$celltype_module <- paste0(ppi_magma$celltype, "_", ppi_magma$module)
+
+```
+
+```{r}
+module_labels <- readr::read_csv(
+  here::here(
+    "03_data/990_processed_data/001_snrnaseq/12_protein_protein_interactions",
+    "ppi_magma_sig_genes_module_labels.csv"
+  )
+)
+module_labels$module_function <-
+  str_extract(module_labels$module_label, "^[^-]*")
+module_labels$module <- sub(".*-", "", module_labels$module_label)
+module_labels$celltype_module <-
+  paste0(module_labels$celltype, "_", module_labels$module)
+module_labels$percent <- "top-ten-percent"
+
+# Add the module labels
+# ppi_magma <-
+#   dplyr::left_join(ppi_magma,
+#             module_labels,
+#             by = join_by(celltype, module, celltype_module, percent, input_gene_list == fraction))
+```
+
+```{r}
+# Nest data on broad groups
+df_nest <- ppi_magma |> 
+  dplyr::filter(percent == "top-ten-percent") |>
+  dplyr::arrange(gwas_background) |>
+  dplyr::group_by(celltype, input_gene_list) |>
+  tidyr::nest()
+```
+
+
+```{r}
+#| eval: false
+#| include: true
+# Without the filter above, there's these odd mismatches between the 
+# VARIABLE and group columns for the magma gene data...
+grepl("Perivascular-FB-KAZN2", ppi_magma$group[which(ppi_magma$VARIABLE == "Perivascular-FB-KAZN2_sig-magma-sig-genes_EUROPEUKBB_35k10k_all_controls_top-five-percent_module1")])
+```
+
+```{r}
+#| eval: false
+heatmap_data <- map(df_nest$data, get_heatmap_data) |>
+  set_names(paste0(df_nest$celltype, "_", df_nest$input_gene_list))
+
+ppi_heatmap <-
+  map2(heatmap_data,
+       str_remove(
+         names(heatmap_data),
+         "_top-.*"),
+       make_heatmap_v)
+```
+
+```{r}
+#| eval: false
+joined_plot_top10 <- ppi_heatmap$`all_controls_top-ten-percent` %v% ppi_heatmap$`controls_vascular_top-ten-percent` %v% ppi_heatmap$`controls_parenchymal_top-ten-percent`
+joined_plot_top10
+joined_plot_top5 <- ppi_heatmap$`all_controls_top-five-percent` %v% ppi_heatmap$`controls_vascular_top-five-percent` %v% ppi_heatmap$`controls_parenchymal_top-five-percent`
+joined_plot_top5
+# Open a graphics device to save the image (e.g., PNG format)
+png(here::here("05_figures", "990_shared_figures", "001_magma", 
+               "magma_heatmap_ppi_magma_sig_genes_top5.png"), width = 18, 
+    height = 10, units = 'in', res = 300)
+# Draw concatenated heatmaps
+draw(joined_plot_top5)
+# Close the graphics device to save the image
+dev.off()
+# Open a graphics device to save the image (e.g., PNG format)
+png(here::here("05_figures", "990_shared_figures", "001_magma", 
+               "magma_heatmap_ppi_magma_sig_genes_top10.png"), width = 18, 
+    height = 10, units = 'in', res = 300)
+# Draw concatenated heatmaps
+draw(joined_plot_top10)
+# Close the graphics device to save the image
+dev.off()
+```
+
+# MAGMA genes
+
+MAGMA also gives gene level data - let's look at the genes driving the significant celltypes.
+I'll focus on the level 2s for now.
+
+These files have a funny format, they're broken up into gene set sections, so there's a need to parse the first three header lines of each section and read in the subsequent data.
+
+Note that the files I'm using as input here are already subset to significant gene sets after multiple testing by MAGMA itself.
+
+```{r}
+# List files
+files <- list.files(
+  here::here("03_data/994_magma_inputs/results"),
+  pattern = "*.sets.genes.out",
+  full.names = TRUE
+)
+
+# Remove PPI files
+files <- files[!grepl("ppi_", files)]
+
+read_magma_gene_data <- function(file) {
+  lines <- readLines(file)
+  
+  set_start_indices <- grep("^# _SET.*VARIABLE", lines)
+  set_end_indices <- c(which(lines == "")[-1], length(lines))
+  
+  # Define a function to parse a single section
+  parse_section <- function(start_idx, end_idx) {
+    header_lines <- lines[start_idx:(start_idx + 2)]
+    set_name <-
+      sub(".*=\\s*(.*?)\\s*\\(set\\).*", "\\1", header_lines[1])
+    num_genes <-
+      as.numeric(sub(".*=\\s*(\\d+).*", "\\1", header_lines[2]))
+    p_value <-
+      as.numeric(sub(".*P-VALUE =\\s*([0-9.]+).*", "\\1", header_lines[3]))
+    
+    gene_data <- lines[(start_idx + 3):end_idx]
+    set_df <-
+      read.table(
+        text = gene_data,
+        header = TRUE,
+        sep = "",
+        quote = "",
+        comment.char = ""
+      ) |>
+      dplyr::mutate(padj = p.adjust(P, method = "bonferroni"))
+    #set_df <- read_table(file = gene_data)
+    
+    set_df$SetName <- set_name
+    set_df$NumGenes <- num_genes
+    set_df$SetPValue <- p_value
+    
+    # Make column names match
+    names(set_df)[1] <- "gene_set"
+    # Make sure chr is a character to account for "X"/"Y"
+    set_df$CHR <- as.character(set_df$CHR)
+    
+    return(set_df)
+  }
+  
+  # Use mapply to apply the function to each set of start and end indices
+  sets_list <-
+    mapply(
+      parse_section,
+      start_idx = set_start_indices,
+      end_idx = set_end_indices,
+      SIMPLIFY = FALSE
+    ) |>
+    list_rbind()
+  return(sets_list)
+}
+
+df <- map(files, read_magma_gene_data)
+
+assertthat::are_equal(sum(map_dbl(df, nrow) == 0), 0)
+groups <- str_replace(basename(files), "_scz.", "_scz_") |>
+  str_replace("_gene_analysis", "") %>%
+  sub("\\..*$", "", .) |>
+  str_replace("magma_celltypes_", "")
+
+df <- map2(df, groups, ~ .x |>
+       dplyr::mutate(group = .y)) |>
+  list_rbind()
+
+# Remove the logfc part of the string
+string <- str_replace(df$group, "logfc_threshold_", "") |>
+  str_replace("level2_celltypes_", "")
+# Use sub to replace the entire string with the captured group
+df$input_gene_list <- sub(pattern, "\\1", string)
+df$gwas_background <- sub(pattern_2, "\\1", string)
+df$input_filter <- ifelse(grepl("logfc_threshold_", df$group), "logfc_filter", "no_filter")
+df$celltype_level <- ifelse(grepl("level1", df$group), "level1", "level2")
+df$percent <- ifelse(grepl("top-", df$group), regmatches(string, regexpr(pattern_3, string)), NA)
+```
+
+```{r}
+# filter out scz no window and no APOE
+df <- df |>
+  dplyr::filter(!grepl("scz_|nowindow|noAPOE", gwas_background))
+
+tar_load(translated_id)
+
+# Get unique Ensembl-Entrez pairs by keeping the first occurrence
+entrez_ids <- translated_id |>
+  dplyr::filter(!is.na(entrezgene_id)) |>
+  dplyr::filter(!duplicated(ensembl_gene_id))
+
+df <- df |>
+  dplyr::left_join(translated_id, by = c("GENE" = "entrezgene_id"), multiple = "any") 
+
+assertthat::assert_that(sum(is.na(df$hgnc_symbol)) == 0)
+```
+
+```{r}
+# Save list for PPI and mouse phenotype analysis
+readr::write_tsv(df, here::here("03_data/994_magma_inputs/results/sig_celltype_sig_genes.tsv"))
+```
+
+Want to check that sig hits for AD are independent of the Microglia activated gene sets in particular.
+
+```{r}
+ad_level2 <- df |>
+  dplyr::filter(celltype_level == "level2" & gwas_background == "EUROPEUKBB_35k10k" & percent == "top-ten-percent" & input_gene_list == "all_controls")
+table(ad_level2$SetName)
+
+# Get the gene and Zscores columns per gene set
+gene_zscores <- ad_level2 |>
+  dplyr::filter(padj < 0.05) |>
+  dplyr::select(GENE, ZSTAT, SetName) |>
+  dplyr::group_by(SetName) |>
+  tidyr::nest()
+
+# Check number of genes in common quickly
+sum(gene_zscores$data[[1]]$GENE %in% gene_zscores$data[[2]]$GENE)
+# So there is some overlap
+# Save data for conditional
+map2(gene_zscores$SetName, gene_zscores$data, ~ readr::write_tsv(.y, here::here("03_data/994_magma_inputs/gene_covars", paste0(.x, "_gene-covar.txt"))))
+```
+
+```{r}
+readr::write_tsv(ad_level2, here::here("03_data/994_magma_inputs/sig_genelist", "all_sig_magma_set_genes.tsv"))
+```
+
+```{r}
+# Get the number of times each gene appears in a group
+gene_counts <- ad_level2 %>%
+  group_by(GENE) %>%
+  summarize(count = n_distinct(SetName))
+unique_genes <- gene_counts |>
+  dplyr::filter(count == 1)
+unique_genes <- ad_level2 |>
+  semi_join(unique_genes, by = "GENE")
+
+```
+
+- fix code block
+```{r}
+unique_genes <- unique_genes |>
+  dplyr::left_join(mapped_genes, by = c("GENE" = "entrezgene_id")) |>
+  dplyr::mutate(ensembl_gene_id = ifelse(is.na(ensembl_gene_id.x), 
+                                         ensembl_gene_id.y, ensembl_gene_id.x), 
+                hgnc_symbol = ifelse(is.na(hgnc_symbol.x), hgnc_symbol.y, 
+                                     hgnc_symbol.x)) |>
+  dplyr::select(!c(hgnc_symbol.y, hgnc_symbol.x, ensembl_gene_id.x, 
+                   ensembl_gene_id.y))
+
+readr::write_tsv(unique_genes, 
+                 here::here("03_data/994_magma_inputs/sig_genelist", "unique_sig_magma_set_genes.tsv"))
+```
+
+# Conditional anlaysis
+
+We want to be sure that the sig hits we get are not being driven by the same genes
+
+```{r}
+files <- list.files(
+  here::here("03_data/994_magma_inputs/sig_genelist/results/"),
+  pattern = "*.gsa.out",
+  full.names = TRUE
+)
+
+# Read data
+parse_magma_set_data <- function(file) {
+  file_lines <- readLines(file)
+  # Get the index of the line judt before the data starts
+  data_starts_index <- grep("^# CONDITIONED_VARIABLES", file_lines)
+  condition <- str_extract(file_lines[data_starts_index], "(?<=# CONDITIONED_VARIABLES = ).*?(?= )")
+  data <- read_table(file, skip = data_starts_index, show_col_types = FALSE) |>
+    dplyr::mutate(condition = condition)
+  return(data) 
+}
+data <- map(files, parse_magma_set_data) |>
+  list_rbind()
+
+# filter to conditioned celltypes
+df <- data |>
+  dplyr::filter(VARIABLE %in% unique(condition) & VARIABLE != condition) |>
+  dplyr::group_by(condition) |>
+  dplyr::mutate(padj = p.adjust(P,method = "bonferroni")) |>
+  dplyr::select(!c(TYPE, FULL_NAME)) |>
+  dplyr::filter(padj < 0.05)
+
+gt::gt(df)
+readr::write_tsv(df, here::here("03_data/994_magma_inputs/sig_genelist/conditional_adjusted_pvals.tsv"))
+# nothing is sig after correction with all celltypes it seems
+data |>
+  dplyr::filter(VARIABLE != condition) |>
+  dplyr::group_by(condition) |>
+  dplyr::mutate(padj = p.adjust(P,method = "bonferroni")) |>
+  dplyr::filter(padj < 0.05)
+```
+
+All the sig hits are still significant after conditioning on each others gene sets and adjusting the pval
