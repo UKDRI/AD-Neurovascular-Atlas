@@ -2,7 +2,6 @@
 title: Protein-protein interactions
 execute:
   eval: true
-#self-contained: true
 ---
 
 ```{r}
@@ -134,8 +133,6 @@ res_sig <- res |>
 x = res_sig |>
   dplyr::filter(apoe_included ==  "no_apoe")
 table(x$celltype)
-
-#write_csv(res_sig, here::here("initial_pseudobulk_sig_genes.csv"))
 
 # Assert that there are no NAs in ensembl IDs
 assertthat::are_equal(nrow(dplyr::filter(res_sig, is.na(ensembl))), 0)
@@ -311,13 +308,6 @@ use_known_interactions_only = TRUE
 ```{r}
 # # # SELECT YOUR NETWORK FILE # # # 
 # Merged protein protein interactions.
-# my_network <- read_graph(file = here::here("03_data/993_protein_protein_interaction_data/2023May_MergedPPI_.txt"), 
-#                          format = "ncol")
-# For some reason updating igraph has resulted in read.graph being deprecated 
-# in favour for read_graph, but this is throwing an error
-# Read the file into a dataframe
-# ppi_data <- read.table(here::here("03_data/993_protein_protein_interaction_data/MergedPPI_2024Feb_PIO_STRING.txt"), 
-#                        header = FALSE, as.is = TRUE)
 if(use_known_interactions_only) {
 ppi_data <- read.table(here::here("03_data/993_protein_protein_interaction_data/MergedPPI_2024Feb.txt"), 
                        header = FALSE, as.is = TRUE)
@@ -347,29 +337,6 @@ Could want to run against multiple backgrounds in future, but I'll just use the 
 background_population <- unique(res$ensembl)
 background_population <- list("full_background" = background_population)
 ```
-
-```{r}
-#| eval: false
-# Path to background populations
-bg_pop <-
-  list.files(
-    path = here::here("03_data/993_protein_protein_interaction_data/"),
-    full.names = TRUE,
-    pattern = "Background"
-  ) 
-
-# # #  INPUT YOUR BACKGROUND population # # # 
-# All protein coding genes for example
-background_population <- map(bg_pop, ~ read.table(file = .x, 
-                                    sep = "\t", header = FALSE, 
-                                    stringsAsFactors = FALSE)) |>
-  purrr::set_names(basename(bg_pop))
-
-# if(length(background_population) == 1){
-#   background_population <- background_population[[1]]
-# }
-```
-
 
 ```{r}
 # # #  INPUT gene attributes  # # # 
@@ -753,7 +720,6 @@ plot_network_ggraph <- function(group, module_df, overall_network = my_network,
   require(tidygraph)
   
   df <- module_df |>
-    #dplyr::filter(grepl(group, label)) |>
     dplyr::filter(label == group) |>
     dplyr::group_by(module) |>
     dplyr::mutate(genes_in_module = n()) |>
@@ -761,7 +727,6 @@ plot_network_ggraph <- function(group, module_df, overall_network = my_network,
     dplyr::filter(genes_in_module > 1) |>
     # If there's no module labels just replace with module numbers
     dplyr::mutate(module_label = if_else(is.na(module_label), NA, module_label))
-    #dplyr::mutate(module_label = if_else(is.na(module_label), as.character(module), module_label))
   
   # Add filter to isolated nodes
   if(grepl("Perivascular-FB-KAZN2", group)) {
@@ -796,8 +761,6 @@ V(subgraph)$hgnc_symbol <- ensembl_to_symbol[V(subgraph)$name]
     geom_node_text(aes(label = gene_name), repel = TRUE, size = 1.8) +
     scale_color_manual(values = setNames(df$module_color, df$module_label)) +
     theme_void() +
-    #guides(color = guide_legend(override.aes = list(size = 2))) +
-    #guides(color = guide_legend(nrow = 2)) +
     labs(color = "Module Function", title = unique(df$celltype)) +
     theme(legend.position = "top", plot.title = element_text(size = 5,
                                                              hjust = 0.5,
@@ -883,139 +846,6 @@ Make a master amyloid column as well
 celltype_abbrev_df <- readr::read_tsv(here::here("05_figures/990_shared_figures/003_final_figures/001_data_for_plots/celltype_abbreviations.tsv"))
 ```
 
-
-```{r}
-#| eval: false
-unique(modules$label)
-
-module_sub <- modules |>
-  dplyr::filter(label %in% c("Microglia-activated_sig-magma-sig-genes_EUROPEUKBB_35k10k_all_controls_top-ten-percent_level2", "Pericyte-2_sig-magma-sig-genes_EUROPEUKBB_35k10k_all_controls_top-ten-percent_level2", "Perivascular-FB-KAZN2_sig-magma-sig-genes_EUROPEUKBB_35k10k_all_controls_top-ten-percent_level2")) |>
-  dplyr::left_join(celltype_abbrev_df, by = join_by(celltype)) |>
-  dplyr::mutate(celltypes_abbrev = if_else(is.na(celltypes_abbrev), celltype, celltypes_abbrev))
-
-celltypes_per_gene <- module_sub |>
-  dplyr::select(gene_symbol, celltypes_abbrev) |>
-  pivot_wider(values_from = celltypes_abbrev, names_from = celltypes_abbrev) |>
-  unite(celltypes_with_gene, `Microglia-A`:`Perivascular-FB-2`, sep = " ", na.rm = TRUE)
-
-modules_per_gene <- module_sub |>
-  dplyr::select(gene_symbol, celltypes_abbrev, module_label) |>
-  dplyr::filter(!is.na(module_label)) |>
-  unite(celltype_model, celltypes_abbrev:module_label) |>
-  pivot_wider(values_from = celltype_model, names_from = celltype_model) |>
-  unite(
-    celltypes_with_modules_gene,
-    `Microglia-A_Lymphocyte activation`:`Perivascular-FB-2_Viral process`,
-    sep = " ",
-    na.rm = TRUE
-  ) |>
-  dplyr::mutate(amyloid_modules = if_else(
-    grepl("amyloid", celltypes_with_modules_gene, ignore.case = TRUE),
-    "amyloid",
-    NA
-  ))
-
-# Count unique cell types for each gene
-df_summary <- module_sub |>
-  dplyr::select(gene_symbol, celltypes_abbrev) |>
-  summarise(celltype_count = n_distinct(celltypes_abbrev), .by = gene_symbol)
-
-celltypes_per_gene |>
-  dplyr::left_join(modules_per_gene, by = join_by(gene_symbol)) |>
-  dplyr::left_join(df_summary, by = join_by(gene_symbol)) |>
-  readr::write_tsv(here("03_data/999_data_for_publication/cytoscape_edgelist_metadata.tsv"))
-induced_subgraph(graph = overall_network, vids = module_sub$gene) |>
-  as_edgelist() |>
-  as.data.frame() |>
-  na.omit() |>
-  readr::write_tsv(here("03_data/999_data_for_publication/cytoscape_edgelist_ensembl.tsv"))
-  
-# Create a named vector for easy lookup
-ensembl_to_symbol <- setNames(module_sub$hgnc_symbol, module_sub$gene)
-network <- induced_subgraph(graph = overall_network, vids = module_sub$gene)
-# Add gene symbols to the graph vertices
-V(network)$name <- ensembl_to_symbol[V(network)$name]
-  network |>
-    as_edgelist() |>
-    as.data.frame() |>
-    na.omit() |>
-    readr::write_tsv(here("03_data/999_data_for_publication/cytoscape_edgelist_genesymbol.tsv"))
-    
-
-plot_network_ggraph <- function(group, module_df, overall_network = my_network,
-                                network_layout = "auto") {
-  require(ggraph)
-  require(tidygraph)
-  
-  df <- module_df |>
-    dplyr::group_by(label, module) |>
-    dplyr::mutate(genes_in_module = n()) |>
-    dplyr::ungroup() |>
-    dplyr::filter(genes_in_module > 1) |>
-    # If there's no module labels just replace with module numbers
-    dplyr::mutate(module_label = if_else(is.na(module_label), as.character(module), module_label))
-  
-  
-  set.seed(1234)
-  subgraph <- induced_subgraph(graph = overall_network, vids = df$gene)
-  all_genes <- unique(df$hgnc_symbol)
-  # Create a named vector for easy lookup
-ensembl_to_symbol <- setNames(df$hgnc_symbol, df$gene)
-
-# Add gene symbols to the graph vertices
-V(subgraph)$hgnc_symbol <- ensembl_to_symbol[V(subgraph)$name]
-  # Convert igraph to tidygraph
-  tbl_graph <- as_tbl_graph(subgraph)
-  
-  celltype <- df |>
-    dplyr::filter(label == group)
-  
-  # Get additional genes
-  genes <- unique(df$gene)[!unique(df$gene) %in% celltype$gene]
-  additional_genes <- df |>
-    dplyr::filter(gene %in% genes) |>
-    dplyr::distinct(gene, .keep_all = TRUE) |>
-    dplyr::mutate(module_color = "grey", module_label = "Other celltype/s")
-  
-  # Combine with celltype specific stuff 
-  df <- rbind(celltype, additional_genes) |>
-    dplyr::mutate(module_label = if_else(module_label == "0", "< 3 proteins", module_label))
-  
-  # Add module information to the graph
-  tbl_graph <- tbl_graph %>%
-    activate(nodes) %>%
-    mutate(module_number = df$module,
-           module_color = df$module_color,
-           module_label = df$module_label,
-           group = df$label,
-           gene_name = df$gene_symbol)
-  
-  # Plot using ggraph
-  p <- ggraph(tbl_graph, layout = network_layout) +  # 'fr' layout for Fruchterman-Reingold
-    geom_edge_link(aes(edge_alpha = 0.5), edge_colour = "grey", 
-                   edge_linetype = "solid", show.legend = FALSE) +
-    geom_node_point(aes(color = module_label), size = 5) +
-    geom_node_text(aes(label = gene_name), repel = TRUE, size = 5) +
-    scale_color_manual(values = setNames(df$module_color, df$module_label)) +
-    theme_void() +
-    theme(legend.position = "right") +
-    guides(color = guide_legend(override.aes = list(size = 5))) +
-    labs(color = "Module Function", title = unique(df$celltype))
-  
-  # if(length(unique(df$label)) > 1) {
-  #   p <- p + facet_wrap(~ group)  # Facet by group
-  # }
-  
-  return(p)
-}
-
-plots <- map(unique(module_sub$label), plot_network_ggraph, module_sub, network_layout = "fr") |>
-  set_names(unique(module_sub$label))
-```
-
-- NOTE: I can't seem to get ggraph to plot the nodes in the same way, so I'll try exporting the network as an edgelist and the data table of the celltypes and do it manually. May also need to mess with the ensembl vs gene symbol labels...
-
-
 ```{r}
 module_sub <- modules |>
   dplyr::filter(grepl("all_controls_top-ten-percent", label)) |>
@@ -1025,7 +855,7 @@ module_sub <- modules |>
                 case_control = if_else(grepl("_case", label), "case", "control"),
                 celltype_level = if_else(grepl("level1", label), "level1", "level2"))
 
-# Summarize the presence of each gene in the case_control groups
+# Summarise the presence of each gene in the case_control groups
 gene_summary <- module_sub %>%
   summarize(
     in_case = any(case_control == "case"),
@@ -1083,20 +913,6 @@ ensembl_to_symbol <- setNames(df$hgnc_symbol, df$gene)
 V(subgraph)$hgnc_symbol <- ensembl_to_symbol[V(subgraph)$name]
   # Convert igraph to tidygraph
   tbl_graph <- as_tbl_graph(subgraph)
-  
-  # celltype <- df |>
-  #   dplyr::filter(label == group)
-  # 
-  # # Get additional genes
-  # genes <- unique(df$gene)[!unique(df$gene) %in% celltype$gene]
-  # additional_genes <- df |>
-  #   dplyr::filter(gene %in% genes) |>
-  #   dplyr::distinct(gene, .keep_all = TRUE) |>
-  #   dplyr::mutate(module_color = "grey", module_label = "Other celltype/s")
-  # 
-  # # Combine with celltype specific stuff 
-  # df <- rbind(celltype, additional_genes) |>
-  #   dplyr::mutate(module_label = if_else(module_label == "0", "< 3 proteins", module_label))
   
   microglia_risk_genes <- df |>
     dplyr::select(gene, gene_symbol, unique_genes_per_celltype, 
@@ -1162,20 +978,6 @@ ensembl_to_symbol <- setNames(df$hgnc_symbol, df$gene)
 V(subgraph)$hgnc_symbol <- ensembl_to_symbol[V(subgraph)$name]
   # Convert igraph to tidygraph
   tbl_graph <- as_tbl_graph(subgraph)
-  
-  # celltype <- df |>
-  #   dplyr::filter(label == group)
-  # 
-  # # Get additional genes
-  # genes <- unique(df$gene)[!unique(df$gene) %in% celltype$gene]
-  # additional_genes <- df |>
-  #   dplyr::filter(gene %in% genes) |>
-  #   dplyr::distinct(gene, .keep_all = TRUE) |>
-  #   dplyr::mutate(module_color = "grey", module_label = "Other celltype/s")
-  # 
-  # # Combine with celltype specific stuff 
-  # df <- rbind(celltype, additional_genes) |>
-  #   dplyr::mutate(module_label = if_else(module_label == "0", "< 3 proteins", module_label))
   
   df <- df |>
     dplyr::select(gene, gene_symbol, unique_genes_per_celltype) |>
@@ -1326,33 +1128,7 @@ walk2(plots, names(plots), ~ ggsave(
 ))
 ```
 
-
 ## For each module
-
-```{r}
-#| eval: false
-# Plot each community separately
-#par(mfrow = c(2, 3))
-mcl <- membership(cl)
-for (i in which(table(cl$membership) >= min_cluster_size)) {
-  #i=1
-  community_vertices <- which(mcl == i)
-  
-  # Create a subgraph for the current community
-  subgraph <- induced_subgraph(my_subgraph, community_vertices)
-  # xx <- subset(module_assignment, module == i)
-  V(subgraph)$hgnc_symbol <- module_assignment[match(V(subgraph)$name, module_assignment$gene), "hgnc_symbol"]
- # V(subgraph)$colors <- module_assignment[match(V(subgraph)$name, module_assignment$gene), "known"]
-
-  # Plot the subgraph with community-specific information
-  #png(paste("Known and 90 pain genes M",i,".png",sep = ""))
-  plot(subgraph,vertex.size=7, vertex.label.dist=2, vertex.label.cex=0.8, 
-       vertex.label = V(subgraph)$hgnc_symbol, vertex.color = V(subgraph)$colors )
-  box()
-  #dev.off()
-}
-
-```
 
 ```{r}
 # Plot clustering
@@ -1712,79 +1488,7 @@ dev.off()
 
 ### Module labels
 
-So there isn't really a mathematical solution to this other than eyeballing the plots and assigning module functions
-
 #### Pseudobulk labels
-
-```{r}
-#| eval: false
-# Astro module 1 has memory stuff
-module_assignments <-
-  c(#astro-activ
-    "synapse_regulation-memory",
-    "plasma_membrane",
-    "anion_transport",
-    "cell_adhesion",
-    "basal_membrane-exosome",
-    # astro-quie
-    "synaptic_transmission-memory",
-    "ubiquitin-complexes",
-    "cell_junction-actin",
-    "vascular_transport",
-    "glycosylation",
-    "extracellular_matrix",
-    "chemotaxis-pos_reg_cascades",
-    # ex-neuron l2-3
-    "endothelial_migration-preptide_hormone",
-    "synapse_protein_localisation",
-    "ribonuclieotide_catabolic",
-    "rna_splicing",
-    "wnt",
-    # ex-neuron-l4-5
-    "extracellular_matrix_organisation",
-    "negative_reg_protein_phos",
-    "chromatid-mitotic_spindle",
-    "glycosyltransferase",
-    "bbb_transport-anion",
-    "salt_reponse-calcium",
-    # in-neuron
-    "ubiquitin_ligasse",
-    "chloride",
-    "IGF",
-    "vesicle-synapse",
-    "gtpase_activity",
-    # M-pericyte
-    "adhesion",
-    "endo_retic",
-    "cellcell_adhesion",
-    "basal_plasma_membrane-stress",
-    # microglia-activated
-    "amino_acid_transport-sodium_ion",
-    "cholesterol",
-    "peptide_catabolic",
-    "gtpase_reg-binding",
-    # t-pericyte
-    "glutamate-synaptic",
-    "basal_plasma",
-    "cellcell_adhesion-synapse_organisation-epitheilal_migration",
-    "neuron_projection_regulation",
-    # trans-endo-to-mural
-    "carboxylic_acid_transport",
-    "synapce_reg-chemotaxis",
-    "cytoskeleton_actin",
-    "pyrimidine_metabolic")
-pseudobulk_modules <- names(treeplots)[grepl("_pseudobulk_", names(treeplots))]
-module_assignments <- tibble("module" = pseudobulk_modules, "label" = module_assignments)
-
-# Save module assignment
-write_csv(
-  module_assignments,
-  here::here(
-    "03_data/990_processed_data/001_snrnaseq/12_protein_protein_interactions",
-    "ppi_sig_module_labels.csv"
-  )
-)
-```
 
 #### MAGMA sig gene labels
 
@@ -1959,410 +1663,3 @@ readr::write_csv(
 )
 ```
 
-```{r}
-#| eval: false
-# Add gene symbols
-modules_sig <- modules_sig |>
-  dplyr::rename(ensembl = gene) |>
-  dplyr::left_join(gene_ensembl_ids, by = "ensembl")
-# Check there's no NAs
-assertthat::are_equal(sum(is.na(modules_sig$gene)), 0)
-
-# subset to desired celltypes
-module_sub <- modules_sig |>
-  dplyr::filter(grepl("EUROPEUKBB", label) & grepl("all_controls_top-ten-percent", label) | label == "sig_magma_celltypes") |>
-  dplyr::mutate(gwas = ifelse(grepl("EUROPEUKBB|sig_magma_celltypes", label), "ad", NA),
-                # use str_extract to extract everything until the first "_"
-                celltype = str_extract(label, "^[^_]*")) |>
-dplyr::mutate(celltype = ifelse(celltype == "sig", "All-celltypes", celltype))
-
-# use str_extract to extract characters after "-module" to get module numbers
-module_labels$module <- str_extract(module_labels$module_label, "(?<=-module).+") |>
-  as.numeric()
-module_labels_sub <- module_labels |>
-  dplyr::filter(ontology == "BP")
-
-# join module labels
-module_sub <- module_sub |>
-  dplyr::left_join(module_labels_sub, by = join_by(module, gwas, celltype))
-# save data
-readr::write_csv(module_sub, here::here("03_data/990_processed_data/007_magma/sig_celltype_module_labels_with_genes.csv"))
-
-# look at amyloid modules in particular
-amyloid_modules <- module_sub |>
-  dplyr::filter(grepl("amyloid", module_label)) |>
-dplyr::filter(celltype != "All-celltypes")
-amyloid_modules |> dplyr::select(!label)
-
-df_list <- split(amyloid_modules$gene, amyloid_modules$celltype)
-
-unique_genes <- lapply(names(df_list), function(x) {
-  current_genes <- df_list[[x]]
-  other_genes <- unlist(df_list[names(df_list) != x])
-  unique_genes <- setdiff(current_genes, other_genes)
-  return(unique_genes)
-})
-names(unique_genes) <- names(df_list)
-unique_genes <- unique_genes |>
-  stack() |>
-  dplyr::rename(gene = values, celltype_specificty = ind) |>
-  dplyr::mutate(shared_or_unique_gene = "unique")
-unique_genes
-
-if (nrow(unique_genes) != nrow(amyloid_modules)) {
-  common_genes <- data.frame(
-    "gene" = Reduce(intersect, df_list),
-    "celltype_specificty" = "NA",
-    "shared_or_unique_gene" = "shared"
-  )
-  
-} else {
-  common_genes <- NULL
-}
-rbind(unique_genes, common_genes)
-#readr::write_csv(rbind(unique_genes, common_genes), here::here("../../../gmbh_results_summaries/2024-04-52_ad_bbb/sig_celltype_amyloid_genes.csv"))
-```
-
-## Plot labelled modules
-
-It'd be nice to have the PPI networks with the module labels attached
-
-```{r}
-#| eval: false
-# Plot clustering
-map2(subgraphs, module_assignment, ~ plot(.x, 
-     vertex.size = 3, 
-     vertex.color = as.character(.y$module_color), 
-     vertex.frame.color = .y$module_color, 
-     edge.color = "grey",  
-     rescale = TRUE, 
-     vertex.label = NA,
-     main = paste0("Celltype: ", .y$label[1])))
-
-# subset to celltypes of interest
-#module_sub <- module_assignment[(grepl("EUROPEUKBB", names(module_assignment)) & grepl("all_controls_top-ten-percent", names(module_assignment)))] 
-subgraphs_sub <- subgraphs[(grepl("EUROPEUKBB", names(subgraphs)) & grepl("all_controls_top-ten-percent", names(subgraphs)))]
-
-# make module label list for plots
-module_sub_list <- module_sub |>
-  dplyr::filter(!is.na(module_label)) |>
-  dplyr::group_by(label) |>
-  tidyr::nest()
-list <- module_sub_list$data |>
-  set_names(module_sub_list$label)
-
-map2(subgraphs_sub, list, ~ {
-  png(
-    here::here(
-      "05_figures/990_shared_figures/ppi_modules/network_plots",
-      paste0(.y$celltype[1], "_magma_risk_ppi.png")
-    )
-  )
-  
-  
-  df <- data.frame(module_label = unique(.y$module_label))
-  df$colours <- rainbow(n = nrow(df))
-  df <- left_join(.y, df, by = "module_label")
-  plot(
-    .x,
-    vertex.size = 3,
-    vertex.color = as.character(df$colours),
-    vertex.frame.color = df$colours,
-    edge.color = 'grey',
-    rescale = TRUE,
-    vertex.label = NA,
-    main = paste0('Celltype: ', df$celltype[1])
-  )
-  # Assuming you have a vector of unique labels and corresponding colors
-  unique_labels <- df |>
-    dplyr::select(module_label, colours) |>
-    unique()
-  #colors_for_legend <- unique(as.character(.y)) # Replace with actual colors if different
-  legend(
-    "topright",
-    # Position of the le
-    legend = unique_labels$module_label,
-    # Text in the le
-    col = unique_labels$colours,
-    # Colors in the legend
-    pch = 19,
-    # Type of point to use, 19 is a solid circle
-    cex = 0.8 # Size of legend text
-  )
-  
-  dev.off()
-})
-```
-
-### networkD3 graph
-
-Let's try using `networkD3` to make some nicer visualisations, and be able to see what genes are in the nodes
-
-```{r}
-#| eval: false
-# In case they are not selected from the ppi network check that they are in the ppi network
-genes_of_interest <- intersect(sig_celltypes_magma$data[[1]]$ensembl, V(my_network)$name)
-
-
-# Subset the ppi network to your genes of interest
-my_network_sub <- induced_subgraph(graph = my_network, vids = genes_of_interest)
-my_network_sub <- as_edgelist(my_network_sub)
-
-# You can use Gene IDs instead of Ensembl Gene IDs if you have the corresponding annotations
-# for example gene_info containing Gene_ID / Ensembl IDs  to Gene_Name correspondence 
-# my_network[, 1] <- gene_info$Gene_name[match(x = my_network[, 1], table = gene_info$Gene_ID)]
-# my_network[, 2] <- gene_info$Gene_name[match(x = my_network[, 2], table = gene_info$Gene_ID)]
-
-unique_genes_df <- module_sub |>
-  dplyr::filter(celltype != "All-celltypes") |>
-  group_by(ensembl) |>
-  summarise(celltypes_with_gene = toString(unique(celltype))) |>
-  ungroup()
-
-nodes_table <- module_sub |>
-dplyr::filter(celltype == "All-celltypes") |>
-dplyr::left_join(unique_genes_df, by = "ensembl") |>
-dplyr::mutate(module_plus_celltypes = paste0(module_label, " ", celltypes_with_gene)) |>
-dplyr::mutate(module_label = ifelse(is.na(module_label), "no_label", module_label))
-#dplyr::filter(!is.na(module_label))
-
-# Nodes table 
-#nodes <- unique(c(my_network_sub[, 1], my_network_sub[, 2]))
-#nodes_table <- data.frame(name = nodes,
-#                          # Change here for your relevant annotations 
-#                          group1 = sample(x = c("A", "B", "C"), size = length(nodes), replace = TRUE),
-#                          group2 = sample(x = c("typeI", "typeII"), size = length(nodes), replace = TRUE),
-#                          size = 1)
-
-# Links table
-links_table <- data.frame(my_network_sub)
-links_table$X1 <- match(links_table$X1, nodes_table$ensembl) - 1
-links_table$X2 <- match(links_table$X2, nodes_table$ensembl) - 1
-colnames(links_table) <- c("source", "target")
-
-# Plot by your first set of annotations
-module_plot <- forceNetwork(Links = links_table, Nodes = nodes_table, 
-             # In case you want specific colours
-             colourScale = networkD3::JS('d3.scaleOrdinal().domain(["leukocyte_activation-module1", "notch_sig-endothelial-migration-module4", "amyloid-module3", "no_label"]).range(["blue", "red", "limegreen", "grey"])'), 
-             linkColour = alpha("grey", .5), 
-             charge = -20, 
-             Source = "source", 
-             Target = "target",
-             NodeID = "gene",
-             Group = "module_label", 
-             opacity = 0.8, 
-             bounded = TRUE,
-             legend = TRUE,
-             opacityNoHover = .5)#,
-             #Nodesize = "celltypes_with_gene")
-
-# Plot by your second annotation
-celltypes_plots <- forceNetwork(Links = links_table, Nodes = nodes_table, 
-             # In case you want specific colours
-             colourScale = networkD3::JS('d3.scaleOrdinal().domain(["typeI", "typeII"]).range(["deeppink", "steelblue"])'), 
-             linkColour = alpha("grey", .5),
-             charge = -20,
-             Source = "source", 
-             Target = "target",
-             NodeID = "gene", 
-             Group = "celltypes_with_gene", 
-             opacity = 0.8, 
-             bounded = TRUE, 
-             legend = TRUE,
-             opacityNoHover = .5) 
-combined_plot <- manipulateWidget::combineWidgets(module_plot, celltypes_plots, ncol = 2)
-combined_plot
-
-# Save both plots to an HTML file
-htmlwidgets::saveWidget(combined_plot, here::here("05_figures/990_shared_figures/ppi_modules/network_plots/d3_plots.html"))
-
-# Use webshot to take a screenshot of the HTML file and save it as an image
-webshot::webshot(here::here("05_figures/990_shared_figures/ppi_modules/network_plots/d3_plots.html"), file = here::here("05_figures/990_shared_figures/ppi_modules/network_plots/d3_plots.png"))
-
-nodes_table_sub <- nodes_table |>
-dplyr::filter(celltypes_with_gene %in% c("Pericyte-2", "Microglia-activated", "Perivascular-FB-KAZN2"))
-
-my_network_sub <- induced_subgraph(graph = my_network, vids = unique(nodes_table_sub$ensembl))
-my_network_sub <- as_edgelist(my_network_sub)
-
-# Links table
-links_table <- data.frame(my_network_sub)
-links_table$X1 <- match(links_table$X1, nodes_table_sub$ensembl) - 1
-links_table$X2 <- match(links_table$X2, nodes_table_sub$ensembl) - 1
-colnames(links_table) <- c("source", "target")
-
-# Plot by your first set of annotations
-module_plot <- forceNetwork(Links = links_table, Nodes = nodes_table_sub, 
-             # In case you want specific colours
-             colourScale = networkD3::JS('d3.scaleOrdinal().domain(["leukocyte_activation-module1", "notch_sig-endothelial-migration-module4", "amyloid-module3", "no_label"]).range(["blue", "red", "limegreen", "grey"])'), 
-             linkColour = alpha("grey", .5), 
-             charge = -20, 
-             Source = "source", 
-             Target = "target",
-             NodeID = "gene",
-             Group = "module_label", 
-             opacity = 0.8, 
-             bounded = TRUE,
-             legend = TRUE,
-             opacityNoHover = .5)#,
-             #Nodesize = "celltypes_with_gene")
-
-# Plot by your second annotation
-celltypes_plots <- forceNetwork(Links = links_table, Nodes = nodes_table_sub, 
-             # In case you want specific colours
-             colourScale = networkD3::JS('d3.scaleOrdinal().domain(["Microglia-activated", "Pericyte-2", "Perivascular-FB-KAZN2"]).range(["deeppink", "steelblue", "yellow"])'), 
-             linkColour = alpha("grey", .5),
-             charge = -20,
-             Source = "source", 
-             Target = "target",
-             NodeID = "gene", 
-             Group = "celltypes_with_gene", 
-             opacity = 0.8, 
-             bounded = TRUE, 
-             legend = TRUE,
-             opacityNoHover = .5) 
-combined_plot <- manipulateWidget::combineWidgets(module_plot, celltypes_plots, ncol = 2)
-combined_plot
-
-nodes_table_sub <- nodes_table |>
-dplyr::filter(celltypes_with_gene %in% c("Pericyte-2", "Microglia-activated", "Perivascular-FB-KAZN2")) |>
-dplyr::filter(module_label == "amyloid-module3")
-
-my_network_sub <- induced_subgraph(graph = my_network, vids = unique(nodes_table_sub$ensembl))
-my_network_sub <- as_edgelist(my_network_sub)
-
-# Links table
-links_table <- data.frame(my_network_sub)
-links_table$X1 <- match(links_table$X1, nodes_table_sub$ensembl) - 1
-links_table$X2 <- match(links_table$X2, nodes_table_sub$ensembl) - 1
-colnames(links_table) <- c("source", "target")
-
-# Plot by your second annotation
-celltypes_plots <- forceNetwork(Links = links_table, Nodes = nodes_table_sub, 
-             # In case you want specific colours
-             colourScale = networkD3::JS('d3.scaleOrdinal().domain(["Microglia-activated", "Pericyte-2", "Perivascular-FB-KAZN2"]).range(["deeppink", "steelblue", "yellow"])'), 
-             linkColour = alpha("grey", .5),
-             charge = -20,
-             Source = "source", 
-             Target = "target",
-             NodeID = "gene", 
-             Group = "celltypes_with_gene", 
-             opacity = 0.8, 
-             bounded = TRUE, 
-             legend = TRUE,
-             opacityNoHover = .5) 
-celltypes_plots
-
-combined_plot <- manipulateWidget::combineWidgets(module_plot, celltypes_plots, ncol = 2)
-combined_plot
-```
-
-
-```{r}
-#| eval: false
-unique_genes_to_plot <- rbind(unique_genes, common_genes) |>
-dplyr::left_join(gene_ensembl_ids, by = "gene") |>
-  dplyr::mutate(celltype_specificty = as.character(celltype_specificty)) |>
-  dplyr::mutate(celltype_specificty = ifelse(celltype_specificty == "NA", "Shared-genes", celltype_specificty))
-
-# In case they are not selected from the ppi network check that they are in the ppi network
-genes_of_interest <- intersect(unique_genes_to_plot$ensembl, V(my_network)$name)
-assertthat::are_equal(length(unique_genes_to_plot$gene), length(genes_of_interest))
-
-
-
-# Subset the ppi network to your genes of interest
-my_network_sub <- induced_subgraph(graph = my_network, vids = genes_of_interest)
-my_network_sub <- as_edgelist(my_network_sub)
-
-# Links table
-links_table <- data.frame(my_network_sub)
-links_table$X1 <- match(links_table$X1, unique_genes_to_plot$ensembl) - 1
-links_table$X2 <- match(links_table$X2, unique_genes_to_plot$ensembl) - 1
-colnames(links_table) <- c("source", "target")
-
-# Plot by your first set of annotations
-module_plot <- forceNetwork(Links = links_table, Nodes = unique_genes_to_plot, 
-             # In case you want specific colours
-             colourScale = networkD3::JS('d3.scaleOrdinal().domain(["Microglia-activated", "Pericyte-2", "Perivascular-FB-KAZN2", "Shared-genes"]).range(["deeppink", "steelblue", "red", "limegreen"])'), 
-             linkColour = alpha("grey", .5), 
-             charge = -150, 
-             Source = "source", 
-             Target = "target",
-             NodeID = "gene",
-             Group = "celltype_specificty", 
-             opacity = 1, 
-             bounded = TRUE,
-             legend = TRUE,
-             zoom = TRUE,
-             height = 400,
-             width = 500,
-             opacityNoHover = .5)#,
-             #Nodesize = "celltypes_with_gene")
-module_plot
-
-
-# doesn't work due to phanotomJS error, likely due to incompatible version of openssl
-# module_plot <- forceNetwork(Links = links_table, Nodes = unique_genes_to_plot, 
-#              # In case you want specific colours
-#              colourScale = networkD3::JS('d3.scaleOrdinal().domain(["Microglia-activated", "Pericyte-2", "Perivascular-FB-KAZN2", "Shared-genes"]).range(["deeppink", "steelblue", "red", "limegreen"])'), 
-#              linkColour = alpha("grey", .5), 
-#              charge = -150, 
-#              Source = "source", 
-#              Target = "target",
-#              NodeID = "gene",
-#              Group = "celltype_specificty", 
-#              opacity = 1, 
-#              bounded = TRUE,
-#              legend = TRUE,
-#              zoom = TRUE,
-#              opacityNoHover = .5)#,
-#              #Nodesize = "celltypes_with_gene")
-# 
-# htmlwidgets::saveWidget(module_plot, here::here("test_network.html"))
-# webshot::webshot(here::here("test_network.html"), file = "test_network.png", vwidth = 500, vheight = 400, zoom = 3)
-```
-
-<!-- Several of the modules have just one gene in them and I don't trust any enrichment for GO terms there, so I'll replace the module label with the gene label -->
-
-```{r}
-#| eval: false
-#| include: false
-# I've changed to just excluding these now
-gene_num <- map_dbl(result_list_subset, ~ length(.x@gene))
-one_gene <- names(gene_num)[gene_num == 1]
-genes <- map_chr(one_gene, ~ result_list[[.x]]@gene)
-names(genes) <- one_gene
-
-ensembl <- useMart("ensembl", dataset = "hsapiens_gene_ensembl")
-# Retrieve gene symbols
-gene_info <- getBM(attributes = c('entrezgene_id', 'hgnc_symbol'),
-                   filters = 'entrezgene_id',
-                   values = genes,
-                   mart = ensembl)
-
-# Print the results
-print(gene_info)
-# Make sure there's no NAs in the conversion
-assertthat::noNA(gene_info)
-
-# Make sure genes are arranged in the same way
-module_order <- names(genes)[match(gene_info$entrezgene_id, genes)]
-gene_symbols <- gene_info$hgnc_symbol
-names(gene_symbols) <- module_order
-# There are some modules not in the module assignment as they didn't get trees 
-# for being to small. I'll exclude these modules and add them to dataframe
-extra_modules <- gene_symbols[!names(gene_symbols) %in% module_assignments$module]
-extra_modules <- data.frame(module = names(extra_modules), label = extra_modules)
-module_assignments <- rbind(module_assignments, extra_modules)
-# Update labels in the dataframe
-module_assignments$label[match(names(gene_symbols), module_assignments$module)] <- gene_symbols
-# Save module assignment
-write_csv(
-  module_assignments,
-  here::here(
-    "03_data/990_processed_data/001_snrnaseq/12_protein_protein_interactions",
-    "ppi_sig_module_labels.csv"
-  )
-)
-```
