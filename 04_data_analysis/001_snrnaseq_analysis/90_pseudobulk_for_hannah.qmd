@@ -1,0 +1,96 @@
+---
+title: Pseudobulk resutls
+execute:
+  eval: false
+---
+
+# Data
+
+The pseudobulk R object is a list with three elements.
+
+```{r}
+#| label: load packages
+library(readr)
+library(here)
+library(dplyr)
+library(ggplot2)
+```
+
+```{r}
+#| eval: false
+# read data
+pseudobulk <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/pseudobulk_results.rds"))
+```
+
+The simplest element is the celltype counts
+
+```{r}
+pseudobulk$celltype_counts
+```
+
+Then there's the differential expression per celltype which is itself a list.
+Note that this is filtered to significant genes by adjusted pval
+
+```{r}
+# show object
+head(pseudobulk$celltype_DEGs$Endothelial)
+# get dimentions
+dim(pseudobulk$celltype_DEGs$Endothelial)
+```
+
+Here's an example volcano plot
+
+```{r}
+endo_volc_plot <- pseudobulk$celltype_DEGs$Endothelial %>%
+  # make column of FC direction
+  dplyr::mutate(fc_direction = ifelse(logFC < 0, "Down", "up")) %>%
+  ggplot(aes(x = logFC, y = -log10(adj_pval), col = fc_direction)) + # scale FDR by log10
+  geom_vline(xintercept = c(-0.6, 0.6), col = "gray", linetype = 'dashed') +
+  geom_hline(yintercept = -log10(0.05), col = "gray", linetype = 'dashed') +
+  geom_point(size = 2) +
+  scale_color_manual(values = c("#00AFBB", "#bb0c00"),
+                     labels = c("Downregulated", "Upregulated")) +
+  labs(color = 'Severe',
+       x = expression("log"[2]*"FC"), y = expression("-log"[10]*"p-value")) +
+  scale_x_continuous(breaks = seq(-10, 10, 2)) + # to customise the breaks in the x axis
+  ggtitle('Endothelial volcano plot example')
+```
+
+```{r}
+  volcano_plot<-
+      ggplot(data=celltype_all_genes_dt,
+               aes(x = logFC, y = -log10(adj_pval)))+ #scale FDR by log10
+        geom_point(aes(colour=colour_ident),stat="identity",size=.2) + 
+        facet_wrap(~factor(celltype),scales = "free")+
+        geom_hline(yintercept = -log10(0.05), colour="#990000", 
+                   linetype="dashed",size=.3) + 
+        #geom_vline(xintercept = 0, colour="black", size=.3) + 
+        labs(y= "-log10(FDR)", x = "Log2 Fold Change", colour="") +
+        theme_cowplot()+
+        theme(axis.text = element_text(size=9),axis.text.x=element_blank(),
+              legend.text=element_text(size=10))+
+        scale_colour_manual(values = cols)+
+        geom_text_repel( #give top three genes per cell type by adjusted p value
+            data = celltype_all_genes_dt[
+                celltype_all_genes_dt[,.I[adj_pval %in% 
+                                              sort(adj_pval)[1:3]][1:3],
+                                      by=celltype]$V1],
+            aes(label = gene_name),
+            size = 3,
+            box.padding = unit(0.35, "lines"),
+            point.padding = unit(0.3, "lines")
+        )
+```
+
+
+And lastly is the full gene list including non-significant genes
+
+```{r}
+head(pseudobulk$celltype_all_genes$Endothelial)
+dim(pseudobulk$celltype_all_genes$Endothelial)
+
+# the dimensions are the same as the prior object if we filter them
+pseudobulk$celltype_all_genes$Endothelial %>%
+  dplyr::filter(adj_pval < 0.05) %>%
+  dim()
+```

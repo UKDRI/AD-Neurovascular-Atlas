@@ -1,0 +1,387 @@
+---
+title: Perform Pseudobulk with Mystery cluster
+execute:
+  eval: true
+#self-contained: true
+---
+
+I want to try doing a differential expression with the mystery cluster against the other major vascular types
+
+```{r}
+#here::i_am("04_data_analysis/001_snrnaseq_analysis/90_")
+```
+
+# Load packages
+
+```{r}
+source(here::here("04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"))
+```
+
+```{r}
+path <- here::here("04_data_analysis/990_code_libraries/pseudobulk")
+#source necessary functions from other scripts
+#source(here::here(path, "validate_input_parameters_de.R"))
+source(here::here(path, "make_pseudobulk.R"))
+source(here::here(path, "de_analysis.R"))
+source(here::here(path, "plot_de_analysis.R"))
+```
+
+# Read in data
+
+First we'll read in the scFlow output to a sce
+
+```{r}
+#| eval: true
+# read data
+#sce <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-sce-annotated.rds"))
+sce <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-sce-annotated-highlevel.rds"))
+#sce <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-sce-updated_dim-35.rds"))
+```
+
+```{r}
+# save gene and ensembl IDs to switch between them as needed
+df <- data.frame(gene = rownames(sce@assays$RNA@data), ensembl = rownames(sce@assays$RNA@counts))
+# make count rownames match data rownames
+rownames(sce@assays$RNA@counts) <- rownames(sce@assays$RNA@data)
+sce$highlevel_manual_annotations <- Idents(sce)
+```
+
+```{r}
+# I'll do the manually annotated ones not the reduced highlevel ones for now
+sce$highlevel_manual_annotations <- Idents(sce)
+```
+
+Subset to controls in relevant cell types
+
+```{r}
+rownames(sce@assays$RNA@data) <- df$ensembl
+rownames(sce@assays$RNA@counts) <- df$ensembl
+sce <- subset(sce, idents = c("mystery-cluster", "Endothelial", "Pericyte", "SMC"), subset = diagnosis == "Control")
+rownames(sce@assays$RNA@data) <- df$gene
+rownames(sce@assays$RNA@counts) <- df$gene
+```
+
+```{r}
+# setup columns to aggregate by
+sce$celltype <- Idents(sce)
+# remove the "_" in the celltype names and replace with "-"
+sce$celltype <- gsub("_", "-", sce$celltype)
+levels(sce$diagnosis) <- c("AD", "Control")
+```
+
+# MAST DE
+
+I'll try using MAST not pseudobulked, but with donor as a covariate, which should in theory capture the donor variability
+
+```{r}
+rownames(sce@assays$RNA@data) <- df$ensembl
+rownames(sce@assays$RNA@counts) <- df$ensembl
+# List of cell types to compare
+cell_types <- c("mystery-cluster", "Endothelial", "Pericyte", "SMC")
+
+# Generate all pairwise combinations of cell types
+combinations <- combn(cell_types, 2, simplify = FALSE)
+
+# This takes a while to run, so save the output and only rerun if needed
+results_file <-
+  here::here(
+    "03_data/990_processed_data/001_snrnaseq/08_pseudobulk/mystery-cluster-differential-expression.rds"
+  )
+
+if (!file.exists(results_file)) {
+  # Set up future to use multicore processing
+  plan(multisession, workers = 6)
+  
+  # Perform differential expression analysis for each combination
+  results_list <- future_lapply(combinations, function(pair) {
+    FindMarkers(
+      object = sce,
+      ident.1 = pair[1],
+      ident.2 = pair[2],
+      test.use = 'MAST',
+      latent.vars = "donor"
+    )
+  })
+  
+  # Name the list elements
+  names(results_list) <-
+    apply(combn(cell_types, 2), 2, function(x)
+      paste(x, collapse = "_vs_"))
+  
+  readr::write_rds(results_list, results_file)
+} else {
+  results_list <- readr::read_rds(results_file)
+}
+rm(results_file)
+```
+
+```{r}
+# Add gene names
+mast_results <- map2(results_list, names(results_list), ~ .x |>
+       # Add ensembl column
+       rownames_to_column("ensembl") |>
+       dplyr::mutate(comparison = .y, deg_direction = case_when(
+                       avg_log2FC > 0 & p_val_adj < 0.05 ~ "Up",
+                       avg_log2FC < 0 & p_val_adj < 0.05 ~ "Down",
+                       .default = "Not Sig"))) |>
+  purrr::list_rbind() |>
+  dplyr::left_join(df, by = "ensembl")
+```
+
+Well there are way too many differentially expressed genes from this...
+I guess I'll have to do pseudobulk instead.
+
+## Plots
+
+```{r}
+#| warning: false
+mast_results %>%
+  ggplot(aes(x = factor(deg_direction), fill = factor(comparison))) +
+  geom_histogram(stat = "count") +
+  facet_wrap(~factor(comparison)) +
+  ggtitle("Cluster comparison counts of DEGs - Controls")+
+  labs(y= "Count", x = "DEG direction", fill="Comparison") +
+  theme_cowplot()+
+  theme(axis.text = element_text(size=9)) +
+  scale_fill_viridis(discrete = T)
+  #scale_fill_manual(values=pal)
+```
+
+### Volcano plots
+
+```{r}
+# add colour identifier
+cols <- c("Up" = "#FDE725FF", "Down" = "#440154FF", "Not Sig" = "#d3d3d3")
+
+volc_plot <- mast_results %>%
+  # filter to significant hits
+  #dplyr::filter(padj < 0.05) %>%
+  # scale FDR by log10
+  ggplot(aes(x = avg_log2FC, y = -log10(p_val_adj))) +
+  geom_point(aes(colour = deg_direction), stat = "identity", size = .2) +
+  facet_wrap( ~ factor(comparison), scales = "free") +
+  geom_hline(
+    yintercept = -log10(0.05),
+    colour = "#990000",
+    linetype = "dashed",
+    linewidth = .3
+  ) +
+  # geom_vline(xintercept = 0, colour="black", size=.3) +
+  labs(y = "-log10(FDR)", x = "Log2 Fold Change", colour = "") +
+  theme_cowplot() +
+  theme(
+    axis.text = element_text(size = 9),
+    #axis.text.x = element_blank(),
+    legend.text = element_text(size = 10)
+  ) +
+  scale_colour_manual(values = cols) +
+  geom_text_repel(
+    # give top three genes per cell type by adjusted p value
+    data = mast_results %>%
+      dplyr::group_by(comparison) %>%
+      dplyr::slice_min(p_val_adj, n = 3),
+    aes(label = gene),
+    size = 3,
+    box.padding = unit(0.35, "lines"),
+    point.padding = unit(0.3, "lines")
+  )
+
+volc_plot
+# Save
+ggsave(here::here("05_figures/990_shared_figures/mast_volcano-plot.png"), volc_plot, device = "png")
+# Remove
+rm(volc_plot)
+```
+
+# DESeq2
+
+Try pseudobulk instead
+
+```{r}
+# switch back to gene names
+rownames(sce@assays$RNA@data) <- df$gene
+rownames(sce@assays$RNA@counts) <- df$gene
+# counts matrix individual level
+cts <- AggregateExpression(sce, group.by = c("celltype", "donor", "diagnosis"),
+                    assays = "RNA",
+                    slot = "counts",
+                    return.seurat = FALSE)
+cts <- cts$RNA
+cts[1:5,1:10]
+```
+
+```{r}
+# Step 1: Aggregate data into pseudobulk samples using AggregateExpression
+pseudobulk_counts <- AggregateExpression(
+  sce,
+  group.by = c("celltype", "donor", "diagnosis"),
+  assay = "RNA",
+  return.seurat = FALSE
+)
+
+# Convert the aggregated data to a matrix format for DESeq2
+pseudobulk_counts <- as.matrix(pseudobulk_counts$RNA)
+pseudobulk_counts[1:5,1:10]
+```
+
+```{r}
+# Step 2: Prepare the data for DESeq2
+# Create a metadata data frame for the conditions (cell types)
+conditions <- data.frame(
+  cell_type = colnames(pseudobulk_counts),
+  condition = colnames(pseudobulk_counts) 
+)
+rownames(conditions) <-  gsub("-", "_", conditions$cell_type)
+# Subset string to first "_"
+conditions$condition <- sub("^(.*?)_.*$", "\\1", conditions$condition)
+conditions$condition <-  gsub("-", "_", conditions$condition)
+
+# Replace hyphens with underscores in the column names of the pseudobulk_counts matrix
+colnames(pseudobulk_counts) <- gsub("-", "_", colnames(pseudobulk_counts))
+
+# Create DESeqDataSet object
+dds <- DESeqDataSetFromMatrix(
+  countData = pseudobulk_counts,
+  colData = conditions,
+  design = ~ condition
+)
+
+# Step 3: Perform differential expression analysis with DESeq2
+# Run the DESeq pipeline
+dds <- DESeq(dds)
+
+# List of cell types to compare
+cell_types <- c("mystery_cluster", "Endothelial", "Pericyte", "SMC")
+
+# Generate all pairwise combinations of cell types
+combinations <- combn(cell_types, 2, simplify = FALSE)
+
+# Perform pairwise comparisons for the cell type of interest against the other three
+results_list <-
+  set_names(combinations, sapply(combinations, function(pair)
+    paste(pair, collapse = "_vs_"))) %>%
+  map( ~ results(dds, contrast = c("condition", .x[1], .x[2])))
+# The results_list now contains the results of the DE analysis for each pairwise comparison
+```
+
+```{r}
+# merge contrasts dataframes
+res_merged <- map2(results_list, names(results_list), ~ as.data.frame(.x) %>%
+                     rownames_to_column("gene") %>%
+                     dplyr::mutate(contrast = .y, deg_direction = case_when(
+                       log2FoldChange > 0 & padj < 0.05 ~ "Up",
+                       log2FoldChange < 0 & padj < 0.05 ~ "Down",
+                       .default = "Not Sig"))) %>%
+  purrr::list_rbind() |>
+  # remove NAs
+  dplyr::filter(!is.na(log2FoldChange))
+```
+
+## Plots
+
+```{r}
+#| warning: false
+res_merged %>%
+  ggplot(aes(x = factor(deg_direction), fill = factor(contrast))) +
+  geom_histogram(stat = "count") +
+  facet_wrap(~factor(contrast)) +
+  ggtitle("Cell type counts of DEGs - Controls")+
+  labs(y= "Log2 Fold Change", x = "DEG direction", fill="Contrast") +
+  theme_cowplot()+
+  theme(axis.text = element_text(size=9)) +
+  scale_fill_viridis(discrete = T)
+  #scale_fill_manual(values=pal)
+```
+
+### Volcano plots
+
+```{r}
+# add colour identifier
+cols <- c("Up" = "#FDE725FF", "Down" = "#440154FF", "Not Sig" = "#d3d3d3")
+
+volc_plot <- res_merged %>%
+  # filter to significant hits
+  #dplyr::filter(padj < 0.05) %>%
+  # scale FDR by log10
+  ggplot(aes(x = log2FoldChange, y = -log10(padj))) +
+  geom_point(aes(colour = deg_direction), stat = "identity", size = .2) +
+  facet_wrap( ~ factor(contrast), scales = "free") +
+  geom_hline(
+    yintercept = -log10(0.05),
+    colour = "#990000",
+    linetype = "dashed",
+    linewidth = .3
+  ) +
+  # geom_vline(xintercept = 0, colour="black", size=.3) +
+  labs(y = "-log10(FDR)", x = "Log2 Fold Change", colour = "") +
+  theme_cowplot() +
+  theme(
+    axis.text = element_text(size = 9),
+    #axis.text.x = element_blank(),
+    legend.text = element_text(size = 10)
+  ) +
+  scale_colour_manual(values = cols) +
+  geom_text_repel(
+    # give top three genes per cell type by adjusted p value
+    data = res_merged %>%
+      dplyr::group_by(contrast) %>%
+      dplyr::slice_min(padj, n = 3),
+    aes(label = gene),
+    size = 3,
+    box.padding = unit(0.35, "lines"),
+    point.padding = unit(0.3, "lines")
+  )
+
+volc_plot
+# Save
+#ggsave(here::here("05_figures/990_shared_figures/deseq2_volcano-plot_myseter-cluster.png"), volc_plot, device = "png")
+# Remove
+rm(volc_plot)
+```
+
+Zam found an [interesting paper](https://www.nature.com/articles/ncomms12422) about endothelial cells being progenitors of mural cells in the heart.
+They talk about the PDGFRB gene in particular being important.
+
+```{r}
+res_merged |>
+  dplyr::filter(gene %in% c("PDGFRB")) |>
+  ggplot(aes(x = contrast, y = log2FoldChange, fill = contrast)) +
+  geom_bar(stat = "identity", position = position_dodge()) +
+  geom_errorbar(
+    aes(ymin = log2FoldChange - lfcSE, ymax = log2FoldChange + lfcSE),
+    width = 0.25,
+    position = position_dodge(0.9)
+  ) +
+  labs(
+    x = "Contrast",
+    y = "Log2 Fold Change",
+    title = "Pseudobulk expression of PDGFRB"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+res_merged |>
+  dplyr::filter(gene %in% c("CSPG4")) |>
+  ggplot(aes(x = contrast, y = log2FoldChange, fill = contrast)) +
+  geom_bar(stat = "identity", position = position_dodge()) +
+  geom_errorbar(
+    aes(ymin = log2FoldChange - lfcSE, ymax = log2FoldChange + lfcSE),
+    width = 0.25,
+    position = position_dodge(0.9)
+  ) +
+  labs(
+    x = "Contrast",
+    y = "Log2 Fold Change",
+    title = "Pseudobulk expression of CSPG4"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r}
+DimPlot(sce, reduction = "umap", label = TRUE)
+FeaturePlot(sce, reduction = "umap", features = "PDGFRB")
+FeaturePlot(sce, reduction = "umap", features = "CSPG4")
+```
+
+
