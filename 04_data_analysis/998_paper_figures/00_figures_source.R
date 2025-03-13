@@ -1,0 +1,51 @@
+## ----------------------------------------------------------------------------
+# Set default continuous color palette
+scale_color_continuous <- function(...) scale_color_viridis_c(...)
+
+# Set default fill palette
+scale_fill_discrete <- function(...) scale_fill_viridis_d(...)
+scale_fill_continuous <- function(...) scale_fill_viridis_c(...)
+
+# Set Dark2 palette as default
+scale_fill_discrete <- function(...) scale_fill_brewer(palette="Dark2", ...)
+scale_colour_discrete <- function(...) scale_colour_brewer(palette="Dark2", ...)
+
+
+## ----------------------------------------------------------------------------
+library(Polychrome)
+# Generate a colorblind-friendly palette with 44 colors
+palette <- createPalette(45, seedcolors = viridis(3), M = 5000)
+
+# Convert to a format that ggplot2 can use
+palette <- unname(palette)
+
+# Custom function to apply the palette
+scale_color_custom <- function(...) {
+  scale_color_manual(values = palette, ...)
+}
+
+scale_fill_custom <- function(...) {
+  scale_fill_manual(values = palette, ...)
+}
+
+
+## ----------------------------------------------------------------------------
+# Custom ggplot theme
+custom_theme <- theme(
+  text = element_text(family = "Arial", size = 8), # Set the base font size - needs to be 6-8 pt
+  axis.title = element_text(family = "Arial", size = 8), # Axis titles font size
+  axis.text = element_text(family = "Arial", size = 6), # Axis text font size
+  legend.title = element_text(family = "Arial", size = 8), # Legend title font size
+  legend.text = element_text(family = "Arial", size = 6), # Legend text font size
+  plot.title = element_text(family = "Arial", size = 18, face = "bold"), # Plot title font size and style
+  panel.background = element_blank(), # Remove background
+  #panel.grid.major = element_line(color = "grey80"), # Major grid lines color
+  #panel.grid.minor = element_line(color = "grey90"), # Minor grid lines color
+  panel.grid.major = element_blank(), # Major grid lines color
+  panel.grid.minor = element_blank(), # Minor grid lines color
+  axis.line = element_line(color = "black") # Axis line color
+)
+
+# Apply the theme globally
+theme_set(custom_theme)
+

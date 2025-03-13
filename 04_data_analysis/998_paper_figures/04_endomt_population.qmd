@@ -1,0 +1,261 @@
+---
+title: EndoMT population figure
+execute:
+  eval: true
+code-fold: true
+---
+
+## Load packages
+
+```{r}
+source(here::here("04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"))
+library(magick)
+library(circlize)
+library(Cairo)
+library(ggtext)
+library(ggstatsplot)
+library(dlookr)
+tar_config_set(store = here::here("_targets"))
+```
+
+```{r}
+source("04_data_analysis/998_paper_figures/00_figures_source.R")
+```
+
+
+```{r}
+tar_load(sce)
+
+unique(Idents(sce))
+
+celltypes_abbrev <-
+  c(
+    "Astrocyte-activated" = "Astro-A",
+    "Astrocyte-quiescent" = "Astro-Q",
+    "Ex-Neuron-ADARB2-ERBB4" = "Ex-Neuro-1",
+    "Ex-Neuron-CBLN2-NRGN" = "Ex-Neuro-2",
+    "Ex-Neuron-DLC1-HS3ST4" = "Ex-Neuro-3",
+    "Ex-Neuron-L2-3-CBLN2-LINC02306-CUX2" = "Ex-Neuro-4",
+    "Ex-Neuron-L3-5-RORB-PLCH1" = "Ex-Neuro-5",
+    "Ex-Neuron-L4-5-RORB-IL1RAPL2" = "Ex-Neuro-6",
+    "Ex-Neuron-L6-THEMIS-NFIA" = "Ex-Neuro-7",
+    "In-Neuron-ADARB2-GRM7" = "In-Neuro-1",
+    "In-Neuron-ADARB2-IL1RAPL2-CSCL14" = "In-Neuro-2",
+    "In-Neuron-ADARB2-LAMP5-NRG1" = "In-Neuro-3",
+    "In-Neuron-ADARB2-NRG1-RELN" = "In-Neuro-4",
+    "In-Neuron-DPP10-MEF2C" = "In-Neuro-5",
+    "In-Neuron-PRKG1-TBC1D4" = "In-Neuro-6",
+    "In-Neuron-TRHDE-RALYL" = "In-Neuro-7",
+    "Microglia-activated" = "Microglia-A",
+    "Microglia-quiescent" = "Microglia-Q",
+    "Microglia-vascular" = "Microglia-V",
+    "Pericyte" = "Pericyte-1",
+    "Perivascular Macrophage" = "Perivascular-M",
+    "Perivascular" = "Perivascular-M",
+    "Perivascular-FB" = "Perivascular-FB-1",
+    "Perivascular-FB-KAZN2" = "Perivascular-FB-2",
+    "T-cell-parenchymal-1" = "T-cell-P1",
+    "T-cell-parenchymal-2" = "T-cell-P2",
+    "T-cell-vascular" = "T-cell-V",
+    "T-cell-mixed" = "T-cell-M",
+    "Vascular-SMC" = "Vascular-SMC-1",
+    "Vascular-SMC-LINC00486" = "Vascular-SMC-2"
+  )
+abbreviated_idents <- celltypes_abbrev[as.character(sce$subcelltype_annotations)]
+abbreviated_idents <- if_else(is.na(abbreviated_idents), sce$subcelltype_annotations, abbreviated_idents)
+names(abbreviated_idents) <- NULL
+sce$abbreviated_idents <- abbreviated_idents
+unique(sce$abbreviated_idents)
+
+
+celltypes_abbrev_level1 <-
+  c(
+    "mystery-cluster" = "Endo-MT",
+    "Neuron_ex" = "Ex-Neuro",
+    "Neuron_in" = "In-Neuro"
+  )
+abbreviated_idents <- celltypes_abbrev_level1[as.character(sce$highlevel_manual_annotations)]
+abbreviated_idents <- if_else(is.na(abbreviated_idents), sce$highlevel_manual_annotations, abbreviated_idents)
+names(abbreviated_idents) <- NULL
+sce$abbreviated_idents_level1 <- abbreviated_idents
+unique(sce$abbreviated_idents_level1)
+
+Idents(sce) <- sce$abbreviated_idents_level1
+```
+
+## Dotplot
+
+```{r}
+genes_to_plot <- c("TBX2", "SMAD6", "BTNL9", "XAF1", "CMTM8", "ABCB1", "ZNF366", "ERG", "LEF1", "GGT5", "SYNE2", "EPAS1", "CYYR1", "FLI1", "NOTCH3", "GPCPD1", "GJC1")
+dotplot <- DotPlot(sce, features = genes_to_plot)
+
+
+dotplot_m <- dotplot +
+  # For some reason trying to rename the legends isn't working, I'll do it manually
+  labs(x = "", y = "", colour = "Average\nExpression") +
+  scale_size_continuous("% Expressed", range = c(000.1, 4)) +  # Adjust point size scale (min, max)
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+    legend.position = "right", legend.title = element_text(size = 6),
+    axis.text = element_text(size = 8), legend.text = element_text(size = 6),
+    legend.key.size = unit(2, "mm"), legend.box = "vertical") +
+  # Add rectangles for specific genes
+  annotate("rect",
+           xmin = which(levels(dotplot$data$features.plot) %in% c("ERG", "NOTCH3")) - 0.5,
+           xmax = which(levels(dotplot$data$features.plot) %in% c("ERG", "NOTCH3")) + 0.5,
+           ymin = -Inf,
+           ymax = Inf,
+           alpha = 0.2,
+           fill = "red") +
+  # Customize y-axis text
+  scale_y_discrete(
+    labels = function(x) {
+      ifelse(x == "Endo-MT",
+             paste0("<span style='color:red;font-weight:bold'>", x, "</span>"),
+             x)
+    }
+  ) +
+  theme(axis.text.y = element_markdown())
+dotplot_m
+
+dotplot_m$guides$guides$colour$params$title <- "Average\nExpression"
+dotplot_m$guides$guides$size$params$title <- "% Expressed"
+```
+
+## scproportiontest
+
+```{r}
+# Make fraction subsets
+df <- data.frame(gene = rownames(sce@assays$RNA@data), ensembl = rownames(sce@assays$RNA@counts))
+rownames(sce@assays$RNA@data) <- df$ensembl
+sce_v <- sce[,sce$prep == "V"]
+sce_p <- sce[,sce$prep == "P"]
+rownames(sce@assays$RNA@data) <- df$gene
+
+vascular_celltypes_level1 <- c("Endo-MT", "Endothelial", "Pericyte",
+                               "SMC", "Fibroblast", "T-cell")
+vascular_celltypes_level2 <- c('T-Pericyte', 'M-Pericyte', 'Pericyte',
+                               'Pericyte-2', 'Vascular-SMC', 'Arteriolar-SMC',
+                               'Vascular-SMC-LINC00486', 'EndoMT_1', 'EndoMT_2',
+                               'Perivascular-FB-KAZN2', 'Perivascular-FB',
+                               'Meningeal-FB', 'Artirial-FB', 'Pericyte-FB',
+                               'Capillary', 'Arterial', 'Venous',
+                               'T-cell-vascular')
+
+# Subset the Seurat object to keep only the desired cell types
+sce_v <- sce_v[,sce_v$abbreviated_idents_level1 %in% c(vascular_celltypes_level1, "Microglia") & sce_v$subcelltype_annotations %in% c(vascular_celltypes_level2, 'Microglia-vascular', 'T-cell-mixed')]
+sce_p <- sce_p[,!sce_p$abbreviated_idents_level1 %in% vascular_celltypes_level1 & !sce_p$subcelltype_annotations %in% c(vascular_celltypes_level2, "ambiguous", "low-feature-cells", "Microglia-vascular")]
+
+table(sce_v$highlevel_manual_annotations)
+table(sce_p$highlevel_manual_annotations)
+table(sce_p$abbreviated_idents)
+table(sce_v$subcelltype_annotations)
+
+sce_v$abbreviated_idents <- str_replace_all(sce_v$abbreviated_idents,
+  "_", "-")
+```
+
+
+```{r}
+prop_test_v <- sc_utils(sce_v)
+prop_test_p <- sc_utils(sce_p)
+
+prop_test_level2_v <- permutation_test(
+	prop_test_v, cluster_identity = "abbreviated_idents",
+	sample_1 = "Control", sample_2 = "Case",
+	sample_identity = "diagnosis"
+)
+scprop_plot <- permutation_plot(prop_test_level2_v)
+
+scprop_plot <- scprop_plot +
+  theme(axis.text = element_text(size = 7),
+    legend.position = "top", legend.text = element_text(size = 7),
+    axis.title = element_text(size = 8)) +
+  labs(x = "", y = "Log2 Fold Change", colour = "") +
+  scale_colour_manual(labels = c("Significant", "Not Significant"),
+    values = c("#E64B35FF", "grey"))
+
+scales::show_col(pal_npg("nrc")(9))
+```
+
+```{r}
+#| eval: false
+prop_test_level2_p <- permutation_test(
+	prop_test_p, cluster_identity = "abbreviated_idents",
+	sample_1 = "Control", sample_2 = "Case",
+	sample_identity = "diagnosis"
+)
+scprop_plot_p <- permutation_plot(prop_test_level2_p)
+scprop_plot_p <- scprop_plot_p +
+  theme(axis.text = element_text(size = 7),
+    legend.position = "top", legend.text = element_text(size = 7),
+    axis.title = element_text(size = 8)) +
+  labs(x = "", y = "Log2 Fold Change", colour = "") +
+  scale_colour_manual(labels = c("Significant", "Not Significant"),
+    values = c("#E64B35FF", "grey"))
+scprop_plot_p
+
+ggsave(filename = here::here("05_figures/990_shared_figures/003_final_figures/",
+                             "000_sup_figures/parenchymal_prop_scprop.pdf"),
+                             plot = scprop_plot_p, width = 4, height = 4, units = "in")
+```
+
+## FACS data
+
+```{r}
+facs_df <- read_csv(here("03_data/991_external_data/endomt_facs_data.csv")) |>
+  janitor::clean_names() |>
+  # remove outlier
+  dplyr::filter(!(percent_endo_mt > 15 & cohort == "AD"))
+
+facs_df |>
+  dplyr::group_by(cohort) |>
+  dlookr::normality()
+
+# Create a violin plot with statistical comparison
+facs_plot <- ggbetweenstats(
+  data = facs_df,
+  x = cohort,
+  y = percent_endo_mt,
+  xlab = "",
+  ylab = "% Endo-MT",
+  centrality.label.args = list(size  = 2, nudge_x = 0.6),
+  #centrality.plotting = FALSE,
+  ggplot.component = list(theme(plot.subtitle = element_text(size = 6.2),
+  plot.caption = element_text(size = 6.5)))
+) +
+  scale_colour_npg()
+
+facs_plot
+```
+
+## Lineage tracing data
+
+```{r}
+# Read your image file (after exporting from AI to PNG/JPEG/PDF)
+img <- image_read_svg(here("05_figures/990_shared_figures/003_final_figures",
+  "001_data_for_plots/lineage_tracing_figure.svg"))
+
+# Convert the image to a ggplot object
+img_plot <- ggdraw() +
+  draw_image(img)
+
+row_1 <- plot_grid(dotplot_m, facs_plot, ncol = 1, labels = c("B", "C"),
+  label_colour = "black", rel_heights = c(1.2, 1))
+row_1_1 <- plot_grid(scprop_plot, row_1, ncol = 2, labels = c("A", ""),
+  label_colour = "black")
+
+# Combine with your other plots using plot_grid
+combined_figure <- plot_grid(
+  row_1_1,
+  img_plot,
+  rel_heights = c(1.2, 1),
+  labels = c("", ""),
+  label_colour = "black",
+  ncol = 1  # Adjust layout as needed
+)
+
+
+ggsave(filename = here::here("05_figures/990_shared_figures/003_final_figures",
+                             "figure4_endomt_prop.pdf"), plot = combined_figure,
+       width = 7, height = 9, units = "in")
+```

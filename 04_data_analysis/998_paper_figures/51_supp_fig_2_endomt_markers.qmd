@@ -1,0 +1,108 @@
+---
+title: EndoMT paper marker expression
+subtitle: Supp figure 2
+execute:
+  eval: true
+code-fold: true
+---
+
+## Load packages
+
+```{r}
+source(here::here("04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"))
+library(magick)
+library(circlize)
+library(Cairo)
+library(ggtext)
+library(ggstatsplot)
+library(dlookr)
+tar_config_set(store = here::here("_targets"))
+```
+
+```{r}
+source("04_data_analysis/998_paper_figures/00_figures_source.R")
+```
+
+```{r}
+# Get seurat object
+tar_load(sce)
+
+# the full cell labels are long for plots, let's make abbreviated versions
+celltypes_abbrev <-
+  c(
+    "Astrocyte-activated" = "Astro-A",
+    "Astrocyte-quiescent" = "Astro-Q",
+    "Ex-Neuron-ADARB2-ERBB4" = "Ex-Neuro-1",
+    "Ex-Neuron-CBLN2-NRGN" = "Ex-Neuro-2",
+    "Ex-Neuron-DLC1-HS3ST4" = "Ex-Neuro-3",
+    "Ex-Neuron-L2-3-CBLN2-LINC02306-CUX2" = "Ex-Neuro-4",
+    "Ex-Neuron-L3-5-RORB-PLCH1" = "Ex-Neuro-5",
+    "Ex-Neuron-L4-5-RORB-IL1RAPL2" = "Ex-Neuro-6",
+    "Ex-Neuron-L6-THEMIS-NFIA" = "Ex-Neuro-7",
+    "In-Neuron-ADARB2-GRM7" = "In-Neuro-1",
+    "In-Neuron-ADARB2-IL1RAPL2-CSCL14" = "In-Neuro-2",
+    "In-Neuron-ADARB2-LAMP5-NRG1" = "In-Neuro-3",
+    "In-Neuron-ADARB2-NRG1-RELN" = "In-Neuro-4",
+    "In-Neuron-DPP10-MEF2C" = "In-Neuro-5",
+    "In-Neuron-PRKG1-TBC1D4" = "In-Neuro-6",
+    "In-Neuron-TRHDE-RALYL" = "In-Neuro-7",
+    "Microglia-activated" = "Microglia-A",
+    "Microglia-quiescent" = "Microglia-Q",
+    "Microglia-vascular" = "Microglia-V",
+    "Pericyte" = "Pericyte-1",
+    "Perivascular Macrophage" = "Perivascular-M",
+    "Perivascular" = "Perivascular-M",
+    "Perivascular-FB" = "Perivascular-FB-1",
+    "Perivascular-FB-KAZN2" = "Perivascular-FB-2",
+    "T-cell-parenchymal-1" = "T-cell-P1",
+    "T-cell-parenchymal-2" = "T-cell-P2",
+    "T-cell-vascular" = "T-cell-V",
+    "T-cell-mixed" = "T-cell-M",
+    "Vascular-SMC" = "Vascular-SMC-1",
+    "Vascular-SMC-LINC00486" = "Vascular-SMC-2"
+  )
+
+# Create a new column with abbreviated Idents
+abbreviated_idents <- celltypes_abbrev[as.character(sce$subcelltype_annotations)]
+abbreviated_idents <- if_else(is.na(abbreviated_idents), sce$subcelltype_annotations, abbreviated_idents)
+names(abbreviated_idents) <- NULL
+sce$abbreviated_idents <- abbreviated_idents
+unique(sce$abbreviated_idents)
+Idents(sce) <- sce$abbreviated_idents
+
+celltypes_abbrev_level1 <-
+  c(
+    "mystery-cluster" = "EndoMT",
+    "Neuron_ex" = "Ex-Neuro",
+    "Neuron_in" = "In-Neuro"
+  )
+abbreviated_idents <- celltypes_abbrev_level1[as.character(sce$highlevel_manual_annotations)]
+abbreviated_idents <- if_else(is.na(abbreviated_idents), sce$highlevel_manual_annotations, abbreviated_idents)
+names(abbreviated_idents) <- NULL
+sce$abbreviated_idents_level1 <- abbreviated_idents
+unique(sce$abbreviated_idents_level1)
+Idents(sce) <- sce$abbreviated_idents_level1
+```
+
+# Make dotplot of markers in paper for level 1 subtypes
+
+Plotting the expression of the markers from this paper:
+  - [https://onlinelibrary.wiley.com/doi/10.1002/ctm2.99](https://onlinelibrary.wiley.com/doi/10.1002/ctm2.99)
+
+```{r}
+plot <- DotPlot(sce, features = c("KLF4", "SNAI1", "SNAI2", "VIM", "ACTA2",
+  "S100A4"))
+
+plot <- plot +
+  labs(x = "", y = "") +
+  theme(axis.text = element_text(size = 8),
+    legend.text = element_text(size = 8),
+    legend.title = element_text(size = 8))
+# Still dunno why trying to rename the legend in the normal way doesn't work for these plots...
+plot$guides$guides$colour$params$title <- "Average\nExpression"
+plot$guides$guides$size$params$title <- "% Expressed"
+
+ggsave(filename = here::here("05_figures/990_shared_figures/003_final_figures",
+                             "000_sup_figures/", "supp_fig_2_endmt_markers.pdf"),
+                             plot = plot, width = 5, height = 4, units = "in")
+```

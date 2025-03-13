@@ -1,0 +1,111 @@
+---
+title: Magma risk level 1 celltypes
+subtitle: Supp figure 1
+execute:
+  eval: true
+code-fold: true
+---
+
+## Load packages
+
+```{r}
+source(here::here("04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"))
+library(magick)
+library(circlize)
+library(Cairo)
+library(ggtext)
+library(ggstatsplot)
+library(dlookr)
+tar_config_set(store = here::here("_targets"))
+```
+
+```{r}
+source("04_data_analysis/998_paper_figures/00_figures_source.R")
+```
+
+```{r}
+magma_heatmap_data <- qs::qread(here::here("05_figures/990_shared_figures/003_final_figures/magma_celltype_heatmap_data_level1.qs"))
+magma_heatmap_data <- qs::qread(here::here("05_figures/990_shared_figures/003_final_figures/magma_celltype_heatmap_data_level1_nominal.qs"))
+
+#ldscore_heatmap_data <- qs::qread(here::here("05_figures/990_shared_figures/003_final_figures/ldscore_celltype_heatmap_data.qs"))
+# Update col labels
+colnames(magma_heatmap_data) <- "MAGMA risk enrichment"
+#colnames(ldscore_heatmap_data) <- "LDScore"
+# Merge data
+#heatmap_data <- cbind(magma_heatmap_data, ldscore_heatmap_data)
+heatmap_data <- magma_heatmap_data
+
+create_annotation_matrix <- function(pval_matrix) {
+  # Get dimensions of input matrix
+  n_rows <- nrow(pval_matrix)
+  n_cols <- ncol(pval_matrix)
+
+  # Create empty character matrix for annotations
+  annot_matrix <- matrix("", nrow = n_rows, ncol = n_cols)
+
+  # Convert log10 p-values back to regular p-values
+  regular_pvals <- 10^(-pval_matrix)
+
+  # Calculate Bonferroni adjusted p-values
+  # Convert matrix to vector, adjust, then back to matrix
+  adj_pvals <- matrix(
+    p.adjust(as.vector(regular_pvals), method = "bonferroni"),
+    nrow = n_rows,
+    ncol = n_cols
+  )
+
+  # Fill annotation matrix based on conditions
+  annot_matrix[regular_pvals < 0.05] <- "*"
+  annot_matrix[adj_pvals < 0.05] <- "**"
+  annot_matrix[adj_pvals < 0.01] <- "***"
+
+  # Preserve dimnames if they exist
+  dimnames(annot_matrix) <- dimnames(pval_matrix)
+
+  return(annot_matrix)
+}
+
+#heatmap_data <- t(heatmap_data)
+#colnames(heatmap_data) <- str_replace(colnames(heatmap_data), "_", "-")
+rownames(heatmap_data) <- str_replace(rownames(heatmap_data), "_", "-")
+row_anno <- create_annotation_matrix(heatmap_data)
+
+# Create the heatmap
+heatmap <- Heatmap(heatmap_data,
+        name = "-log10 p-value",
+#        row_names_side = "left",
+#        right_annotation = row_anno,
+    # Adjust the clustering method if necessary
+    cluster_rows = FALSE,
+    cluster_columns = FALSE,
+        show_row_names = TRUE,
+        show_column_names = TRUE,
+    column_names_rot = 0,
+    #row_names_rot = 90,
+    #row_names_centered = TRUE,
+    column_names_centered = TRUE,
+    # Use the defined color palette
+    cell_fun = function(j, i, x, y, width, height, fill) {
+      if (row_anno[i, j] != "") {
+        grid.text(row_anno[i, j], x, y, gp = gpar(col = "black", fontsize = 8))
+      }
+    },
+    row_names_gp = gpar(fontsize = 8),  # Set row label text size
+        column_names_gp = gpar(fontsize = 8),
+     width = unit(1, "cm"),
+     #height = unit(3, "mm"),
+     heatmap_legend_param = list(#direction = "horizontal",
+                                 labels_gp = gpar(fontsize = 8),
+                                 title_gp = gpar(fontsize = 8,
+                                                 fontface = "bold"),
+                                 #title_position = "leftcenter",
+                                 gap = unit(0.1, "mm"),
+                                 grid_height = unit(0.5, "mm")))
+draw(heatmap, heatmap_legend_side = "right", ht_gap = unit(10, "mm"))
+p1 = grid.grabExpr(draw(heatmap, heatmap_legend_side = "right"), ht_gap = unit(10, "mm"))
+
+
+ggsave(filename = here::here("05_figures/990_shared_figures/003_final_figures",
+                             "000_sup_figures/", "supp_fig_1_magma_risk.pdf"),
+                             plot = p1, width = 4, height = 4, units = "in")
+```
