@@ -53,23 +53,6 @@ create_balanced_subsample <- function(sce,
     dplyr::mutate(cell_id = colnames(sce))
     
   # Create balanced sample using dplyr operations
-  if(cases_or_controls == "controls") {
-      selected_cells <- cell_data |>
-        dplyr::filter(base::get(condition_col) == "Control") |>
-        # Group by both celltype and condition
-        group_by(across(all_of(c(celltype_col, condition_col)))) |>
-        # Sample cells from each group
-        slice_sample(n = cells_per_group * 2) |>
-        ungroup()
-  } else if (cases_or_controls == "cases") {
-      selected_cells <- cell_data |>
-        dplyr::filter(base::get(condition_col) == "Case") |>
-        # Group by both celltype and condition
-        group_by(across(all_of(c(celltype_col, condition_col)))) |>
-        # Sample cells from each group
-        slice_sample(n = cells_per_group * 2) |>
-        ungroup()
-  } else {
       # Create balanced sample using dplyr operations
       selected_cells <- cell_data |>
         # Group by both celltype and condition
@@ -77,16 +60,15 @@ create_balanced_subsample <- function(sce,
         # Sample cells from each group
         slice_sample(n = cells_per_group) |>
         ungroup()
-  }
-  
-  
+
+
   # Print summary of balanced dataset
   summary_table <- selected_cells |>
     dplyr::count(across(all_of(c(celltype_col, condition_col)))) |>
     pivot_wider(names_from = all_of(condition_col),
                 values_from = n)
   
-  cat("Summary of balanced dataset for ", cases_or_controls, ":", sep = "")
+  cat("Summary of balanced dataset for ", subset, ":", sep = "")
   print(summary_table)
   
   return(selected_cells)
