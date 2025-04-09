@@ -31,10 +31,10 @@ library(tradeSeq)
 subset = "pericyte"
 
 if(subset == "pericyte"){
-  sce_slingshot <- qs::qload(here::here("03_data/990_processed_data/008_pseudotime",
+  sce_slingshot <- qs::qread(here::here("03_data/990_processed_data/008_pseudotime",
                               "slingshot_obj_pericyte.qs"))
 } else {
-  sce_slingshot <- qs::qload(here::here("03_data/990_processed_data/008_pseudotime",
+  sce_slingshot <- qs::qread(here::here("03_data/990_processed_data/008_pseudotime",
                               "slingshot_obj_smc.qs"))
 }
 
