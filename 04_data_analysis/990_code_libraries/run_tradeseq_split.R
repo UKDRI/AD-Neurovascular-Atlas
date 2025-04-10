@@ -174,7 +174,7 @@ print("Finished fitGAM!")
 # Save
 file <- here::here("03_data/990_processed_data/008_pseudotime",
                    "slingshot_tradeseq_3k_pericyte.qs")
-if(subset == "pericyte") {
+if(subset != "pericyte") {
   file <- str_replace(file, "_pericyte", "_smc")
 } 
 
