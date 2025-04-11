@@ -20,6 +20,7 @@ tar_config_set(store = here::here("_targets"))
 library(SeuratWrappers)
 library(monocle3)
 library(slingshot)
+library(GGally)
 ```
 
 ```{r}
@@ -275,6 +276,7 @@ qs::qsave(sce_slingshot, here("03_data/990_processed_data/008_pseudotime",
 #                               "slingshot_obj.qs"))
 
 celltype <- sce_slingshot$level1_celltypes_with_endomt_subclusters
+#celltype <- sce_slingshot$subcelltype_annotations
 celltype <- str_replace(celltype, "_", "-")
 
 # Plot PCA colored by cell type
@@ -331,6 +333,7 @@ centroids <- data.frame(
 print(p_pca_labeled)
 
 ggsave(here("05_figures/990_shared_figures/004_pseudotime/slingshot_pca_npc2_res0.1.png"), height = 8, width = 10)
+#ggsave(here("05_figures/990_shared_figures/004_pseudotime/slingshot_pca_npc2_res0.1_level-2-celltypes.png"), height = 8, width = 10)
 
 
 # Extract pseudotimes
@@ -421,6 +424,201 @@ p1 <- ggplot(data.frame(pca, pseudotime), aes(PC_1, PC_2, color = Lineage1)) +
   scale_color_viridis_c(option = 'plasma', name = 'Pseudotime') +
   labs(x = 'PC1', y = 'PC2') +
   theme_minimal()
+```
+
+```{r}
+metadata <- data.frame(
+  donor = colData(sce_slingshot)$donor,
+  celltype = sce_slingshot@colData$level1_celltypes_with_endomt_subclusters,
+  diagnosis = sce_slingshot@colData$diagnosis
+)
+
+percent_overall <- metadata |>
+  dplyr::count(donor, celltype, diagnosis) |>
+  dplyr::mutate(percent = n / sum(n) * 100, .by = donor)
+# get the percent of endomt in endothelial cells per donor
+percent_endomt <- metadata |>
+  dplyr::filter(!celltype %in% c("Pericyte", "SMC")) |>
+  dplyr::mutate(celltype = if_else(grepl("EndoMT", celltype), "EndoMT", celltype)) |>
+  dplyr::count(donor, celltype, diagnosis) |>
+  dplyr::mutate(percent = n / sum(n) * 100, .by = donor) |>
+  dplyr::filter(grepl("EndoMT", celltype)) |>
+  dplyr::arrange(percent)
+
+metadata |>
+  dplyr::filter(donor %in% c("donor-31", "donor-11", "donor-23")) |>
+  dplyr::count(donor, celltype, diagnosis) |>
+  dplyr::mutate(percent = n / sum(n) * 100, .by = donor)
+
+# Reshape data: Wide format (each cell type as a column)
+wide_df <- percent_overall |>
+  select(donor, celltype, percent, diagnosis) |>
+  pivot_wider(names_from = celltype, values_from = percent, values_fill = 0)
+
+# Move diagnosis column to rownames for annotation
+rownames(wide_df) <- wide_df$donor
+diagnosis_annotation <- wide_df %>%
+  select(donor, diagnosis) %>%
+  column_to_rownames("donor")
+
+# Remove non-numeric columns before correlation
+wide_numeric <- wide_df %>% select(-donor, -diagnosis)
+
+pdf(here::here(
+  "05_figures/990_shared_figures/003_final_figures",
+  "001_data_for_plots", "donor-celltype-percent-corrgram.pdf"
+))
+corrgram::corrgram(wide_numeric,
+  main = "Endothelial and mural celltype proportions",
+  lower.panel = panel.pts, upper.panel = panel.conf,
+  diag.panel = panel.density
+)
+dev.off()
+
+# Compute correlation matrix
+cor_matrix <- cor(wide_numeric, use = "pairwise.complete.obs")
+
+# Plot
+ggcorrplot(cor_matrix,
+  method = "circle", # or "square" for heatmap-like look
+  type = "upper", # Show only upper triangle
+  lab = TRUE, # Show correlation values
+  outline.col = "white",
+  colors = c("#6D9EC1", "white", "#E46726") # Custom color palette
+) +
+  ggtitle("Endothelial and mural celltype proportions") +
+  theme_minimal()
+
+ggpairs(
+  wide_numeric,
+  lower = list(continuous = wrap("points", alpha = 0.5, size = 1.5)), # Scatterplots
+  diag = list(continuous = wrap("densityDiag")), # Density plots on diagonal
+  upper = list(continuous = wrap("cor", size = 6)) # Correlation coefficients
+) +
+  ggtitle("Endothelial and mural celltype proportions") +
+  theme_minimal(base_size = 14)
+
+
+# Compute correlation matrix (Spearman)
+cor_matrix <- cor(wide_numeric, method = "spearman", use = "pairwise.complete.obs")
+
+# Plot heatmap with case/control annotation
+hmap <- pheatmap(as.matrix(wide_numeric),
+  annotation_row = diagnosis_annotation, # Annotate donors by diagnosis
+  clustering_distance_rows = "euclidean",
+  clustering_distance_cols = "euclidean",
+  main = "Cell Type Proportions per Donor"
+)
+hmap
+
+pdf(
+  here::here(
+    "05_figures/990_shared_figures/003_final_figures",
+    "001_data_for_plots", "donor-celltype-percent.pdf"
+  ),
+  height = 15, width = 12
+)
+print(hmap)
+dev.off()
+
+pheatmap(cor_matrix,
+  clustering_distance_rows = "euclidean",
+  clustering_distance_cols = "euclidean",
+  display_numbers = TRUE,
+  main = "Cell Type Proportion Correlations"
+)
+
+
+
+# Scatterplot: EndoMT vs Pericytes with color by Diagnosis
+ggplot(wide_df, aes(x = EndoMT_2, y = Pericyte, color = diagnosis)) +
+  geom_point(size = 3) +
+  geom_smooth(method = "lm", se = FALSE) +
+  ggtitle("EndoMT vs Pericytes (Colored by Diagnosis)") +
+  theme_minimal()
+
+# Scatterplot: EndoMT vs SMC with color by Diagnosis
+ggplot(wide_df, aes(x = EndoMT_2, y = SMC, color = diagnosis)) +
+  geom_point(size = 3) +
+  geom_smooth(method = "lm", se = FALSE) +
+  ggtitle("EndoMT vs SMC (Colored by Diagnosis)") +
+  theme_minimal()
+
+
+# Move donor column to rownames
+wide_df <- wide_df |>
+  as.data.frame()
+rownames(wide_df) <- wide_df$donor
+wide_numeric <- wide_df %>% dplyr::select(-donor, -diagnosis) # Remove donor column for numeric operations
+
+# Compute correlation of EndoMT with all other cell types across donors
+cor_vector <- cor(wide_numeric, method = "spearman", use = "pairwise.complete.obs")[, "EndoMT_2"]
+
+# Convert to a dataframe for visualization
+cor_df <- data.frame(CellType = names(cor_vector), Correlation = cor_vector)
+
+# Heatmap of correlations
+pheatmap(matrix(cor_vector, ncol = 1, dimnames = list(names(cor_vector), "Correlation")),
+  display_numbers = TRUE,
+  main = "Correlation of EndoMT with Other Cell Types Across Donors"
+)
+```
+
+```{r}
+# Pivot to wide format
+percent_wide <- percent_overall %>%
+  select(donor, celltype, percent) %>%
+  pivot_wider(names_from = celltype, values_from = percent, values_fill = 0) %>%
+  column_to_rownames("donor")
+
+pca_res <- prcomp(percent_wide, scale. = TRUE, center = TRUE)
+
+# Extract PC scores
+pca_scores <- as.data.frame(pca_res$x)
+pca_scores$donor <- rownames(pca_scores)
+percent_wide$donor <- rownames(percent_wide)
+
+# Merge PCA scores with original proportions
+pca_merged <- left_join(pca_scores, percent_wide, by = "donor")
+
+# Compute correlation of PC1 with EndoMT and other cell types
+cor_results <- cor(pca_merged$PC1, pca_merged$EndoMT_1, method = "spearman")
+
+print(cor_results)
+
+rownames(pca_merged) <- pca_merged$donor
+pca_merged$donor <- NULL
+correlations <- cor(pca_merged[, grep("^PC", colnames(pca_merged))],
+  pca_merged[, -grep("^PC", colnames(pca_merged))],
+  method = "spearman"
+)
+
+print(correlations)
+
+ggplot(pca_merged, aes(x = PC1, y = EndoMT_1)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "blue") +
+  labs(title = "PC1 vs EndoMT_1", x = "PC1", y = "EndoMT_1 proportion")
+
+# Convert PCA scores to long format
+pca_long <- pca_scores |>
+  pivot_longer(cols = starts_with("PC"), names_to = "PC", values_to = "PC_value")
+
+
+# Convert cell type proportions to long format
+proportions_long <- percent_wide |>
+  pivot_longer(cols = -donor, names_to = "celltype", values_to = "percent")
+
+# Merge PCA scores and cell type proportions
+plot_data <- left_join(pca_long, proportions_long, by = "donor")
+
+ggplot(plot_data, aes(x = PC_value, y = percent)) +
+  geom_point(alpha = 0.7) +
+  geom_smooth(method = "lm", se = FALSE, color = "blue") + # Add trendline
+  facet_grid(celltype ~ PC, scales = "free") + # Facet by both PC and cell type
+  labs(x = "PC Value", y = "Cell Type Proportion", title = "PCA vs Cell Type Proportions") +
+  theme_minimal() +
+  theme(strip.text = element_text(size = 10, face = "bold"))
 ```
 
 ### Density plot
@@ -562,20 +760,167 @@ density_plot <- ggplot() +
   #theme(plot.margin = margin(t = 40, r = 20, b = 20, l = 20, unit = "pt"))
 
 density_plot
-
-# TODO make colours consitent
 ```
 
+Make a density plot faceted by donor
+
+```{r}
+pseudotime_data <- data.frame(slingPseudotime(sce_slingshot))
+pseudotime_data <- pseudotime_data |>
+  dplyr::mutate(
+    Group = sce_slingshot$diagnosis,
+    CellType = sce_slingshot$level1_celltypes_with_endomt_subclusters,
+    donor = sce_slingshot$donor
+  ) |>
+  pivot_longer(cols = starts_with("Lineage"),
+               names_to = "lineage",
+               values_to = "Pseudotime") |>
+  dplyr::mutate(celltype_reduced = case_when(
+    CellType %in% c("EndoMT_1", "EndoMT_2") ~ "EndoMT-1/2",
+    CellType %in% c("Pericyte", "SMC") ~ "Pericyte/SMC",
+    .default = CellType)) |>
+  dplyr::filter(!is.na(Pseudotime))
+
+pseudotime_data <- pseudotime_data |>
+  dplyr::mutate(Group = if_else(Group == "Case", "AD", Group),
+                lineage = if_else(lineage == "Lineage1", "EndoMT-SMC Lienage",
+                           "EndoMT-PC Lineage"))
+
+# Convert the donor column to a factor with the specified order
+pseudotime_data$donor <- factor(pseudotime_data$donor, levels = percent_endomt$donor)
+
+density_plot_donor <- ggplot() +
+  geom_density(data = pseudotime_data,
+               aes(x = Pseudotime, fill = Group),
+               alpha = 0.7) +
+  scale_fill_manual(
+    values = c(
+      "Control" = "#DC0000FF",
+      "AD" = "#4DBBD4FF",
+      "EndoMT-1/2" = "#E64B35FF",
+      "Pericyte/SMC" = "#91D1C2FF",
+      "Endothelial" = "#F39B7FFF",
+      "Fibroblast" = "#7E6148FF"
+    ),
+    breaks = c("Control", "AD")
+  ) +
+  #scale_fill_npg(breaks = c("Control", "AD")) +
+  theme_minimal() +
+  labs(x = "Pseudotime", y = "Density", fill = "") +
+  facet_wrap(vars(donor, lineage)) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.2)))
+  #theme(plot.margin = margin(t = 40, r = 20, b = 20, l = 20, unit = "pt"))
+
+density_plot_donor
+
+ggsave(filename = here("05_figures/990_shared_figures/003_final_figures",
+                       "001_data_for_plots", "donor-density-plots.pdf"),
+       height = 15, width = 12)
+```
+
+#### switchDE for pericyte lineage
+
+```{r}
+# This gives you the lineage-specific pseudotimes (rows = cells, columns = lineages)
+pseudotime <- slingPseudotime(sce_slingshot)
+# Lineage-specific weights (how much a cell is associated with a lineage)
+weights <- slingCurveWeights(sce_slingshot)
+
+# Get pseudotime for lineage 2
+pt_pericyte <- pseudotime[, 2]  # adjust index if lineage order is different
+
+# Get weights for lineage 2
+w_pericyte <- weights[, 2]
+
+# Choose cells strongly associated with the lineage (e.g., weight > 0.5)
+cells_pericyte <- which(w_pericyte > 0.5 & !is.na(pt_pericyte))
+```
+
+```{r}
+library(switchde)
+
+counts <- assay(sce_slingshot, "logcounts")[, cells_pericyte]
+# filter out genes based on mean expression and at least 20% of cells should express it.
+counts <- counts[rowMeans(counts) > 0.1 & rowMeans(counts > 0) > 0.2,]
+pt <- pt_pericyte[cells_pericyte]
+
+file <- here::here("03_data/990_processed_data/008_pseudotime",
+  "pericyte_switchde_results.qs")
+if(!file.exists(file)) {
+  res <- switchde(as.matrix(counts), pseudotime = pt)
+  res <- res[order(res$qval), ]
+  head(res)
+  
+  qs::qsave(res, file)
+} else {
+  res <- qs::qread(file)
+}
+```
+
+In the switchDE results the `mu0` column is the mean expression prior to the switch.
+`k` is the estimated slope or steepness of the switch (higher = sharper switch).
+`t0` is the estimated switch point along pseudotime (where expression changes most)
+
+```{r}
+res <- res |>
+  dplyr::left_join(translated_id, by = join_by(gene == ensembl_gene_id))
+
+res_sig <- res |>
+  dplyr::filter(pval == 0)
+
+
+tf_link_table <- readr::read_tsv(here("03_data/991_external_data/TFLink_Homo_sapiens_interactions_All_simpleFormat_v1.0.tsv")) |> 
+  dplyr::select(!contains("Target"))
+head(tf_link_table)
+
+res_sig <- res_sig |>
+  dplyr::mutate(is_tf = hgnc_symbol %in% tf_link_table$Name.TF)
+
+res_sig_tf <- res_sig |>
+  dplyr::filter(is_tf & qval < 0.05)
+
+
+top_tf_hits <- res_sig_tf[order(-abs(res_sig_tf$k)), ]  # strongest effect
+head(top_tf_hits, 10)
+
+res_sig_tf |>
+  dplyr::filter(hgnc_symbol == "FOXP2")
+
+```
+
+```{r}
+#| eval: false
+# Create individual plots
+plots <- lapply(top_tf_hits$gene, function(g) {
+  df <- data.frame(
+    pseudotime = pt,
+    expression = counts[g, ],
+    gene = g
+  )
+  
+  ggplot(df, aes(x = pseudotime, y = expression)) +
+    geom_point(alpha = 0.4, size = 1) +
+    geom_smooth(method = "loess", se = FALSE, color = "steelblue") +
+    labs(title = g, x = "Pseudotime", y = "Expression") +
+    theme_minimal()
+})
+
+# Combine into a grid
+plot_grid(plotlist = plots, ncol = 2)
+```
 ### tradeseq results
 
 The associationTest function gives the wald stat, the degrees of freedom and the unadjusted p-vals associated with each gene.
 By default it doesn't test for each lineage independently.
 
+
 ```{r}
 library(tradeSeq)
 # Read in data from hawk
 sce_subset <- qs::qread(here("03_data/990_processed_data/008_pseudotime/slingshot_tradeseq_3k_case_and_control.qs"))
+```
 
+```{r}
 asso_res <- associationTest(sce_subset, lineages = TRUE)
 asso_res_overall <- associationTest(sce_subset)
 asso_res |> head(2) |> write_tsv("temp.txt")
@@ -889,6 +1234,11 @@ readr::write_csv(top_lin_genes,
                  here("03_data/990_processed_data/008_pseudotime",
                       "top_pseudotime_lineage_genes.csv"))
 
+lineage_genes |>
+    rownames_to_column("ensembl_gene_id") |>
+    readr::write_csv(here("03_data/990_processed_data/008_pseudotime",
+                      "all_pseudotime_lineage_genes.csv"))
+
 dim(top_lin_genes)
 top_genes <- top_lin_genes |>
   slice_max(fcMedian, n = 20)
@@ -1074,10 +1424,20 @@ It might be nice to make a list and perhaps pdf of all the unique genes of inter
 ```{r}
 df <- list(top_diff_early_genes, top_diff_end_genes, top_genes_condition,
            top_lin_genes)
+names(df) <- c("top_early_genes", "top_end_genes", "top_genes_condition",
+  "top_lin_genes")
 genes <- map(df, dplyr::pull, hgnc_symbol)
 genes <- unique(unlist(genes))
 
+head(df)
+test <- df
+
 cat("Number of unique genes of interest:", length(genes))
+
+qs::qsave(test, here::here("05_figures/990_shared_figures/003_final_figures",
+  "001_data_for_plots/tradeseq_sig_degs.qs"))
+readr::write_rds(df, here::here("05_figures/990_shared_figures/003_final_figures",
+  "001_data_for_plots/tradeseq_sig_degs.rds"))
 ```
 
 ### Additional genes to plot
@@ -1191,8 +1551,14 @@ early_tf <- early_tf |>
   dplyr::filter(Is_TF) |>
   dplyr::left_join(translated_id, by = join_by(Gene == hgnc_symbol))
 
-plots <- map2(early_tf$ensembl_gene_id,
-              early_tf$Gene,
+tf_link_match <- top_diff_early_genes |>
+  dplyr::filter(hgnc_symbol %in% tf_link_table$Name.TF & !hgnc_symbol %in% early_tf$Gene)
+
+all_tfs <- data.frame(gene = c(early_tf$Gene, tf_link_match$hgnc_symbol),
+  ensembl_gene_id = c(early_tf$ensembl_gene_id, tf_link_match$ensembl_gene_id))
+
+plots <- map2(all_tfs$ensembl_gene_id,
+              all_tfs$gene,
               plot_gene_pseudotime, sce_subset, counts)
 
 plots[[4]]
@@ -1242,6 +1608,32 @@ dev.off()
 table(all_tf$TF_Sources)
 ```
 
+
+```{r}
+# make supp figure of the TFs of interest
+genes <- c("FOXP2", "RORA", "ZBTB7C", "PRDM16", "NR4A1")
+genes <- translated_id |>
+  dplyr::filter(hgnc_symbol %in% genes)
+
+plots <- map2(genes$ensembl_gene_id,
+              genes$hgnc_symbol,
+              plot_gene_pseudotime, sce_subset, counts)
+
+plot <- plot_grid(plotlist = plots, nrow = 2)
+
+# extract the legend from one of the plots
+legend <- get_legend(
+  # create some space to the left of the legend
+  plots[[1]] + theme(legend.position = "right", legend.box.margin = margin(0, 0, 0, 12))
+)
+
+plot_grid(plots[[3]], plots[[1]], plots[[2]], plots[[4]], plots[[5]], 
+  legend, nrow = 2, labels = c("A", "B", "C", "D", "E", ""))
+
+ggsave(filename = here("05_figures/990_shared_figures/003_final_figures",
+                       "000_sup_figures", "endomt-lineage-transcription-factors.pdf"),
+       width = 7, height = 7, units = "in")
+```
 Zam flagged there TFs as being visually interesting
 
 ```{r}
@@ -1310,253 +1702,6 @@ ggplot(plot_data,
   theme_minimal()
 ```
 
-
-
-```{r}
-#| eval: false
-top_genes <- translated_id |>
-  dplyr::filter(hgnc_symbol %in% genes) |>
-  dplyr::distinct(hgnc_symbol, .keep_all = TRUE)
-
-qs::qsave(top_genes, here("03_data/990_processed_data/008_pseudotime",
-                          "all_genes_of_interest.qs"))
-
-future::plan(multisession, workers = 10)
-plot_list <- future_map2(top_genes$ensembl_gene_id,
-              top_genes$hgnc_symbol,
-              plot_gene_pseudotime, sce_subset, counts)
-
-# Vectorized PDF creation
-pdf(here("05_figures/990_shared_figures/004_pseudotime",
-         "01_tradeseq", "all_genes.pdf"), width = 11, height = 8)
-
-# Split the plot list into chunks of 4
-plot_chunks <- split(plot_list, ceiling(seq_along(plot_list)/4))
-
-# Use map to apply grid.arrange to each chunk
-walk(plot_chunks, function(chunk) {
-  do.call(grid.arrange, c(chunk, ncol = 2, nrow = 2))
-})
-
-dev.off()
-```
-
-
-```{r}
-#| eval: false
-
-# Trying to add the celltypes to the background of the plot - not working
-
-sce_slingshot <- qs::qread(here("03_data/990_processed_data/008_pseudotime",
-                              "slingshot_obj.qs"))
-
-sce_slingshot_sub <- sce_slingshot[, rownames(colData(sce_subset))]
-
-pseudotime <- slingshot::slingPseudotime(sce_slingshot_sub)
-
-df <- data.frame(
-  cellTypes = sce_slingshot_sub$level1_celltypes_with_endomt_subclusters,
-  pseudotime = pseudotime
-)
-
-pseudotime_df <- data.frame(
-  Cell = colnames(sce_slingshot_sub),
-  Pseudotime1 = pseudotime[,1],
-  Pseudotime2 = pseudotime[,2],
-  Group = sce_slingshot_sub$diagnosis,
-  CellType = sce_slingshot_sub$level1_celltypes_with_endomt_subclusters
-)
-
-df <- pseudotime_df |>
-  dplyr::mutate(pseudotime_agg = case_when(
-    is.na(Pseudotime1) ~ Pseudotime2,
-    is.na(Pseudotime2) ~ Pseudotime1,
-    !is.na(Pseudotime1) & !is.na(Pseudotime2) ~ (Pseudotime1 + Pseudotime2) / 2,
-    .default = NA
-  )) |>
-  dplyr::summarise(min_pseu = min(pseudotime_agg),
-                   max_pseu = max(pseudotime_agg),
-                   ymin = 0, ymax = 1, gene_count = 1, .by = CellType)
-
-p1_diagnosis <- ggplot(pseudotime_df, aes(x = Pseudotime1, fill = Group)) +
-  geom_density(alpha = 0.5) +
-  theme_minimal() +
-  labs(title = "Pseudotime Distribution for Lineage 1", x = "Pseudotime", y = "Density")
-ggplot() + geom_rect(data = df,
-                     aes(xmin = min_pseu, xmax = max_pseu, ymin = 0, ymax = 1, fill = CellType),
-                     alpha = 0.2)
-
-plot_controls[[1]] + geom_rect(data = df,
-                     aes(xmin = min_pseu, xmax = max_pseu, ymin = ymin, ymax = ymax, fill = CellType),
-                     alpha = 0.2)
-
-plot_controls[[1]] + geom_density(data = pseudotime_df,
-                     aes(x = ),
-                     alpha = 0.2)
-
-
-combined_data <- pseudotime_df |>
-  pivot_longer(Pseudotime1:Pseudotime2, names_to = "lineage",
-               values_to = "pseudotime") |>
-  dplyr::filter(!is.na(pseudotime))
-
-celltype_regions <- combined_data %>%
-  group_by(lineage, CellType) %>%
-  summarise(
-    start = min(pseudotime),
-    end = max(pseudotime),
-    .groups = "drop"
-  ) %>%
-  dplyr::summarise(start = round(mean(start)),
-                   end = round(mean(end)),
-                   ymin = 0,
-                   ymax = 1,
-                   .by = CellType)
-
-plot_controls[[1]] + geom_rect(data = celltype_regions,
-              aes(xmin = start,
-                  xmax = end,
-                  ymin = min(plot_controls[[1]]$data$gene_count),
-                  ymax = max(plot_controls[[1]]$data$gene_count),
-                  fill = CellType),
-              alpha = 0.2)
-
-# Get y-axis limits from the plot data
-y_min <- min(plot_controls[[1]]$data$gene_count)
-y_max <- max(plot_controls[[1]]$data$gene_count)
-
-# Add rectangles with fixed y limits
-plot_lineages[[1]] +
-    geom_rect(data = celltype_regions,
-              aes(xmin = start,
-                  xmax = end,
-                  fill = CellType),
-              ymin = y_min,
-              ymax = y_max,
-              alpha = 0.2)
-
-plot_lineages[[1]]$data |> nrow()
-plot_lineages[[1]] +
-ggplot2::geom_rect(data = celltype_regions, aes(
-    xmin = start,
-    xmax = end,
-    ymin = -Inf,
-    ymax = Inf,
-    fill = CellType
-  ), alpha = 0.3)
-plot_lineages[[1]] +
-  #annotate("rect", xmin = 4, xmax = 5, ymin = 0, ymax = 4)
-  geom_rect(aes(xmin=start, xmax=end, ymin=0, ymax=max(plot_lineages[[1]]$data$gene_count)), data = celltype_regions)
-
-plot_lineages[[1]]
-plot_data_df <- plot_lineages[[1]]$data |>
-  dplyr::mutate(log_gene_count = log(gene_count + 1))
-
-p <- ggplot() +
-  geom_rect(aes(xmin=start, xmax=end, ymin=0,
-                ymax=7,
-                fill = CellType), alpha = 0.2, data = celltype_regions) +
-  geom_smooth(data = plot_data_df, aes(x = time, y = log_gene_count, color = lineage)) +
-  theme_minimal()
-p
-```
-
-
-```{r}
-#| eval: false
-
-# format for the associations is annoying, function to reformat
-# Should geneeralise this to an arbitrary number of lineages in future
-analyse_pseudotime_genes <- function(asso_res, pval_adjust_method = "fdr") {
-
-  # Get significant genes for each lineage
-  genes_l1 <- asso_res |>
-    dplyr::select(waldStat_1:pvalue_1) |>
-    dplyr::rename(waldStat = waldStat_1, df = df_1, pvalue = pvalue_1) |>
-    na.omit() |>
-    dplyr::mutate(lineage = "1", p_adj = p.adjust(pvalue, pval_adjust_method))
-  genes_l2 <- asso_res |>
-    dplyr::select(waldStat_2:pvalue_2) |>
-    dplyr::rename(waldStat = waldStat_2, df = df_2, pvalue = pvalue_2) |>
-    na.omit() |>
-    dplyr::mutate(lineage = "2", p_adj = p.adjust(pvalue, pval_adjust_method))
-  genes_overall <- asso_res |>
-    dplyr::select(waldStat:pvalue) |>
-    na.omit() |>
-    dplyr::mutate(lineage = "overall", p_adj = p.adjust(pvalue, pval_adjust_method))
-
-  df <- rbind(genes_l1, genes_l2, genes_overall)
-  df$ensembl <- rownames(df)
-  asso_res$ensembl <- rownames(asso_res)
-  df <- asso_res |>
-    dplyr::select(ensembl, meanLogFC) |>
-    dplyr::left_join(x = df, y = _, by = "ensembl")
-  return(df)
-}
-
-tar_load(translated_id)
-tradeseq_res <- analyse_pseudotime_genes(asso_res, "bonferroni") |>
-  dplyr::left_join(translated_id, by = join_by(ensembl == ensembl_gene_id))
-tradeseq_res_consec <- analyse_pseudotime_genes(asso_res_consec, "bonferroni") |>
-  dplyr::left_join(translated_id, by = join_by(ensembl == ensembl_gene_id))
-
-tradeseq_overall <- asso_res_overall |>
-  dplyr::filter(!is.na(pvalue)) |>
-  dplyr::mutate(p_adj = p.adjust(pvalue, "bonferroni")) |>
-  rownames_to_column("ensembl")
-
-tradeseq_sig_overall <- tradeseq_overall |>
-  dplyr::filter(p_adj < 0.05) |>
-  dplyr::left_join(translated_id, by = join_by(ensembl == ensembl_gene_id))
-
-tradeseq_sig <- tradeseq_res |>
-  dplyr::filter(p_adj < 0.05)
-tradeseq_sig_consec <- tradeseq_res_consec |>
-  dplyr::filter(p_adj < 0.05)
-
-table(tradeseq_sig$lineage)
-table(tradeseq_sig_consec$lineage)
-
-counts <- assays(sce_subset)$counts
-# For some reason this contains loads of genes not present in the counts?
-tradeseq_sig <- tradeseq_res |>
-  dplyr::filter(p_adj < 0.05 & ensembl %in% rownames(counts) & meanLogFC < 100)
-tradeseq_sig_consec <- tradeseq_res_consec |>
-  dplyr::filter(p_adj < 0.05 & ensembl %in% rownames(counts) & meanLogFC < 100)
-# Plot for a gene
-plotSmoothers(sce_subset, counts, rownames(counts)[1])
-
-# get top genes
-big_genes <- tradeseq_sig_consec |>
-  slice_min(p_adj, by = lineage, n = 5) |>
-  #dplyr::filter(meanLogFC > 2 | is.na(meanLogFC)) |>
-  slice_max(abs(meanLogFC), by = lineage, n = 5) |>
-  slice_sample(by = lineage, n = 5)
-
-tradeseq_plots <- function(gene_id, gene_symbol) {
-  plot <- plotSmoothers(sce_subset, counts, gene_id) +
-    ggtitle(if_else(gene_symbol == "", gene_id, gene_symbol))
-  return(plot)
-}
-
-plots <- map2(big_genes$ensembl, big_genes$hgnc_symbol, tradeseq_plots) |>
-  set_names(big_genes$hgnc_symbol)
-
-plot_grid(plotlist = plots, ncol = 5)
-
-big_genes <- tradeseq_sig_overall |>
-  slice_min(p_adj, n = 50) |>
-  #dplyr::filter(meanLogFC > 2 | is.na(meanLogFC)) |>
-  slice_sample(n = 15)
-
-plots <- map2(big_genes$ensembl, big_genes$hgnc_symbol, tradeseq_plots) |>
-  set_names(big_genes$hgnc_symbol)
-
-plot_grid(plotlist = plots, ncol = 5)
-
-```
-
-
 ## Condiment differential trajectory analysis
 
 ```{r}
@@ -1583,90 +1728,4 @@ sce_slingshot <- fitGAM(counts = assays(sce_slingshot)$counts, pseudotime = slin
 
 # Extract the model results
 gam_results <- rowData(sce_slingshot)$tradeSeq
-```
-
-```{r}
-#| eval: false
-# Load required libraries
-library(condiments)
-
-# Assuming you have your data in a SingleCellExperiment object named 'sce'
-# with a column in colData named 'condition' (e.g., "case" or "control")
-
-# Perform differential progression analysis
-diff_prog <- differentiationTest(sce_slingshot, sce_slingshot$diagnosis)
-
-# View results
-head(diff_prog)
-
-# Visualize differential progression
-plotDiffProgression(sce_slingshot, diff_prog, lineages = TRUE)
-
-# Perform gene-level analysis
-gene_fits <- fitGAM(sce_slingshot)
-
-# Test for condition-specific gene expression
-cond_test <- conditionTest(gene_fits)
-
-# View top differentially expressed genes
-top_genes <- rownames(cond_test)[order(cond_test$pvalue)[1:20]]
-print(top_genes)
-
-# Visualize condition-specific expression for top genes
-plotGeneCount(sce_slingshot, gene_fits, top_genes[1:6])
-
-# If you're interested in specific branching points:
-branch_test <- branchTest(gene_fits)
-
-# Visualize branching genes
-plotBranchHeatmap(sce_slingshot, branch_test, pcutoff = 0.05)
-```
-
-```{r}
-#| eval: false
-# Run Slingshot on PCA
-sce_slingshot <- slingshot(sce_slingshot, clusterLabels = 'highlevel_manual_annotations', start.clus = "mystery-cluster", reducedDim = 'PCA')
-# Plot the trajectory
-png(here::here("05_figures/990_shared_figures/004_pseudotime/slingshot_pca_endomt_start-clus.png"))
-# plot(reducedDims(sce_slingshot)$PCA, col = sce$highlevel_manual_annotations, pch = 16, asp = 1)
-# lines(SlingshotDataSet(sce_slingshot), lwd = 2)
-plot(reducedDims(sce_slingshot)$PCA, col = sce$highlevel_manual_annotations, pch=16, asp = 1)
-lines(SlingshotDataSet(sce_slingshot), lwd=2, type = 'lineages', col = 'black')
-dev.off()
-```
-
-```{r}
-#| eval: false
-# Extract pseudotime
-pseudotime <- slingPseudotime(sce)
-
-# Plot gene expression along pseudotime
-plotGeneExpression <- function(gene) {
-  plot(pseudotime, assays(sce)$logcounts[gene, ], pch = 16, col = sce$seurat_clusters)
-  lines(smooth.spline(pseudotime, assays(sce)$logcounts[gene, ]), lwd = 2)
-}
-
-# Example for a specific gene
-plotGeneExpression("Gene1")
-```
-
-
-```{r}
-lin1 <- getLineages(reducedDims(sce_slingshot)$PCA, sce$highlevel_manual_annotations, start.clus = 'mystery-cluster')
-lin1
-png(here::here("05_figures/990_shared_figures/004_pseudotime/slingshot_pca_endomt_start-clus_lineage_2pcs_res0.1.png"))
-plot(reducedDims(sce_slingshot)$PCA,
-     col = brewer.pal(9,"Set1")[sce$highlevel_manual_annotations],
-     asp = 1, pch = 16, main = "Lineage with EndoMT as start cluster")
-lines(SlingshotDataSet(lin1), lwd = 3, col = 'black')
-dev.off()
-
-lin1 <- getLineages(reducedDims(sce_slingshot)$PCA, sce$highlevel_manual_annotations, start.clus = 'Endothelial')
-lin1
-png(here::here("05_figures/990_shared_figures/004_pseudotime/slingshot_pca_endothelial-clus_lineage_2pcs_res0.1.png"))
-plot(reducedDims(sce_slingshot)$PCA,
-     col = brewer.pal(9,"Set1")[sce$highlevel_manual_annotations],
-     asp = 1, pch = 16, main = "Lineage with Endothelial as start cluster")
-lines(SlingshotDataSet(lin1), lwd = 3, col = 'black')
-dev.off()
 ```

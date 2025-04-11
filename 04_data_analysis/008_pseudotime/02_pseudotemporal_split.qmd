@@ -1,0 +1,958 @@
+---
+title: EndoMT pseudotime split
+execute:
+  eval: true
+code-fold: true
+---
+
+```{r}
+here::i_am("04_data_analysis/001_snrnaseq_analysis/16_pathway_analysis.qmd")
+```
+
+Interest in the possiblity that capilary cells are driving the pericyte lineage and arterial are driving the SMC lineage.
+
+# Load packages
+
+```{r}
+source(here::here("04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"))
+Sys.setenv(TAR_PROJECT = here::here())
+tar_config_set(store = here::here("_targets"))
+library(SeuratWrappers)
+library(monocle3)
+library(slingshot)
+library(GGally)
+```
+
+```{r}
+# Get seurat object
+tar_load(sce)
+tar_load(gene_ids)
+tar_load(translated_id)
+
+assertthat::assert_that(sum(rownames(sce@assays$RNA@counts) ==
+                              gene_ids$ensembl) == nrow(gene_ids))
+```
+
+## EndoMT
+
+### Subset to celltypes
+
+```{r}
+# Subset to EndoMT
+rownames(sce@assays$RNA@data) <- gene_ids$ensembl
+sce <- subset(sce, highlevel_manual_annotations %in% c("SMC", "Pericyte", "mystery-cluster", "Endothelial"))
+# remove unneded cells
+sce <- subset(sce, subcelltype_annotations %in% c("Oligo-A", "Astrocyte-activated", "Venous"), invert = TRUE)
+```
+ 
+Seperate out pericyte and SMC.
+To avoid duplicating all the subsequent code I'll just add a selection variable for which subset to process.
+
+```{r}
+# select subset 
+subset = "pericyte"
+#subset = "smc"
+
+if(subset == "pericyte"){
+  #sce_sub <- subset(sce, subset = grepl("Capillary|EndoMT_2|Pericyte", sce$subcelltype_annotations))
+  sce_sub <- subset(sce, highlevel_manual_annotations != "SMC" & !(sce$subcelltype_annotations %in% c("Arterial", "EndoMT_2")))
+} else {
+  sce_sub <- subset(sce, highlevel_manual_annotations != "Pericyte" & !(sce$subcelltype_annotations %in% c("Capillary", "EndoMT_1")))
+}
+
+table(sce_sub$subcelltype_annotations)
+```
+
+```{r}
+sce_sub <- NormalizeData(sce_sub)
+sce_sub <- FindVariableFeatures(sce_sub)
+sce_sub <- ScaleData(sce_sub)
+```
+
+```{r}
+sce_sub <- RunPCA(sce_sub, dims = 1:30)
+sce_sub <- RunUMAP(sce_sub, dims = 1:30)
+ElbowPlot(sce_sub, ndims = 30)
+```
+
+```{r}
+# This resolution is good to recapture the level 2 celltypes
+#sce_sub <- FindClusters(sce_sub, resolution = 0.3)
+# this is good to reduce the celltypes to three main clusters
+sce_sub <- FindClusters(sce_sub, resolution = 0.05)
+```
+
+
+```{r}
+DimPlot(sce_sub, reduction = "umap", group.by = "seurat_clusters",
+              label = TRUE)
+DimPlot(sce_sub, reduction = "umap", group.by = "highlevel_manual_annotations",
+              label = TRUE)
+DimPlot(sce_sub, reduction = "pca", group.by = "seurat_clusters",
+              label = TRUE)
+```
+
+```{r}
+p1 <- DimPlot(sce_sub, reduction = "umap", group.by = "subcelltype_annotations",
+              label = TRUE)
+p2 <- DimPlot(sce_sub, reduction = "umap", group.by = "seurat_clusters",
+              label = TRUE)
+p1|p2
+p1 <- DimPlot(sce_sub, reduction = "umap", group.by = "highlevel_manual_annotations",
+              label = TRUE)
+p2 <- DimPlot(sce_sub, reduction = "pca", group.by = "highlevel_manual_annotations",
+              label = TRUE)
+p1|p2
+```
+
+```{r}
+# Extract PCA embeddings
+pca_embeddings <- Embeddings(sce_sub, reduction = "pca")
+
+# Create a data frame for the first two principal components
+pca_df <- data.frame(PC1 = pca_embeddings[, 1], PC2 = pca_embeddings[, 2],
+                     celltype = sce_sub$highlevel_manual_annotations)
+
+library(ggpointdensity)
+# Generate the density plot
+p1 <- ggplot(pca_df, aes(x = PC1, y = PC2)) +
+  geom_pointdensity() +
+  #geom_point(alpha = 0.5) +
+  theme_minimal() +
+  labs(title = "Density Plot of First Two Principal Components",
+       x = "PC1",
+       y = "PC2") +
+  facet_wrap(~celltype)
+p2 <- ggplot(pca_df, aes(x = PC1, y = PC2, colour = celltype)) +
+  geom_pointdensity() +
+  #geom_point(alpha = 0.5) +
+  theme_minimal() +
+  labs(title = "Density Plot of First Two Principal Components",
+       x = "PC1",
+       y = "PC2")
+p1|p2
+```
+
+```{r}
+# Create a data frame for the first 30 principal components and cell type annotations
+pca_df <- data.frame(pca_embeddings[, 1:30], CellType = sce_sub$highlevel_manual_annotations)
+
+# Function to create scatter plots for each pair of PCs
+plot_pcs <- function(i) {
+  pc_x <- paste0("PC_", i)
+  pc_y <- paste0("PC_", i + 1)
+  ggplot(pca_df, aes_string(x = pc_x, y = pc_y, color = "CellType")) +
+    geom_point(alpha = 0.5) +
+    theme_minimal() +
+    labs(title = paste(pc_x, "vs", pc_y),
+         x = pc_x,
+         y = pc_y,
+         color = "Cell Type")
+}
+
+# Generate scatter plots for PC1 vs PC2, PC3 vs PC4, ..., PC29 vs PC30 using lapply
+plots <- lapply(seq(1, 29, by = 2), plot_pcs)
+
+# Arrange plots in a grid
+plots <- do.call(grid.arrange, c(plots, ncol = 3))
+#ggsave(here::here("05_figures/990_shared_figures/004_pseudotime/first_30_pcs.png"), plots, width = 20, height = 15)
+
+# Function to create scatter plots for each pair of PCs
+plot_pcs <- function(i) {
+  pc_x <- paste0("PC_", i)
+  pc_y <- paste0("PC_", i + 1)
+  ggplot(pca_df, aes_string(x = pc_x, y = pc_y)) +
+    geom_pointdensity() +
+    theme_minimal() +
+    labs(title = paste(pc_x, "vs", pc_y),
+         x = pc_x,
+         y = pc_y,
+         color = "Cell Type") +
+    facet_wrap(~ CellType)
+}
+
+# Generate scatter plots for PC1 vs PC2, PC3 vs PC4, ..., PC29 vs PC30 using lapply
+plots <- lapply(seq(1, 29, by = 2), plot_pcs)
+
+# Arrange plots in a grid
+plots <- do.call(grid.arrange, c(plots, ncol = 3))
+#ggsave(here::here("05_figures/990_shared_figures/004_pseudotime/first_30_pcs_facet.png"), plots, width = 20, height = 15)
+```
+
+```{r}
+sce_sub <- RunPCA(sce_sub, npcs = 2)
+# This splits the pericyte and smcs
+sce_sub <- FindClusters(sce_sub, resolution = 0.1)
+sce_sub <- RunUMAP(sce_sub, dims = 1:2)
+```
+
+```{r}
+sce_sub$highlevel_manual_annotations <- if_else(sce_sub$highlevel_manual_annotations == "mystery-cluster", "EndoMT", sce_sub$highlevel_manual_annotations)
+```
+
+```{r}
+DimPlot(sce_sub, reduction = "umap", group.by = "seurat_clusters",
+              label = TRUE)
+DimPlot(sce_sub, reduction = "umap", group.by = "highlevel_manual_annotations",
+              label = TRUE)
+DimPlot(sce_sub, reduction = "pca", group.by = "seurat_clusters",
+              label = TRUE)
+DimPlot(sce_sub, reduction = "pca", group.by = "level1_celltypes_with_endomt_subclusters",
+              label = TRUE)
+DimPlot(sce_sub, reduction = "pca", group.by = "diagnosis",
+              label = TRUE)
+```
+
+### Slingshot
+
+The PCA plot looks to capture the lineages quite nicely by itself, so I'll use that as the basis.
+
+```{r}
+# Convert Seurat object to SingleCellExperiment
+sce_slingshot <- as.SingleCellExperiment(sce_sub)
+```
+
+```{r}
+sce_slingshot <- slingshot(
+  sce_slingshot,
+  clusterLabels = 'level1_celltypes_with_endomt_subclusters',
+  start.clus = "Endothelial",
+  reducedDim = 'PCA'
+)
+```
+
+```{r}
+# 1. Plot PCA with Slingshot trajectory
+pca <- reducedDims(sce_slingshot)$PCA
+lineages <- slingCurves(sce_slingshot)
+
+if(subset == "pericyte"){
+  qs::qsave(sce_slingshot, here("03_data/990_processed_data/008_pseudotime",
+                              "slingshot_obj_pericyte.qs"))
+} else {
+  qs::qsave(sce_slingshot, here("03_data/990_processed_data/008_pseudotime",
+                              "slingshot_obj_smc.qs"))
+}
+#sce_slingshot <- qs::qread(here("03_data/990_processed_data/008_pseudotime",
+#                              "slingshot_obj_pericyte.qs"))
+#sce_slingshot <- qs::qread(here("03_data/990_processed_data/008_pseudotime",
+#                              "slingshot_obj_smc.qs"))
+
+celltype <- sce_slingshot$level1_celltypes_with_endomt_subclusters
+#celltype <- sce_slingshot$subcelltype_annotations
+celltype <- str_replace(celltype, "_", "-")
+
+# Plot PCA colored by cell type
+# Flip x-axis
+p_pca <- ggplot(as.data.frame(pca), aes(x = -PC_1, y = PC_2)) +
+  geom_point(aes(color = celltype),
+             size = 0.8, alpha = 0.6) +
+  scale_color_brewer(palette = "Set1") +
+  theme_minimal() +
+  labs(x = "PC1", y = "PC2", color = "Celltype &\nLineage") +
+  scale_color_npg()
+  #scale_color_brewer(palette = "Dark2")
+
+# Add arrows to the curves
+curves <- map2_dfr(lineages, names(lineages), ~ .x$s |>
+           as.data.frame() |>
+           mutate(lineage = .y)) |>
+  mutate(lineage = if_else(lineage == "Lineage1", "EndoMT-SMC Lienage",
+                           "EndoMT-PC Lineage"))
+
+# Add arrows using geom_path and arrow.decoration
+p_pca <- p_pca +
+  geom_path(data = curves,
+            aes(x = -PC_1, y = PC_2, colour = lineage), # Note the negative PC_1
+            linewidth = 1.1,
+            arrow = arrow(type = "closed",
+                         length = unit(0.1, "inches"),
+                         ends = "last"))
+
+# Calculate centroids for each cell type
+centroids <- data.frame(
+  PC_1 = pca[, 1],
+  PC_2 = pca[, 2],
+  CellType = celltype) |>
+  group_by(CellType) |>
+  summarise(
+    mean_PC1 = mean(PC_1),
+    mean_PC2 = mean(PC_2)
+  )
+ p_pca_labeled <- p_pca +
+  geom_text_repel(
+    data = centroids,
+    aes(x = -mean_PC1, y = mean_PC2, label = CellType),
+    color = "black",
+    size = 3,
+    box.padding = 0.5,
+    point.padding = 0.5,
+    force = 10,
+    segment.color = "grey50",
+    segment.size = 0.5,
+    max.overlaps = Inf
+  )
+
+print(p_pca_labeled)
+
+if(subset == "pericyte"){
+  ggsave(here("05_figures/990_shared_figures/004_pseudotime/slingshot_pca_npc2_res0.1_pericyte.png"), 
+    height = 8, width = 10)
+} else {
+  ggsave(here("05_figures/990_shared_figures/004_pseudotime/slingshot_pca_npc2_res0.1_smc.png"), 
+    height = 8, width = 10)
+}
+
+# Extract pseudotimes
+pseudotime <- slingPseudotime(sce_slingshot)
+
+# Convert to data frame for ggplot
+pseudotime_df <- data.frame(
+  Pseudotime1 = pseudotime[,1],
+  Group = sce_slingshot$diagnosis
+)
+
+# Plot Pseudotime for Lineage 1
+p1 <- ggplot(pseudotime_df, aes(x = Pseudotime1, fill = Group)) +
+  geom_density(alpha = 0.5) +
+  theme_minimal() +
+  labs(title = "Pseudotime Distribution for Lineage 1", x = "Pseudotime", y = "Density")
+
+print(p1)
+
+p1 <- ggplot(data.frame(pca, pseudotime), aes(PC_1, PC_2, color = Lineage1)) +
+  geom_point(alpha = 0.7) +
+  scale_color_viridis_c(option = 'plasma', name = 'Pseudotime') +
+  labs(x = 'PC1', y = 'PC2') +
+  theme_minimal()
+print(p1)
+```
+
+### tradeseq results
+
+The associationTest function gives the wald stat, the degrees of freedom and the unadjusted p-vals associated with each gene.
+By default it doesn't test for each lineage independently.
+
+```{r}
+library(tradeSeq)
+
+# Read in data from hawk
+file <- here("03_data/990_processed_data/008_pseudotime/slingshot_tradeseq_3k_pericyte.qs")
+
+if(subset != "pericyte"){
+  file <- str_replace(file, "_pericyte", "_smc")
+}
+
+sce_subset <- qs::qread(file)
+
+# Function to tidy the tradeseq output
+tidy_tradeseq <- function(data) {
+  # First, get the base columns that don't need splitting
+  base_cols <- c("waldStat", "df", "pvalue")
+
+  data <- data |>
+    rownames_to_column("ensembl_gene_id")
+
+  # Find columns that need to be split (those containing underscores)
+  split_cols <- names(data)[grepl("_", names(data))]
+
+  # Create the base dataframe with non-split columns
+  base_df <- data[c(base_cols, "ensembl_gene_id")] |>
+    dplyr::mutate(lineage = "overall")
+
+  # Process the split columns
+  if (sum(grepl("condition", split_cols)) > 0) {
+    base_df$condition <- "overall"
+    split_data <- data |>
+      dplyr::select(all_of(split_cols)) |>
+      pivot_longer(
+        cols = -ensembl_gene_id,
+        names_to = c(".value", "lineage", "condition"),
+        names_pattern = "(.*)_lineage(\\d+)_condition(.*)"
+      )
+  } else {
+    split_data <- data |>
+      dplyr::select(all_of(split_cols)) |>
+      pivot_longer(
+        cols = -ensembl_gene_id,
+        names_to = c(".value", "lineage"),
+        names_pattern = "(.*)_lineage(\\d+)"
+      )
+  }
+
+  result <- rbind(split_data, base_df)
+  # Add logfc back in
+  if (sum(grepl("condition", split_cols)) > 0) {
+  result <- data[c("ensembl_gene_id", "meanLogFC")] |>
+    dplyr::left_join(x = result, y = _, by = "ensembl_gene_id")
+  }
+  return(result)
+}
+
+# Get stats for the all genes overall across all lineages and conditions
+plot_gene_pseudotime <- function(gene, gene_symbol, sce, counts) {
+  plot <- plotSmoothers(sce, counts, gene, curvesCols = pal_npg("nrc")(2)) +
+    scale_colour_npg(labels = c("EndoMT-PC - AD",
+                                "EndoMT-PC - Control")) +
+    ggtitle(if_else(gene_symbol == "", gene, gene_symbol)) +
+    labs(colour = "") +
+    theme(legend.position = "none")
+  return(plot)
+}
+
+counts <- assays(sce_subset)$counts
+
+# TODO check the colours are right for SMC lineage
+plotSmoothers(sce_subset, counts, cond_res_sig$ensembl_gene_id[1])
+p <- plot_gene_pseudotime(cond_res_sig$ensembl_gene_id[1], cond_res_sig$hgnc_symbol[1], sce_subset, counts)
+p + theme(legend.position = "right")
+```
+
+```{r}
+#| eval: false
+asso_res <- associationTest(sce_slingshot)
+
+asso_res_tidy <- tidy_tradeseq(asso_res) |>
+  dplyr::left_join(translated_id, by = "ensembl_gene_id")
+
+# Get top 10 genes per condition and lineage
+top_genes <- asso_res_tidy |>
+  dplyr::filter(hgnc_symbol != "" | !is.na(hgnc_symbol)) |>
+  dplyr::group_by(condition, lineage) |>
+  dplyr::distinct(hgnc_symbol, .keep_all = TRUE) |>
+  dplyr::ungroup() |>
+  dplyr::filter(pvalue == 0)
+
+table(top_genes$lineage, top_genes$condition)
+
+top_controls <- top_genes |>
+  dplyr::filter(condition == "Control") |>
+  slice_max(waldStat, n = 25, with_ties = FALSE, by = c(condition, lineage)) |>
+  dplyr::distinct(hgnc_symbol, .keep_all = TRUE)
+
+pdf(here("05_figures/990_shared_figures/004_pseudotime/01_tradeseq/",
+                       "top_controls_pseudotime_degs.pdf"),
+       height = 12, width = 20)
+map2(top_controls$ensembl_gene_id, top_controls$hgnc_symbol, ~ plotSmoothers(sce_subset, counts, .x) +
+    ggtitle(.y))
+dev.off()
+
+# CNTN1 looks unique to lineage 1!
+lineage_genes <- c("CHF", "TFPI", "PDK4", "ITGA3", "JARID2", "CYTH3", "ZNF207",
+                   "SLC6A13", "FYN", "MRC2", "DCN", "RUFY3", "CNTN1", "ATP1A2",
+                   "NR1H3", "PRKCH", "ZFHX3", "FLT1", "ATP10A", "PLEKHG1",
+                   "RORA", "IGF1R", "SLC6A1", "LAMA2", "SLC6A12", "SORBS1",
+                   "SEC14L1", "PDE3A")
+
+top_lineage_degs <- top_genes |>
+  dplyr::filter(hgnc_symbol %in% lineage_genes)
+
+plot_lineages <- map2(unique(top_lineage_degs$ensembl_gene_id),
+                      unique(top_lineage_degs$hgnc_symbol),
+              plot_gene_pseudotime, sce_subset, counts)
+
+plot_lineages[[5]] <- plot_lineages[[5]] +
+  theme(legend.position = "right")
+
+
+plot <- plot_grid(plotlist = plot_lineages, ncol = 5)
+plot
+
+#ggsave(filename = here("05_figures/990_shared_figures/004_pseudotime",
+#                       "01_tradeseq", "top_lineage_pseudotime_degs.png"),
+#       height = 14, width = 18)
+```
+## Key genes for figure
+
+```{r}
+key_genes <- translated_id |>
+  dplyr::filter(hgnc_symbol %in% c("BACE2", "APOD"))
+
+plot_lineages <- map2(unique(key_genes$ensembl_gene_id),
+                      unique(key_genes$hgnc_symbol),
+              plot_gene_pseudotime, sce_subset, counts)
+apod <- plot_lineages[[2]] +
+  theme(legend.position = "bottom")
+
+# extract a legend that is laid out horizontally
+legend_b <- get_legend(
+  apod +
+    guides(color = guide_legend(nrow = 1)) +
+    theme(legend.position = "bottom")
+)
+prow <- plot_grid(apod + theme(legend.position = "none"), plot_lineages[[1]])
+key_genes_plot <- plot_grid(prow, legend_b, ncol = 1, rel_heights = c(1, 0.1))
+
+key_genes <- translated_id |>
+  dplyr::filter(grepl("^ANG", hgnc_symbol)) |>
+  dplyr::filter(ensembl_gene_id %in% rownames(counts))
+
+plot_lineages <- map2(unique(key_genes$ensembl_gene_id),
+                      unique(key_genes$hgnc_symbol),
+              plot_gene_pseudotime, sce_subset, counts)
+plot_lineages[[5]] <- plot_lineages[[5]] +
+  theme(legend.position = "right")
+
+
+plot <- plot_grid(plotlist = plot_lineages, ncol = 3)
+plot
+
+ggsave(filename = here("05_figures/990_shared_figures/004_pseudotime",
+                       "01_tradeseq", "ANG_genes.png"),
+       height = 14, width = 18)
+```
+
+## Build figure
+
+```{r}
+plot <- plot_grid(p_pca_labeled, density_plot, key_genes_plot,
+                   ncol = 1, labels = "AUTO",
+                  rel_heights = c(1.2, 1, 1))
+plot
+ggsave(here::here("05_figures/990_shared_figures/003_final_figures",
+                  "endomt_fig.pdf"), plot, width = 7, height = 9, units = "in")
+#plot_grid(p_pca_labeled, density_plot, key_genes_plot, labels = "AUTO", nrow = 3)
+```
+
+
+```{r}
+x <- predictSmooth(sce_subset, "ENSG00000000971")
+
+x <- x |> dplyr::mutate(lineage_condition = paste0("Lienage-", lineage, "_", condition))
+plot_example <- plotSmoothers(sce_subset, counts, "ENSG00000000971")
+
+
+ggplot(x, aes(x = time, y = log(yhat + 1), colour = lineage_condition)) +
+  geom_point() +
+#  geom_smooth(linewidth = 1) +
+  # Add confidence interval ribbon if you have SE columns
+  # geom_ribbon(aes(ymin = yhat - 2 * SE, ymax = yhat + 2 * SE),
+  #             alpha = 0.2,
+  #             fill = "blue")+
+  theme_bw() +
+  labs(x = "Pseudotime",
+       y = "Expression",
+       title = "Gene Expression over Pseudotime") +
+  theme(panel.grid.minor = element_blank())
+
+```
+
+### Get best lineage genes
+
+```{r}
+# Get all genes with a p-value of 0
+all_top_genes <- top_genes |>
+  dplyr::distinct(hgnc_symbol, .keep_all = TRUE)
+
+table(all_top_genes$condition, all_top_genes$lineage)
+
+smoothed_values <- predictSmooth(sce_subset,
+                                 gene = unique(all_top_genes$ensembl_gene_id),
+                                 nPoints = 100)
+```
+
+### Condition test
+
+The `conditionTest` function test genes across conditions.
+It can give overall genes, and per lineage, so I'll check both
+
+```{r}
+cond_res <- conditionTest(sce_subset, lineages = TRUE, pairwise = TRUE)
+
+sum(cond_res$pvalue < 0.05)
+sum(cond_res$pvalue == 0)
+
+cond_res_sig <- cond_res |> 
+  rownames_to_column("ensembl_gene_id") |>
+  dplyr::left_join(translated_id, by = "ensembl_gene_id") |>
+  dplyr::filter(hgnc_symbol != "" & !is.na(hgnc_symbol)) |>
+  dplyr::filter(pvalue == 0)
+
+sig_genes <- rownames(cond_res)[cond_res$pvalue == 0]
+
+plots <- map2(cond_res_sig$ensembl_gene_id,
+              cond_res_sig$hgnc_symbol,
+              plot_gene_pseudotime, sce_subset, counts)
+
+plots[[4]]
+plots[[4]] <- plots[[4]] +
+  theme(legend.position = "right")
+
+file <- here("05_figures/990_shared_figures/004_pseudotime",
+             "01_tradeseq", "top_condition_genes_pericyte.pdf")
+
+if(subset != "pericyte") {
+  file <- str_replace(file, "_pericyte", "_smc")
+}
+
+# Save to PDF with 4 plots per page (2 rows x 2 columns)
+pdf(file, width = 8.5, height = 11)  # Adjust page size as needed
+marrangeGrob(grobs = plots, nrow = 2, ncol = 2)
+dev.off()
+
+file <- here("03_data/990_processed_data/008_pseudotime",
+                      "top_pseudotime_condition_genes_pericyte.csv")
+if(subset != "pericyte") {
+  file <- str_replace(file, "_pericyte", "_smc")
+}
+readr::write_csv(cond_res_sig, file)
+```
+
+ 
+#### Hypergeometric pathways
+
+It seems only lineage 2 has any pathway enrichment, and only in MF.
+
+```{r}
+genes <- top_genes_condition |>
+  tidyr::nest(.by = lineage)
+
+# plan("multisession", workers = parallel::detectCores() - 1)
+go_results_all <- map(genes$data, ~ enrichGO(gene = .x$ensembl_gene_id, OrgDb = "org.Hs.eg.db",
+                                    keyType = "ENSEMBL", ont = "ALL",
+                                    universe = rownames(sce_subset)))
+                           # .options = furrr_options(seed = 123))
+
+names(go_results_all) <- genes$lineage
+
+go_results_filtered <- go_results_all |>
+  purrr::keep(~ !is.null(.)) |>
+  purrr::keep(~ nrow(.) > 0)
+
+# Apply pairwise_termism where possible
+go_results_filtered <- map(go_results_filtered, ~{
+  if(length(.x$ID) >= 2) {
+    pairwise_termsim(.x)
+  } else {
+    .x
+  }
+})
+
+# dotplots
+dotplots <-
+  map2(
+    go_results_filtered,
+    names(go_results_filtered),
+    ~ dotplot(.x, showCategory = 20, split = "ONTOLOGY") + facet_grid(. ~ ONTOLOGY) +
+      ggtitle(paste0(.y, " - Sig genes only"))
+  )
+dotplots
+```
+
+
+### All genes of interest
+
+It might be nice to make a list and perhaps pdf of all the unique genes of interest accross the comparisons
+
+```{r}
+df <- list(top_diff_early_genes, top_diff_end_genes, top_genes_condition,
+           top_lin_genes)
+names(df) <- c("top_early_genes", "top_end_genes", "top_genes_condition",
+  "top_lin_genes")
+genes <- map(df, dplyr::pull, hgnc_symbol)
+genes <- unique(unlist(genes))
+
+head(df)
+test <- df
+
+cat("Number of unique genes of interest:", length(genes))
+
+qs::qsave(test, here::here("05_figures/990_shared_figures/003_final_figures",
+  "001_data_for_plots/tradeseq_sig_degs.qs"))
+readr::write_rds(df, here::here("05_figures/990_shared_figures/003_final_figures",
+  "001_data_for_plots/tradeseq_sig_degs.rds"))
+```
+
+### Additional genes to plot
+
+
+```{r}
+additional_genes <- translated_id |>
+  dplyr::filter(hgnc_symbol %in% c("BACE2", "APOD", "MEF2C", "NOTCH1")) |>
+  dplyr::distinct(hgnc_symbol, .keep_all = TRUE)
+
+plots <- map2(additional_genes$ensembl_gene_id,
+              additional_genes$hgnc_symbol,
+              plot_gene_pseudotime, sce_subset, counts)
+
+plots[[2]]
+plots[[2]] <- plots[[2]] +
+  theme(legend.position = "right")
+
+plot <- plot_grid(plotlist = plots, ncol = 2)
+plot
+
+ggsave(filename = here("05_figures/990_shared_figures/004_pseudotime",
+                       "01_tradeseq", "additional_genes.png"),
+       height = 6, width = 12)
+```
+
+### Transcription factors
+
+Check if the genes are transcription factors, it might be of particular interest if there's some in the early diff genes.
+
+```{r}
+# Load required libraries
+library(org.Hs.eg.db)
+library(dplyr)
+library(httr)
+library(jsonlite)
+
+# Function to check transcription factors using multiple methods
+comprehensive_tf_check <- function(gene_list) {
+  # Initialize results dataframe
+  results <- data.frame(
+    Gene = gene_list,
+    Is_TF = NA,
+    TF_Sources = NA,
+    stringsAsFactors = FALSE
+  )
+
+  # 1. GO Annotation Check
+  go_tf_term <- "GO:0003700"  # Transcription factor activity
+  go_results <- tryCatch({
+    go_annotations <- AnnotationDbi::select(org.Hs.eg.db,
+                             keys = gene_list,
+                             columns = c("GOALL"),
+                             keytype = "SYMBOL")
+    go_tf_genes <- go_annotations$SYMBOL[grep(go_tf_term, go_annotations$GOALL)]
+    go_tf_genes
+  }, error = function(e) c())
+
+  # 2. TFClass Database Check (via manual API/web query simulation)
+  tfclass_check <- sapply(gene_list, function(gene) {
+    tryCatch({
+      # Note: This is a simulated approach as TFClass doesn't have a direct R API
+      url <- paste0("http://tfclass.bioinf.med.uni-goettingen.de/tfclass/cgi-bin/tfclass.py?VERSION=1.22&DATASET=TF&SPECIES=Homo%20sapiens&GENE=", gene)
+      response <- GET(url)
+      content <- content(response, "text")
+      grepl("Transcription Factor", content)
+    }, error = function(e) FALSE)
+  })
+
+  # 3. Literature-based TF Databases (simulated with known TFs)
+  known_tfs <- c(
+    "STAT3", "TP53", "MYC", "FOXO1", "NRF2", "CREB1",
+    "ELK1", "SP1", "NFKB1", "HIF1A", "REST", "BRCA1"
+  )
+
+  # Combine results
+  for (i in seq_along(gene_list)) {
+    gene <- gene_list[i]
+    sources <- c()
+
+    # Check GO annotation
+    if (gene %in% go_tf_genes) {
+      sources <- c(sources, "GO_Annotation")
+    }
+
+    # Check TFClass
+    if (tfclass_check[gene]) {
+      sources <- c(sources, "TFClass")
+    }
+
+    # Check known TFs
+    if (gene %in% known_tfs) {
+      sources <- c(sources, "Literature_Known_TFs")
+    }
+
+    # Determine overall TF status
+    results$Is_TF[i] <- length(sources) > 0
+    results$TF_Sources[i] <- ifelse(length(sources) > 0,
+                                    paste(sources, collapse = "; "),
+                                    "No TF Evidence")
+  }
+
+  return(results)
+}
+
+
+# Early transcrition factors
+early_tf <- comprehensive_tf_check(unique(top_diff_early_genes$hgnc_symbol))
+table(early_tf$TF_Sources)
+early_tf <- early_tf |>
+  dplyr::filter(Is_TF) |>
+  dplyr::left_join(translated_id, by = join_by(Gene == hgnc_symbol))
+
+tf_link_table <- readr::read_tsv(here("03_data/991_external_data/TFLink_Homo_sapiens_interactions_All_simpleFormat_v1.0.tsv")) |> 
+  dplyr::select(!contains("Target"))
+head(tf_link_table)
+
+tf_link_match <- top_diff_early_genes |>
+  dplyr::filter(hgnc_symbol %in% tf_link_table$Name.TF & !hgnc_symbol %in% early_tf$Gene)
+
+all_tfs <- data.frame(gene = c(early_tf$Gene, tf_link_match$hgnc_symbol),
+  ensembl_gene_id = c(early_tf$ensembl_gene_id, tf_link_match$ensembl_gene_id))
+
+plots <- map2(all_tfs$ensembl_gene_id,
+              all_tfs$gene,
+              plot_gene_pseudotime, sce_subset, counts)
+
+plots[[4]]
+plots[[4]] <- plots[[4]] +
+  theme(legend.position = "right")
+
+plot <- plot_grid(plotlist = plots, ncol = 4)
+plot
+
+ggsave(filename = here("05_figures/990_shared_figures/004_pseudotime",
+                       "01_tradeseq", "early_diff_tf_genes.png"),
+       height = 6, width = 14)
+
+
+all_tf <- comprehensive_tf_check(unique(genes))
+all_tf <- all_tf |>
+  dplyr::filter(Is_TF) |>
+  dplyr::left_join(translated_id, by = join_by(Gene == hgnc_symbol))
+
+readr::write_csv(all_tf,
+                 here("03_data/990_processed_data/008_pseudotime",
+                      "all_transcription_factors.csv"))
+
+plots <- map2(all_tf$ensembl_gene_id,
+              all_tf$Gene,
+              plot_gene_pseudotime, sce_subset, counts)
+
+plots[[4]]
+plots[[4]] <- plots[[4]] +
+  theme(legend.position = "right")
+
+# Vectorized PDF creation
+pdf(here::here("05_figures/990_shared_figures/004_pseudotime",
+         "01_tradeseq", "all_transcription_factors.pdf"),
+    width = 11, height = 8)
+
+# Split the plot list into chunks of 4
+plot_chunks <- split(plots, ceiling(seq_along(plots)/4))
+
+# Use map to apply grid.arrange to each chunk
+walk(plot_chunks, function(chunk) {
+  do.call(grid.arrange, c(chunk, ncol = 2, nrow = 2))
+})
+
+dev.off()
+
+table(all_tf$TF_Sources)
+```
+
+
+```{r}
+# make supp figure of the TFs of interest
+genes <- c("FOXP2", "RORA", "ZBTB7C", "PRDM16", "NR4A1")
+genes <- translated_id |>
+  dplyr::filter(hgnc_symbol %in% genes)
+
+plots <- map2(genes$ensembl_gene_id,
+              genes$hgnc_symbol,
+              plot_gene_pseudotime, sce_subset, counts)
+
+plot <- plot_grid(plotlist = plots, nrow = 2)
+
+# extract the legend from one of the plots
+legend <- get_legend(
+  # create some space to the left of the legend
+  plots[[1]] + theme(legend.position = "right", legend.box.margin = margin(0, 0, 0, 12))
+)
+
+plot_grid(plots[[3]], plots[[1]], plots[[2]], plots[[4]], plots[[5]], 
+  legend, nrow = 2, labels = c("A", "B", "C", "D", "E", ""))
+
+ggsave(filename = here("05_figures/990_shared_figures/003_final_figures",
+                       "000_sup_figures", "endomt-lineage-transcription-factors.pdf"),
+       width = 7, height = 7, units = "in")
+```
+Zam flagged there TFs as being visually interesting
+
+```{r}
+lineage1_genes <- c("ZBTB7C", "PRDM17", "JPH2", "NR4A1", "PPARG", "ZFHX3", "NR4A3", "FOSL2", "ETV6")
+lineage2_genes <- c("RORA", "FOXP2", "ESRRG", "DACH1", "TCF4")
+
+# If you want a named vector approach
+lineage_genes <- c(
+  setNames(lineage1_genes, rep("Lineage1", length(lineage1_genes))),
+  setNames(lineage2_genes, rep("Lineage2", length(lineage2_genes)))
+)
+```
+
+```{r}
+# If you used fitGAM, you can extract information directly
+cell_data <- data.frame(
+  pseudotime = slingPseudotime(sce_subset),
+  condition = sce_slingshot$diagnosis,
+  lineage = slingLineages(sce_slingshot)
+)
+
+pseudotime <- slingPseudotime(sce_slingshot) |>
+  as.data.frame()
+pseudotime$condition <- colData(sce_slingshot)$diagnosis
+
+# Extract count matrix from slingshot object
+count_matrix <- assay(sce_slingshot)
+
+genes_to_check <- translated_id |>
+  dplyr::filter(hgnc_symbol %in% c("BACE2"))
+# Extract expression for your gene of interest
+gene_expr <- count_matrix[genes_to_check$ensembl_gene_id, ]
+
+# Combine pseudotime and gene expression
+plot_data <- data.frame(
+  cell = colnames(count_matrix),
+  expression = gene_expr,
+  pseudotime_lineage1 = pseudotime$Lineage1,
+  pseudotime_lineage2 = pseudotime$Lineage2,
+  condition = sce_slingshot$diagnosis
+)
+
+head(plot_data)
+assertthat::assert_that(sum(rownames(pseudotime) != plot_data$cell) == 0)
+
+# Melt the data for easier plotting
+plot_data <- plot_data |>
+  pivot_longer(contains("_lineage"), names_to = "lineage", values_to = "pseudotime") |>
+  dplyr::filter(!is.na(pseudotime)) |>
+  dplyr::mutate(lineage = str_remove(lineage, "pseudotime_"))
+
+# Plotting
+ggplot(plot_data,
+       aes(x = pseudotime,
+           y = expression,
+           color = condition,
+           group = interaction(condition, lineage))) +
+  geom_density(alpha = 0.5) +
+#  geom_smooth(method = "loess", se = TRUE) +
+  facet_wrap(~ lineage, scales = "free") +
+  labs(
+    title = paste("Expression of", "blah", "Across Pseudotime"),
+    x = "Pseudotime",
+    y = "Normalized Expression"
+  ) +
+  theme_minimal()
+```
+
+## Condiment differential trajectory analysis
+
+```{r}
+library(tradeSeq)
+
+sds <- SlingshotDataSet(sce_slingshot)
+# Set up parallel processing
+BPPARAM <- BiocParallel::bpparam()
+BPPARAM$workers <- parallel::detectCores() - 2
+BPPARAM
+
+# Evaluate the optimal number of knots
+set.seed(123)  # For reproducibility
+k_values <- evaluateK(counts = assays(sce_slingshot)$counts, sds = sds,
+                      nGenes = 500, k = 3:10, parallel = TRUE, BPPARAM = BPPARAM)
+k_values
+# Plot the evaluation results to choose the best k
+plot(k_values)
+
+optimal_k <- which.min(k_values$ic$BIC)
+# Having a hard time running evaluateK, it's slow and seems to crash, I'll just try progressing with nknots of 6 (the default)
+# Fit GAMs for each gene along the pseudotime
+sce_slingshot <- fitGAM(counts = assays(sce_slingshot)$counts, pseudotime = slingPseudotime(sds, na = FALSE), cellWeights = slingCurveWeights(sds), nknots = 6, parallel = TRUE, BPPARAM = BPPARAM)
+
+# Extract the model results
+gam_results <- rowData(sce_slingshot)$tradeSeq
+```

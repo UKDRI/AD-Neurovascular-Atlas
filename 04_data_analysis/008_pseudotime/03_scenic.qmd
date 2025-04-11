@@ -1,0 +1,226 @@
+---
+title: SCENIC prep
+execute:
+  eval: true
+code-fold: true
+---
+
+# Load packages
+
+```{r}
+source(here::here("04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"))
+Sys.setenv(TAR_PROJECT = here::here())
+tar_config_set(store = here::here("_targets"))
+library(SeuratWrappers)
+library(monocle3)
+library(slingshot)
+library(GGally)
+```
+
+```{r}
+# Get seurat object
+tar_load(sce)
+tar_load(gene_ids)
+tar_load(translated_id)
+
+assertthat::assert_that(sum(rownames(sce@assays$RNA@counts) ==
+                              gene_ids$ensembl) == nrow(gene_ids))
+```
+
+## EndoMT
+
+### Subset to celltypes
+
+```{r}
+# Subset to EndoMT
+rownames(sce@assays$RNA@data) <- gene_ids$ensembl
+sce <- subset(sce, highlevel_manual_annotations %in% c("SMC", "Pericyte", "mystery-cluster", "Endothelial"))
+# remove unneded cells
+sce <- subset(sce, subcelltype_annotations %in% c("Oligo-A", "Astrocyte-activated", "Venous"), invert = TRUE)
+```
+ 
+Seperate out pericyte lineage
+
+```{r}
+sce_sub <- subset(sce, highlevel_manual_annotations != "SMC" & !(sce$subcelltype_annotations %in% c("Arterial", "EndoMT_2")))
+table(sce_sub$subcelltype_annotations)
+```
+
+ 
+```{r}
+# Filter low-quality genes
+library(SingleCellExperiment)
+library(scater)
+
+sce_sub <- as.SingleCellExperiment(sce_sub)
+sce_sub <- sce_sub[rowSums(counts(sce_sub) > 1) >= 10, ]  # Filter genes expressed in >=10 cells
+counts(sce_sub)[1:10,1:5]
+
+file <- here::here("03_data/990_processed_data/008_pseudotime",
+  "scenic_input_counts.csv")
+
+# Save as CSV or TSV
+write.csv(as.matrix(counts(sce_sub)), file)
+```
+
+# Get the human TF list
+
+
+```{bash}
+#| eval: false
+
+cd /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_data/008_pseudotime
+wget https://raw.githubusercontent.com/aertslab/pySCENIC/master/resources/hs_hgnc_tfs.txt
+```
+
+# Python code to run SCENIC
+
+```{python}
+#| eval: false
+import pandas as pd
+from arboreto.algo import grnboost2
+from pyscenic.utils import load_motifs
+from dask.diagnostics import ProgressBar
+
+expr_matrix = pd.read_csv("03_data/990_processed_data/008_pseudotime/scenic_input_counts.csv", index_col=0)
+# Transpose if needed
+if expr_matrix.shape[0] < expr_matrix.shape[1]:
+    expr_matrix = expr_matrix.T
+
+# Load TFs (use human list from pySCENIC resources or define your own)
+with open("03_data/990_processed_data/008_pseudotime/hs_hgnc_tfs.txt") as f:
+    tf_names = [line.strip() for line in f]
+
+# Run GRNBoost2
+with ProgressBar():
+    network = grnboost2(expression_data=expr_matrix, tf_names=tf_names)
+network.to_csv("03_data/990_processed_data/008_pseudotime/grnboost2_network.tsv", sep='\t', index=False)
+```
+
+
+```{python}
+#| eval: false
+
+#!/usr/bin/env python3
+import pandas as pd
+import numpy as np
+from arboreto.algo import grnboost2
+from dask.diagnostics import ProgressBar
+from dask.distributed import Client, LocalCluster
+import os
+import argparse
+
+def main():
+    parser = argparse.ArgumentParser(description='Run GRNBoost2 for gene regulatory network inference')
+    parser.add_argument('--input', required=True, help='Path to input expression matrix')
+    parser.add_argument('--tf-list', required=True, help='Path to TF list file')
+    parser.add_argument('--output', required=True, help='Path to output network file')
+    parser.add_argument('--cores', type=int, default=1, help='Number of cores to use')
+    args = parser.parse_args()
+    
+    print(f"Loading expression matrix from {args.input}")
+    expr_matrix = pd.read_csv(args.input, index_col=0)
+    
+    # Transpose if needed (samples should be rows, genes columns)
+    if expr_matrix.shape[0] < expr_matrix.shape[1]:
+        print("Transposing expression matrix...")
+        expr_matrix = expr_matrix.T
+        
+    print(f"Expression matrix shape: {expr_matrix.shape} (samples × genes)")
+    
+    # Load TFs
+    print(f"Loading TF list from {args.tf_list}")
+    with open(args.tf_list) as f:
+        tf_names = [line.strip() for line in f]
+    print(f"Loaded {len(tf_names)} transcription factors")
+    
+    # Set up parallel processing
+    print(f"Setting up Dask cluster with {args.cores} workers")
+    cluster = LocalCluster(n_workers=args.cores, threads_per_worker=1)
+    client = Client(cluster)
+    print(f"Dashboard link: {client.dashboard_link}")
+    
+    # Run GRNBoost2
+    print("Running GRNBoost2 network inference...")
+    with ProgressBar():
+        network = grnboost2(expression_data=expr_matrix, 
+                           tf_names=tf_names,
+                           verbose=True)
+    
+    # Save the network
+    print(f"Saving network to {args.output}")
+    network.to_csv(args.output, sep='\t', index=False)
+    print("GRNBoost2 network inference completed.")
+    
+    # Close the client
+    client.close()
+    cluster.close()
+    
+if __name__ == "__main__":
+    main()
+```
+
+There're some database files needed that can be found here: [https://resources.aertslab.org/cistarget/](https://resources.aertslab.org/cistarget/)
+
+# Set up conda env for hawk
+
+```{bash}
+#| eval: false
+
+#!/bin/bash
+#SBATCH -p c_highmem_dri1
+#SBATCH --job-name=run_scenic_endomt
+#SBATCH --ntasks=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=30
+#SBATCH --mem=350G # memory limit per compute node for the job
+#SBATCH --time=3-00:00 # maximum job time in D-HH:MM
+#SBATCH --account=scw1329
+#SBATCH -o /scratch/c.mpmgb/hawk_output/%x_out_%A_%a_%J.txt
+#SBATCH -e /scratch/c.mpmgb/hawk_output/%x_err_%A_%a_%J.txt
+#SBATCH --mail-user Bernardo-HarringtonG@cardiff.ac.uk # email on fail
+#SBATCH --mail-type END,FAIL
+
+# load environment
+# note mamba env created with the following:
+#cd /scratch/scw1329/gmbh/blood-brain-barrier-in-ad
+#mamba create --prefix pyscenic pyscenic python=3.10
+
+# load environment
+module load anaconda
+source activate
+
+# move to directory
+cd /scratch/scw1329/gmbh/blood-brain-barrier-in-ad
+conda activate /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/pyscenic
+
+DB_DIR=/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_data/008_pseudotime
+
+# Step 1: Run the Python script for GRNBoost2 network inference
+echo "Starting GRNBoost2 network inference..."
+python run_grnboost2.py \
+    --input ${DB_DIR}/scenic_input_counts.csv \
+    --tf-list ${DB_DIR}/hs_hgnc_tfs.txt \
+    --output ${DB_DIR}/grnboost2_network.tsv \
+    --cores 30
+
+# Step 2: Run pyscenic ctx for cisTarget analysis
+echo "Starting cisTarget analysis..."
+pyscenic ctx ${DB_DIR}/grnboost2_network.tsv \
+  ${DB_DIR}/01_scenic/hg38__refseq-r80__500bp_up_and_100bp_down_tss.mc9nr.feather,\
+${DB_DIR}/01_scenic/hg38__refseq-r80__10kb_up_and_down_tss.mc9nr.feather \
+  --annotations_fname ${DB_DIR}/01_scenic/motifs-v10nr_clust-nr.hgnc-m0.001-o0.0.tbl \
+  --expression_mtx_fname ${DB_DIR}/scenic_input_counts.csv \
+  --output ${DB_DIR}/reg.csv \
+  --mode "dask_multiprocessing" \
+  --num_workers 30
+
+# Step 3: Run pyscenic aucell for cellular enrichment
+echo "Starting AUCell analysis..."
+pyscenic aucell ${DB_DIR}/scenic_input_counts.csv \
+    ${DB_DIR}/reg.csv \
+    --output ${DB_DIR}/auc_mtx.csv \
+    --num_workers 30
+
+echo "SCENIC analysis completed."
+```
