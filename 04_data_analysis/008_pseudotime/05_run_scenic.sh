@@ -29,7 +29,7 @@ DB_DIR=/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_dat
 
 # Step 1: Run the Python script for GRNBoost2 network inference
 echo "Starting GRNBoost2 network inference..."
-python run_grnboost2.py \
+python /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/04_data_analysis/008_pseudotime/04_scenic_python.py \
     --input ${DB_DIR}/scenic_input_counts.csv \
     --tf-list ${DB_DIR}/hs_hgnc_tfs.txt \
     --output ${DB_DIR}/grnboost2_network.tsv \
