@@ -3,7 +3,7 @@
 #SBATCH --job-name=run_scenic_endomt
 #SBATCH --ntasks=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=30
+#SBATCH --cpus-per-task=40
 #SBATCH --mem=350G
 #SBATCH --time=3-00:00
 #SBATCH --account=scw1329
@@ -22,16 +22,16 @@ cd /scratch/scw1329/gmbh/blood-brain-barrier-in-ad
 conda activate /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/pyscenic
 
 DB_DIR=/scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/990_processed_data/008_pseudotime
-OUT_DIR=${DB_DIR}
+OUT_DIR=${DB_DIR}/02_scenic_results
 
 # Check input files exist
-COUNTS_FILE=${DB_DIR}/scenic_input_counts.csv
-TF_LIST=${DB_DIR}/hs_hgnc_tfs.txt
-MOTIF_ANNOT=${DB_DIR}/01_scenic/motifs-v10nr_clust-nr.hgnc-m0.001-o0.0.tbl
-DATABASE1=${DB_DIR}/01_scenic/hg38_10kbp_up_10kbp_down_full_tx_v10_clust.genes_vs_motifs.rankings.feather
-DATABASE2=${DB_DIR}/01_scenic/hg38_500bp_up_100bp_down_full_tx_v10_clust.genes_vs_motifs.rankings.feather
-DATABASE3=${DB_DIR}/01_scenic/hg38_10kbp_up_10kbp_down_full_tx_v10_clust.genes_vs_motifs.scores.feather
-DATABASE4=${DB_DIR}/01_scenic/hg38_500bp_up_100bp_down_full_tx_v10_clust.genes_vs_motifs.scores.feather
+COUNTS_FILE=${DB_DIR}/01_scenic_inputs/scenic_input_counts.csv
+TF_LIST=${DB_DIR}/01_scenic_inputs/hs_hgnc_tfs.txt
+MOTIF_ANNOT=${DB_DIR}/01_scenic_inputs/motifs-v10nr_clust-nr.hgnc-m0.001-o0.0.tbl
+DATABASE1=${DB_DIR}/01_scenic_inputs/hg38_10kbp_up_10kbp_down_full_tx_v10_clust.genes_vs_motifs.rankings.feather
+DATABASE2=${DB_DIR}/01_scenic_inputs/hg38_500bp_up_100bp_down_full_tx_v10_clust.genes_vs_motifs.rankings.feather
+DATABASE3=${DB_DIR}/01_scenic_inputs/hg38_10kbp_up_10kbp_down_full_tx_v10_clust.genes_vs_motifs.scores.feather
+DATABASE4=${DB_DIR}/01_scenic_inputs/hg38_500bp_up_100bp_down_full_tx_v10_clust.genes_vs_motifs.scores.feather
 
 # Function for checking file existence
 check_file () {
