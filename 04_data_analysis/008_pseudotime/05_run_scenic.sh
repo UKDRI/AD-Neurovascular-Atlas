@@ -38,8 +38,8 @@ python /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/04_data_analysis/008_pseu
 # Step 2: Run pyscenic ctx for cisTarget analysis
 echo "Starting cisTarget analysis..."
 pyscenic ctx ${DB_DIR}/grnboost2_network.tsv \
-  ${DB_DIR}/01_scenic/hg38__refseq-r80__500bp_up_and_100bp_down_tss.mc9nr.feather,\
-${DB_DIR}/01_scenic/hg38__refseq-r80__10kb_up_and_down_tss.mc9nr.feather \
+  ${DB_DIR}/01_scenic/hg38__refseq-r80__500bp_up_and_100bp_down_tss.mc9nr.feather \
+  ${DB_DIR}/01_scenic/hg38__refseq-r80__10kb_up_and_down_tss.mc9nr.feather \
   --annotations_fname ${DB_DIR}/01_scenic/motifs-v10nr_clust-nr.hgnc-m0.001-o0.0.tbl \
   --expression_mtx_fname ${DB_DIR}/scenic_input_counts.csv \
   --output ${DB_DIR}/reg.csv \
