@@ -28,8 +28,10 @@ OUT_DIR=${DB_DIR}
 COUNTS_FILE=${DB_DIR}/scenic_input_counts.csv
 TF_LIST=${DB_DIR}/hs_hgnc_tfs.txt
 MOTIF_ANNOT=${DB_DIR}/01_scenic/motifs-v10nr_clust-nr.hgnc-m0.001-o0.0.tbl
-DATABASE1=${DB_DIR}/01_scenic/hg38__refseq-r80__500bp_up_and_100bp_down_tss.mc9nr.feather
-DATABASE2=${DB_DIR}/01_scenic/hg38__refseq-r80__10kb_up_and_down_tss.mc9nr.feather
+DATABASE1=${DB_DIR}/01_scenic/hg38_10kbp_up_10kbp_down_full_tx_v10_clust.genes_vs_motifs.rankings.feather
+DATABASE2=${DB_DIR}/01_scenic/hg38_500bp_up_100bp_down_full_tx_v10_clust.genes_vs_motifs.rankings.feather
+DATABASE3=${DB_DIR}/01_scenic/hg38_10kbp_up_10kbp_down_full_tx_v10_clust.genes_vs_motifs.scores.feather
+DATABASE4=${DB_DIR}/01_scenic/hg38_500bp_up_100bp_down_full_tx_v10_clust.genes_vs_motifs.scores.feather
 
 # Function for checking file existence
 check_file () {
@@ -46,6 +48,8 @@ check_file "$TF_LIST"
 check_file "$MOTIF_ANNOT"
 check_file "$DATABASE1"
 check_file "$DATABASE2"
+check_file "$DATABASE3"
+check_file "$DATABASE4"
 
 # Step 1: Run GRNBoost2 if output doesn't exist
 GRNBOOST_OUTPUT=${OUT_DIR}/grnboost2_network.tsv
@@ -67,7 +71,7 @@ if [ -f "$REG_OUTPUT" ]; then
 else
   echo "Starting cisTarget analysis..."
   pyscenic ctx "$GRNBOOST_OUTPUT" \
-    "$DATABASE1" "$DATABASE2" \
+    "$DATABASE1" "$DATABASE2" "$DATABASE3" "$DATABASE4" \
     --annotations_fname "$MOTIF_ANNOT" \
     --expression_mtx_fname "$COUNTS_FILE" \
     --output "$REG_OUTPUT" \
