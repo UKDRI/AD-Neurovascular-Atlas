@@ -88,10 +88,11 @@ Idents(sce) <- sce$abbreviated_idents_level1
 
 Plotting the expression of the markers from this paper:
   - [https://onlinelibrary.wiley.com/doi/10.1002/ctm2.99](https://onlinelibrary.wiley.com/doi/10.1002/ctm2.99)
+  - [https://www.nature.com/articles/s41586-024-07493-y#MOESM6](https://www.nature.com/articles/s41586-024-07493-y#MOESM6)
 
 ```{r}
 plot <- DotPlot(sce, features = c("KLF4", "SNAI1", "SNAI2", "VIM", "ACTA2",
-  "S100A4"))
+  "S100A4", "APOE", "TAGLN", "THY1", "TMP2", "LGALS1"))
 
 plot <- plot +
   labs(x = "", y = "") +
@@ -104,5 +105,29 @@ plot$guides$guides$size$params$title <- "% Expressed"
 
 ggsave(filename = here::here("05_figures/990_shared_figures/003_final_figures",
                              "000_sup_figures/", "supp_fig_2_endmt_markers.pdf"),
-                             plot = plot, width = 5, height = 4, units = "in")
+                             plot = plot, width = 6, height = 4, units = "in")
+```
+
+
+```{r}
+gene_ensembl_ids <- data.frame(gene = rownames(sce@assays$RNA@data), ensembl = rownames(sce@assays$RNA@counts))
+
+rownames(sce@assays$RNA@data) <- gene_ensembl_ids$ensembl
+# try subsetting to just endothelial populations 
+sce_sub <- subset(sce, subset = abbreviated_idents_level1 %in% c("Pericyte", "SMC", "EndoMT", "Endothelial"))
+rownames(sce_sub@assays$RNA@data) <- gene_ensembl_ids$gene
+
+Idents(sce_sub) <- sce_sub$abbreviated_idents
+
+plot <- DotPlot(sce_sub, features = c("KLF4", "SNAI1", "SNAI2", "VIM", "ACTA2",
+  "S100A4", "APOE", "TAGLN", "THY1", "TMP2", "LGALS1"))
+
+plot <- plot +
+  labs(x = "", y = "") +
+  theme(axis.text = element_text(size = 8),
+    legend.text = element_text(size = 8),
+    legend.title = element_text(size = 8))
+# Still dunno why trying to rename the legend in the normal way doesn't work for these plots...
+plot$guides$guides$colour$params$title <- "Average\nExpression"
+plot$guides$guides$size$params$title <- "% Expressed"
 ```

@@ -15,7 +15,7 @@
 
 # load environment
 # note mamba env created with the following:
-#mamba create --prefix r-env -c conda-forge -c bioconda -c R -c paul.martin-2 r-base r-seurat r-future r-readr r-remotes r-doubletfinder r-here r-tidyverse bioconductor-mast r-qs bioconductor-slingshot bioconductor-tradeseq bioconductor-trajectoryutils
+#mamba create --prefix r-env -c conda-forge -c bioconda -c R -c paul.martin-2 r-base r-future r-readr r-remotes r-here r-tidyverse r-qs bioconductor-slingshot bioconductor-tradeseq bioconductor-trajectoryutils bioconductor-delayedmatrixstats
 
 # activate conda environment
 module load anaconda
