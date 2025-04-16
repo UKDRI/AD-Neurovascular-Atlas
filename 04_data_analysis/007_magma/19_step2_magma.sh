@@ -1,16 +1,14 @@
 #!/bin/bash
-#SBATCH --job-name=MAGMA_step2 
-#SBATCH -p c_compute_dri1 
-#SBATCH -o /scratch/c.mpmgb/hawk_output/%x_out_%A_%a_%J.txt 
-#SBATCH -e /scratch/c.mpmgb/hawk_output/%x_err_%A_%a_%J.txt 
-#SBATCH --time=0-10:00:00 
-#SBATCH --ntasks=1 
-#SBATCH --cpus-per-task=10 
-#SBATCH --array=1 
-#SBATCH --mem=120G 
-#SBATCH --account=scw1329 
-#SBATCH --mail-type=END,FAIL 
-#SBATCH --mail-user=bernardo-harringtong@cardiff.ac.uk 
+#SBATCH --job-name=MAGMA_step2
+#SBATCH -p c_compute_dri1
+#SBATCH -o /scratch/c.mpmgb/hawk_output/%x_out_%A_%a_%J.txt
+#SBATCH -e /scratch/c.mpmgb/hawk_output/%x_err_%A_%a_%J.txt
+#SBATCH --time=0-10:00:00
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=10
+#SBATCH --array=1
+#SBATCH --mem=120G
+#SBATCH --account=scw1329
 
 echo "*****************************************************************"
 echo "All jobs in this array have:"
@@ -40,7 +38,7 @@ cd $WORK_DIR
 #### Without proxies and with APOE - 35k10k window
 
 # mkdir temp_annot_35k10k # make a temporary directory to host the intermediate files
-# 
+#
 # PLINK files from reference (.bed/.bim/.fam)
 Data_File=${WORK_DIR}"g1000_eur"
 # # Output of step 1
@@ -51,11 +49,11 @@ Data_File=${WORK_DIR}"g1000_eur"
 # # Should try with and without APOE in summary stats
 # # Should also try with and without proxy cases, file: EADB_release_Feb2020.meta_model_pcs.mac_info_20_GC_OFF.formatted.exc_perc_cases_50.het_5e-8.freq_amp_40_noATGC_GRCh37.tsv
 # SNP_Pval_File="/scratch/scw1751/shared/Bellenguez_2022_sumstats/EADB_release_Feb2020.meta_model_pcs.mac_info_20_GC_OFF.formatted.exc_perc_cases_50.het_5e-8.freq_amp_40_noATGC_GRCh37.tsv"
-# 
+#
 # Output_Prefix="EUROPE_noproxy_35k10k"
-# 
+#
 #     # run magma in parallel, 10 threads in this case
-# 
+#
 # parallel magma \
 #    --batch {} 10 \
 #    --bfile $Data_File \
@@ -64,30 +62,30 @@ Data_File=${WORK_DIR}"g1000_eur"
 #    --pval $SNP_Pval_File ncol=N \
 #    --out temp_annot_35k10k/$Output_Prefix \
 # ::: {1..10}
-# 
+#
 # # merge all intermediate files generated under the temp_annot files
 # # and send out for one single file set
-# 
+#
 # magma \
 #    --merge temp_annot_35k10k/$Output_Prefix \
 #    --out temp_annot_35k10k/$Output_Prefix
-# 
+#
 # # extract merged files for subsequent analysis
-# 
+#
 # cp ./temp_annot_35k10k/$Output_Prefix.genes.* ./gwas_backgrounds
-# 
+#
 # # remove the temporary directory
-# 
+#
 # rm -r temp_annot_35k10k
-# 
+#
 # #### Without proxies and with APOE - no window
-# 
+#
 # mkdir temp_annot # make a temporary directory to host the intermediate files
-# 
+#
 # Annot_File=${WORK_DIR}"NCBI37_annotated_nowindow.genes.annot"
 # SNP_Pval_File="/scratch/scw1751/shared/Bellenguez_2022_sumstats/EADB_release_Feb2020.meta_model_pcs.mac_info_20_GC_OFF.formatted.exc_perc_cases_50.het_5e-8.freq_amp_40_noATGC_GRCh37.tsv"
 # Output_Prefix="EUROPE_noproxy_nowindow"
-# 
+#
 # # run magma in parallel, 10 threads in this case
 # parallel magma \
 #    --batch {} 10 \
@@ -97,20 +95,20 @@ Data_File=${WORK_DIR}"g1000_eur"
 #    --pval $SNP_Pval_File ncol=N \
 #    --out temp_annot/$Output_Prefix \
 # ::: {1..10}
-# 
+#
 # # merge all intermediate files generated under the temp_annot files
 # # and send out for one single file set
-# 
+#
 # magma \
 #    --merge temp_annot/$Output_Prefix \
 #    --out temp_annot/$Output_Prefix
-# 
+#
 # # extract merged files for subsequent analysis
-# 
+#
 # cp ./temp_annot/$Output_Prefix.genes.* ./gwas_backgrounds
-# 
+#
 # # remove the temporary directory
-# 
+#
 # rm -r temp_annot
 
 #### Kunkle 2019 - 35k10k window

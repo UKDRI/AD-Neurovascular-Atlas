@@ -2,284 +2,11 @@
 title: MAGMA - risk analysis
 execute:
   eval: false
-#self-contained: true
 ---
 
 ```{r}
 here::i_am("04_data_analysis/007_magma/19_magma_risk_analysis.qmd")
 ```
-
-# Load packages
-
-```{r}
-source(here::here("04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"))
-```
-
-Ata gave me the Bellenguez GWAS data without UKbiobank proxy cases, but I need to process the data to be inline with the MAGMA format.
-The SNP IDs in the annotation file are in a rs<id_num> format, so I also need to map the SNPs to those using the 37 build snpdb that can be found [here](https://ftp.ncbi.nih.gov/snp/latest_release/VCF/)
-
-Note that this file had a annoying 37 lines of header info that `arrow` couldn't deal with, and it's a large file so modifying it is a pain, I used this command for parallel compression:
-
-```{sh}
-#| eval: false
-zcat GCF_000001405.25.gz | tail -n +38 | pigz > GCF_000001405.25_header_removed.gz
-```
-
-Ata gave me a file with the updated rs IDs where they existed in the end, so I just need to merge those IDs in the summary stats
-
-```{r}
-updated_ids <- fread(here("03_data/994_magma_inputs/bellenguez_2022_no_proxy.tsv"))
-# temp <- updated_ids |>
-#   dplyr::distinct(CHROM, POS, REF, ALT, .keep_all = TRUE)
-bellenguez_stats <- fread(here("03_data/994_magma_inputs/EADB_release_Feb2020.meta_model_pcs.mac_info_20_GC_OFF.formatted.exc_perc_cases_50.het_5e-8.freq_amp_40_magma_format.tsv"))
-dim(bellenguez_stats)
-head(bellenguez_stats)
-bellenguez_stats_1 <- bellenguez_stats |>
-  dplyr::left_join(updated_ids, by = join_by(CHR == CHROM, BP == POS, A1 == REF, A2 == ALT))
-dim(bellenguez_stats_1)
-head(bellenguez_stats_1)
-bellenguez_stats_1 |>
-  dplyr::group_by(CHR, BP, A1, A2) |>
-  dplyr::summarise(n = n()) |>
-  dplyr::filter(n > 1)
-
-#bellenguez_stats_full <- fread(here("03_data/994_magma_inputs/GCST90027158_buildGRCh37_noATGC_forMAGMA.tsv"))
-#head(bellenguez_stats_full)
-# select relevant columns to match
-#bellenguez_stats_full <- bellenguez_stats_full[, .(CHR, SNP, BP, A1, A2)]
-#setnames(bellenguez_stats_full, old = c("SNP"), new = c("snp_rs"))
-
-#bellenguez_stats$CHR <- as.character(bellenguez_stats$CHR)
-#result <- merge(bellenguez_stats, bellenguez_stats_full, by = c("CHR", "BP", "A1", "A2"), all.x = TRUE)
-
-# Convert to data.table if it's not already
-setDT(bellenguez_stats_1)
-
-# Count the number of occurrences for each join key
-keycols <- c("CHR", "BP", "A1", "A2")
-setkeyv(bellenguez_stats_1, keycols)
-bellenguez_stats_1[, .N, by = key(bellenguez_stats_1)][N > 1]
-
-# Filter out duplicates, keeping the 'rs' ID as a priority
-#bellenguez_stats_1[, .SD[which.max(grepl("^rs", ID))], by = key(bellenguez_stats_1)]
-
-bellenguez_stats_1[, unique_id := .I]  # Create a unique identifier
-bellenguez_stats_1[, count := .N, by = .(CHR, BP, A1, A2)]  # Count occurrences of each combination
-# Flag rows where ID starts with "rs"
-bellenguez_stats_1[, rs_flag := grepl("^rs", ID)]
-
-# Filter out many-to-many relationships and prefer rows with rs_flag
-rs_ids <- bellenguez_stats_1[(rs_flag)]
-nrow(rs_ids) - nrow(bellenguez_stats)
-num_snps_in_full_bellenguez <- 18045416
-nrow(rs_ids) - num_snps_in_full_bellenguez
-# In case of remaining duplicates, keep the first occurrence
-setnames(preferred_file, old = c("SNP", "ID"), new = c("full_id", "SNP"))
-preferred_file <- preferred_file[!duplicated(preferred_file, by = c("SNP"))]
-nrow(preferred_file) - nrow(bellenguez_stats)
-
-fwrite(
-  preferred_file,
-  here::here(
-    "03_data/994_magma_inputs/bellenguez_2022_udpated_ids.tsv"
-  ),
-  sep = "\t",
-  quote = FALSE
-)
-# write.table(x2, here::here(
-#     "03_data/994_magma_inputs/EADB_release_Feb2020.meta_model_pcs.mac_info_20_GC_OFF.formatted.exc_perc_cases_50.het_5e-8.freq_amp_40_magma_format.tsv"
-#   ), quote = FALSE, sep = "\t", row.names = FALSE)
-
-```
-
-## Option 2 - use VEP to convert IDs
-
-```{r}
-# Install VEP on HPC via mamba
-mamba create -n vep_env
-mamba activate vep_env
-mamba install -c bioconda ensembl-vep
-# Download cache for VEP
-vep_install -a cf -s homo_sapiens -y GRCh37 -c /path/to/vep_cache
-# Extract the current IDs to a file to give to VEP (second col in this case)
-cut -f2 gwas_summary_statistics.txt > input_variants.txt
-sed 's/^chr//' input_variants.txt > input_variants_no_chr.txt
-# Convert IDs with VEP
-vep -i input_variants_no_chr.txt --format id --output_file annotated_variants.txt --cache --dir_cache /path/to/vep_cache --assembly GRCh37 --force_overwrite --vcf
-# Extract the relevant columns from the resulting output
-awk 'BEGIN {OFS="\t"} !/^#/ {print $1, $2, $4, $5, $3}' annotated_variants.txt > snp_mapping.txt
-```
-
-Now we can merge the new IDs back to the summary stats
-```{r}
-# Read in the GWAS summary statistics file
-gwas_df <- fread("gwas_summary_statistics.txt", sep="\t")
-
-# Read in the mapping file
-mapping_df <- fread("snp_mapping.txt", sep="\t", header=FALSE, col.names=c("chrom", "pos", "ref", "alt", "rsid"))
-
-# Create the 'id' column in the mapping file
-mapping_df[, id := paste(chrom, pos, ref, alt, sep=":")]
-
-# Set the key for faster merging
-setkey(mapping_df, id)
-
-# Merge the GWAS summary statistics with the mapping file to replace SNP IDs
-gwas_df[, SNP := mapping_df[J(SNP), rsid]]
-
-# Save the updated GWAS summary statistics
-fwrite(gwas_df, "updated_gwas_summary_statistics.txt", sep="\t")
-```
-
-## Option 3 use dbSNP
-
-Download whole dbSNP and map with that
-
-```{r}
-# Index file
-tabix -p vcf GCF_000001405.25.gz
-
-# Extract the necessary columns
-bcftools query -f '%CHROM\t%POS\t%REF\t%ALT\t%ID\n' GCF_000001405.25.gz > dbsnp_mapping.txt
-
-# Convert the chromosome names to the number before the "."
-awk 'BEGIN {FS=OFS="\t"} {
-    split($1, arr, "."); 
-    gsub("NC_0+", "", arr[1]); 
-    $1 = arr[1]; 
-    print
-}' dbsnp_mapping.txt > dbsnp_mapping_numeric.txt
-```
-
-```{r}
-# Read in the GWAS summary statistics file
-gwas_df <- fread(here("03_data/994_magma_inputs/EADB_release_Feb2020.meta_model_pcs.mac_info_20_GC_OFF.formatted.exc_perc_cases_50.het_5e-8.freq_amp_40_magma_format.tsv"), 
-                 sep="\t", skip = 37)
-# Read in the mapping file with numeric chromosome names
-mapping_df <- fread(here("03_data/994_magma_inputs/dbsnp_mapping_numeric.txt"), sep="\t", header=FALSE, col.names=c("chrom", "pos", "ref", "alt", "rsid"))
-
-# Create the 'id' column in the mapping file
-mapping_df[, id := paste(chrom, pos, ref, alt, sep=":")]
-
-# Set the key for faster merging
-setkey(mapping_df, id)
-
-# Remove the "chr" from the begining of the SNP column
-gwas_df[, SNP := sub("^chr", "", SNP)]
-
-# Merge the GWAS summary statistics with the mapping file to replace SNP IDs
-gwas_df[, SNP := mapping_df[J(SNP), rsid]]
-
-# Save the updated GWAS summary statistics
-fwrite(gwas_df, here("03_data/994_magma_inputs/bellenguez_2022_rsids.tsv"), sep="\t")
-```
-
-```{r}
-#!/bin/bash
-#SBATCH --job-name=my_r_job
-#SBATCH --output=my_r_job_output.txt
-#SBATCH --error=my_r_job_error.txt
-#SBATCH --time=15:00:00
-#SBATCH --mem=400G
-#SBATCH --cpus-per-task=4
-
-mamba create -n r-environment r-base r-data.table
-source activate r-environment
-
-module load R
-Rscript my_script.R
-```
-
-The data.table code gave a memory error...
-I'll try splitting the dbsnp file into chromosomes and use a python script to map the IDs
-
-```{r}
-# Split the dbsnp file into chromosomes
-mkdir dbsnp_chunks
-awk '{print > "dbsnp_chunks/chr"$1".txt"}' dbsnp.txt
-```
-
-Python scirpt to map them:
-
-```{r}
-import pandas as pd
-from multiprocessing import Pool
-
-# Load GWAS summary statistics file
-gwas_file = 'EADB_release_Feb2020.meta_model_pcs.mac_info_20_GC_OFF.formatted.exc_perc_cases_50.het_5e-8.freq_amp_40_magma_format.tsv'
-gwas_df = pd.read_csv(gwas_file, delim_whitespace=True)
-
-# Function to merge GWAS summary stats with dbSNP chunk
-def merge_with_dbsnp(chr_num):
-    dbsnp_file = f'01_dbsnp_files/dbsnp_chunks/chr{chr_num}.txt'
-    dbsnp_df = pd.read_csv(dbsnp_file, delim_whitespace=True, header=None, names=['CHR', 'BP', 'A1', 'A2', 'RSID'])
-
-    # Merge on CHR and BP
-    merged_df = pd.merge(gwas_df[gwas_df['CHR'] == chr_num], dbsnp_df, how='left', left_on=['CHR', 'BP'], right_on=['CHR', 'BP'])
-
-    # Rename columns as required
-    merged_df.rename(columns={'RSID': 'SNP', 'SNP': 'POS_ID'}, inplace=True)
-
-    # Count matched and unmatched RS IDs
-    matched_count = merged_df['SNP'].notna().sum()
-    unmatched_count = merged_df['SNP'].isna().sum()
-
-    # Print counts
-    print(f'Chromosome {chr_num}: {matched_count} matched, {unmatched_count} unmatched')
-
-    # Filter out rows where RS ID is not mapped
-    merged_df = merged_df[merged_df['SNP'].notna()]
-
-    # Save the merged result
-    merged_df.to_csv(f'01_dbsnp_files/merged_chr{chr_num}.txt', sep='\t', index=False)
-
-def main():
-    # List of chromosomes to process
-    chromosomes = list(range(1, 23))
-
-    # Create a pool of workers
-    with Pool(processes=23) as pool:
-        pool.map(merge_with_dbsnp, chromosomes)
-
-if __name__ == '__main__':
-    main()
-```
-
-Set up conda environment
-
-```{r}
-# Create a new Conda environment named gwas_dnsnp_mapping
-conda create -n gwas_dnsnp_mapping python=3.8 pandas -y
-```
-
-```{r}
-#!/bin/bash
-#SBATCH --job-name=python_dbsnp_mapping
-#SBATCH -p c_highmem_dri1
-#SBATCH -o /scratch/c.mpmgb/hawk_output/%x_out_%A_%a_%J.txt
-#SBATCH -e /scratch/c.mpmgb/hawk_output/%x_err_%A_%a_%J.txt
-#SBATCH --time=0-10:00:00
-#SBATCH --cpus-per-task=23
-#SBATCH --account=scw1329
-#SBATCH --mail-type=END,FAIL
-#SBATCH --mail-user=bernardo-harringtong@cardiff.ac.uk
-
-# activate conda environment
-module load anaconda
-source activate
-
-cd /scratch/scw1329/gmbh/blood-brain-barrier-in-ad/03_data/994_magma_inputs
-
-conda activate gwas_dnsnp_mapping
-
-# Run the Python script
-python merge_gwas_dbsnp_parallel.py
-```
-
-```{r}
-cat merged_chr*.txt > bellenguez_2022_rsids.tsv
-```
-
 
 ```{r}
 #!/bin/bash
@@ -292,8 +19,6 @@ cat merged_chr*.txt > bellenguez_2022_rsids.tsv
 #SBATCH --cpus-per-task=1
 #SBATCH --array=1
 #SBATCH --account=scw1329
-#SBATCH --mail-type=END,FAIL
-#SBATCH --mail-user=bernardo-harringtong@cardiff.ac.uk
 
 echo "*****************************************************************"
 echo "All jobs in this array have:"
@@ -359,8 +84,6 @@ echo "*****************************************************************"
 #SBATCH --array=1
 #SBATCH --mem=120G
 #SBATCH --account=scw1329
-#SBATCH --mail-type=END,FAIL
-#SBATCH --mail-user=bernardo-harringtong@cardiff.ac.uk
 
 echo "*****************************************************************"
 echo "All jobs in this array have:"
@@ -617,10 +340,6 @@ echo "*****************************************************************"
 #SBATCH --cpus-per-task=10
 #SBATCH --array=1
 #SBATCH --account=scw1329
-#SBATCH --mail-type=END,FAIL
-#SBATCH --mail-user=bernardo-harringtong@cardiff.ac.uk
-
-#####SBATCH --mem=120G
 
 echo "*****************************************************************"
 echo "All jobs in this array have:"

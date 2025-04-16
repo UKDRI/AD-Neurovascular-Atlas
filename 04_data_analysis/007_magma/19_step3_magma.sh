@@ -7,10 +7,6 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=10
 #SBATCH --account=scw1329
-#SBATCH --mail-type=END,FAIL
-#SBATCH --mail-user=bernardo-harringtong@cardiff.ac.uk
-
-#####SBATCH --mem=120G
 
 echo "*****************************************************************"
 echo "Host: "`hostname`

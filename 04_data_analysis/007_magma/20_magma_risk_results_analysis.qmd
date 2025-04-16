@@ -2,7 +2,6 @@
 title: MAGMA - risk results analysis
 execute:
   eval: true
-#self-contained: true
 ---
 
 ```{r}
@@ -22,7 +21,7 @@ Some of the files have different numbers of headers, so I'll write a function to
 ```{r}
 #| eval: true
 # List files
-files <- list.files(here::here("03_data/994_magma_inputs/results.bak.2025-01-08"), 
+files <- list.files(here::here("03_data/994_magma_inputs/results.bak.2025-01-08"),
                     pattern = "*.gsa.out", full.names = TRUE)
 
 # Read data
@@ -31,7 +30,7 @@ parse_magma_set_data <- function(file) {
   # Get the index of the line judt before the data starts
   data_starts_index <- grep("^# CONDITIONED_INTERNAL", file_lines)
   data <- read_table(file, skip = data_starts_index, show_col_types = FALSE)
-  return(data) 
+  return(data)
 }
 data <- map(files, parse_magma_set_data)
 
@@ -131,7 +130,7 @@ Remove runs with no APOE and no window
 df <- df |>
   dplyr::filter(!grepl("noAPOE", group)) |>
   dplyr::filter(!grepl("nowindow", group)) |>
-  # some duplicates got in - should probably check where from, likely old runs 
+  # some duplicates got in - should probably check where from, likely old runs
   # with different names
   dplyr::filter(!grepl("celltypes_", group))
 ```
@@ -174,7 +173,7 @@ df$group <- str_replace(df$group, "top.*?percent_", "") |>
   str_replace("AD_", "Kunkle_2019_")
 
 # Nest data on broad groups
-df_nest <- df |> 
+df_nest <- df |>
   dplyr::arrange(gwas_background) |>
   dplyr::group_by(celltype_level, percent) |>
   tidyr::nest()
@@ -192,7 +191,7 @@ get_heatmap_data <- function(df, nominal_p = FALSE) {
     pivot_wider(names_from = celltype, values_from = log_p) |>
     as.data.frame()
   }
-  
+
   rownames(heatmap_data) <- heatmap_data$group
   # Remove the first column if it contains row names (cell types)
   heatmap_data <- heatmap_data[, -1]
@@ -209,7 +208,7 @@ heatmap_data <- map(df_nest$data, get_heatmap_data) |>
 #| eval: false
 #| include: false
 # Create the heatmap
-pheatmap(heatmap_data$`level1_EUROPEUKBB_35k10k_top-five-percent`, cluster_rows = TRUE, cluster_cols = TRUE, 
+pheatmap(heatmap_data$`level1_EUROPEUKBB_35k10k_top-five-percent`, cluster_rows = TRUE, cluster_cols = TRUE,
          annotation_colors = RColorBrewer::brewer.pal(n = 7, name = "Reds"))
 ```
 
@@ -222,7 +221,7 @@ make_heatmap <- function(heatmap_data, plot_title) {
   sig_threshold1 <- -log10(0.05) # Corresponds to p < 0.05
   sig_threshold2 <- -log10(0.01) # Corresponds to p < 0.01
   sig_threshold3 <- -log10(0.001) # Corresponds to p < 0.001
-  
+
   # Create an annotation matrix with the same dimensions as 'heatmap'
   annotation_matrix <-
     matrix(
@@ -230,7 +229,7 @@ make_heatmap <- function(heatmap_data, plot_title) {
       nrow = nrow(heatmap_data),
       ncol = ncol(heatmap_data)
     )
-  
+
   # Populate the annotation matrix with '*', '**', or '***' based on significance levels
   annotation_matrix[heatmap_data > sig_threshold3] <-
     "***"
@@ -238,10 +237,10 @@ make_heatmap <- function(heatmap_data, plot_title) {
                       heatmap_data <= sig_threshold3] <- "**"
   annotation_matrix[heatmap_data > sig_threshold1 &
                       heatmap_data <= sig_threshold2] <- "*"
-  
+
   # Define a color palette for the heatmap
   color_palette <- colorRampPalette(c("blue", "white", "red"))(100)
-  
+
   # Create the heatmap with customizations
   plot <- Heatmap(
     heatmap_data,
@@ -272,9 +271,9 @@ make_heatmap <- function(heatmap_data, plot_title) {
     #bottom_annotation_height = unit(2, "cm"),
     #left_annotation_width = unit(2, "cm")
   )
-  
+
   return(plot)
-  
+
 }
 
 # Get heatmaps
@@ -295,9 +294,9 @@ level2_hmap_list
 # Save them to files
 save_heatmaps <- function(heatmap, file_name) {
   # Construct the full file path
-  file_path <- here::here("05_figures", "990_shared_figures", "001_magma", 
+  file_path <- here::here("05_figures", "990_shared_figures", "001_magma",
                           paste0("magma_heatmap_", file_name, ".png"))
-  
+
   # Save the heatmap to a file
   png(file_path, height = 1200, width = 1000)
   #svg(file_path, height = 15)
@@ -307,16 +306,16 @@ save_heatmaps <- function(heatmap, file_name) {
 map2(heatmaps, names(heatmaps), ~ save_heatmaps(.x, .y))
 
 # Open a graphics device to save the image (e.g., PNG format)
-png(here::here("05_figures", "990_shared_figures", "001_magma", 
-               "magma_heatmap_level1.png"), width = 22, height = 10, 
+png(here::here("05_figures", "990_shared_figures", "001_magma",
+               "magma_heatmap_level1.png"), width = 22, height = 10,
     units = 'in', res = 300)
 # Draw concatenated heatmaps
 draw(level1_hmap_list)
 # Close the graphics device to save the image
 dev.off()
 # Open a graphics device to save the image (e.g., PNG format)
-png(here::here("05_figures", "990_shared_figures", "001_magma", 
-               "magma_heatmap_level2.png"), width = 24, height = 10, 
+png(here::here("05_figures", "990_shared_figures", "001_magma",
+               "magma_heatmap_level2.png"), width = 24, height = 10,
     units = 'in', res = 300)
 # Draw concatenated heatmaps
 draw(level2_hmap_list)
@@ -346,16 +345,16 @@ level2_hmap_list
 
 
 # Open a graphics device to save the image (e.g., PNG format)
-png(here::here("05_figures", "990_shared_figures", "001_magma", 
-               "magma_heatmap_level1_no_scz.png"), width = 18, height = 10, 
+png(here::here("05_figures", "990_shared_figures", "001_magma",
+               "magma_heatmap_level1_no_scz.png"), width = 18, height = 10,
     units = 'in', res = 300)
 # Draw concatenated heatmaps
 draw(level1_hmap_list)
 # Close the graphics device to save the image
 dev.off()
 # Open a graphics device to save the image (e.g., PNG format)
-png(here::here("05_figures", "990_shared_figures", "001_magma", 
-               "magma_heatmap_level2_no_scz.png"), width = 20, height = 10, 
+png(here::here("05_figures", "990_shared_figures", "001_magma",
+               "magma_heatmap_level2_no_scz.png"), width = 20, height = 10,
     units = 'in', res = 300)
 # Draw concatenated heatmaps
 draw(level2_hmap_list)
@@ -374,8 +373,8 @@ subset_column <- subset_column[, grepl("Bellenguez_2022_35k10k", colnames(subset
 subset_column <- subset_column[, grepl("all_controls", colnames(subset_column))]
 heatmap_case <- make_heatmap(subset_column, "")
 heatmap_case
-png(here::here("05_figures", "990_shared_figures", "001_magma", 
-               "magma_heatmap_level2_case.png"), width = 6, height = 10, 
+png(here::here("05_figures", "990_shared_figures", "001_magma",
+               "magma_heatmap_level2_case.png"), width = 6, height = 10,
     units = 'in', res = 300)
 draw(heatmap_case)
 dev.off()
@@ -392,8 +391,8 @@ subset_column <- subset_column[, grepl("Bellenguez_2022_35k10k", colnames(subset
 subset_column <- subset_column[, grepl("all_controls", colnames(subset_column))]
 heatmap_case <- make_heatmap(subset_column, "")
 heatmap_case
-png(here::here("05_figures", "990_shared_figures", "001_magma", 
-               "magma_heatmap_level1_case.png"), width = 6, height = 10, 
+png(here::here("05_figures", "990_shared_figures", "001_magma",
+               "magma_heatmap_level1_case.png"), width = 6, height = 10,
     units = 'in', res = 300)
 draw(heatmap_case)
 dev.off()
@@ -412,14 +411,14 @@ The Bellenguez all controls are the risk hits of interest for the paper, subset 
 ```{r}
 subset_column <- heatmap_data_no_scz$`level2_top-ten-percent`[, "all_controls_Control_Bellenguez_2022_35k10k", drop = FALSE]
 colnames(subset_column) <- "Bellenguez_2022"
-subset_column <- subset_column[rownames(subset_column) != "EndoMT", , 
+subset_column <- subset_column[rownames(subset_column) != "EndoMT", ,
                                drop = FALSE]
 head(subset_column)
 
 # add nominal pval
 subset_column_nom <- heatmap_data_nom[, "all_controls_Control_Bellenguez_2022_35k10k", drop = FALSE]
 colnames(subset_column_nom) <- "Bellenguez_2022"
-subset_column_nom <- subset_column_nom[rownames(subset_column_nom) != "EndoMT", , 
+subset_column_nom <- subset_column_nom[rownames(subset_column_nom) != "EndoMT", ,
                                drop = FALSE]
 head(subset_column_nom)
 
@@ -432,6 +431,25 @@ qs::qsave(subset_column, here::here("05_figures/990_shared_figures/003_final_fig
 qs::qsave(subset_column_nom, here::here("05_figures/990_shared_figures/003_final_figures/magma_celltype_heatmap_data_endomt_subtypes_nominal.qs"))
 ```
 
+```{r}
+subset_column <- heatmap_data_no_scz$`level1_top-ten-percent`[, "all_controls_Bellenguez_2022_35k10k", drop = FALSE]
+colnames(subset_column) <- "Bellenguez_2022"
+head(subset_column)
+
+heatmap_data_nom <- get_heatmap_data(df_nest$data[[4]], nominal_p = TRUE)
+heatmap_deg_nom <- make_heatmap(heatmap_data_nom, "")
+
+# add nominal pval
+subset_column_nom <- heatmap_data_nom[, "all_controls_Bellenguez_2022_35k10k", drop = FALSE]
+colnames(subset_column_nom) <- "Bellenguez_2022"
+head(subset_column_nom)
+
+heatmap_for_paper <- make_heatmap(subset_column, "")
+heatmap_for_paper
+
+qs::qsave(subset_column, here::here("05_figures/990_shared_figures/003_final_figures/magma_celltype_heatmap_data_level1.qs"))
+qs::qsave(subset_column_nom, here::here("05_figures/990_shared_figures/003_final_figures/magma_celltype_heatmap_data_level1_nominal.qs"))
+```
 ```{r}
 heatmap_data_nom <- map(df_nest$data, get_heatmap_data, nominal_p = TRUE) |>
   set_names(paste0(df_nest$celltype_level, "_", df_nest$percent))
@@ -455,16 +473,16 @@ level1_hmap_list
 level2_hmap_list
 
 # Open a graphics device to save the image (e.g., PNG format)
-png(here::here("05_figures", "990_shared_figures", "001_magma", 
-               "magma_heatmap_level1_no_scz_nominal.png"), width = 18, height = 10, 
+png(here::here("05_figures", "990_shared_figures", "001_magma",
+               "magma_heatmap_level1_no_scz_nominal.png"), width = 18, height = 10,
     units = 'in', res = 300)
 # Draw concatenated heatmaps
 draw(level1_hmap_list)
 # Close the graphics device to save the image
 dev.off()
 # Open a graphics device to save the image (e.g., PNG format)
-png(here::here("05_figures", "990_shared_figures", "001_magma", 
-               "magma_heatmap_level2_no_scz_nominal.png"), width = 20, height = 10, 
+png(here::here("05_figures", "990_shared_figures", "001_magma",
+               "magma_heatmap_level2_no_scz_nominal.png"), width = 20, height = 10,
     units = 'in', res = 300)
 # Draw concatenated heatmaps
 draw(level2_hmap_list)
@@ -480,7 +498,7 @@ make_heatmap_v <- function(heatmap_data, level) {
   sig_threshold1 <- -log10(0.05) # Corresponds to p < 0.05
   sig_threshold2 <- -log10(0.01) # Corresponds to p < 0.01
   sig_threshold3 <- -log10(0.001) # Corresponds to p < 0.001
-  
+
   # Create an annotation matrix with the same dimensions as 'heatmap'
   annotation_matrix <-
     matrix(
@@ -488,7 +506,7 @@ make_heatmap_v <- function(heatmap_data, level) {
       nrow = nrow(heatmap_data),
       ncol = ncol(heatmap_data)
     )
-  
+
   # Populate the annotation matrix with '*', '**', or '***' based on significance levels
   annotation_matrix[heatmap_data > sig_threshold3] <-
     "***"
@@ -496,10 +514,10 @@ make_heatmap_v <- function(heatmap_data, level) {
                       heatmap_data <= sig_threshold3] <- "**"
   annotation_matrix[heatmap_data > sig_threshold1 &
                       heatmap_data <= sig_threshold2] <- "*"
-  
+
   # Define a color palette for the heatmap
   #color_palette <- colorRampPalette(c("blue", "white", "red"))(100)
-  
+
   # Create the heatmap with customizations
   plot <- Heatmap(
     heatmap_data,
@@ -530,9 +548,9 @@ make_heatmap_v <- function(heatmap_data, level) {
     #bottom_annotation_height = unit(2, "cm"),
     #left_annotation_width = unit(2, "cm")
   )
-  
+
   return(plot)
-  
+
 }
 
 # Get heatmaps
@@ -545,8 +563,8 @@ heatmaps_to_join
 ```{r}
 #| eval: false
 # Open a graphics device to save the image (e.g., PNG format)
-png(here::here("05_figures", "990_shared_figures", "001_magma", 
-               "magma_heatmap_level1_and_2.png"), width = 8, height = 10, 
+png(here::here("05_figures", "990_shared_figures", "001_magma",
+               "magma_heatmap_level1_and_2.png"), width = 8, height = 10,
     units = 'in', res = 300)
 
 # Combine heatmaps side-by-side and draw them
@@ -562,7 +580,7 @@ dev.off()
 
 ```{r}
 ppi_modules$log_p <- -log10(ppi_modules$p_adj)
-ppi_modules <- ppi_modules |> 
+ppi_modules <- ppi_modules |>
   dplyr::mutate(type = case_when(
     grepl("pseudobulk", FULL_NAME) ~ "pseudobulk",
     grepl("sig_magma_sig_genes", group) ~ "sig_magma_sig_genes",
@@ -599,8 +617,8 @@ ppi_heatmap_noadj
 joined_plot <- ppi_heatmap + ppi_heatmap_noadj
 joined_plot
 # Open a graphics device to save the image (e.g., PNG format)
-png(here::here("05_figures", "990_shared_figures", "001_magma", 
-               "ppi_magma_heatmap.png"), width = 8, height = 12, units = 'in', 
+png(here::here("05_figures", "990_shared_figures", "001_magma",
+               "ppi_magma_heatmap.png"), width = 8, height = 12, units = 'in',
     res = 300)
 # Draw concatenated heatmaps
 draw(joined_plot)
@@ -663,7 +681,7 @@ module_labels$percent <- "top-ten-percent"
 
 ```{r}
 # Nest data on broad groups
-df_nest <- ppi_magma |> 
+df_nest <- ppi_magma |>
   dplyr::filter(percent == "top-ten-percent") |>
   dplyr::arrange(gwas_background) |>
   dplyr::group_by(celltype, input_gene_list) |>
@@ -674,7 +692,7 @@ df_nest <- ppi_magma |>
 ```{r}
 #| eval: false
 #| include: true
-# Without the filter above, there's these odd mismatches between the 
+# Without the filter above, there's these odd mismatches between the
 # VARIABLE and group columns for the magma gene data...
 grepl("Perivascular-FB-KAZN2", ppi_magma$group[which(ppi_magma$VARIABLE == "Perivascular-FB-KAZN2_sig-magma-sig-genes_EUROPEUKBB_35k10k_all_controls_top-five-percent_module1")])
 ```
@@ -699,16 +717,16 @@ joined_plot_top10
 joined_plot_top5 <- ppi_heatmap$`all_controls_top-five-percent` %v% ppi_heatmap$`controls_vascular_top-five-percent` %v% ppi_heatmap$`controls_parenchymal_top-five-percent`
 joined_plot_top5
 # Open a graphics device to save the image (e.g., PNG format)
-png(here::here("05_figures", "990_shared_figures", "001_magma", 
-               "magma_heatmap_ppi_magma_sig_genes_top5.png"), width = 18, 
+png(here::here("05_figures", "990_shared_figures", "001_magma",
+               "magma_heatmap_ppi_magma_sig_genes_top5.png"), width = 18,
     height = 10, units = 'in', res = 300)
 # Draw concatenated heatmaps
 draw(joined_plot_top5)
 # Close the graphics device to save the image
 dev.off()
 # Open a graphics device to save the image (e.g., PNG format)
-png(here::here("05_figures", "990_shared_figures", "001_magma", 
-               "magma_heatmap_ppi_magma_sig_genes_top10.png"), width = 18, 
+png(here::here("05_figures", "990_shared_figures", "001_magma",
+               "magma_heatmap_ppi_magma_sig_genes_top10.png"), width = 18,
     height = 10, units = 'in', res = 300)
 # Draw concatenated heatmaps
 draw(joined_plot_top10)
@@ -738,10 +756,10 @@ files <- files[!grepl("ppi_", files)]
 
 read_magma_gene_data <- function(file) {
   lines <- readLines(file)
-  
+
   set_start_indices <- grep("^# _SET.*VARIABLE", lines)
   set_end_indices <- c(which(lines == "")[-1], length(lines))
-  
+
   # Define a function to parse a single section
   parse_section <- function(start_idx, end_idx) {
     header_lines <- lines[start_idx:(start_idx + 2)]
@@ -751,7 +769,7 @@ read_magma_gene_data <- function(file) {
       as.numeric(sub(".*=\\s*(\\d+).*", "\\1", header_lines[2]))
     p_value <-
       as.numeric(sub(".*P-VALUE =\\s*([0-9.]+).*", "\\1", header_lines[3]))
-    
+
     gene_data <- lines[(start_idx + 3):end_idx]
     set_df <-
       read.table(
@@ -763,19 +781,19 @@ read_magma_gene_data <- function(file) {
       ) |>
       dplyr::mutate(padj = p.adjust(P, method = "bonferroni"))
     #set_df <- read_table(file = gene_data)
-    
+
     set_df$SetName <- set_name
     set_df$NumGenes <- num_genes
     set_df$SetPValue <- p_value
-    
+
     # Make column names match
     names(set_df)[1] <- "gene_set"
     # Make sure chr is a character to account for "X"/"Y"
     set_df$CHR <- as.character(set_df$CHR)
-    
+
     return(set_df)
   }
-  
+
   # Use mapply to apply the function to each set of start and end indices
   sets_list <-
     mapply(
@@ -824,7 +842,7 @@ entrez_ids <- translated_id |>
   dplyr::filter(!duplicated(ensembl_gene_id))
 
 df <- df |>
-  dplyr::left_join(translated_id, by = c("GENE" = "entrezgene_id"), multiple = "any") 
+  dplyr::left_join(translated_id, by = c("GENE" = "entrezgene_id"), multiple = "any")
 
 assertthat::assert_that(sum(is.na(df$hgnc_symbol)) == 0)
 ```
@@ -875,14 +893,14 @@ unique_genes <- ad_level2 |>
 ```{r}
 unique_genes <- unique_genes |>
   dplyr::left_join(mapped_genes, by = c("GENE" = "entrezgene_id")) |>
-  dplyr::mutate(ensembl_gene_id = ifelse(is.na(ensembl_gene_id.x), 
-                                         ensembl_gene_id.y, ensembl_gene_id.x), 
-                hgnc_symbol = ifelse(is.na(hgnc_symbol.x), hgnc_symbol.y, 
+  dplyr::mutate(ensembl_gene_id = ifelse(is.na(ensembl_gene_id.x),
+                                         ensembl_gene_id.y, ensembl_gene_id.x),
+                hgnc_symbol = ifelse(is.na(hgnc_symbol.x), hgnc_symbol.y,
                                      hgnc_symbol.x)) |>
-  dplyr::select(!c(hgnc_symbol.y, hgnc_symbol.x, ensembl_gene_id.x, 
+  dplyr::select(!c(hgnc_symbol.y, hgnc_symbol.x, ensembl_gene_id.x,
                    ensembl_gene_id.y))
 
-readr::write_tsv(unique_genes, 
+readr::write_tsv(unique_genes,
                  here::here("03_data/994_magma_inputs/sig_genelist", "unique_sig_magma_set_genes.tsv"))
 ```
 
@@ -905,7 +923,7 @@ parse_magma_set_data <- function(file) {
   condition <- str_extract(file_lines[data_starts_index], "(?<=# CONDITIONED_VARIABLES = ).*?(?= )")
   data <- read_table(file, skip = data_starts_index, show_col_types = FALSE) |>
     dplyr::mutate(condition = condition)
-  return(data) 
+  return(data)
 }
 data <- map(files, parse_magma_set_data) |>
   list_rbind()

@@ -8,8 +8,6 @@
 #SBATCH --cpus-per-task=1
 #SBATCH --array=1
 #SBATCH --account=scw1329
-#SBATCH --mail-type=END,FAIL
-#SBATCH --mail-user=bernardo-harringtong@cardiff.ac.uk
 
 echo "*****************************************************************"
 echo "All jobs in this array have:"
