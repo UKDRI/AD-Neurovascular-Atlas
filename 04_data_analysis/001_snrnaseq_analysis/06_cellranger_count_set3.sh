@@ -12,7 +12,7 @@
 #SBATCH -e /scratch/c.mpmgb/hawk_output/%x_err_%A_%a_%J.txt
 
 ## Project root variables defined in the following
-source 00_hpc_variables.sh
+source /scratch/c.mpmgb/blood-brain-barrier-in-ad/04_data_analysis/001_snrnaseq_analysis/00_hpc_variables.sh
 
 echo "*****************************************************************"
 echo "All jobs in this array have:"

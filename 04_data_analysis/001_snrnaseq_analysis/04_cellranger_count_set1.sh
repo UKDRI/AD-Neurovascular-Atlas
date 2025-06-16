@@ -15,7 +15,7 @@
 ## FASTQ files, set 1, 24 samples, sequenced in Cardiff
 ## NOTE, R2 length is 150bp, complete length will be used by default
 ## alternatively, reads could be trimmed  with Cell Ranger option --r2-length=90
-source 00_hpc_variables.sh
+source /scratch/c.mpmgb/blood-brain-barrier-in-ad/04_data_analysis/001_snrnaseq_analysis/00_hpc_variables.sh
 
 echo "*****************************************************************"
 echo "All jobs in this array have:"

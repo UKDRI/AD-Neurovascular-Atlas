@@ -34,7 +34,7 @@ Could also be a index error which resulted in the sample data getting dumped in 
 #SBATCH -e /scratch/c.mpmgb/hawk_output/%x_err_%A_%a_%J.txt
 
 ## Project root variables defined in the following
-source 00_hpc_variables.sh
+source /scratch/c.mpmgb/blood-brain-barrier-in-ad/04_data_analysis/001_snrnaseq_analysis/00_hpc_variables.sh
 
 echo "*****************************************************************"
 echo "All jobs in this array have:"
@@ -107,17 +107,34 @@ Note that there's a also a `web_summary.html` in the `SC_RNA_COUNTER_CS` folder,
 ```{r}
 #| purl: false
 # get the file paths for all the "web_summary.html" files and save them to a file
-find 03_data/990_processed_data/001_snrnaseq/04_cellranger_count/ -name "web_summary.html" > web_summary_files.txt
+find
+03
+_data / 990
+_processed_data / 001
+_snrnaseq / 04
+_cellranger_count / -name
+"web_summary.html" > web_summary_files.txt
 
 # the line length for the summary in the SC_RNA_COUNTER_CS dir is longer:
-awk '{print length}' web_summary_files.txt | sort -n | uniq -c
+awk
+'{print length}'
+web_summary_files.txt | sort - n | uniq - c
 # so we'll remove lines based on their length
-awk 'length <= max_length' max_length="140" web_summary_files.txt > web_summary_files_clean.txt
+awk
+'length <= max_length'
+max_length = "140"
+web_summary_files.txt > web_summary_files_clean.txt
 # prepend "git add " to the file lines
-sed 's/^/git add /' web_summary_files_clean.txt > web_summary_files_git.sh
+sed
+'s/^/git add /'
+web_summary_files_clean.txt > web_summary_files_git.sh
 
 # run the file
-sh web_summary_files_git.sh
+sh
+web_summary_files_git.sh
 # clean up
-rm web_summary_files.txt web_summary_files_clean.txt web_summary_files_git.sh
+rm
+web_summary_files.txt
+web_summary_files_clean.txt
+web_summary_files_git.sh
 ```

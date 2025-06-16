@@ -16,7 +16,7 @@ You can find these combined report for all samples [here](../../03_data/990_proc
 #| purl: false
 
 ## Project root variables defined in the following
-source 00_hpc_variables.sh
+source /scratch/c.mpmgb/blood-brain-barrier-in-ad/04_data_analysis/001_snrnaseq_analysis/00_hpc_variables.sh
 
 # list the cellranger count output directories
 find $PROJECT_ROOT"03_data/990_processed_data/001_snrnaseq/04_cellranger_count/" -maxdepth 2 -mindepth 2 -type d > cellranger_ag.txt 
@@ -67,7 +67,7 @@ rm cellranger_ag.txt cellranger_ag2.txt cellranger_ag3.txt cellranger_ag_set1.tx
 #SBATCH -e /scratch/c.mpmgb/hawk_output/%x_err_%A_%a_%J.txt
 
 ## Project root variables defined in the following
-source 00_hpc_variables.sh
+source /scratch/c.mpmgb/blood-brain-barrier-in-ad/04_data_analysis/001_snrnaseq_analysis/00_hpc_variables.sh
 
 echo "*****************************************************************"
 echo "All jobs in this array have:"
