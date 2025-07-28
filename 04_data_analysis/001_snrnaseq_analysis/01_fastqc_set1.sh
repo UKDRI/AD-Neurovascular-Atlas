@@ -12,7 +12,7 @@
 #SBATCH -e sbatch_err_%x_%A_%a_%J.txt
 
 ## FASTQ file paths and project root variables defined in the following
-source 00_hpc_variables.sh
+source /scratch/c.mpmgb/blood-brain-barrier-in-ad/04_data_analysis/001_snrnaseq_analysis/00_hpc_variables.sh
 
 echo "*****************************************************************"
 echo "All jobs in this array have:"
@@ -23,13 +23,13 @@ echo "- SLURM_ARRAY_TASK_MAX: ${SLURM_ARRAY_TASK_MAX}"
 echo "This job in the array has:"
 echo "- SLURM_JOB_ID: ${SLURM_JOB_ID}"
 echo "- SLURM_ARRAY_TASK_ID: ${SLURM_ARRAY_TASK_ID}"
-echo "Run on host: "`hostname`
-echo "Number of threads (nproc): "`nproc`
-echo "Total memory in GB: "`free -g | grep -oP '\d+' | sed -n 1p`
-echo "Used memory in GB: "`free -g | grep -oP '\d+' | sed -n 2p`
-echo "Free memory in GB: "`free -g | grep -oP '\d+' | sed -n 3p`
-echo "Username: "`whoami`
-echo "Started at: "`date`
+echo "Run on host: "$(hostname)
+echo "Number of threads (nproc): "$(nproc)
+echo "Total memory in GB: "$(free -g | grep -oP '\d+' | sed -n 1p)
+echo "Used memory in GB: "$(free -g | grep -oP '\d+' | sed -n 2p)
+echo "Free memory in GB: "$(free -g | grep -oP '\d+' | sed -n 3p)
+echo "Username: "$(whoami)
+echo "Started at: "$(date)
 echo -e "*****************************************************************\n"
 
 OUTPUT_DIR=$PROJECT_ROOT"03_data/990_processed_data/001_snrnaseq/01_fastqc/01_set1"
@@ -47,14 +47,13 @@ N=${SLURM_ARRAY_TASK_ID}
 
 FASTQ_FILE=$(find $INPUT_DIR_b1s1 -mindepth 1 -maxdepth 1 -name '*_001.fastq.gz' | sort | tail -n+${N} | head -1)
 fastqc -o $OUTPUT_DIR1 -f fastq --noextract --quiet -t 1 $FASTQ_FILE
- 
+
 # FASTQ_FILE=$(find $INPUT_DIR_b1s2 -mindepth 1 -maxdepth 3 -name '*_001.fastq.gz' | sort | tail -n+${N} | head -1)
 # fastqc -o $OUTPUT_DIR2 -f fastq --noextract --quiet -t 1 $FASTQ_FILE
 
 # FASTQ_FILE=$(find $INPUT_DIR -mindepth 1 -maxdepth 1 -name '*_001.fastq.gz' | sort | tail -n+${N} | head -1)
 # fastqc -o $OUTPUT_DIR3 -f fastq --noextract --quiet -t 1 $FASTQ_FILE
 
-
 echo -e "\n*****************************************************************"
-echo "Finished at: "`date`
+echo "Finished at: "$(date)
 echo "*****************************************************************"

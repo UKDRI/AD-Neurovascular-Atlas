@@ -33,7 +33,7 @@ It's a little graceless, but I'll purl this script for set 1 and then manually c
 #SBATCH -e sbatch_err_%x_%A_%a_%J.txt
 
 ## FASTQ file paths and project root variables defined in the following
-source 00_hpc_variables.sh
+source /scratch/c.mpmgb/blood-brain-barrier-in-ad/04_data_analysis/001_snrnaseq_analysis/00_hpc_variables.sh
 
 echo "*****************************************************************"
 echo "All jobs in this array have:"
