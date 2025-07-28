@@ -13,7 +13,9 @@ here::i_am("04_data_analysis/001_snrnaseq_analysis/12_pathway_analysis.qmd")
 # Load packages
 
 ```{r}
-source(here::here("04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"))
+source(here::here(
+  "04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"
+))
 ```
 
 # Read in data
@@ -26,12 +28,16 @@ use_apoe <- FALSE
 ```
 
 ```{r}
-if(use_apoe) {
-res <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/08_pseudobulk/pseudobulk_ad-vs-control_deseq2_apoe.rds")) |>
-  na.omit()
+if (use_apoe) {
+  res <- readr::read_rds(here::here(
+    "03_data/990_processed_data/001_snrnaseq/08_pseudobulk/pseudobulk_ad-vs-control_deseq2_apoe.rds"
+  )) |>
+    na.omit()
 } else {
-res <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/08_pseudobulk/pseudobulk_ad-vs-control_deseq2_noapoe.rds")) |>
-  na.omit()
+  res <- readr::read_rds(here::here(
+    "03_data/990_processed_data/001_snrnaseq/08_pseudobulk/pseudobulk_ad-vs-control_deseq2_noapoe.rds"
+  )) |>
+    na.omit()
 }
 ```
 
@@ -54,8 +60,10 @@ names(genes) <- unique(res_sig$celltype)
 # Hypergeometric enrichment
 
 ```{r}
-go_results <- map(genes, ~ enrichGO(gene = .x, OrgDb = "org.Hs.eg.db", 
-                                    keyType = "SYMBOL", ont = "BP"))
+go_results <- map(
+  genes,
+  ~ enrichGO(gene = .x, OrgDb = "org.Hs.eg.db", keyType = "SYMBOL", ont = "BP")
+)
 ```
 
 ```{r}
@@ -78,14 +86,14 @@ fit
 gsea_df <- res |>
   # group by celltype
   dplyr::group_by(celltype) |>
-  tidyr::nest() 
+  tidyr::nest()
 ```
 
 ```{r}
 #| message: false
 #| warning: false
 # Function: Adjacency matrix to list -------------------------
-matrix_to_list <- function(pws){
+matrix_to_list <- function(pws) {
   pws.l <- list()
   for (pw in colnames(pws)) {
     pws.l[[pw]] <- rownames(pws)[as.logical(pws[, pw])]
@@ -98,11 +106,11 @@ prepare_gmt <- function(gmt_file, genes_in_data, savefile = FALSE) {
   # for debug
   #file <- gmt_files[1]
   #genes_in_data <- df$gene_symbol
-  
+
   # Read in gmt file
   gmt <- gmtPathways(gmt_file)
   hidden <- unique(unlist(gmt))
-  
+
   # Convert gmt file to a matrix with the genes as rows and for each go annotation (columns) the values are 0 or 1
   mat <- matrix(
     NA,
@@ -113,7 +121,7 @@ prepare_gmt <- function(gmt_file, genes_in_data, savefile = FALSE) {
   for (i in 1:dim(mat)[2]) {
     mat[, i] <- as.numeric(hidden %in% gmt[[i]])
   }
-  
+
   #Subset to the genes that are present in our data to avoid bias
   hidden1 <- intersect(genes_in_data, hidden)
   mat <-
@@ -121,46 +129,36 @@ prepare_gmt <- function(gmt_file, genes_in_data, savefile = FALSE) {
   # And get the list again
   final_list <-
     matrix_to_list(mat) # for this we use the function we previously defined
-  
+
   if (savefile) {
-    saveRDS(final_list, file = paste0(
-      gsub('.gmt', '', gmt_file),
-      '_subset_',
-      format(Sys.time(), '%d%m'),
-      '.RData'
-    ))
+    saveRDS(
+      final_list,
+      file = paste0(
+        gsub('.gmt', '', gmt_file),
+        '_subset_',
+        format(Sys.time(), '%d%m'),
+        '.RData'
+      )
+    )
   }
-  
+
   print('Wohoo! .gmt conversion successfull!:)')
   return(final_list)
 }
 
-# Get all the genes in dataset and assign them to my_genes 
+# Get all the genes in dataset and assign them to my_genes
 my_genes <- res$gene
 
 # Download gene sets .gmt files
 #https://www.gsea-msigdb.org/gsea/msigdb/human/collections.jsp
 # I've downloaded several background sets to try
-gmt_files <- list.files(here::here("03_data/991_external_data"), pattern = "\\.gmt$", full.names = TRUE)
+gmt_files <- list.files(
+  here::here("03_data/991_external_data"),
+  pattern = "\\.gmt$",
+  full.names = TRUE
+)
 
 gmt <- map(gmt_files, ~ prepare_gmt(.x, my_genes))
-```
-
-```{r}
-#| eval: false
-#| include: false
-
-# This is the per celltype version - not using fgsea at the moment so I'll skip
-# this for now
-# Get all the genes in your dataset and assign them to my_genes 
-my_genes <- map(gsea_df$data, ~ .x$gene) |>
-  purrr::set_names(gsea_df$celltype)
-
-gmt <- map(gmt_files, function(gmt) {
-  map(my_genes, function(genes) {
-    prepare_gmt(gmt, genes)
-  }
-)})
 ```
 
 Get the gene rankings
@@ -175,11 +173,11 @@ sort_rankings <- function(log2fc, pvals, gene_names, group) {
   # genes as names
   names(rankings) <- gene_names
   head(rankings)
-  
+
   # sort genes by ranking
   rankings <- sort(rankings, decreasing = TRUE)
   plot(rankings, main = group)
-  
+
   # Some genes have such low p values that the signed pval is +- inf, we need to
   # change it to the maximum * constant to avoid problems with fgsea
   max_ranking <- max(rankings[is.finite(rankings)])
@@ -191,31 +189,36 @@ sort_rankings <- function(log2fc, pvals, gene_names, group) {
     replace(rankings, rankings < min_ranking, min_ranking * 10)
   rankings <-
     sort(rankings, decreasing = TRUE) # sort genes by ranking
-  
+
   return(rankings)
 }
 
 rankings <-
-  map2(gsea_df$data, gsea_df$celltype, ~ (sort_rankings(.x$log2FoldChange,
-                                                        .x$pvalue,
-                                                        .x$gene,
-                                                        .y))) |>
+  map2(
+    gsea_df$data,
+    gsea_df$celltype,
+    ~ (sort_rankings(.x$log2FoldChange, .x$pvalue, .x$gene, .y))
+  ) |>
   purrr::set_names(gsea_df$celltype)
 ```
 
 ```{r}
-ggplot(data.frame(
-  gene_symbol = names(rankings$Astro)[1:50],
-  ranks = rankings$Astro[1:50]
-),
-aes(gene_symbol, ranks)) +
+ggplot(
+  data.frame(
+    gene_symbol = names(rankings$Astro)[1:50],
+    ranks = rankings$Astro[1:50]
+  ),
+  aes(gene_symbol, ranks)
+) +
   geom_point() +
   theme_classic() +
-  theme(axis.text.x = element_text(
-    angle = 90,
-    vjust = 0.5,
-    hjust = 1
-  )) +
+  theme(
+    axis.text.x = element_text(
+      angle = 90,
+      vjust = 0.5,
+      hjust = 1
+    )
+  ) +
   ggtitle("Astrocyte top 50 ranked genes")
 ```
 
@@ -245,13 +248,18 @@ gsea_res <- map(gmt, function(pathway) {
 
 
 ```{r}
-# get log2 FC as a vector with the respective gene names, sorted in decreasing 
+# get log2 FC as a vector with the respective gene names, sorted in decreasing
 # order
 named_vectors <- res_sig |>
   dplyr::group_by(celltype) |>
   tidyr::nest() |>
-  dplyr::mutate(gene_list = map(data, ~setNames(.x$log2FoldChange, .x$gene) |>
-                                  sort(decreasing = TRUE)))
+  dplyr::mutate(
+    gene_list = map(
+      data,
+      ~ setNames(.x$log2FoldChange, .x$gene) |>
+        sort(decreasing = TRUE)
+    )
+  )
 ```
 
 ## Gene Ontology
@@ -275,8 +283,8 @@ if (!file.exists(result_file)) {
         ont = "ALL",
         keyType = "SYMBOL"
       )
-    ) 
-  
+    )
+
   # Save the resulting object
   readr::write_rds(gse, result_file)
 } else {
@@ -300,28 +308,38 @@ dotplots <-
   map2(
     gse,
     names(gse),
-    ~ dotplot(.x, showCategory = 10, split = ".sign") + facet_grid(. ~ .sign) +
+    ~ dotplot(.x, showCategory = 10, split = ".sign") +
+      facet_grid(. ~ .sign) +
       ggtitle(.y)
   )
 
 dotplots
-readr::write_rds(dotplots, here::here("03_data/990_processed_data/001_snrnaseq/09_pathway_analysis/go-dotplots.rds"))
+readr::write_rds(
+  dotplots,
+  here::here(
+    "03_data/990_processed_data/001_snrnaseq/09_pathway_analysis/go-dotplots.rds"
+  )
+)
 ```
 
 ```{r}
-map2(gse,
-     names(gse),
-     ~ ridgeplot(.x) +
-       labs(x = "enrichment distribution") +
-                  ggtitle(.y))
+map2(
+  gse,
+  names(gse),
+  ~ ridgeplot(.x) +
+    labs(x = "enrichment distribution") +
+    ggtitle(.y)
+)
 ```
 
 Note, one can change which pathway is plotted here by setting the title and `geneSetID` accordingly
 
 ```{r}
-map2(gse,
-     names(gse),
-     ~ gseaplot(.x, by = "all", title = .x$Description[1], geneSetID = 1))
+map2(
+  gse,
+  names(gse),
+  ~ gseaplot(.x, by = "all", title = .x$Description[1], geneSetID = 1)
+)
 ```
 
 ## KEGG
@@ -340,8 +358,8 @@ ids <-
     )
   ) |>
   purrr::list_rbind()
- # remove duplicate IDS 
-dedup_ids = ids[!duplicated(ids[c("SYMBOL")]),]
+# remove duplicate IDS
+dedup_ids = ids[!duplicated(ids[c("SYMBOL")]), ]
 
 # join entrezids to dataframe
 res_entrez <- res |>
@@ -349,16 +367,18 @@ res_entrez <- res |>
   # remove cases that couldn't be matched
   dplyr::filter(!is.na(ENTREZID))
 
-# get log2 FC as a vector with the respective gene names, sorted in decreasing 
+# get log2 FC as a vector with the respective gene names, sorted in decreasing
 # order
 named_vectors <- res_entrez |>
   dplyr::group_by(celltype) |>
   tidyr::nest() |>
-  dplyr::mutate(gene_list = map(
-    data,
-    ~ setNames(.x$log2FoldChange, .x$ENTREZID) |>
-      sort(decreasing = TRUE)
-  ))
+  dplyr::mutate(
+    gene_list = map(
+      data,
+      ~ setNames(.x$log2FoldChange, .x$ENTREZID) |>
+        sort(decreasing = TRUE)
+    )
+  )
 ```
 
 ```{r}
@@ -373,13 +393,13 @@ result_file <-
 # Check if the file exists
 if (!file.exists(result_file)) {
   # Code for your time-consuming analysis
-kk2 <-
-  map(
-    named_vectors$gene_list,
-    ~ gseKEGG(.x, organism = kegg_organism, keyType = "ncbi-geneid")
-  ) |>
-  set_names(named_vectors$celltype)
-  
+  kk2 <-
+    map(
+      named_vectors$gene_list,
+      ~ gseKEGG(.x, organism = kegg_organism, keyType = "ncbi-geneid")
+    ) |>
+    set_names(named_vectors$celltype)
+
   # Save the resulting object
   readr::write_rds(kk2, result_file)
 } else {
@@ -398,14 +418,14 @@ map2(
   names(kk2),
   ~ {
     # add a check if the dataframe is empty and return null if so
-    if(nrow(.x) > 0) {
+    if (nrow(.x) > 0) {
       dotplot(
         .x,
         showCategory = 10,
         title = .y,
         split = ".sign"
       ) +
-      facet_grid(. ~ .sign)
+        facet_grid(. ~ .sign)
     } else {
       return(NULL)
     }
@@ -414,18 +434,19 @@ map2(
 ```
 
 ```{r}
-map2(kk2,
-     names(kk2),
-     ~ {
-       # add a check if the dataframe is empty and return null if so
-       if (nrow(.x) > 0) {
-         ridgeplot(.x) +
-           labs(x = "enrichment distribution") +
-           ggtitle(.y)
-       } else {
-         return(NULL)
-       }
-     }
+map2(
+  kk2,
+  names(kk2),
+  ~ {
+    # add a check if the dataframe is empty and return null if so
+    if (nrow(.x) > 0) {
+      ridgeplot(.x) +
+        labs(x = "enrichment distribution") +
+        ggtitle(.y)
+    } else {
+      return(NULL)
+    }
+  }
 )
 ```
 
