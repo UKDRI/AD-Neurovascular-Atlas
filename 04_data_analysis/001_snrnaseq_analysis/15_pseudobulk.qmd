@@ -44,7 +44,7 @@ ggplot(data, aes(y = highlevel_manual_annotations, x = EDN1, fill = diagnosis)) 
        x = "Cell Type",
        y = "EDN1 Expression")
 
-avg_cases <- AggregateExpression(sce, group.by = c("ident", "diagnosis")) #%>%
+avg_cases <- AggregateExpression(sce, group.by = c("ident", "diagnosis")) #|>
 end1 <- avg_cases$RNA |>
   as.data.frame() |>
   rownames_to_column("gene") |>
@@ -111,7 +111,7 @@ Now we need to do some data manipulation to get the count and column data in the
 
 ```{r}
 # transpose
-cts_t <- t(cts) %>%
+cts_t <- t(cts) |>
   as.data.frame()
 
 split_rows <- gsub('_.*', '', rownames(cts_t))
@@ -238,12 +238,12 @@ head(res$Arterial)
 
 ```{r}
 # merge celltype dataframes
-res_merged <- map2(res, names(res), ~ as.data.frame(.x) %>%
-                     rownames_to_column("gene") %>%
+res_merged <- map2(res, names(res), ~ as.data.frame(.x) |>
+                     rownames_to_column("gene") |>
                      dplyr::mutate(celltype = .y, deg_direction = case_when(
                        log2FoldChange > 0 & padj < 0.05 ~ "Up",
                        log2FoldChange < 0 & padj < 0.05 ~ "Down",
-                       .default = "Not Sig"))) %>%
+                       .default = "Not Sig"))) |>
   purrr::list_rbind()
 head(res_merged)
 ```
@@ -271,7 +271,7 @@ if(use_apoe) {
 
 ```{r}
 #| warning: false
-res_merged %>%
+res_merged |>
   ggplot(aes(x = factor(deg_direction), fill = factor(celltype))) +
   geom_histogram(stat = "count") +
   facet_wrap(~factor(celltype)) +
@@ -289,9 +289,9 @@ res_merged %>%
 # add colour identifier
 cols <- c("Up" = "#FDE725FF", "Down" = "#440154FF", "Not Sig" = "#d3d3d3")
 
-volc_plot <- res_merged %>%
+volc_plot <- res_merged |>
   # filter to significant hits
-  #dplyr::filter(padj < 0.05) %>%
+  #dplyr::filter(padj < 0.05) |>
   # scale FDR by log10
   ggplot(aes(x = log2FoldChange, y = -log10(padj))) +
   geom_point(aes(colour = deg_direction), stat = "identity", size = .2) +
@@ -313,8 +313,8 @@ volc_plot <- res_merged %>%
   scale_colour_manual(values = cols) +
   geom_text_repel(
     # give top three genes per cell type by adjusted p value
-    data = res_merged %>%
-      dplyr::group_by(celltype) %>%
+    data = res_merged |>
+      dplyr::group_by(celltype) |>
       dplyr::slice_min(padj, n = 3),
     aes(label = gene),
     size = 3,

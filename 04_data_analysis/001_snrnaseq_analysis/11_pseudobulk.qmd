@@ -79,7 +79,7 @@ avg_exp <- as.data.frame(avg_exp) |>
   rownames_to_column(var = "gene")
 
 # pivot longer such that celltypes are separated out
-avg_exp <- avg_exp %>%
+avg_exp <- avg_exp |>
   pivot_longer(
     cols = !gene,
     names_to = c("celltype", ".value"),
@@ -101,7 +101,7 @@ avg_exp <- as.data.frame(avg_exp) |>
   rownames_to_column(var = "gene")
 
 # pivot longer such that celltypes are separated out
-avg_exp <- avg_exp %>%
+avg_exp <- avg_exp |>
   pivot_longer(
     cols = !gene,
     names_to = c("celltype", ".value"),
@@ -113,9 +113,9 @@ readr::write_csv(avg_exp, file_out)
 ```
 
 ```{r}
-cluster_count_by_sample <- table(Idents(sce), sce$donor) %>%
- as.data.frame() %>%
-  pivot_wider(names_from = Var2, values_from = Freq) %>%
+cluster_count_by_sample <- table(Idents(sce), sce$donor) |>
+ as.data.frame() |>
+  pivot_wider(names_from = Var2, values_from = Freq) |>
   dplyr::rename(cell_type = Var1)
 
 sce@meta.data |>
@@ -128,7 +128,7 @@ sce@meta.data |>
   summarise(n = n()) |>
   write_csv("~/Dropbox (UK Dementia Research Institute)/bbb-project_2023-06-30/data/counts_per_highlevelcelltype-donor-prep.csv")
 
-cluster_count_by_sample %>% DT::datatable(
+cluster_count_by_sample |> DT::datatable(
   escape = F,
   rownames = F,
   extensions = 'Buttons',
@@ -247,10 +247,10 @@ pb_dat_per_individual <-
 
 names(pb_dat_per_individual) <- celltypes
 
-pseudo_vals <- map2(pb_dat_per_individual, names(pb_dat_per_individual), ~ .x$sumDat %>%
-              as.data.frame() %>%
-              dplyr::mutate(celltype = .y) %>%
-              rownames_to_column("gene")) %>%
+pseudo_vals <- map2(pb_dat_per_individual, names(pb_dat_per_individual), ~ .x$sumDat |>
+              as.data.frame() |>
+              dplyr::mutate(celltype = .y) |>
+              rownames_to_column("gene")) |>
   purrr::list_rbind()
 
 readr::write_csv(pseudo_vals, here::here("03_data/990_processed_data/001_snrnaseq/08_pseudobulk/pseudobulk_values_per_individual.csv"))
@@ -340,7 +340,7 @@ lrt <- purrr::map2(fit, contr, ~ apply_lrt_to_groups(.x, .y, levels(sce$group)))
 topTags(lrt$Endothelial$groupAD_P_oxford_dunno_vs_others)
 
 # Get number of DE genes
-dt <- purrr::map(lrt, ~ lapply(lapply(.x, decideTestsDGE), summary) %>%
+dt <- purrr::map(lrt, ~ lapply(lapply(.x, decideTestsDGE), summary) |>
                    do.call("cbind", .))
 dt$Endothelial
 ```
@@ -468,13 +468,13 @@ lrt_merged <- map(lrt_sig,
                   ~ map2(
                     .x,
                     names(.x),
-                    ~ .x %>%
+                    ~ .x |>
                       dplyr::mutate(
                         contrast = .y,
                         # add direction of expression
                         deg_direction = ifelse(logFC > 0, "Up", "Down")
                       )
-                  ) %>%
+                  ) |>
                     purrr::list_rbind())
 ```
 
@@ -485,8 +485,8 @@ pal=c(wesanderson::wes_palette("Royal2"),
 ```
 
 ```{r}
-lrt_merged <- map2(lrt_merged, names(lrt_merged), ~ .x %>%
-                     dplyr::mutate(celltype = .y)) %>%
+lrt_merged <- map2(lrt_merged, names(lrt_merged), ~ .x |>
+                     dplyr::mutate(celltype = .y)) |>
   purrr::list_rbind()
 ```
 
@@ -494,7 +494,7 @@ lrt_merged <- map2(lrt_merged, names(lrt_merged), ~ .x %>%
 
 ```{r}
 #| warning: false
-lrt_merged %>%
+lrt_merged |>
   ggplot(aes(x = factor(deg_direction), fill = factor(celltype))) +
   geom_histogram(stat = "count") +
   facet_wrap(~factor(celltype)) +
@@ -507,7 +507,7 @@ lrt_merged %>%
 ```
 
 ```{r}
-lrt_merged %>%
+lrt_merged |>
   ggplot(aes(x = contrast, y = logFC, fill = factor(contrast))) +
   geom_boxplot() +
   facet_wrap(~factor(celltype)) +
@@ -528,7 +528,7 @@ lrt_merged %>%
 # add colour identifier
 cols <- c("Up" = "#FDE725FF", "Down" = "#440154FF")
 
-lrt_merged %>%
+lrt_merged |>
     # scale FDR by log10
     ggplot(aes(x = logFC, y = -log10(adj_pval))) +
     geom_point(aes(colour = deg_direction), stat = "identity", size = .2) +
@@ -546,8 +546,8 @@ lrt_merged %>%
     ) +
     scale_colour_manual(values = cols) +
     geom_text_repel( # give top three genes per cell type by adjusted p value
-        data = lrt_merged %>%
-            dplyr::group_by(celltype) %>%
+        data = lrt_merged |>
+            dplyr::group_by(celltype) |>
             dplyr::slice_min(adj_pval, n = 3),
         aes(label = name),
         size = 3,
@@ -615,7 +615,7 @@ Now we need to do some data manipulation to get the count and column data in the
 
 ```{r}
 # transpose
-cts_t <- t(cts) %>%
+cts_t <- t(cts) |>
   as.data.frame()
 
 split_rows <- gsub('_.*', '', rownames(cts_t))
@@ -753,12 +753,12 @@ head(res$Astro)
 
 ```{r}
 # merge celltype dataframes
-res_merged <- map2(res, names(res), ~ as.data.frame(.x) %>%
-                     rownames_to_column("gene") %>%
+res_merged <- map2(res, names(res), ~ as.data.frame(.x) |>
+                     rownames_to_column("gene") |>
                      dplyr::mutate(celltype = .y, deg_direction = case_when(
                        log2FoldChange > 0 & padj < 0.05 ~ "Up",
                        log2FoldChange < 0 & padj < 0.05 ~ "Down",
-                       .default = "Not Sig"))) %>%
+                       .default = "Not Sig"))) |>
   purrr::list_rbind()
 ```
 
@@ -775,7 +775,7 @@ readr::write_rds(res_merged, here::here("03_data/990_processed_data/001_snrnaseq
 
 ```{r}
 #| warning: false
-res_merged %>%
+res_merged |>
   ggplot(aes(x = factor(deg_direction), fill = factor(celltype))) +
   geom_histogram(stat = "count") +
   facet_wrap(~factor(celltype)) +
@@ -793,7 +793,7 @@ res_merged %>%
 # add colour identifier
 cols <- c("Up" = "#FDE725FF", "Down" = "#440154FF", "Not Sig" = "#d3d3d3")
 
-volc_plot <- res_merged %>%
+volc_plot <- res_merged |>
   # scale FDR by log10
   ggplot(aes(x = log2FoldChange, y = -log10(padj))) +
   geom_point(aes(colour = deg_direction), stat = "identity", size = .2) +
@@ -814,8 +814,8 @@ volc_plot <- res_merged %>%
   scale_colour_manual(values = cols) +
   geom_text_repel(
     # give top three genes per cell type by adjusted p value
-    data = res_merged %>%
-      dplyr::group_by(celltype) %>%
+    data = res_merged |>
+      dplyr::group_by(celltype) |>
       dplyr::slice_min(padj, n = 3),
     aes(label = gene),
     size = 3,

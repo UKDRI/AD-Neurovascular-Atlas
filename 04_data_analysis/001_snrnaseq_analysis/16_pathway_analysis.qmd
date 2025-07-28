@@ -11,7 +11,9 @@ here::i_am("04_data_analysis/001_snrnaseq_analysis/16_pathway_analysis.qmd")
 # Load packages
 
 ```{r}
-source(here::here("04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"))
+source(here::here(
+  "04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"
+))
 ```
 
 # APOE status
@@ -27,12 +29,16 @@ include_apoe = FALSE
 ```{r}
 #| eval: true
 # read data
-if(include_apoe) {
-res <- readr::read_csv(here::here("03_data/990_processed_data/001_snrnaseq/08_pseudobulk/pseudobulk_ad-vs-control_deseq2_subtype-annotated_apoe.csv")) %>%
-  na.omit()
+if (include_apoe) {
+  res <- readr::read_csv(here::here(
+    "03_data/990_processed_data/001_snrnaseq/08_pseudobulk/pseudobulk_ad-vs-control_deseq2_subtype-annotated_apoe.csv"
+  )) |>
+    na.omit()
 } else {
-res <- readr::read_csv(here::here("03_data/990_processed_data/001_snrnaseq/08_pseudobulk/pseudobulk_ad-vs-control_deseq2_subtype-annotated_no-apoe.csv")) %>%
-  na.omit()
+  res <- readr::read_csv(here::here(
+    "03_data/990_processed_data/001_snrnaseq/08_pseudobulk/pseudobulk_ad-vs-control_deseq2_subtype-annotated_no-apoe.csv"
+  )) |>
+    na.omit()
 }
 ```
 
@@ -46,8 +52,10 @@ Since it takes a while to run, I used the HPC, I'll read in the results file her
 tar_load(translated_id)
 
 mast_level <- "level2"
-if(mast_level != "level1") {
-  mast_de <- qs::qread(here::here("03_data/990_processed_data/001_snrnaseq/13_mast_de/level2/mast_de_results_list.qs")) |>
+if (mast_level != "level1") {
+  mast_de <- qs::qread(here::here(
+    "03_data/990_processed_data/001_snrnaseq/13_mast_de/level2/mast_de_results_list.qs"
+  )) |>
     map(rownames_to_column, var = "ensembl") |>
     list_rbind() |>
     dplyr::left_join(translated_id, by = join_by(ensembl == ensembl_gene_id)) |>
@@ -55,7 +63,9 @@ if(mast_level != "level1") {
     dplyr::distinct(ensembl, .keep_all = TRUE) |>
     dplyr::ungroup()
 } else {
-  mast_de <- qs::qread(here::here("03_data/990_processed_data/001_snrnaseq/13_mast_de/level1/mast_de_results_list.qs")) |>
+  mast_de <- qs::qread(here::here(
+    "03_data/990_processed_data/001_snrnaseq/13_mast_de/level1/mast_de_results_list.qs"
+  )) |>
     map(rownames_to_column, var = "ensembl") |>
     list_rbind() |>
     dplyr::left_join(translated_id, by = join_by(ensembl == ensembl_gene_id)) |>
@@ -82,8 +92,8 @@ res_sig <- dplyr::filter(res, padj < 0.05) |>
   dplyr::filter(!celltype %in% c("ambiguous", "low-feature-cells"))
 
 # get gene names per celltype
-genes_sum <- res_sig %>%
-  dplyr::group_by(celltype, deg_direction) %>%
+genes_sum <- res_sig |>
+  dplyr::group_by(celltype, deg_direction) |>
   dplyr::summarise(list_of_columns = list(gene))
 genes <- genes_sum$list_of_columns
 names(genes) <- paste0(genes_sum$celltype, "_", genes_sum$deg_direction)
@@ -99,17 +109,19 @@ mast_des <- mast_de |>
   dplyr::select(hgnc_symbol, p_val_adj, celltype, p_val) |>
   dplyr::rename(gene = hgnc_symbol, padj = p_val_adj, pval = p_val)
 
-compare_de_results <- function(cell_type,
-                               de1,
-                               de2,
-                               de1_name = "pseudobulk",
-                               de2_name = "MAST") {
+compare_de_results <- function(
+  cell_type,
+  de1,
+  de2,
+  de1_name = "pseudobulk",
+  de2_name = "MAST"
+) {
   df1 <- de1 |>
     dplyr::filter(celltype == cell_type) |>
     dplyr::select(!celltype)
   df2 <- dplyr::filter(de2, celltype == cell_type) |>
     dplyr::select(!celltype)
-  
+
   df1_sig_genes <- df1 |>
     dplyr::filter(padj < 0.05) |>
     dplyr::pull(gene)
@@ -117,38 +129,45 @@ compare_de_results <- function(cell_type,
     dplyr::filter(padj < 0.05) |>
     dplyr::pull(gene)
   sig_genes <- c(df1_sig_genes, df2_sig_genes) |> unique()
-  
+
   # filter to genes that are sig in both
   df1 <- df1 |>
     dplyr::filter(gene %in% sig_genes)
   df2 <- df2 |>
     dplyr::filter(gene %in% sig_genes)
-  
-  
+
   # Rank DEGs based on p-value
   df1 <- df1[order(df1$padj), ]
   df2 <- df2[order(df2$padj), ]
-  
+
   # Add rank columns
   df1$rank <- rank(df1$pval)
   df2$rank <- rank(df2$pval)
-  
+
   # Merge the two data frames by gene
-  merged_results <- merge(df1,
-                          df2,
-                          by = "gene",
-                          suffixes = c(paste0("_", de1_name), paste0("_", de2_name)))
-  
+  merged_results <- merge(
+    df1,
+    df2,
+    by = "gene",
+    suffixes = c(paste0("_", de1_name), paste0("_", de2_name))
+  )
+
   # Calculate Spearman's rank correlation
-  spearman_correlation <- cor(merged_results[[paste0("rank_", de1_name)]], merged_results[[paste0("rank_", de2_name)]], method = "spearman")
-  
+  spearman_correlation <- cor(
+    merged_results[[paste0("rank_", de1_name)]],
+    merged_results[[paste0("rank_", de2_name)]],
+    method = "spearman"
+  )
+
   overlap_genes <- intersect(df1$gene, df2$gene)
-  cat("Number of overlapping genes for",
-      cell_type,
-      ":",
-      length(overlap_genes),
-      "\n")
-  
+  cat(
+    "Number of overlapping genes for",
+    cell_type,
+    ":",
+    length(overlap_genes),
+    "\n"
+  )
+
   df <- data.frame(
     "celltype" = cell_type,
     "spearman_cor" = spearman_correlation,
@@ -167,25 +186,31 @@ compare_de_results <- function(cell_type,
     dplyr::filter(celltype == cell_type) |>
     dplyr::filter(padj < 0.05) |>
     dplyr::pull(gene)
-  
+
   # Calculate parameters
   M <- length(all_genes) # Total number of genes
   n <- length(method1_genes) # Number of significant DEGs in method 1
   k <- length(method2_genes) # Number of significant DEGs in method 2
   overlap_genes <- intersect(method1_genes, method2_genes) # Overlapping DEGs
   x <- length(overlap_genes) # Number of overlapping DEGs
-  
+
   # Use phyper to calculate the p-value
   p_value <- phyper(x - 1, n, M - n, k, lower.tail = FALSE)
   df$pval <- p_value
-  
+
   return(df)
 }
 
-df <- map_dfr(unique(mast_de$celltype), compare_de_results, 
-              pseudobulk_de, mast_des) |>
-  dplyr::rename(n_total_pseudobulk = method_1_n_degs,
-                n_total_mast = method_2_n_degs)
+df <- map_dfr(
+  unique(mast_de$celltype),
+  compare_de_results,
+  pseudobulk_de,
+  mast_des
+) |>
+  dplyr::rename(
+    n_total_pseudobulk = method_1_n_degs,
+    n_total_mast = method_2_n_degs
+  )
 readr::write_tsv(df, here("pseudobulk_mast_deg_overlap.tsv"))
 ```
 
@@ -209,13 +234,20 @@ overlap_per_celltype <- function(cell_type, df1, df2) {
     dplyr::filter(celltype == cell_type)
   # Overlapping genes
   overlapping_genes <- intersect(unique(df1$gene), unique(df2$hgnc_symbol))
-  
-  df <- data.frame(celltype = cell_type, 
-                   overlap_sig_genes = length(overlapping_genes))
+
+  df <- data.frame(
+    celltype = cell_type,
+    overlap_sig_genes = length(overlapping_genes)
+  )
   return(df)
 }
 
-n_genes <- map_dfr(unique(res$celltype), overlap_per_celltype, res_sig, mast_de_sig) |>
+n_genes <- map_dfr(
+  unique(res$celltype),
+  overlap_per_celltype,
+  res_sig,
+  mast_de_sig
+) |>
   dplyr::filter(celltype %in% n_genes$celltype) |>
   dplyr::left_join(n_genes, by = join_by(celltype))
 
@@ -233,14 +265,14 @@ ggsave(here("mast_pseudobulk_n_sig_genes.png"), height = 8, width = 10)
 # Get versions with all sig DEGs and with a filter on logFC
 filter_logfc <- TRUE
 
-if(filter_logfc){
+if (filter_logfc) {
   mast_de_sig <- mast_de_sig |>
     dplyr::filter(abs(avg_log2FC) > 1)
 }
 # get gene names per celltype
-genes_sum <- mast_de_sig %>%
+genes_sum <- mast_de_sig |>
   dplyr::mutate(deg_direction = if_else(avg_log2FC > 0, "Up", "Down")) |>
-  dplyr::group_by(celltype, deg_direction) %>%
+  dplyr::group_by(celltype, deg_direction) |>
   dplyr::summarise(list_of_columns = list(hgnc_symbol))
 genes_mast <- genes_sum$list_of_columns
 names(genes_mast) <- paste0(genes_sum$celltype, "_", genes_sum$deg_direction)
@@ -272,17 +304,31 @@ sets2 <- sets2[common_celltypes]
 jaccard_values <- map2(sets1, sets2, jaccard_similarity)
 
 # Convert the result to a matrix
-jaccard_matrix <- matrix(unlist(jaccard_values), nrow = length(common_celltypes), 
-                         ncol = length(common_celltypes), 
-                         dimnames = list(common_celltypes, common_celltypes))
+jaccard_matrix <- matrix(
+  unlist(jaccard_values),
+  nrow = length(common_celltypes),
+  ncol = length(common_celltypes),
+  dimnames = list(common_celltypes, common_celltypes)
+)
 
 # Plot heatmap
-hmap <- Heatmap(jaccard_matrix, name = "Jaccard Similarity",
-        col = circlize::colorRamp2(c(0, 1), c("white", "red")),
-        cluster_rows = FALSE, cluster_columns = FALSE)
+hmap <- Heatmap(
+  jaccard_matrix,
+  name = "Jaccard Similarity",
+  col = circlize::colorRamp2(c(0, 1), c("white", "red")),
+  cluster_rows = FALSE,
+  cluster_columns = FALSE
+)
 # Save plots
-png(here::here("05_figures/990_shared_figures/",
-      "mast_pseudobulk_jaccard_heatmap.png"), width = 4000, height = 4000, res = 300)
+png(
+  here::here(
+    "05_figures/990_shared_figures/",
+    "mast_pseudobulk_jaccard_heatmap.png"
+  ),
+  width = 4000,
+  height = 4000,
+  res = 300
+)
 hmap
 dev.off()
 ```
@@ -291,14 +337,16 @@ dev.off()
 ## Complement gene list
 
 ```{r}
-complement_gene_list <- read_excel(here("03_data/991_external_data/complement_gene_list.xlsx")) |>
+complement_gene_list <- read_excel(here(
+  "03_data/991_external_data/complement_gene_list.xlsx"
+)) |>
   janitor::clean_names() |>
   dplyr::mutate(gene_name_cap = toupper(gene_name))
 
 sig_complement_genes <- res_sig |>
   dplyr::filter(gene %in% complement_gene_list$gene_name_cap)
 # Save data
-if(include_apoe) {
+if (include_apoe) {
   readr::write_csv(
     sig_complement_genes,
     here(
@@ -329,8 +377,7 @@ plots <- lapply(unique(res_sig$celltype), function(celltype) {
   # make barplot
   ggplot(df, aes(x = gene, y = log2FoldChange)) +
     geom_bar(stat = "identity", aes(fill = log2FoldChange > 0)) +
-    scale_fill_manual(values = c("red", "blue"),
-                      labels = c("Down", "Up")) +
+    scale_fill_manual(values = c("red", "blue"), labels = c("Down", "Up")) +
     labs(
       title = paste("Significant DEGs for ", celltype),
       x = "Gene",
@@ -344,25 +391,32 @@ plots$`Microglia-activated`
 
 map_dbl(plots, ~ .x$data |> nrow())
 # Save plots
-map2(plots, names(plots), ~ {
-  
-  # There's a need to adjust the width of the plot based on the number of genes
-  n_genes <- nrow(.x$data)
-  if(n_genes < 30) {
-    plot_width <- 8
-  } else if (n_genes < 100) {
-    plot_width <- 15
-  } else if (n_genes < 300) {
-    plot_width <- 25
-  } else {
-    plot_width <- 45
+map2(
+  plots,
+  names(plots),
+  ~ {
+    # There's a need to adjust the width of the plot based on the number of genes
+    n_genes <- nrow(.x$data)
+    if (n_genes < 30) {
+      plot_width <- 8
+    } else if (n_genes < 100) {
+      plot_width <- 15
+    } else if (n_genes < 300) {
+      plot_width <- 25
+    } else {
+      plot_width <- 45
+    }
+    svg(
+      here::here(
+        "05_figures/990_shared_figures/002_pseudobulk",
+        paste0(.y, "_sig_deg_barplot.svg")
+      ),
+      width = plot_width
+    )
+    print(.x)
+    dev.off()
   }
-  svg(here::here(
-    "05_figures/990_shared_figures/002_pseudobulk",
-    paste0(.y, "_sig_deg_barplot.svg")), width = plot_width)
-  print(.x)
-  dev.off()
-})
+)
 ```
 
 # Hypergeometric enrichment
@@ -375,10 +429,17 @@ tar_load(gene_ids)
 
 ```{r}
 plan("multisession", workers = parallel::detectCores() - 1)
-go_results_all <- future_map(genes, ~ enrichGO(gene = .x, OrgDb = "org.Hs.eg.db", 
-                                    keyType = "SYMBOL", ont = "ALL",
-                                    universe = gene_ids$gene), 
-                            .options = furrr_options(seed = 123))
+go_results_all <- future_map(
+  genes,
+  ~ enrichGO(
+    gene = .x,
+    OrgDb = "org.Hs.eg.db",
+    keyType = "SYMBOL",
+    ont = "ALL",
+    universe = gene_ids$gene
+  ),
+  .options = furrr_options(seed = 123)
+)
 ```
 
 ```{r}
@@ -388,37 +449,40 @@ go_results_filtered <- go_results_all |>
   purrr::keep(~ nrow(.) > 0)
 
 # Apply pairwise_termism where possible
-go_results_filtered <- map(go_results_filtered, ~{
-  if(length(.x$ID) >= 2) {
-    pairwise_termsim(.x)
-  } else {
-    .x
+go_results_filtered <- map(
+  go_results_filtered,
+  ~ {
+    if (length(.x$ID) >= 2) {
+      pairwise_termsim(.x)
+    } else {
+      .x
+    }
   }
-})
+)
 
-if(include_apoe) {
-file <-
-  here::here(
-    "03_data/990_processed_data/001_snrnaseq/09_pathway_analysis/go-hypergeometic_subtypes_apoe_deg_direction.qs"
-  )
+if (include_apoe) {
+  file <-
+    here::here(
+      "03_data/990_processed_data/001_snrnaseq/09_pathway_analysis/go-hypergeometic_subtypes_apoe_deg_direction.qs"
+    )
 } else {
-file <-
-  here::here(
-    "03_data/990_processed_data/001_snrnaseq/09_pathway_analysis/go-hypergeometic_subtypes_no-apoe_deg_direction.qs"
-  )
+  file <-
+    here::here(
+      "03_data/990_processed_data/001_snrnaseq/09_pathway_analysis/go-hypergeometic_subtypes_no-apoe_deg_direction.qs"
+    )
 }
 qs::qsave(go_results_filtered, file)
 #go_results_filtered <- qs::qread(file)
-if(include_apoe) {
-file <-
-  here::here(
-    "03_data/990_processed_data/001_snrnaseq/09_pathway_analysis/go-hypergeometic_subtypes_apoe_deg_direction.rds"
-  )
+if (include_apoe) {
+  file <-
+    here::here(
+      "03_data/990_processed_data/001_snrnaseq/09_pathway_analysis/go-hypergeometic_subtypes_apoe_deg_direction.rds"
+    )
 } else {
-file <-
-  here::here(
-    "03_data/990_processed_data/001_snrnaseq/09_pathway_analysis/go-hypergeometic_subtypes_no-apoe_deg_direction.rds"
-  )
+  file <-
+    here::here(
+      "03_data/990_processed_data/001_snrnaseq/09_pathway_analysis/go-hypergeometic_subtypes_no-apoe_deg_direction.rds"
+    )
 }
 readr::write_rds(go_results_filtered, file)
 #go_results_filtered <- qs::qread(file)
@@ -428,28 +492,41 @@ dotplots <-
   map2(
     go_results_filtered,
     names(go_results_filtered),
-    ~ dotplot(.x, showCategory = 20, split = "ONTOLOGY") + facet_grid(. ~ ONTOLOGY) +
+    ~ dotplot(.x, showCategory = 20, split = "ONTOLOGY") +
+      facet_grid(. ~ ONTOLOGY) +
       ggtitle(paste0(.y, " - Sig genes only"))
   )
-map2(dotplots, names(dotplots), ~ {
-  if (include_apoe) {
-    png(
-      here::here(
-        "05_figures/990_shared_figures/002_pseudobulk/go_sig_genes_only",
-        paste0(.y, "_apoe.png")
-      ), height = 18, width = 10, units = "in", res = 300
-    )
-  } else {
-    png(
-      here::here(
-        "05_figures/990_shared_figures/002_pseudobulk/go_sig_genes_only",
-        paste0(.y, "_no-apoe.png")
-      ), height = 18, width = 10, units = "in", res = 300
-    )
+map2(
+  dotplots,
+  names(dotplots),
+  ~ {
+    if (include_apoe) {
+      png(
+        here::here(
+          "05_figures/990_shared_figures/002_pseudobulk/go_sig_genes_only",
+          paste0(.y, "_apoe.png")
+        ),
+        height = 18,
+        width = 10,
+        units = "in",
+        res = 300
+      )
+    } else {
+      png(
+        here::here(
+          "05_figures/990_shared_figures/002_pseudobulk/go_sig_genes_only",
+          paste0(.y, "_no-apoe.png")
+        ),
+        height = 18,
+        width = 10,
+        units = "in",
+        res = 300
+      )
+    }
+    print(.x)
+    dev.off()
   }
-  print(.x)
-  dev.off()
-})
+)
 ```
 
 ## EndoMT
@@ -464,10 +541,17 @@ go_results_filtered$`EndoMT-2_Up`
 ## MAST hypergeomtric pathways
 
 ```{r}
-go_results_all_mast <- future_map(genes_mast, ~ enrichGO(gene = .x, OrgDb = "org.Hs.eg.db", 
-                                    keyType = "SYMBOL", ont = "ALL",
-                                    universe = gene_ids$gene), 
-                            .options = furrr_options(seed = 123))
+go_results_all_mast <- future_map(
+  genes_mast,
+  ~ enrichGO(
+    gene = .x,
+    OrgDb = "org.Hs.eg.db",
+    keyType = "SYMBOL",
+    ont = "ALL",
+    universe = gene_ids$gene
+  ),
+  .options = furrr_options(seed = 123)
+)
 ```
 
 
@@ -483,7 +567,13 @@ go_results_filtered <- go_results_all_mast |>
     if (new_count == 0) {
       message(paste("Removing", name, "- all pathways filtered out"))
     } else if (new_count < old_count) {
-      message(paste("Filtered", name, ":", old_count - new_count, "pathways removed"))
+      message(paste(
+        "Filtered",
+        name,
+        ":",
+        old_count - new_count,
+        "pathways removed"
+      ))
     }
     enrichResult
   }) |>
@@ -491,26 +581,47 @@ go_results_filtered <- go_results_all_mast |>
   purrr::keep(~ nrow(.) > 0)
 
 # Apply pairwise_termism where possible
-go_results_filtered <- map(go_results_filtered, ~{
-  if(length(.x$ID) >= 2) {
-    pairwise_termsim(.x)
-  } else {
-    .x
+go_results_filtered <- map(
+  go_results_filtered,
+  ~ {
+    if (length(.x$ID) >= 2) {
+      pairwise_termsim(.x)
+    } else {
+      .x
+    }
   }
-})
+)
 
 file <-
   here::here(
     "03_data/990_processed_data/001_snrnaseq/09_pathway_analysis"
   )
-if(mast_level != "level1" & !filter_logfc) {
-  qs::qsave(go_results_filtered, here::here(file, "go-hypergeometic_subtypes_deg_direction_mast_level2.qs"))
-} else if(mast_level == "level1" & !filter_logfc) {
-  qs::qsave(go_results_filtered, here::here(file, "go-hypergeometic_subtypes_deg_direction_mast_level1.qs"))
+if (mast_level != "level1" & !filter_logfc) {
+  qs::qsave(
+    go_results_filtered,
+    here::here(file, "go-hypergeometic_subtypes_deg_direction_mast_level2.qs")
+  )
+} else if (mast_level == "level1" & !filter_logfc) {
+  qs::qsave(
+    go_results_filtered,
+    here::here(file, "go-hypergeometic_subtypes_deg_direction_mast_level1.qs")
+  )
 } else if (mast_level != "level1" & filter_logfc) {
-  qs::qsave(go_results_filtered, here::here(file, "go-hypergeometic_subtypes_deg_direction_mast_level2_logfc_filter.qs"))
+  qs::qsave(
+    go_results_filtered,
+    here::here(
+      file,
+      "go-hypergeometic_subtypes_deg_direction_mast_level2_logfc_filter.qs"
+    )
+  )
 } else {
-  qs::qsave(go_results_filtered, here::here(file, "go-hypergeometic_subtypes_deg_direction_mast_level1_logfc_filter.qs"))
+  qs::qsave(
+    go_results_filtered,
+    here::here(
+      file,
+      "go-hypergeometic_subtypes_deg_direction_mast_level1_logfc_filter.qs"
+    )
+  )
 }
 #go_results_filtered <- qs::qread(file)
 
@@ -519,42 +630,63 @@ dotplots <-
   map2(
     go_results_filtered,
     names(go_results_filtered),
-    ~ dotplot(.x, showCategory = 20, split = "ONTOLOGY") + facet_grid(. ~ ONTOLOGY) +
+    ~ dotplot(.x, showCategory = 20, split = "ONTOLOGY") +
+      facet_grid(. ~ ONTOLOGY) +
       ggtitle(paste0(.y, " - Sig genes only"))
   )
-map2(dotplots, names(dotplots), ~ {
-  if (include_apoe & mast_level != "level1" & !filter_logfc) {
-    png(
-      here::here(
-        "05_figures/990_shared_figures/002_pseudobulk/go_sig_genes_only_mast/level2",
-        paste0(.y, "_apoe.png")
-      ), height = 18, width = 10, units = "in", res = 300
-    )
-  } else if (include_apoe & mast_level == "level1" & !filter_logfc) {
-    png(
-      here::here(
-        "05_figures/990_shared_figures/002_pseudobulk/go_sig_genes_only_mast/level1",
-        paste0(.y, "_apoe.png")
-      ), height = 18, width = 10, units = "in", res = 300
-    )
-  } else if (!include_apoe & mast_level != "level1" & !filter_logfc) {
-    png(
-      here::here(
-        "05_figures/990_shared_figures/002_pseudobulk/go_sig_genes_only_mast/level2",
-        paste0(.y, "_no-apoe.png")
-      ), height = 18, width = 10, units = "in", res = 300
-    )
-  } else if (!filter_logfc) {
-    png(
-      here::here(
-        "05_figures/990_shared_figures/002_pseudobulk/go_sig_genes_only_mast/level1",
-        paste0(.y, "_no-apoe.png")
-      ), height = 18, width = 10, units = "in", res = 300
-    )
+map2(
+  dotplots,
+  names(dotplots),
+  ~ {
+    if (include_apoe & mast_level != "level1" & !filter_logfc) {
+      png(
+        here::here(
+          "05_figures/990_shared_figures/002_pseudobulk/go_sig_genes_only_mast/level2",
+          paste0(.y, "_apoe.png")
+        ),
+        height = 18,
+        width = 10,
+        units = "in",
+        res = 300
+      )
+    } else if (include_apoe & mast_level == "level1" & !filter_logfc) {
+      png(
+        here::here(
+          "05_figures/990_shared_figures/002_pseudobulk/go_sig_genes_only_mast/level1",
+          paste0(.y, "_apoe.png")
+        ),
+        height = 18,
+        width = 10,
+        units = "in",
+        res = 300
+      )
+    } else if (!include_apoe & mast_level != "level1" & !filter_logfc) {
+      png(
+        here::here(
+          "05_figures/990_shared_figures/002_pseudobulk/go_sig_genes_only_mast/level2",
+          paste0(.y, "_no-apoe.png")
+        ),
+        height = 18,
+        width = 10,
+        units = "in",
+        res = 300
+      )
+    } else if (!filter_logfc) {
+      png(
+        here::here(
+          "05_figures/990_shared_figures/002_pseudobulk/go_sig_genes_only_mast/level1",
+          paste0(.y, "_no-apoe.png")
+        ),
+        height = 18,
+        width = 10,
+        units = "in",
+        res = 300
+      )
+    }
+    print(.x)
+    dev.off()
   }
-  print(.x)
-  dev.off()
-})
+)
 ```
 
 ## EndoMT pathways
@@ -597,15 +729,33 @@ end1 <- avg_cases$RNA |>
   as.data.frame() |>
   rownames_to_column("ensembl_gene_id") |>
   #dplyr::filter(gene == "ENSG00000078401") |>
-  pivot_longer(!ensembl_gene_id, names_to = "celltype", 
-               values_to = "pseudobulk_counts") |>
-  separate_wider_delim(celltype, delim = "_", names = c("celltype", 
-                                                        "diagnosis")) |>
+  pivot_longer(
+    !ensembl_gene_id,
+    names_to = "celltype",
+    values_to = "pseudobulk_counts"
+  ) |>
+  separate_wider_delim(
+    celltype,
+    delim = "_",
+    names = c("celltype", "diagnosis")
+  ) |>
   # Subset to celltypes of interest
-  dplyr::filter(celltype %in% c("M-Pericyte", "T-Pericyte", "Pericyte", 
-                                "Pericyte-2", "EndoMT-2", "EndoMT-1", 
-                                "Arterial", "Capillary", "Venous", 
-                                "Vascular-SMC", "Arteriolar-SMC")) |>
+  dplyr::filter(
+    celltype %in%
+      c(
+        "M-Pericyte",
+        "T-Pericyte",
+        "Pericyte",
+        "Pericyte-2",
+        "EndoMT-2",
+        "EndoMT-1",
+        "Arterial",
+        "Capillary",
+        "Venous",
+        "Vascular-SMC",
+        "Arteriolar-SMC"
+      )
+  ) |>
   dplyr::left_join(translated_id, by = "ensembl_gene_id")
 
 # Subset to unique genes in pathways
@@ -613,17 +763,21 @@ end1 <- end1 |>
   dplyr::filter(hgnc_symbol %in% unique_genes)
 
 # Use separate_rows to expand the dataframe
-expanded_df <- endomt_pathways %>% 
+expanded_df <- endomt_pathways |>
   separate_rows(geneID, sep = "/") |>
   dplyr::select(ID:GeneRatio, Count, geneID)
 
 end1 |>
   dplyr::left_join(expanded_df, by = join_by(hgnc_symbol == geneID)) |>
-  readr::write_csv(here::here("03_data/990_processed_data/001_snrnaseq/09_pathway_analysis/endomt1_up_pathway_gene_expression.csv"))
+  readr::write_csv(here::here(
+    "03_data/990_processed_data/001_snrnaseq/09_pathway_analysis/endomt1_up_pathway_gene_expression.csv"
+  ))
 end1 |>
   dplyr::left_join(expanded_df, by = join_by(hgnc_symbol == geneID)) |>
   dplyr::filter(grepl("endotheli", Description, ignore.case = TRUE)) |>
-  readr::write_csv(here::here("03_data/990_processed_data/001_snrnaseq/09_pathway_analysis/endomt1_up_pathway_gene_expression_endeothelial_subset.csv"))
+  readr::write_csv(here::here(
+    "03_data/990_processed_data/001_snrnaseq/09_pathway_analysis/endomt1_up_pathway_gene_expression_endeothelial_subset.csv"
+  ))
 ```
 
 # Gene set enrichment analysis (GSEA)
@@ -635,7 +789,7 @@ end1 |>
 gsea_df <- res |>
   # group by celltype
   dplyr::group_by(celltype) |>
-  tidyr::nest() 
+  tidyr::nest()
 ```
 
 
@@ -643,7 +797,7 @@ gsea_df <- res |>
 #| message: false
 #| warning: false
 # Function: Adjacency matrix to list -------------------------
-matrix_to_list <- function(pws){
+matrix_to_list <- function(pws) {
   pws.l <- list()
   for (pw in colnames(pws)) {
     pws.l[[pw]] <- rownames(pws)[as.logical(pws[, pw])]
@@ -656,11 +810,11 @@ prepare_gmt <- function(gmt_file, genes_in_data, savefile = FALSE) {
   # for debug
   #file <- gmt_files[1]
   #genes_in_data <- df$gene_symbol
-  
+
   # Read in gmt file
   gmt <- gmtPathways(gmt_file)
   hidden <- unique(unlist(gmt))
-  
+
   # Convert gmt file to a matrix with the genes as rows and for each go annotation (columns) the values are 0 or 1
   mat <- matrix(
     NA,
@@ -671,7 +825,7 @@ prepare_gmt <- function(gmt_file, genes_in_data, savefile = FALSE) {
   for (i in 1:dim(mat)[2]) {
     mat[, i] <- as.numeric(hidden %in% gmt[[i]])
   }
-  
+
   #Subset to the genes that are present in our data to avoid bias
   hidden1 <- intersect(genes_in_data, hidden)
   mat <-
@@ -679,27 +833,34 @@ prepare_gmt <- function(gmt_file, genes_in_data, savefile = FALSE) {
   # And get the list again
   final_list <-
     matrix_to_list(mat) # for this we use the function we previously defined
-  
+
   if (savefile) {
-    saveRDS(final_list, file = paste0(
-      gsub('.gmt', '', gmt_file),
-      '_subset_',
-      format(Sys.time(), '%d%m'),
-      '.RData'
-    ))
+    saveRDS(
+      final_list,
+      file = paste0(
+        gsub('.gmt', '', gmt_file),
+        '_subset_',
+        format(Sys.time(), '%d%m'),
+        '.RData'
+      )
+    )
   }
-  
+
   print('Wohoo! .gmt conversion successfull!:)')
   return(final_list)
 }
 
-# Get all the genes in dataset and assign them to my_genes 
+# Get all the genes in dataset and assign them to my_genes
 my_genes <- res$gene
 
 # Download gene sets .gmt files
 #https://www.gsea-msigdb.org/gsea/msigdb/human/collections.jsp
 # I've downloaded several background sets to try
-gmt_files <- list.files(here::here("03_data/991_external_data"), pattern = "\\.gmt$", full.names = TRUE)
+gmt_files <- list.files(
+  here::here("03_data/991_external_data"),
+  pattern = "\\.gmt$",
+  full.names = TRUE
+)
 
 gmt <- map(gmt_files, ~ prepare_gmt(.x, my_genes))
 ```
@@ -716,13 +877,13 @@ sort_rankings <- function(log2fc, pvals, gene_names, group, plot = FALSE) {
   # genes as names
   names(rankings) <- gene_names
   head(rankings)
-  
+
   # sort genes by ranking
   rankings <- sort(rankings, decreasing = TRUE)
   if (plot) {
     plot(rankings, main = group)
   }
-  
+
   # Some genes have such low p values that the signed pval is +- inf, we need to
   # change it to the maximum * constant to avoid problems with fgsea
   max_ranking <- max(rankings[is.finite(rankings)])
@@ -734,38 +895,41 @@ sort_rankings <- function(log2fc, pvals, gene_names, group, plot = FALSE) {
     replace(rankings, rankings < min_ranking, min_ranking * 10)
   rankings <-
     sort(rankings, decreasing = TRUE) # sort genes by ranking
-  
+
   return(rankings)
 }
-
 ```
 
 ```{r}
 rankings <-
-  map2(gsea_df$data, gsea_df$celltype, ~ (sort_rankings(.x$log2FoldChange,
-                                                        .x$pvalue,
-                                                        .x$gene,
-                                                        .y))) %>%
+  map2(
+    gsea_df$data,
+    gsea_df$celltype,
+    ~ (sort_rankings(.x$log2FoldChange, .x$pvalue, .x$gene, .y))
+  ) |>
   purrr::set_names(gsea_df$celltype)
 ```
 
 
 
 ```{r}
-ggplot(data.frame(
-  gene_symbol = names(rankings$Arterial)[1:50],
-  ranks = rankings$Arterial[1:50]
-),
-aes(gene_symbol, ranks)) +
+ggplot(
+  data.frame(
+    gene_symbol = names(rankings$Arterial)[1:50],
+    ranks = rankings$Arterial[1:50]
+  ),
+  aes(gene_symbol, ranks)
+) +
   geom_point() +
   theme_classic() +
-  theme(axis.text.x = element_text(
-    angle = 90,
-    vjust = 0.5,
-    hjust = 1
-  )) +
-  ggtitle("Arterial top 50 ranked genes",
-          subtitle = "Control VS AD")
+  theme(
+    axis.text.x = element_text(
+      angle = 90,
+      vjust = 0.5,
+      hjust = 1
+    )
+  ) +
+  ggtitle("Arterial top 50 ranked genes", subtitle = "Control VS AD")
 ```
 
 ## Run GSEA
@@ -789,35 +953,40 @@ gsea_res <- map(gmt, function(pathway) {
       nproc = parallel::detectCores() - 1
     )
   })
-}) %>%
+}) |>
   purrr::set_names(basename(gmt_files))
 ```
 
 
 ```{r}
-# get log2 FC as a vector with the respective gene names, sorted in decreasing 
+# get log2 FC as a vector with the respective gene names, sorted in decreasing
 # order
-named_vectors <- res_sig %>%
-  dplyr::group_by(celltype) %>%
-  tidyr::nest() %>%
-  dplyr::mutate(gene_list = map(data, ~setNames(.x$log2FoldChange, .x$gene) %>%
-                                  sort(decreasing = TRUE)))
+named_vectors <- res_sig |>
+  dplyr::group_by(celltype) |>
+  tidyr::nest() |>
+  dplyr::mutate(
+    gene_list = map(
+      data,
+      ~ setNames(.x$log2FoldChange, .x$gene) |>
+        sort(decreasing = TRUE)
+    )
+  )
 ```
 
 ## Gene Ontology
 
 ```{r}
 # Define the file path to save the resulting object
-if(include_apoe) {
-file <-
-  here::here(
-    "03_data/990_processed_data/001_snrnaseq/09_pathway_analysis/gene-set-enrichment_go_subtypes_apoe.qs"
-  )
+if (include_apoe) {
+  file <-
+    here::here(
+      "03_data/990_processed_data/001_snrnaseq/09_pathway_analysis/gene-set-enrichment_go_subtypes_apoe.qs"
+    )
 } else {
-file <-
-  here::here(
-    "03_data/990_processed_data/001_snrnaseq/09_pathway_analysis/gene-set-enrichment_go_subtypes_no-apoe.qs"
-  )
+  file <-
+    here::here(
+      "03_data/990_processed_data/001_snrnaseq/09_pathway_analysis/gene-set-enrichment_go_subtypes_no-apoe.qs"
+    )
 }
 
 if (!file.exists(file)) {
@@ -825,40 +994,43 @@ if (!file.exists(file)) {
   result_list_bp <- future_map(
     rankings,
     ~ gseGO(
-      gene          = .x,
-      OrgDb         = org.Hs.eg.db,
-      keyType       = "SYMBOL",
+      gene = .x,
+      OrgDb = org.Hs.eg.db,
+      keyType = "SYMBOL",
       # "BP" for biological process, "MF" for molecular function, "CC" for cellular component
-      ont           = "BP",
+      ont = "BP",
       pAdjustMethod = "BH"
-    ), .options = furrr_options(seed = 123)
+    ),
+    .options = furrr_options(seed = 123)
   ) |>
     set_names(paste0(names(rankings), "_BP"))
   result_list_cc <- future_map(
     rankings,
     ~ gseGO(
-      gene          = .x,
-      OrgDb         = org.Hs.eg.db,
-      keyType       = "SYMBOL",
-      ont           = "CC",
+      gene = .x,
+      OrgDb = org.Hs.eg.db,
+      keyType = "SYMBOL",
+      ont = "CC",
       pAdjustMethod = "BH"
-    ), .options = furrr_options(seed = 123)
+    ),
+    .options = furrr_options(seed = 123)
   ) |>
     set_names(paste0(names(rankings), "_CC"))
   result_list_mf <- future_map(
     rankings,
     ~ gseGO(
-      gene          = .x,
-      OrgDb         = org.Hs.eg.db,
-      keyType       = "SYMBOL",
-      ont           = "MF",
+      gene = .x,
+      OrgDb = org.Hs.eg.db,
+      keyType = "SYMBOL",
+      ont = "MF",
       pAdjustMethod = "BH"
-    ), .options = furrr_options(seed = 123)
+    ),
+    .options = furrr_options(seed = 123)
   ) |>
     set_names(paste0(names(rankings), "_MF"))
   result_list <- c(result_list_bp, result_list_mf, result_list_cc)
   rm(result_list_bp, result_list_cc, result_list_mf)
-  
+
   qs::qsave(result_list, file)
 } else {
   result_list <- qs::qread(file)
@@ -877,7 +1049,7 @@ assertthat::see_if(sum(map_lgl(result_list, is.null)) == 0)
 
 ```{r}
 # remove any with no pathways found
-gse <- result_list %>%
+gse <- result_list |>
   purrr::keep(~ nrow(.) > 0)
 ```
 
@@ -916,15 +1088,26 @@ dotplots <-
   map2(
     gse,
     names(gse),
-    ~ dotplot(.x, showCategory = 10, split = ".sign") + facet_grid(. ~ .sign) +
+    ~ dotplot(.x, showCategory = 10, split = ".sign") +
+      facet_grid(. ~ .sign) +
       ggtitle(paste0(.y, " - GSEA"))
   )
 
 dotplots
-if(include_apoe) {
-readr::write_rds(dotplots, here::here("03_data/990_processed_data/001_snrnaseq/09_pathway_analysis/go-dotplots_subtypes_apoe.rds"))
-} else{
-readr::write_rds(dotplots, here::here("03_data/990_processed_data/001_snrnaseq/09_pathway_analysis/go-dotplots_subtypes_no-apoe.rds"))
+if (include_apoe) {
+  readr::write_rds(
+    dotplots,
+    here::here(
+      "03_data/990_processed_data/001_snrnaseq/09_pathway_analysis/go-dotplots_subtypes_apoe.rds"
+    )
+  )
+} else {
+  readr::write_rds(
+    dotplots,
+    here::here(
+      "03_data/990_processed_data/001_snrnaseq/09_pathway_analysis/go-dotplots_subtypes_no-apoe.rds"
+    )
+  )
 }
 ```
 
@@ -937,7 +1120,7 @@ merge_plots <- function(celltype, dotplot_list) {
   plots <- dotplot_list[grepl(paste0("^", celltype, "_"), names(dotplot_list))]
   # Merge plots
   #plot <- plots[[1]] + plots[[2]] + plots[[3]]
-    # Check if there are any plots available
+  # Check if there are any plots available
   if (length(plots) > 0) {
     # Use Reduce to combine the plots
     final_plot <- Reduce(`+`, plots)
@@ -945,7 +1128,7 @@ merge_plots <- function(celltype, dotplot_list) {
     warning("No plots available for the specified celltype.")
     final_plot <- NULL
   }
-  
+
   return(final_plot)
 }
 
@@ -954,23 +1137,39 @@ plots <- map(celltypes, merge_plots, dotplots) |> set_names(celltypes)
 plots
 
 # Save plots
-map2(plots, names(plots), ~ ggsave(here::here("05_figures/990_shared_figures/002_pseudobulk/gsea", paste0(.y, ".png")), plot = .x, width = 18, height = 10))
+map2(
+  plots,
+  names(plots),
+  ~ ggsave(
+    here::here(
+      "05_figures/990_shared_figures/002_pseudobulk/gsea",
+      paste0(.y, ".png")
+    ),
+    plot = .x,
+    width = 18,
+    height = 10
+  )
+)
 ```
 
 
 ```{r}
-map2(gse,
-     names(gse),
-     ~ ridgeplot(.x) +
-       labs(x = "enrichment distribution") +
-                  ggtitle(.y))
+map2(
+  gse,
+  names(gse),
+  ~ ridgeplot(.x) +
+    labs(x = "enrichment distribution") +
+    ggtitle(.y)
+)
 ```
 
 Note, one can change which pathway is plotted here by setting the title and `geneSetID` accordingly
 
 ```{r}
-map2(gse,
-     names(gse),
-     ~ gseaplot(.x, by = "all", title = .x$Description[1], geneSetID = 1))
+map2(
+  gse,
+  names(gse),
+  ~ gseaplot(.x, by = "all", title = .x$Description[1], geneSetID = 1)
+)
 ```
 

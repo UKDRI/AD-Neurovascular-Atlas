@@ -86,7 +86,7 @@ avg_exp <- as.data.frame(avg_exp) |>
   rownames_to_column(var = "gene")
 
 # pivot longer such that celltypes are separated out
-avg_exp <- avg_exp %>%
+avg_exp <- avg_exp |>
   pivot_longer(
     cols = !gene,
     names_to = c("cluster", ".value"),
@@ -323,14 +323,14 @@ cluster_size_sample <- as.data.frame.matrix(table(Idents(seurat), seurat$manifes
 cluster_size <- cbind(cluster_size, cluster_size_sample)
 
 # add percentage within cluster
-cluster_size <- cluster_size %>%
+cluster_size <- cluster_size |>
   dplyr::mutate(across(P01:V40, ~ round(. * 100 / nuclei, 1), 
                        .names = "percentage_{.col}"))
 
 # Get the total for vascular and parenchymal cells
-cluster_size <- cluster_size %>%
+cluster_size <- cluster_size |>
   dplyr::mutate(v_all = rowSums(across(V01:V40)),
-         p_all = rowSums(across(P01:P40))) %>%
+         p_all = rowSums(across(P01:P40))) |>
   # add the percentage
   dplyr::mutate(percentage_v_all = round(v_all * 100 / nuclei, 1),
                 percentage_p_all = round(p_all * 100 / nuclei, 1))
@@ -341,7 +341,7 @@ Here's a count table of nuclei per sample
 ```{r}
 #| tbl-cap: !expr 'paste0("Clusters found in: ", n_all, " nuclei:")'
 
-cluster_size %>% DT::datatable(
+cluster_size |> DT::datatable(
   escape = F,
   rownames = F,
   extensions = 'Buttons',
@@ -396,7 +396,7 @@ attributes <- c("ensembl_gene_id", "hgnc_symbol", "description")
 gene_info <- getBM(attributes = attributes, filters = "ensembl_gene_id", values = ensembl_ids, mart = dataset)
 
 # Create a mapping dataframe with Ensembl IDs and gene symbols
-ensembl_to_symbol <- gene_info %>% 
+ensembl_to_symbol <- gene_info |> 
   dplyr::distinct(ensembl_gene_id, .keep_all = TRUE)
 
 # There are several missing genes that appear to be novel transcripts
@@ -429,17 +429,17 @@ Dotplot of the top 5 markers per cluster
 #| fig-width: 25
 #| fig-height: 25
 # get top 5 genes per cluster
-top5 <- cluster_markers %>%
-  dplyr::filter(hgnc_symbol != "") %>%
-  group_by(cluster) %>% 
+top5 <- cluster_markers |>
+  dplyr::filter(hgnc_symbol != "") |>
+  group_by(cluster) |> 
   slice_max(n = 5, order_by = avg_log2FC)
-top10 <- cluster_markers %>%
-  dplyr::filter(hgnc_symbol != "") %>%
-  group_by(cluster) %>% 
+top10 <- cluster_markers |>
+  dplyr::filter(hgnc_symbol != "") |>
+  group_by(cluster) |> 
   slice_max(n = 10, order_by = avg_log2FC)
-bottom10 <- cluster_markers %>%
-  dplyr::filter(hgnc_symbol != "") %>%
-  group_by(cluster) %>% 
+bottom10 <- cluster_markers |>
+  dplyr::filter(hgnc_symbol != "") |>
+  group_by(cluster) |> 
   slice_min(n = 10, order_by = avg_log2FC)
 
 to_plot <- unique(top5$hgnc_symbol)
@@ -462,7 +462,7 @@ top5 <- nest(top5)
 # to get points to appear with raster = T, increase point size
 #FeaturePlot(seurat, features = markers, pt.size = 1.5)
 sce_markers_plot <- map2(top5$data, top5$cluster, ~ FeaturePlot(seurat, features = .x$hgnc_symbol, raster = FALSE) +
-                          patchwork::plot_annotation(title = paste0("Seurat cluster: ", .y))) %>%
+                          patchwork::plot_annotation(title = paste0("Seurat cluster: ", .y))) |>
   set_names(paste0("cluster_", top5$cluster))
 ```
 
@@ -641,9 +641,9 @@ If those uniquely map so some neuronal clusters but not others then that'd be ni
 frank_annotation <- readxl::read_excel(here::here("03_data/990_processed_data/001_snrnaseq/91_data_from_frank/Cell Markers - Frank - First 20.xlsx"))
 head(frank_annotation)
 unique(frank_annotation$cluster)
-neuro_i <- frank_annotation %>%
+neuro_i <- frank_annotation |>
   # filter to inhibitory neuron makrers that aren't in excitatory group
-  dplyr::filter(cluster %in% c("NI") & !grepl("NE", in_cluster)) %>%
+  dplyr::filter(cluster %in% c("NI") & !grepl("NE", in_cluster)) |>
   # get top 10 markers by fold change
   dplyr::top_n(n = 10, wt = avg_log2FC)
 
@@ -661,9 +661,9 @@ Clusters 11 and 13 look likes they've good expression for ERBB4 and ADARB2 in pa
 #| label: plot excitatory neuronal markers
 #| fig-width: 9
 #| fig-height: 7
-neuro_e <- frank_annotation %>%
+neuro_e <- frank_annotation |>
   # filter to inhibitory neuron makrers that aren't in excitatory group
-  dplyr::filter(cluster %in% c("NE") & !grepl("NI", in_cluster)) %>%
+  dplyr::filter(cluster %in% c("NE") & !grepl("NI", in_cluster)) |>
   # get top 10 markers by fold change
   dplyr::top_n(n = 10, wt = avg_log2FC)
 
@@ -846,7 +846,7 @@ cluster_info_all <-
 
 ```{r}
 #| tbl-cap: "Overview of clusters"
-cluster_info_all %>% DT::datatable(
+cluster_info_all |> DT::datatable(
   escape = F,
   rownames = F,
   extensions = 'Buttons',
@@ -885,25 +885,25 @@ cluster_info_all %>% DT::datatable(
 #names(cluster_info_all)
 nuclei_all <- sum(cluster_info_all$nuclei)
 
-plot_data <- cluster_info_all %>%
-  dplyr::select(type:nuclei, P01:V40) %>%
-  dplyr::rename(nuclei_total = nuclei) %>%
-  pivot_longer(P01:V40, names_to = "sample", values_to = "nuclei") %>%
+plot_data <- cluster_info_all |>
+  dplyr::select(type:nuclei, P01:V40) |>
+  dplyr::rename(nuclei_total = nuclei) |>
+  pivot_longer(P01:V40, names_to = "sample", values_to = "nuclei") |>
   # get sample prep
-  dplyr::mutate(prep = str_sub(sample, end = 1)) %>%
+  dplyr::mutate(prep = str_sub(sample, end = 1)) |>
   # get the sum of nuclei per celltype and prep
-  dplyr::group_by(type, prep) %>%
-  dplyr::mutate(nuclei_total = sum(nuclei)) %>%
-  dplyr::ungroup() %>%
-  dplyr::select(!sample:nuclei) %>%
-  unique() %>%
-  dplyr::rename(nuclei = nuclei_total) %>%
+  dplyr::group_by(type, prep) |>
+  dplyr::mutate(nuclei_total = sum(nuclei)) |>
+  dplyr::ungroup() |>
+  dplyr::select(!sample:nuclei) |>
+  unique() |>
+  dplyr::rename(nuclei = nuclei_total) |>
   # group by cluster to get total nuclei per cluster
-  dplyr::group_by(type) %>%
-  dplyr::mutate(nuclei_total = sum(nuclei)) %>%
+  dplyr::group_by(type) |>
+  dplyr::mutate(nuclei_total = sum(nuclei)) |>
   # get percentage per prep
-  dplyr::group_by(prep) %>%
-  dplyr::mutate(pct = nuclei / nuclei_total * 100) %>%
+  dplyr::group_by(prep) |>
+  dplyr::mutate(pct = nuclei / nuclei_total * 100) |>
   dplyr::ungroup() 
 
 p_nuclei <- ggplot(plot_data, aes(x=type, y=nuclei, fill=prep)) +
@@ -938,8 +938,8 @@ ggsave(
 #| layout-ncol: 2
 
 # make data wide format
-plot_data <- plot_data %>%
-  pivot_wider(names_from = prep, values_from = c(nuclei, pct)) %>%
+plot_data <- plot_data |>
+  pivot_wider(names_from = prep, values_from = c(nuclei, pct)) |>
   dplyr::mutate(pct_total = nuclei_total / sum(nuclei_total) * 100)
 
 # plot total number per celltypes
@@ -984,7 +984,7 @@ p_pct
 ```{r}
 #| label: overview main types table per prep
 #| tbl-cap: "Main cell types"
-plot_data %>%
+plot_data |>
   DT::datatable(
     escape = F,
     rownames = F,
@@ -1059,7 +1059,7 @@ cluster_markers_dt <- cluster_markers_dt[, p_val := NULL]
 ## report only unique markers listed, found in >= 1 cluster, i.e. genes found in several clusters only listed once
 ## cluster_markers_dt_print <- copy(unique(cluster_markers_dt, by = "gene"))
 
-cluster_markers_dt %>% DT::datatable(
+cluster_markers_dt |> DT::datatable(
   escape = F,
   rownames = F,
   extensions = 'Buttons',
@@ -1183,7 +1183,7 @@ p
 #| label: cell types per sample table
 #| tbl-cap: "Main cell types per sample"
 
-dt_per_sample %>% DT::datatable(
+dt_per_sample |> DT::datatable(
   escape = F,
   rownames = F,
   extensions = 'Buttons',
@@ -1261,14 +1261,14 @@ print(plot_markers)
 VlnPlot(sdata_endo, features = plot_markers, ncol = 1, group.by = "manifest")
 VlnPlot(sdata_endo, features = plot_markers, ncol = 1, group.by = "manifest", pt.size = 0)
 
-table(seurat$manifest, seurat$sex) %>%
-  as.data.frame() %>%
-  dplyr::rename(sample = Var1, sex = Var2) %>%
-  dplyr::filter(Freq != 0) %>%
-  dplyr::select(!Freq) %>%
-  dplyr::mutate(sample = str_sub(sample, start = 2)) %>%
-  unique() %>%
-  dplyr::arrange(sample) %>%
+table(seurat$manifest, seurat$sex) |>
+  as.data.frame() |>
+  dplyr::rename(sample = Var1, sex = Var2) |>
+  dplyr::filter(Freq != 0) |>
+  dplyr::select(!Freq) |>
+  dplyr::mutate(sample = str_sub(sample, start = 2)) |>
+  unique() |>
+  dplyr::arrange(sample) |>
   gt::gt()
 ```
 
@@ -1343,11 +1343,11 @@ Note that Hannah is after the unified samples, so this is merging the vascular a
 #| tbl-cap: Total counts per celltype
 # show cell numbers
 cluster_counts <- table(Idents(sdata_endo))
-cluster_counts <- data.frame(as.list(cluster_counts), row.names = "counts") %>% 
-  t() %>%
+cluster_counts <- data.frame(as.list(cluster_counts), row.names = "counts") |> 
+  t() |>
   as_tibble(rownames = "cell_type")
 
-cluster_counts %>% DT::datatable(
+cluster_counts |> DT::datatable(
   escape = F,
   rownames = F,
   extensions = 'Buttons',
@@ -1374,15 +1374,15 @@ cluster_counts %>% DT::datatable(
 
 ```{r}
 # counts by samples
-cluster_count_by_sample <- table(Idents(sdata_endo), sdata_endo$individual) %>%
- as.data.frame() %>%
-  dplyr::mutate(Var2 = as.numeric(Var2)) %>%
-  dplyr::arrange(Var2) %>%
-  dplyr::mutate(Var2 = paste0("sample_", Var2)) %>%
-  pivot_wider(names_from = Var2, values_from = Freq) %>%
+cluster_count_by_sample <- table(Idents(sdata_endo), sdata_endo$individual) |>
+ as.data.frame() |>
+  dplyr::mutate(Var2 = as.numeric(Var2)) |>
+  dplyr::arrange(Var2) |>
+  dplyr::mutate(Var2 = paste0("sample_", Var2)) |>
+  pivot_wider(names_from = Var2, values_from = Freq) |>
   dplyr::rename(cell_type = Var1)
 
-cluster_count_by_sample %>% DT::datatable(
+cluster_count_by_sample |> DT::datatable(
   escape = F,
   rownames = F,
   extensions = 'Buttons',
@@ -1409,15 +1409,15 @@ cluster_count_by_sample %>% DT::datatable(
 
 ```{r}
 # counts by samples per cluster
-cluster_count_by_sample <- table(sdata_endo$seurat_clusters, sdata_endo$individual) %>%
- as.data.frame() %>%
-  dplyr::mutate(Var2 = as.numeric(Var2)) %>%
-  dplyr::arrange(Var2) %>%
-  dplyr::mutate(Var2 = paste0("sample_", Var2)) %>%
-  pivot_wider(names_from = Var2, values_from = Freq) %>%
+cluster_count_by_sample <- table(sdata_endo$seurat_clusters, sdata_endo$individual) |>
+ as.data.frame() |>
+  dplyr::mutate(Var2 = as.numeric(Var2)) |>
+  dplyr::arrange(Var2) |>
+  dplyr::mutate(Var2 = paste0("sample_", Var2)) |>
+  pivot_wider(names_from = Var2, values_from = Freq) |>
   dplyr::rename(cluster = Var1)
 
-cluster_count_by_sample %>% DT::datatable(
+cluster_count_by_sample |> DT::datatable(
   escape = F,
   rownames = F,
   extensions = 'Buttons',
@@ -1446,11 +1446,11 @@ Now the same for the higher-level celltypes
 
 ```{r}
 current_labels <- levels(Idents(sdata_endo))
-new_labels <- str_replace_all(current_labels, "Capillary|Venous|Arterial", "Endothelial") %>%
-  str_replace_all("T-Peri", "Pericyte") %>%
-  str_replace_all("vascular-SMC", "SMC") %>%
-  str_replace_all("Oligo-pre", "OPC") %>%
-  str_replace_all("Trans-Endo-to-mural", "mystery-cluster") %>%
+new_labels <- str_replace_all(current_labels, "Capillary|Venous|Arterial", "Endothelial") |>
+  str_replace_all("T-Peri", "Pericyte") |>
+  str_replace_all("vascular-SMC", "SMC") |>
+  str_replace_all("Oligo-pre", "OPC") |>
+  str_replace_all("Trans-Endo-to-mural", "mystery-cluster") |>
   str_replace_all("Peri-Fibro|Meningeal-Fibro", "Fibroblast")
 
 names(new_labels) <- current_labels
@@ -1461,12 +1461,12 @@ sdata_endo$highlevel_manual_annotations <- Idents(sdata_endo)
 
 ```{r}
 # counts by samples
-cluster_count_by_sample <- table(Idents(sce), sce$donor) %>%
- as.data.frame() %>%
-  pivot_wider(names_from = Var2, values_from = Freq) %>%
+cluster_count_by_sample <- table(Idents(sce), sce$donor) |>
+ as.data.frame() |>
+  pivot_wider(names_from = Var2, values_from = Freq) |>
   dplyr::rename(cell_type = Var1)
 
-cluster_count_by_sample %>% DT::datatable(
+cluster_count_by_sample |> DT::datatable(
   escape = F,
   rownames = F,
   extensions = 'Buttons',
@@ -1510,11 +1510,11 @@ table(apoe_status$apoe_status)
 # the unique sample ID is between the first and second _
 apoe_status$unique_id <- sapply(strsplit(as.character(apoe_status$sample_name), "_"), function(x) x[2])
 
-apoe_status %>%
-  group_by(unique_id) %>%
-  mutate(count = n()) %>%
-  #ungroup() %>%
-  filter(count > 1) %>%
+apoe_status |>
+  group_by(unique_id) |>
+  mutate(count = n()) |>
+  #ungroup() |>
+  filter(count > 1) |>
   dplyr::arrange(unique_id) |>
   gt()
 ```
@@ -1558,8 +1558,8 @@ updated_meta <- dplyr::left_join(sce@meta.data, apoe_status, by = "donor")
 assertthat::assert_that(sum(sce@meta.data$nCount_RNA != updated_meta$nCount_RNA) == 0)
 rownames(updated_meta) <- rownames(sce@meta.data)
 # merge the two apoe columns
-updated_meta <- updated_meta %>%
-  mutate(apoe_status = coalesce(APOE, apoe_status)) %>%
+updated_meta <- updated_meta |>
+  mutate(apoe_status = coalesce(APOE, apoe_status)) |>
 # remove old column
   select(-APOE)  
 
@@ -1607,15 +1607,15 @@ hannah_annotations <-
   )
 
 # counts per cluster
-cluster_count_by_sample <- table(Idents(sce), sce$individual) %>%
- as.data.frame() %>%
-  dplyr::mutate(Var2 = as.numeric(Var2)) %>%
-  dplyr::arrange(Var2) %>%
-  dplyr::mutate(Var2 = paste0("sample_", Var2)) %>%
-  pivot_wider(names_from = Var2, values_from = Freq) %>%
+cluster_count_by_sample <- table(Idents(sce), sce$individual) |>
+ as.data.frame() |>
+  dplyr::mutate(Var2 = as.numeric(Var2)) |>
+  dplyr::arrange(Var2) |>
+  dplyr::mutate(Var2 = paste0("sample_", Var2)) |>
+  pivot_wider(names_from = Var2, values_from = Freq) |>
   dplyr::rename(cell_type = Var1)
 
-cluster_count_by_sample %>% DT::datatable(
+cluster_count_by_sample |> DT::datatable(
   escape = F,
   rownames = F,
   extensions = 'Buttons',
@@ -1646,15 +1646,15 @@ sce <- RenameIdents(sce, celltypes)
 DimPlot(sce, reduction = "umap", label = TRUE, raster = FALSE)
 
 # counts per celltype
-cluster_count_by_sample <- table(Idents(sce), sce$individual) %>%
- as.data.frame() %>%
-  dplyr::mutate(Var2 = as.numeric(Var2)) %>%
-  dplyr::arrange(Var2) %>%
-  dplyr::mutate(Var2 = paste0("sample_", Var2)) %>%
-  pivot_wider(names_from = Var2, values_from = Freq) %>%
+cluster_count_by_sample <- table(Idents(sce), sce$individual) |>
+ as.data.frame() |>
+  dplyr::mutate(Var2 = as.numeric(Var2)) |>
+  dplyr::arrange(Var2) |>
+  dplyr::mutate(Var2 = paste0("sample_", Var2)) |>
+  pivot_wider(names_from = Var2, values_from = Freq) |>
   dplyr::rename(cell_type = Var1)
 
-cluster_count_by_sample %>% DT::datatable(
+cluster_count_by_sample |> DT::datatable(
   escape = F,
   rownames = F,
   extensions = 'Buttons',
