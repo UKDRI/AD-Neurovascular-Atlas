@@ -14,7 +14,9 @@ here::i_am("04_data_analysis/007_magma/23_risk_gene_expression.qmd")
 # Load packages
 
 ```{r}
-source(here::here("04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"))
+source(here::here(
+  "04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"
+))
 ```
 
 # Read in data
@@ -26,7 +28,9 @@ Note that each celltype was adjusted separately and via Bonferroni.
 ```{r}
 #| eval: true
 # read data of sig magma genes from sig celltypes for AD all controls
-res <- readr::read_tsv(here::here("03_data/994_magma_inputs/results/sig_celltype_sig_genes.tsv")) |>
+res <- readr::read_tsv(here::here(
+  "03_data/994_magma_inputs/sig_celltype_sig_genes.tsv"
+)) |>
   dplyr::rename(celltype = SetName)
 # This is just the sig genes for the three enriched level 2 celltypes with bellenguez
 # res <- readr::read_tsv(here::here("03_data/994_magma_inputs/sig_genelist", "all_sig_magma_set_genes.tsv")) |>

@@ -35,7 +35,7 @@ parse_magma_set_data <- function(file) {
 data <- map(files, parse_magma_set_data)
 
 files_sub <- str_replace(basename(files), "_scz.", "_scz_") |>
-  str_replace("_gene_analysis", "") %>%
+  str_replace("_gene_analysis", "") |>
   # Use sub() to remove all characters after the first dot
   sub("\\..*$", "", .) |>
   str_replace("magma_celltypes_", "")
@@ -810,7 +810,7 @@ df <- map(files, read_magma_gene_data)
 
 assertthat::are_equal(sum(map_dbl(df, nrow) == 0), 0)
 groups <- str_replace(basename(files), "_scz.", "_scz_") |>
-  str_replace("_gene_analysis", "") %>%
+  str_replace("_gene_analysis", "") |>
   sub("\\..*$", "", .) |>
   str_replace("magma_celltypes_", "")
 
@@ -879,8 +879,8 @@ readr::write_tsv(ad_level2, here::here("03_data/994_magma_inputs/sig_genelist", 
 
 ```{r}
 # Get the number of times each gene appears in a group
-gene_counts <- ad_level2 %>%
-  group_by(GENE) %>%
+gene_counts <- ad_level2 |>
+  group_by(GENE) |>
   summarize(count = n_distinct(SetName))
 unique_genes <- gene_counts |>
   dplyr::filter(count == 1)

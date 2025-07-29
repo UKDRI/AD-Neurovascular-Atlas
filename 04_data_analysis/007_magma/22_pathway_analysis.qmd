@@ -64,8 +64,8 @@ res_sig_level2 <- res_sig |>
 readr::write_csv(res_sig_level2, "03_data/994_magma_inputs/sig_genelist/magma_level2_controls_sig_genes.csv")
 
 # get gene names per celltype
-genes_df <- res_sig %>%
-  dplyr::group_by(celltype, gwas_background, celltype_level) %>%
+genes_df <- res_sig |>
+  dplyr::group_by(celltype, gwas_background, celltype_level) |>
   dplyr::summarise(list_of_columns = list(hgnc_symbol))
 genes <- genes_df |> 
   dplyr::pull(list_of_columns)
@@ -113,11 +113,11 @@ binary_matrix <- res_sig |>
   pivot_wider(names_from = case_control, values_from = presence, values_fill = list(presence = 0))
 
 # Prepare data for UpSet plot
-upset_data <- binary_matrix %>%
-  select(-celltype_combined) %>%
-  group_by(hgnc_symbol) %>%
-  summarise_all(max) %>%
-  ungroup() %>%
+upset_data <- binary_matrix |>
+  select(-celltype_combined) |>
+  group_by(hgnc_symbol) |>
+  summarise_all(max) |>
+  ungroup() |>
   column_to_rownames(var = "hgnc_symbol")
 
 # Visualize using UpSet plot
@@ -133,19 +133,19 @@ unique_genes <- upset_data |>
 
 
 # Step 1: Filter out celltypes not present in both case and control groups
-filtered_df <- df %>%
+filtered_df <- df |>
   dplyr::filter(n() > 0, .by = c(celltype_combined, case_control)) |>
   dplyr::filter(n_distinct(case_control) == 2, .by = celltype_combined)
 
 # Step 2: Create a binary matrix indicating presence of genes in case/control groups for each celltype_combined
-binary_matrix <- filtered_df %>%
-  mutate(presence = 1) %>%
+binary_matrix <- filtered_df |>
+  mutate(presence = 1) |>
   pivot_wider(names_from = case_control, values_from = presence, values_fill = list(presence = 0))
 
 # Step 3: Prepare data for UpSet plot
-upset_data <- binary_matrix %>%
-  dplyr::select(-celltype_combined) %>%
-  dplyr::summarise(across(where(is.numeric), max), .by = hgnc_symbol) %>%
+upset_data <- binary_matrix |>
+  dplyr::select(-celltype_combined) |>
+  dplyr::summarise(across(where(is.numeric), max), .by = hgnc_symbol) |>
   column_to_rownames(var = "hgnc_symbol")
 
 # Step 4: Visualize using UpSet plot
@@ -199,7 +199,7 @@ treeplots <- map2(treeplots, names(treeplots), ~ .x + ggtitle(.y))
 # Define the function to subset a single string up to the last underscore
 subset_until_last_underscore <- function(input_string) {
   # Find the position of the last underscore
-  last_underscore_position <- str_locate_all(input_string, "_")[[1]][, 1] %>% max()
+  last_underscore_position <- str_locate_all(input_string, "_")[[1]][, 1] |> max()
   
   # Subset the string up to the last underscore
   if (!is.na(last_underscore_position)) {
@@ -278,7 +278,7 @@ Caleb mentioned it can be useful to see what IPA pulls out in terms of pathways 
 # Define a function to save each subset as a CSV file
 save_celltype_df <- function(cell_type, df, file_name_root) {
   # Subset the dataframe for the current cell type
-  celltype_df <- df %>% dplyr::filter(celltype == cell_type) |>
+  celltype_df <- df |> dplyr::filter(celltype == cell_type) |>
     # Select relevant columns
     dplyr::select(gene, log2FoldChange, padj) |>
     # Help IPA figure the columns out
@@ -438,7 +438,7 @@ gmt <- map(gmt_files, ~ prepare_gmt(.x, my_genes))
 # This is the per celltype version - not using fgsea at the moment so I'll skip
 # this for now
 # Get all the genes in your dataset and assign them to my_genes 
-my_genes <- map(gsea_df$data, ~ .x$gene) %>%
+my_genes <- map(gsea_df$data, ~ .x$gene) |>
   purrr::set_names(gsea_df$celltype)
 
 gmt <- map(gmt_files, function(gmt) {
@@ -493,7 +493,7 @@ rankings <-
   map2(gsea_df$data, gsea_df$celltype_contrast, ~ (sort_rankings(.x$log2FoldChange,
                                                         .x$pvalue,
                                                         .x$gene,
-                                                        .y))) %>%
+                                                        .y))) |>
   purrr::set_names(gsea_df$celltype_contrast)
 ```
 
@@ -502,7 +502,7 @@ rankings <-
   map2(gsea_df$data, gsea_df$celltype, ~ (sort_rankings(.x$ZSTAT,
                                                         .x$P,
                                                         .x$hgnc_symbol,
-                                                        .y))) %>%
+                                                        .y))) |>
   purrr::set_names(paste0(gsea_df$celltype, "-", gsea_df$gwas_background, "-", gsea_df$celltype_level))
 ```
 
@@ -546,7 +546,7 @@ gsea_res <- map(gmt, function(pathway) {
       nproc = 8
     )
   })
-}) %>%
+}) |>
   purrr::set_names(basename(gmt_files))
 ```
 
@@ -621,7 +621,7 @@ if (!file.exists(result_file)) {
 
 ```{r}
 # remove any with no pathways found
-gse <- gse %>%
+gse <- gse |>
   purrr::keep(~ nrow(.) > 0)
 ```
 

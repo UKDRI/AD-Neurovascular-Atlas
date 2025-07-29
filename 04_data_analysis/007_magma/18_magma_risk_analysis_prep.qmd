@@ -343,7 +343,7 @@ It wants a file with no column headers, a row per celltype and space separated e
 ```{r}
 prep_for_magma <- function(df) {
   # Group by celltype and concatenate the Entrez IDs into a space-separated string
-  formatted_data <- df %>%
+  formatted_data <- df |>
     dplyr::select(cluster, entrezgene_id) |>
     group_by(cluster) |>
     summarise(entrez_ids = paste(entrezgene_id, collapse = " "),
