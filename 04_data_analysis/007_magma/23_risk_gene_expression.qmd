@@ -38,55 +38,103 @@ res <- readr::read_tsv(here::here(
 
 res_sig <- res |>
   dplyr::filter(padj < 0.05) |>
-  dplyr::filter(celltype_level == "level1", input_gene_list == "all_controls", gwas_background == "EUROPEUKBB_35k10k", percent == "top-ten-percent")
+  dplyr::filter(
+    celltype_level == "level1",
+    input_gene_list == "all_controls",
+    gwas_background == "EUROPEUKBB_35k10k",
+    percent == "top-ten-percent"
+  )
 ```
+
+```{r}
+tar_load(translated_id)
+head(translated_id)
+
+res_sig_level2 <- res |>
+  dplyr::filter(padj < 0.05) |>
+  dplyr::filter(
+    celltype_level == "level2",
+    input_gene_list == "all_controls",
+    gwas_background == "EUROPEUKBB_35k10k",
+    percent == "top-ten-percent"
+  ) |>
+  dplyr::select(entrezgene_id = GENE, padj, celltype) |>
+  dplyr::left_join(translated_id, by = "entrezgene_id") |>
+  readr::write_csv(here::here(
+    "03_data/990_processed_data/007_magma/level2_sig_magma_genes.csv"
+  ))
+```
+
+
 
 ```{r}
 #| eval: true
 # read data
-sce <- qs::qread(here::here("03_data/990_processed_data/001_snrnaseq",
-                                  "11_cell_network_interactions",
-                                  "scflow-sce-annotated.qs"))
-
+sce <- qs::qread(here::here(
+  "03_data/990_processed_data/001_snrnaseq",
+  "11_cell_network_interactions",
+  "scflow-sce-annotated.qs"
+))
 ```
 
 # Data prep
 
 ```{r}
 # need to fix rownames in order to subset
-gene_ensembl_ids <- data.frame(gene = rownames(sce@assays$RNA@data), ensembl = rownames(sce@assays$RNA@counts))
-# remove duplicated gene IDs 
-unique_ids = gene_ensembl_ids[which(!duplicated(gene_ensembl_ids$gene)),]
+gene_ensembl_ids <- data.frame(
+  gene = rownames(sce@assays$RNA@data),
+  ensembl = rownames(sce@assays$RNA@counts)
+)
+# remove duplicated gene IDs
+unique_ids = gene_ensembl_ids[which(!duplicated(gene_ensembl_ids$gene)), ]
 ```
 
 ```{r}
 rownames(sce@assays$RNA@data) <- gene_ensembl_ids$ensembl
 # Subset Seurat object based on diagnosis and Idents
-sce_sub <- subset(sce, subset = diagnosis == "Control" & sce$highlevel_manual_annotations %in% unique(res_sig$celltype))
+sce_sub <- subset(
+  sce,
+  subset = diagnosis == "Control" &
+    sce$highlevel_manual_annotations %in% unique(res_sig$celltype)
+)
 Idents(sce_sub) <- sce_sub$highlevel_manual_annotations
 # Check if all genes of interest are in the object
-genes_of_interest <- setdiff(unique(res_sig$ensembl_gene_id), rownames(sce_sub@assays$RNA@data))
+genes_of_interest <- setdiff(
+  unique(res_sig$ensembl_gene_id),
+  rownames(sce_sub@assays$RNA@data)
+)
 
 res_sub <- res_sig |> dplyr::filter(ensembl_gene_id %in% genes_of_interest)
-genes_sub <- gene_ensembl_ids[gene_ensembl_ids$gene %in% res_sub$hgnc_symbol,]
+genes_sub <- gene_ensembl_ids[gene_ensembl_ids$gene %in% res_sub$hgnc_symbol, ]
 
 # order by gene
 genes_sub <- genes_sub |> dplyr::arrange(gene)
-assertthat::are_equal(res_sig$hgnc_symbol[res_sig$hgnc_symbol %in% genes_sub$gene], genes_sub$gene)
-res_sig$ensembl_gene_id[res_sig$hgnc_symbol %in% genes_sub$gene] <- genes_sub$ensembl
+assertthat::are_equal(
+  res_sig$hgnc_symbol[res_sig$hgnc_symbol %in% genes_sub$gene],
+  genes_sub$gene
+)
+res_sig$ensembl_gene_id[
+  res_sig$hgnc_symbol %in% genes_sub$gene
+] <- genes_sub$ensembl
 
-genes_of_interest <- intersect(res_sig$ensembl_gene_id, rownames(sce_sub@assays$RNA@data))
+genes_of_interest <- intersect(
+  res_sig$ensembl_gene_id,
+  rownames(sce_sub@assays$RNA@data)
+)
 # Scale the data for the genes of interest
 sce_sub <- ScaleData(sce_sub, features = genes_of_interest)
 rownames(sce_sub@assays$RNA@data) <- gene_ensembl_ids$gene
 
-genes_of_interest_symbols <- gene_ensembl_ids$gene[gene_ensembl_ids$ensembl %in% genes_of_interest]
+genes_of_interest_symbols <- gene_ensembl_ids$gene[
+  gene_ensembl_ids$ensembl %in% genes_of_interest
+]
 
 # Generate the heatmap
-risk_gene_heatmap <- DoHeatmap(sce_sub, features = genes_of_interest)   
+risk_gene_heatmap <- DoHeatmap(sce_sub, features = genes_of_interest)
 risk_gene_heatmap
-risk_gene_dotplot <- DotPlot(sce_sub, features = genes_of_interest_symbols) + 
-  coord_flip() + RotatedAxis()
+risk_gene_dotplot <- DotPlot(sce_sub, features = genes_of_interest_symbols) +
+  coord_flip() +
+  RotatedAxis()
 risk_gene_dotplot
 # Change ensembl IDs to gene symbols
 heatmap_data <- risk_gene_heatmap[[1]]$data
@@ -94,9 +142,16 @@ heatmap_data <- risk_gene_dotplot$data
 
 #heatmap_data <- left_join(heatmap_data, gene_ensembl_ids, by = join_by(Feature == ensembl))
 
-
-ggsave(here::here("05_figures/990_shared_figures/001_magma/risk_gene_heatmap.png"), risk_gene_heatmap, height = 10)
-ggsave(here::here("05_figures/990_shared_figures/001_magma/risk_gene_dotplot.png"), risk_gene_dotplot, height = 10)
+ggsave(
+  here::here("05_figures/990_shared_figures/001_magma/risk_gene_heatmap.png"),
+  risk_gene_heatmap,
+  height = 10
+)
+ggsave(
+  here::here("05_figures/990_shared_figures/001_magma/risk_gene_dotplot.png"),
+  risk_gene_dotplot,
+  height = 10
+)
 ```
 
 ```{r}
@@ -105,7 +160,12 @@ wide_df <- heatmap_data |>
   dplyr::select(!c(avg.exp, pct.exp)) |>
   spread(key = id, value = avg.exp.scaled)
 
-readr::write_tsv(wide_df, here::here("05_figures/990_shared_figures/003_final_figures/001_data_for_plots/risk_gene_avg_expression.tsv"))
+readr::write_tsv(
+  wide_df,
+  here::here(
+    "05_figures/990_shared_figures/003_final_figures/001_data_for_plots/risk_gene_avg_expression.tsv"
+  )
+)
 
 # Remove the gene column to create a matrix
 expression_matrix <- as.matrix(wide_df[, -1])
@@ -113,11 +173,16 @@ expression_matrix <- as.matrix(wide_df[, -1])
 # Optionally, you can set row names to gene names
 rownames(expression_matrix) <- wide_df$features.plot
 
-plot <- Heatmap(expression_matrix,
-        name = "Expression",
-        column_names_rot = 45
+plot <- Heatmap(expression_matrix, name = "Expression", column_names_rot = 45)
+png(
+  here::here(
+    "05_figures/990_shared_figures/001_magma/risk_gene_heatmap_mean_level1.png"
+  ),
+  width = 6,
+  height = 10,
+  units = "in",
+  res = 300
 )
-png(here::here("05_figures/990_shared_figures/001_magma/risk_gene_heatmap_mean_level1.png"), width = 6, height = 10, units = "in", res = 300)
 plot
 dev.off()
 ```
