@@ -21,6 +21,7 @@ library(SeuratWrappers)
 library(monocle3)
 library(slingshot)
 library(GGally)
+library(tradeSeq)
 ```
 
 ```{r}
@@ -334,16 +335,11 @@ The associationTest function gives the wald stat, the degrees of freedom and the
 By default it doesn't test for each lineage independently.
 
 ```{r}
-library(tradeSeq)
-
 # Read in data from hawk
 file <- here("03_data/990_processed_data/008_pseudotime/slingshot_tradeseq_3k_pericyte.qs")
 
-if(subset != "pericyte"){
-  file <- str_replace(file, "_pericyte", "_smc")
-}
-
 sce_subset <- qs::qread(file)
+sce_subset_smc <- qs::qread(str_replace(file, "_pericyte", "_smc"))
 
 # Function to tidy the tradeseq output
 tidy_tradeseq <- function(data) {
@@ -390,165 +386,18 @@ tidy_tradeseq <- function(data) {
 }
 
 # Get stats for the all genes overall across all lineages and conditions
-plot_gene_pseudotime <- function(gene, gene_symbol, sce, counts) {
+plot_gene_pseudotime <- function(gene, gene_symbol, sce, counts, extra_title = NULL) {
   plot <- plotSmoothers(sce, counts, gene, curvesCols = pal_npg("nrc")(2)) +
     scale_colour_npg(labels = c("EndoMT-PC - AD",
                                 "EndoMT-PC - Control")) +
-    ggtitle(if_else(gene_symbol == "", gene, gene_symbol)) +
+    ggtitle(paste0(if_else(gene_symbol == "", gene, gene_symbol), " - ", extra_title)) +
     labs(colour = "") +
     theme(legend.position = "none")
   return(plot)
 }
 
 counts <- assays(sce_subset)$counts
-
-# TODO check the colours are right for SMC lineage
-plotSmoothers(sce_subset, counts, cond_res_sig$ensembl_gene_id[1])
-p <- plot_gene_pseudotime(cond_res_sig$ensembl_gene_id[1], cond_res_sig$hgnc_symbol[1], sce_subset, counts)
-p + theme(legend.position = "right")
-```
-
-```{r}
-#| eval: false
-asso_res <- associationTest(sce_slingshot)
-
-asso_res_tidy <- tidy_tradeseq(asso_res) |>
-  dplyr::left_join(translated_id, by = "ensembl_gene_id")
-
-# Get top 10 genes per condition and lineage
-top_genes <- asso_res_tidy |>
-  dplyr::filter(hgnc_symbol != "" | !is.na(hgnc_symbol)) |>
-  dplyr::group_by(condition, lineage) |>
-  dplyr::distinct(hgnc_symbol, .keep_all = TRUE) |>
-  dplyr::ungroup() |>
-  dplyr::filter(pvalue == 0)
-
-table(top_genes$lineage, top_genes$condition)
-
-top_controls <- top_genes |>
-  dplyr::filter(condition == "Control") |>
-  slice_max(waldStat, n = 25, with_ties = FALSE, by = c(condition, lineage)) |>
-  dplyr::distinct(hgnc_symbol, .keep_all = TRUE)
-
-pdf(here("05_figures/990_shared_figures/004_pseudotime/01_tradeseq/",
-                       "top_controls_pseudotime_degs.pdf"),
-       height = 12, width = 20)
-map2(top_controls$ensembl_gene_id, top_controls$hgnc_symbol, ~ plotSmoothers(sce_subset, counts, .x) +
-    ggtitle(.y))
-dev.off()
-
-# CNTN1 looks unique to lineage 1!
-lineage_genes <- c("CHF", "TFPI", "PDK4", "ITGA3", "JARID2", "CYTH3", "ZNF207",
-                   "SLC6A13", "FYN", "MRC2", "DCN", "RUFY3", "CNTN1", "ATP1A2",
-                   "NR1H3", "PRKCH", "ZFHX3", "FLT1", "ATP10A", "PLEKHG1",
-                   "RORA", "IGF1R", "SLC6A1", "LAMA2", "SLC6A12", "SORBS1",
-                   "SEC14L1", "PDE3A")
-
-top_lineage_degs <- top_genes |>
-  dplyr::filter(hgnc_symbol %in% lineage_genes)
-
-plot_lineages <- map2(unique(top_lineage_degs$ensembl_gene_id),
-                      unique(top_lineage_degs$hgnc_symbol),
-              plot_gene_pseudotime, sce_subset, counts)
-
-plot_lineages[[5]] <- plot_lineages[[5]] +
-  theme(legend.position = "right")
-
-
-plot <- plot_grid(plotlist = plot_lineages, ncol = 5)
-plot
-
-#ggsave(filename = here("05_figures/990_shared_figures/004_pseudotime",
-#                       "01_tradeseq", "top_lineage_pseudotime_degs.png"),
-#       height = 14, width = 18)
-```
-## Key genes for figure
-
-```{r}
-key_genes <- translated_id |>
-  dplyr::filter(hgnc_symbol %in% c("BACE2", "APOD"))
-
-plot_lineages <- map2(unique(key_genes$ensembl_gene_id),
-                      unique(key_genes$hgnc_symbol),
-              plot_gene_pseudotime, sce_subset, counts)
-apod <- plot_lineages[[2]] +
-  theme(legend.position = "bottom")
-
-# extract a legend that is laid out horizontally
-legend_b <- get_legend(
-  apod +
-    guides(color = guide_legend(nrow = 1)) +
-    theme(legend.position = "bottom")
-)
-prow <- plot_grid(apod + theme(legend.position = "none"), plot_lineages[[1]])
-key_genes_plot <- plot_grid(prow, legend_b, ncol = 1, rel_heights = c(1, 0.1))
-
-key_genes <- translated_id |>
-  dplyr::filter(grepl("^ANG", hgnc_symbol)) |>
-  dplyr::filter(ensembl_gene_id %in% rownames(counts))
-
-plot_lineages <- map2(unique(key_genes$ensembl_gene_id),
-                      unique(key_genes$hgnc_symbol),
-              plot_gene_pseudotime, sce_subset, counts)
-plot_lineages[[5]] <- plot_lineages[[5]] +
-  theme(legend.position = "right")
-
-
-plot <- plot_grid(plotlist = plot_lineages, ncol = 3)
-plot
-
-ggsave(filename = here("05_figures/990_shared_figures/004_pseudotime",
-                       "01_tradeseq", "ANG_genes.png"),
-       height = 14, width = 18)
-```
-
-## Build figure
-
-```{r}
-plot <- plot_grid(p_pca_labeled, density_plot, key_genes_plot,
-                   ncol = 1, labels = "AUTO",
-                  rel_heights = c(1.2, 1, 1))
-plot
-ggsave(here::here("05_figures/990_shared_figures/003_final_figures",
-                  "endomt_fig.pdf"), plot, width = 7, height = 9, units = "in")
-#plot_grid(p_pca_labeled, density_plot, key_genes_plot, labels = "AUTO", nrow = 3)
-```
-
-
-```{r}
-x <- predictSmooth(sce_subset, "ENSG00000000971")
-
-x <- x |> dplyr::mutate(lineage_condition = paste0("Lienage-", lineage, "_", condition))
-plot_example <- plotSmoothers(sce_subset, counts, "ENSG00000000971")
-
-
-ggplot(x, aes(x = time, y = log(yhat + 1), colour = lineage_condition)) +
-  geom_point() +
-#  geom_smooth(linewidth = 1) +
-  # Add confidence interval ribbon if you have SE columns
-  # geom_ribbon(aes(ymin = yhat - 2 * SE, ymax = yhat + 2 * SE),
-  #             alpha = 0.2,
-  #             fill = "blue")+
-  theme_bw() +
-  labs(x = "Pseudotime",
-       y = "Expression",
-       title = "Gene Expression over Pseudotime") +
-  theme(panel.grid.minor = element_blank())
-
-```
-
-### Get best lineage genes
-
-```{r}
-# Get all genes with a p-value of 0
-all_top_genes <- top_genes |>
-  dplyr::distinct(hgnc_symbol, .keep_all = TRUE)
-
-table(all_top_genes$condition, all_top_genes$lineage)
-
-smoothed_values <- predictSmooth(sce_subset,
-                                 gene = unique(all_top_genes$ensembl_gene_id),
-                                 nPoints = 100)
+counts_smc <- assays(sce_subset_smc)$counts
 ```
 
 ### Condition test
@@ -558,11 +407,17 @@ It can give overall genes, and per lineage, so I'll check both
 
 ```{r}
 cond_res <- conditionTest(sce_subset, lineages = TRUE, pairwise = TRUE)
+cond_res_smc <- conditionTest(sce_subset_smc, lineages = TRUE, pairwise = TRUE)
 
-sum(cond_res$pvalue < 0.05)
-sum(cond_res$pvalue == 0)
+sum(cond_res$pvalue < 0.05, na.rm = TRUE)
+sum(cond_res$pvalue == 0, na.rm = TRUE)
 
 cond_res_sig <- cond_res |> 
+  rownames_to_column("ensembl_gene_id") |>
+  dplyr::left_join(translated_id, by = "ensembl_gene_id") |>
+  dplyr::filter(hgnc_symbol != "" & !is.na(hgnc_symbol)) |>
+  dplyr::filter(pvalue == 0)
+cond_res_sig_smc <- cond_res_smc |> 
   rownames_to_column("ensembl_gene_id") |>
   dplyr::left_join(translated_id, by = "ensembl_gene_id") |>
   dplyr::filter(hgnc_symbol != "" & !is.na(hgnc_symbol)) |>
@@ -574,8 +429,8 @@ plots <- map2(cond_res_sig$ensembl_gene_id,
               cond_res_sig$hgnc_symbol,
               plot_gene_pseudotime, sce_subset, counts)
 
-plots[[4]]
-plots[[4]] <- plots[[4]] +
+plots[[1]]
+plots[[1]] <- plots[[1]] +
   theme(legend.position = "right")
 
 file <- here("05_figures/990_shared_figures/004_pseudotime",
@@ -586,8 +441,8 @@ if(subset != "pericyte") {
 }
 
 # Save to PDF with 4 plots per page (2 rows x 2 columns)
-pdf(file, width = 8.5, height = 11)  # Adjust page size as needed
-marrangeGrob(grobs = plots, nrow = 2, ncol = 2)
+pdf(file, width = 12.5, height = 11)  # Adjust page size as needed
+marrangeGrob(grobs = plots, nrow = 2, ncol = 3)
 dev.off()
 
 file <- here("03_data/990_processed_data/008_pseudotime",
@@ -596,95 +451,6 @@ if(subset != "pericyte") {
   file <- str_replace(file, "_pericyte", "_smc")
 }
 readr::write_csv(cond_res_sig, file)
-```
-
- 
-#### Hypergeometric pathways
-
-It seems only lineage 2 has any pathway enrichment, and only in MF.
-
-```{r}
-genes <- top_genes_condition |>
-  tidyr::nest(.by = lineage)
-
-# plan("multisession", workers = parallel::detectCores() - 1)
-go_results_all <- map(genes$data, ~ enrichGO(gene = .x$ensembl_gene_id, OrgDb = "org.Hs.eg.db",
-                                    keyType = "ENSEMBL", ont = "ALL",
-                                    universe = rownames(sce_subset)))
-                           # .options = furrr_options(seed = 123))
-
-names(go_results_all) <- genes$lineage
-
-go_results_filtered <- go_results_all |>
-  purrr::keep(~ !is.null(.)) |>
-  purrr::keep(~ nrow(.) > 0)
-
-# Apply pairwise_termism where possible
-go_results_filtered <- map(go_results_filtered, ~{
-  if(length(.x$ID) >= 2) {
-    pairwise_termsim(.x)
-  } else {
-    .x
-  }
-})
-
-# dotplots
-dotplots <-
-  map2(
-    go_results_filtered,
-    names(go_results_filtered),
-    ~ dotplot(.x, showCategory = 20, split = "ONTOLOGY") + facet_grid(. ~ ONTOLOGY) +
-      ggtitle(paste0(.y, " - Sig genes only"))
-  )
-dotplots
-```
-
-
-### All genes of interest
-
-It might be nice to make a list and perhaps pdf of all the unique genes of interest accross the comparisons
-
-```{r}
-df <- list(top_diff_early_genes, top_diff_end_genes, top_genes_condition,
-           top_lin_genes)
-names(df) <- c("top_early_genes", "top_end_genes", "top_genes_condition",
-  "top_lin_genes")
-genes <- map(df, dplyr::pull, hgnc_symbol)
-genes <- unique(unlist(genes))
-
-head(df)
-test <- df
-
-cat("Number of unique genes of interest:", length(genes))
-
-qs::qsave(test, here::here("05_figures/990_shared_figures/003_final_figures",
-  "001_data_for_plots/tradeseq_sig_degs.qs"))
-readr::write_rds(df, here::here("05_figures/990_shared_figures/003_final_figures",
-  "001_data_for_plots/tradeseq_sig_degs.rds"))
-```
-
-### Additional genes to plot
-
-
-```{r}
-additional_genes <- translated_id |>
-  dplyr::filter(hgnc_symbol %in% c("BACE2", "APOD", "MEF2C", "NOTCH1")) |>
-  dplyr::distinct(hgnc_symbol, .keep_all = TRUE)
-
-plots <- map2(additional_genes$ensembl_gene_id,
-              additional_genes$hgnc_symbol,
-              plot_gene_pseudotime, sce_subset, counts)
-
-plots[[2]]
-plots[[2]] <- plots[[2]] +
-  theme(legend.position = "right")
-
-plot <- plot_grid(plotlist = plots, ncol = 2)
-plot
-
-ggsave(filename = here("05_figures/990_shared_figures/004_pseudotime",
-                       "01_tradeseq", "additional_genes.png"),
-       height = 6, width = 12)
 ```
 
 ### Transcription factors
@@ -767,10 +533,13 @@ comprehensive_tf_check <- function(gene_list) {
 }
 
 
-# Early transcrition factors
-early_tf <- comprehensive_tf_check(unique(top_diff_early_genes$hgnc_symbol))
+# Transcrition factors
+early_tf <- comprehensive_tf_check(unique(cond_res_sig$hgnc_symbol))
 table(early_tf$TF_Sources)
 early_tf <- early_tf |>
+  dplyr::filter(Is_TF) |>
+  dplyr::left_join(translated_id, by = join_by(Gene == hgnc_symbol))
+early_tf_smc <- comprehensive_tf_check(unique(cond_res_sig_smc$hgnc_symbol)) |>
   dplyr::filter(Is_TF) |>
   dplyr::left_join(translated_id, by = join_by(Gene == hgnc_symbol))
 
@@ -778,49 +547,50 @@ tf_link_table <- readr::read_tsv(here("03_data/991_external_data/TFLink_Homo_sap
   dplyr::select(!contains("Target"))
 head(tf_link_table)
 
-tf_link_match <- top_diff_early_genes |>
+tf_link_match <- cond_res_sig |>
   dplyr::filter(hgnc_symbol %in% tf_link_table$Name.TF & !hgnc_symbol %in% early_tf$Gene)
+tf_link_match_smc <- cond_res_sig_smc |>
+  dplyr::filter(hgnc_symbol %in% tf_link_table$Name.TF & !hgnc_symbol %in% early_tf_smc$Gene)
 
 all_tfs <- data.frame(gene = c(early_tf$Gene, tf_link_match$hgnc_symbol),
-  ensembl_gene_id = c(early_tf$ensembl_gene_id, tf_link_match$ensembl_gene_id))
+  ensembl_gene_id = c(early_tf$ensembl_gene_id, tf_link_match$ensembl_gene_id),
+  lineage = "Pericyte")
+all_tfs_smc <- data.frame(gene = c(early_tf_smc$Gene, tf_link_match_smc$hgnc_symbol),
+  ensembl_gene_id = c(early_tf_smc$ensembl_gene_id, tf_link_match_smc$ensembl_gene_id),
+  lineage = "SMC")
 
-plots <- map2(all_tfs$ensembl_gene_id,
-              all_tfs$gene,
-              plot_gene_pseudotime, sce_subset, counts)
+all_tfs_joined <- rbind(all_tfs, all_tfs_smc) |>
+  mutate(lineage_group = case_when(
+    n_distinct(lineage) == 2 ~ "Both",
+    lineage[1] == "Pericyte" ~ "Pericyte",
+    lineage[1] == "SMC" ~ "SMC"
+  ), .by = gene) |>
+  dplyr::distinct(gene, .keep_all = TRUE) |>
+  dplyr::mutate(plot_title = paste0(gene, " - ", lineage_group))
 
-plots[[4]]
-plots[[4]] <- plots[[4]] +
-  theme(legend.position = "right")
+tfs_lineage_pericyte <- all_tfs_joined |>
+  dplyr::filter(lineage_group == "Pericyte")
+tfs_lineage_smc <- all_tfs_joined |>
+  dplyr::filter(lineage_group == "SMC")
 
-plot <- plot_grid(plotlist = plots, ncol = 4)
-plot
+plots_peri <- map2(tfs_lineage_pericyte$ensembl_gene_id,
+              tfs_lineage_pericyte$gene,
+              plot_gene_pseudotime, sce_subset, counts, "Pericyte")
 
-ggsave(filename = here("05_figures/990_shared_figures/004_pseudotime",
-                       "01_tradeseq", "early_diff_tf_genes.png"),
-       height = 6, width = 14)
-
-
-all_tf <- comprehensive_tf_check(unique(genes))
-all_tf <- all_tf |>
-  dplyr::filter(Is_TF) |>
-  dplyr::left_join(translated_id, by = join_by(Gene == hgnc_symbol))
-
-readr::write_csv(all_tf,
-                 here("03_data/990_processed_data/008_pseudotime",
-                      "all_transcription_factors.csv"))
-
-plots <- map2(all_tf$ensembl_gene_id,
-              all_tf$Gene,
-              plot_gene_pseudotime, sce_subset, counts)
+plots_smc <- map2(tfs_lineage_smc$ensembl_gene_id,
+              tfs_lineage_smc$gene,
+              plot_gene_pseudotime, sce_subset_smc, counts_smc, "SMC")
+plots <- c(plots_peri, plots_smc)
 
 plots[[4]]
 plots[[4]] <- plots[[4]] +
   theme(legend.position = "right")
+
+file <- here("05_figures/990_shared_figures/004_pseudotime",
+                       "01_tradeseq", "tradeseq_tfs_split_lineage.pdf")
 
 # Vectorized PDF creation
-pdf(here::here("05_figures/990_shared_figures/004_pseudotime",
-         "01_tradeseq", "all_transcription_factors.pdf"),
-    width = 11, height = 8)
+pdf(file, width = 11, height = 8)
 
 # Split the plot list into chunks of 4
 plot_chunks <- split(plots, ceiling(seq_along(plots)/4))
@@ -832,7 +602,42 @@ walk(plot_chunks, function(chunk) {
 
 dev.off()
 
-table(all_tf$TF_Sources)
+plots <- map2(all_tfs$ensembl_gene_id,
+              all_tfs$gene,
+              plot_gene_pseudotime, sce_subset, counts)
+
+file <- here("05_figures/990_shared_figures/004_pseudotime",
+                       "01_tradeseq", "tradeseq_tfs_pericyte_lineage.pdf")
+
+if(subset != "pericyte"){
+  file <- str_replace(file, "_pericyte", "_smc")
+  plots <- map2(all_tfs_smc$ensembl_gene_id,
+                all_tfs_smc$gene,
+                plot_gene_pseudotime, sce_subset_smc, counts_smc)
+}
+
+# Vectorized PDF creation
+pdf(file, width = 11, height = 8)
+
+# Split the plot list into chunks of 4
+plot_chunks <- split(plots, ceiling(seq_along(plots)/4))
+
+# Use map to apply grid.arrange to each chunk
+walk(plot_chunks, function(chunk) {
+  do.call(grid.arrange, c(chunk, ncol = 2, nrow = 2))
+})
+
+dev.off()
+
+file <- here("03_data/990_processed_data/008_pseudotime",
+             "all_transcription_factors_pericyte_lineage.csv")
+
+if(subset != "pericyte"){
+  file <- str_replace(file, "_pericyte", "_smc")
+  all_tfs <- all_tfs_smc
+}
+
+readr::write_csv(all_tfs, file)
 ```
 
 
