@@ -1081,58 +1081,6 @@ pseudotime_data <- pseudotime_data |>
 ```
 
 ```{r}
-#| eval: false
-
-# Calculate cell type abundance per pseudotime bin
-celltype_abundance <- pseudotime_data |>
-  dplyr::group_by(Pseudotime = cut(Pseudotime, breaks = 5)) |>
-  dplyr::count(celltype_reduced) |>
-  dplyr::group_by(Pseudotime) |>
-  dplyr::slice_max(n, n = 1) |>
-  dplyr::ungroup()
-
-density <- celltype_abundance$Pseudotime |>
-  str_remove_all("]") |>
-  str_remove_all("\\(") |>
-  str_split(",") |>
-  map_dfr(~ data.frame("min" = as.numeric(.x[1]), "max" = as.numeric(.x[2]))) |>
-  cbind("celltype" = celltype_abundance$celltype_reduced) |>
-  dplyr::mutate(Pseudotime = 10)
-
-# Prepare density data for each lineage and group
-density_data <- lapply(lineage_names, function(lineage) {
-  pseudotime_data |>
-    filter(!is.na(Pseudotime[, lineage])) |>
-    group_by(Group) |>
-    summarise(
-      density = density(
-        Pseudotime[, lineage],
-        from = min(Pseudotime[, lineage], na.rm = TRUE),
-        to = max(Pseudotime[, lineage], na.rm = TRUE)
-      )
-    )
-})
-
-density_plot <- ggplot(pseudotime_data, aes(x = Pseudotime, fill = Group)) +
-  geom_density(alpha = 0.7) +
-  theme_minimal() +
-  labs(x = "Pseudotime", y = "Density") +
-  facet_wrap(~lineage) +
-  geom_rect(
-    data = density,
-    aes(
-      xmin = min,
-      xmax = max,
-      ymin = 0,
-      ymax = 0.15,
-      fill = celltype
-    ),
-    alpha = 0.2
-  )
-density_plot
-```
-
-```{r}
 pseudotime_data <- pseudotime_data |>
   dplyr::mutate(
     Group = if_else(Group == "Case", "AD", Group),
@@ -1386,27 +1334,6 @@ head(top_tf_hits, 10)
 
 res_sig_tf |>
   dplyr::filter(hgnc_symbol == "FOXP2")
-```
-
-```{r}
-#| eval: false
-# Create individual plots
-plots <- lapply(top_tf_hits$gene, function(g) {
-  df <- data.frame(
-    pseudotime = pt,
-    expression = counts[g, ],
-    gene = g
-  )
-
-  ggplot(df, aes(x = pseudotime, y = expression)) +
-    geom_point(alpha = 0.4, size = 1) +
-    geom_smooth(method = "loess", se = FALSE, color = "steelblue") +
-    labs(title = g, x = "Pseudotime", y = "Expression") +
-    theme_minimal()
-})
-
-# Combine into a grid
-plot_grid(plotlist = plots, ncol = 2)
 ```
 
 ### tradeseq results
@@ -1925,25 +1852,6 @@ mapped_symbols_matches <- mapped_symbols[
 ]
 ```
 
-```{r}
-#| eval: false
-pdf(
-  here(
-    "05_figures/990_shared_figures/004_pseudotime/01_tradeseq/",
-    "senescence_markers.pdf"
-  ),
-  height = 12,
-  width = 20
-)
-map2(
-  mapped_symbols_matches,
-  names(mapped_symbols_matches),
-  ~ plotSmoothers(sce_subset, counts, .x) +
-    ggtitle(.y)
-)
-dev.off()
-```
-
 From those plots I'll pull out some promissing looking ones
 
 ```{r}
@@ -1994,9 +1902,6 @@ pdf(
 marrangeGrob(grobs = plots, nrow = 2, ncol = 2)
 dev.off()
 ```
-
-
-
 
 
 ```{r}
@@ -2144,59 +2049,6 @@ ggsave(
 
 ## Key genes for figure
 
-```{r}
-#| eval: false
-
-key_genes <- translated_id |>
-  dplyr::filter(hgnc_symbol %in% c("BACE2", "APOD"))
-
-plot_lineages <- map2(
-  unique(key_genes$ensembl_gene_id),
-  unique(key_genes$hgnc_symbol),
-  plot_gene_pseudotime,
-  sce_subset,
-  counts
-)
-apod <- plot_lineages[[2]] +
-  theme(legend.position = "bottom")
-
-# extract a legend that is laid out horizontally
-legend_b <- get_legend(
-  apod +
-    guides(color = guide_legend(nrow = 1)) +
-    theme(legend.position = "bottom")
-)
-prow <- plot_grid(apod + theme(legend.position = "none"), plot_lineages[[1]])
-key_genes_plot <- plot_grid(prow, legend_b, ncol = 1, rel_heights = c(1, 0.1))
-
-key_genes <- translated_id |>
-  dplyr::filter(grepl("^ANG", hgnc_symbol)) |>
-  dplyr::filter(ensembl_gene_id %in% rownames(counts))
-
-plot_lineages <- map2(
-  unique(key_genes$ensembl_gene_id),
-  unique(key_genes$hgnc_symbol),
-  plot_gene_pseudotime,
-  sce_subset,
-  counts
-)
-plot_lineages[[5]] <- plot_lineages[[5]] +
-  theme(legend.position = "right")
-
-
-plot <- plot_grid(plotlist = plot_lineages, ncol = 3)
-plot
-
-ggsave(
-  filename = here(
-    "05_figures/990_shared_figures/004_pseudotime",
-    "01_tradeseq",
-    "ANG_genes.png"
-  ),
-  height = 14,
-  width = 18
-)
-```
 ```{r}
 # Get stats for the all genes overall across all lineages and conditions
 plot_gene_pseudotime <- function(gene, gene_symbol, sce, counts) {
@@ -2832,46 +2684,6 @@ ggsave(
 )
 ```
 
-```{r}
-#| eval: false
-## C5 category is according to gene ontology grouping: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4707969/pdf/nihms-743907.pdf
-geneSets <- msigdbr(
-  species = "Homo sapiens",
-  collection = "C5",
-  subcollection = "BP"
-)
-### filter background to only include genes that we assessed.
-geneSets$gene_symbol <- toupper(geneSets$gene_symbol)
-geneSets <- geneSets[geneSets$ensembl_gene %in% names(sce_subset), ]
-m_list <- geneSets %>% split(x = .$gene_symbol, f = .$gs_name)
-head(m_list)
-
-de_genes_celltype <- split(
-  mast_de_tradeseq_and_switchde_overlap,
-  mast_de_tradeseq_and_switchde_overlap$celltype
-)
-# Create a named vector of adjusted p-values for each celltype
-logfc_list <- lapply(de_genes_celltype, function(subdf) {
-  setNames(subdf$avg_log2FC, subdf$hgnc_symbol)
-})
-head(logfc_list[[1]])
-
-pathways <- logfc_list |>
-  map(\(x) fgsea(pathways = m_list, stats = x, minSize = 10))
-pathways <- map2(
-  pathways,
-  names(pathways),
-  \(x, y) {
-    x |>
-      dplyr::mutate(celltype = y) |>
-      as_tibble()
-  }
-) |>
-  list_rbind()
-# No pathways are signficant
-pathways |> dplyr::filter(padj < 0.05)
-```
-
 #### Hypergeometric pathways
 
 It seems only lineage 2 has any pathway enrichment, and only in MF.
@@ -2965,55 +2777,6 @@ readr::write_rds(
 )
 ```
 
-```{r}
-#| eval: false
-genes = c(
-  "NOTCH1",
-  "ZIC1",
-  "SETBP1",
-  "SOX5",
-  "HIF3A",
-  "YBX3",
-  "BCL6",
-  "RBM17",
-  "BHLHE40",
-  "PBX1",
-  "ZNF423",
-  "RFX3",
-  "ZBTB20",
-  "PTEN"
-)
-
-x <- map(df, \(x) x |> dplyr::filter(hgnc_symbol %in% genes))
-x$top_genes_condition |> write_csv(here("zam_tfs.csv"))
-
-additional_genes <- translated_id |>
-  dplyr::filter(hgnc_symbol %in% genes) |>
-  dplyr::distinct(hgnc_symbol, .keep_all = TRUE)
-
-plots <- map2(
-  additional_genes$ensembl_gene_id,
-  additional_genes$hgnc_symbol,
-  plot_gene_pseudotime,
-  sce_subset,
-  counts
-)
-
-plots[[4]] <- plots[[4]] +
-  theme(legend.position = "right")
-
-
-pdf(
-  here(
-    "05_figures/990_shared_figures/004_pseudotime/01_tradeseq",
-    "zam_tfs.pdf"
-  ),
-  width = 10,
-  height = 8
-)
-marrangeGrob(grobs = plots, nrow = 2, ncol = 3)
-dev.off()
-```
 #### Tradeseq - switchde - MAST DE overlap
 
 Want to check the overlap of sig genes found by these different approaches
