@@ -43,8 +43,8 @@ df <- map2(files, names(files), ~ .x |>
   list_rbind() |>
   dplyr::mutate(log_p_nominal = -log10(Coefficient_P_value),
                 log_p = -log10(padj)) |>
-  dplyr::mutate(group = str_remove(group, ".cell_type_results.txt") %>%
-                  gsub("_top_.*?_percent", "", .) %>%
+  dplyr::mutate(group = str_remove(group, ".cell_type_results.txt") |>
+                  gsub("_top_.*?_percent", "", .) |>
                   gsub("level.*?_", "", .)) |>
   dplyr::arrange(Name) |>
   dplyr::mutate(Name = str_replace_all(Name, "_", "-")) |>

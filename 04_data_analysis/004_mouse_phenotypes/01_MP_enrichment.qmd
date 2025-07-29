@@ -139,7 +139,7 @@ readr::write_tsv(mouse_orthologs, here::here("03_data/996_mouse_phenotype_inputs
 # Get ID translator
 id_translate <- readr::read_tsv(here::here("03_data/996_mouse_phenotype_inputs/mouse_ortholog_ids.tsv"))
 # Read in differential genes with no APOE
-res <- readr::read_csv(here::here("03_data/990_processed_data/001_snrnaseq/08_pseudobulk/pseudobulk_ad-vs-control_deseq2_subtype-annotated_no-apoe.csv")) %>%
+res <- readr::read_csv(here::here("03_data/990_processed_data/001_snrnaseq/08_pseudobulk/pseudobulk_ad-vs-control_deseq2_subtype-annotated_no-apoe.csv")) |>
   na.omit() |>
   dplyr::filter(padj < 0.05) |>
   dplyr::filter(!celltype %in% c("ambiguous", "low-feature-cells")) |>
@@ -388,11 +388,11 @@ fwrite(genes_per_phenotype, here::here("03_data/996_mouse_phenotype_inputs/genes
 ```
 
 ```{r}
-overall_overlap <- mp_ids %>%
-  group_by(mgi) %>%
-  mutate(overlap_count = n()) %>%
-  ungroup() %>%
-  group_by(MP_name) %>%
+overall_overlap <- mp_ids |>
+  group_by(mgi) |>
+  mutate(overlap_count = n()) |>
+  ungroup() |>
+  group_by(MP_name) |>
   summarise(
     unique_genes = sum(overlap_count == 1),
     overlapping_genes = sum(overlap_count > 1),
@@ -403,13 +403,13 @@ fwrite(overall_overlap, here::here("03_data/996_mouse_phenotype_inputs/overall_o
 # Assuming your dataframe is named df and has columns: genes, celltypes, phenotype_terms
 
 # Count the number of overlapping genes per celltype and phenotype term
-overlap_counts <- celltype_genes %>%
-  group_by(set_name, MP_name) %>%
-  summarise(overlap = n_distinct(hgnc_symbol)) %>%
+overlap_counts <- celltype_genes |>
+  group_by(set_name, MP_name) |>
+  summarise(overlap = n_distinct(hgnc_symbol)) |>
   ungroup()
 
 # Spread the counts into a wide format with celltypes as rows and phenotype terms as columns
-wide_format <- overlap_counts %>%
+wide_format <- overlap_counts |>
   pivot_wider(names_from = MP_name, values_from = overlap, values_fill = list(overlap = 0))
 
 print(wide_format)
@@ -421,26 +421,26 @@ print(wide_format)
 combinations <- expand.grid(celltype = unique(celltype_genes$set_name), phenotype_term = unique(celltype_genes$MP_name))
 
 # Then, we count the number of overlapping genes for each combination
-overlap_counts <- combinations %>%
-  rowwise() %>%
+overlap_counts <- combinations |>
+  rowwise() |>
   mutate(
     overlap = list(intersect(celltype_genes$hgnc_symbol[celltype_genes$set_name == celltype & !duplicated(celltype_genes$hgnc_symbol)], 
                              celltype_genes$hgnc_symbol[celltype_genes$MP_name == phenotype_term & !duplicated(celltype_genes$hgnc_symbol)]))
-  ) %>%
-  ungroup() %>%
+  ) |>
+  ungroup() |>
   mutate(overlap_count = lengths(overlap))
 
 # To find unique genes per term per celltype, we can do a group_by and filter
-unique_genes <- celltype_genes %>%
-  group_by(set_name, MP_name) %>%
-  filter(!hgnc_symbol %in% celltype_genes$hgnc_symbol[celltype_genes$MP_name != MP_name]) %>%
+unique_genes <- celltype_genes |>
+  group_by(set_name, MP_name) |>
+  filter(!hgnc_symbol %in% celltype_genes$hgnc_symbol[celltype_genes$MP_name != MP_name]) |>
   ungroup()
 
 # To see which genes are unique per term per celltype
-unique_genes_list <- unique_genes %>%
-  group_by(set_name, MP_name) %>%
+unique_genes_list <- unique_genes |>
+  group_by(set_name, MP_name) |>
   summarise(unique_genes = list(unique(hgnc_symbol)), 
-            unique_count = n_distinct(hgnc_symbol)) %>%
+            unique_count = n_distinct(hgnc_symbol)) |>
   ungroup()
 
 # Output the results
