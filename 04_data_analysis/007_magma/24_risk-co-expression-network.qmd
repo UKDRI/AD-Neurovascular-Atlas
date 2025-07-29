@@ -1,0 +1,272 @@
+---
+title: Risk co-expression
+execute:
+  eval: true
+---
+
+```{r}
+here::i_am("04_data_analysis/001_snrnaseq_analysis/16_pathway_analysis.qmd")
+```
+
+# Load packages
+
+```{r}
+source(here::here("04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"))
+library(magick)
+library(circlize)
+```
+
+Want to check the co-expression of the sig MAGMA genes in the three celltypes
+
+# Load data
+
+Get the risk gene data
+
+```{r}
+#| eval: true
+# read data of sig magma genes from sig celltypes for AD all controls
+res <- readr::read_tsv(here::here("03_data/994_magma_inputs/sig_celltype_sig_genes.tsv")) |>
+  dplyr::rename(celltype = SetName)
+```
+
+Get gene label table
+
+```{r}
+# Gene labels
+tar_load(translated_id)
+```
+
+Get the seurat data
+
+```{r}
+# single cell seq data
+tar_load(sce)
+
+celltypes_abbrev <-
+  c(
+    "Astrocyte-activated" = "Astro-A",
+    "Astrocyte-quiescent" = "Astro-Q",
+    "Ex-Neuron-ADARB2-ERBB4" = "Ex-Neuro-1",
+    "Ex-Neuron-CBLN2-NRGN" = "Ex-Neuro-2",
+    "Ex-Neuron-DLC1-HS3ST4" = "Ex-Neuro-3",
+    "Ex-Neuron-L2-3-CBLN2-LINC02306-CUX2" = "Ex-Neuro-4",
+    "Ex-Neuron-L3-5-RORB-PLCH1" = "Ex-Neuro-5",
+    "Ex-Neuron-L4-5-RORB-IL1RAPL2" = "Ex-Neuro-6",
+    "Ex-Neuron-L6-THEMIS-NFIA" = "Ex-Neuro-7",
+    "In-Neuron-ADARB2-GRM7" = "In-Neuro-1",
+    "In-Neuron-ADARB2-IL1RAPL2-CSCL14" = "In-Neuro-2",
+    "In-Neuron-ADARB2-LAMP5-NRG1" = "In-Neuro-3",
+    "In-Neuron-ADARB2-NRG1-RELN" = "In-Neuro-4",
+    "In-Neuron-DPP10-MEF2C" = "In-Neuro-5",
+    "In-Neuron-PRKG1-TBC1D4" = "In-Neuro-6",
+    "In-Neuron-TRHDE-RALYL" = "In-Neuro-7",
+    "Microglia-activated" = "Microglia-A",
+    "Microglia-quiescent" = "Microglia-Q",
+    "Microglia-vascular" = "Microglia-V",
+    "Pericyte" = "Pericyte-1",
+    "Perivascular Macrophage" = "Perivascular-M",
+    "Perivascular" = "Perivascular-M",
+    "Perivascular-FB" = "Perivascular-FB-1",
+    "Perivascular-FB-KAZN2" = "Perivascular-FB-2",
+    "T-cell-parenchymal-1" = "T-cell-P1",
+    "T-cell-parenchymal-2" = "T-cell-P2",
+    "T-cell-vascular" = "T-cell-V",
+    "T-cell-mixed" = "T-cell-M",
+    "Vascular-SMC" = "Vascular-SMC-1",
+    "Vascular-SMC-LINC00486" = "Vascular-SMC-2"
+  )
+
+# Create a new column with abbreviated Idents
+abbreviated_idents <- celltypes_abbrev[as.character(sce$subcelltype_annotations)]
+abbreviated_idents <- if_else(is.na(abbreviated_idents), sce$subcelltype_annotations, abbreviated_idents)
+names(abbreviated_idents) <- NULL
+sce$abbreviated_idents <- abbreviated_idents
+unique(sce$abbreviated_idents)
+Idents(sce) <- sce$abbreviated_idents
+
+celltypes_abbrev_level1 <-
+  c(
+    "mystery-cluster" = "EndoMT",
+    "Neuron_ex" = "Ex-Neuro",
+    "Neuron_in" = "In-Neuro"
+  )
+abbreviated_idents <- celltypes_abbrev_level1[as.character(sce$highlevel_manual_annotations)]
+abbreviated_idents <- if_else(is.na(abbreviated_idents), sce$highlevel_manual_annotations, abbreviated_idents)
+names(abbreviated_idents) <- NULL
+sce$abbreviated_idents_level1 <- abbreviated_idents
+unique(sce$abbreviated_idents_level1)
+```
+
+# Data cleaning
+
+Subset to the genes of interest
+
+```{r}
+res_sig <- res |>
+  dplyr::filter(padj < 0.05) |>
+  dplyr::filter(celltype_level == "level2", input_gene_list == "all_controls", gwas_background == "EUROPEUKBB_35k10k", percent == "top-ten-percent") |>
+  janitor::clean_names() |>
+  dplyr::left_join(translated_id, by = join_by(gene == entrezgene_id))
+
+abbreviated_idents <- celltypes_abbrev[as.character(res_sig$celltype)]
+abbreviated_idents <- if_else(is.na(abbreviated_idents), res_sig$celltype, abbreviated_idents)
+names(abbreviated_idents) <- NULL
+res_sig$abbreviated_idents <- abbreviated_idents
+
+genes_of_interest <- unique(res_sig$hgnc_symbol)
+```
+
+# Get average expression of log-normalised counts
+
+```{r}
+# Extract expression matrix and convert to a dataframe
+expr_mat <- GetAssayData(sce, assay = "RNA", layer = "data") # Log-normalised counts
+
+library(matrixStats)
+
+# Get the expression matrix without metadata
+expr_mat <- expr_mat[genes_of_interest, ]
+
+# Compute variances efficiently
+gene_vars <- colVars(expr_mat, na.rm = TRUE)
+
+# Get column indices for non-zero variance genes
+non_zero_var_indices <- which(gene_vars > 0)
+
+# Only create one filtered matrix
+expr_mat_filtered <- expr_mat[, non_zero_var_indices]
+
+dim(expr_mat)
+dim(expr_mat_filtered)
+
+# Convert to dataframe for easier handling
+expr_mat_filtered <- as.data.frame(expr_mat_filtered)
+```
+
+```{r}
+expr_df <- t(expr_mat_filtered) # Transpose so genes are columns
+metadata <- sce@meta.data[, c("donor", "abbreviated_idents")]
+dim(metadata)
+metadata <- metadata[rownames(metadata) %in% rownames(expr_df),]
+dim(metadata)
+assertthat::assert_that(sum(rownames(expr_df) != rownames(metadata)) == 0)
+expr_df <- cbind(expr_df, metadata) |> # Add metadata
+  dplyr::filter(abbreviated_idents %in% unique(res_sig$abbreviated_idents))
+
+
+# Compute mean expression per sample and cell type
+avg_expr <- expr_df |>
+  summarise(across(all_of(genes_of_interest), \(x) mean(x, na.rm = TRUE)),
+  .by = c(donor, abbreviated_idents))
+```
+
+```{r}
+# Function to compute correlation matrix for a subset of data
+compute_correlation <- function(data) {
+  data |>
+    dplyr::select(-donor) |> # Remove metadata columns
+    corrr::correlate(method = "pearson")  # Change to "spearman" if needed
+}
+
+# Add diagnosis info from the Seurat object
+metadata <- sce@meta.data |>
+  dplyr::select(donor, diagnosis) |>
+  dplyr::distinct()
+
+# Merge diagnosis info into avg_expr
+avg_expr <- avg_expr |>
+  left_join(metadata, by = "donor")
+
+# Split data by diagnosis (Case vs Control)
+cor_matrices <- avg_expr |>
+  dplyr::group_by(diagnosis, abbreviated_idents) |>
+  tidyr::nest()
+  #group_split() |>
+  #setNames(paste(avg_expr$diagnosis, avg_expr$abbreviated_idents, sep = "_")) |>
+  #lapply(compute_correlation)
+
+cor_matrices <- map(cor_matrices$data, compute_correlation) |>
+  set_names(paste(cor_matrices$diagnosis,
+    cor_matrices$abbreviated_idents, sep = "_"))
+
+cor_matrices$`Control_Pericyte-2`
+```
+
+```{r}
+# Count problematic values
+x <- map_dbl(cor_matrices, ~ sum(is.na(.x)))   # NAs
+x[x > 0]
+x <- map_dbl(cor_matrices, ~ sum(is.nan(as.matrix(.x))))   # NANs
+x[x > 0]
+x <- map_dbl(cor_matrices, ~ sum(is.infinite(as.matrix(.x))))   # Inf values
+x[x > 0]
+```
+
+Try clustering one and
+
+```{r}
+# Function to preprocess matrices: replace NA with 0
+preprocess_matrix <- function(mat) {
+  mat <- tibble::column_to_rownames(mat, var = "term") |> as.matrix()
+  mat[is.na(mat)] <- 0  # Replace NAs with 0
+  return(mat)
+}
+
+# Apply preprocessing
+cor_matrices <- map(cor_matrices, preprocess_matrix)
+```
+
+```{r}
+# Determine clustering order from the first control matrix
+ref_mat <- cor_matrices[["Control_Microglia-A"]]
+# Cluster rows
+row_order_control <- hclust(dist(ref_mat))$order
+# Corrected extraction
+col_order_control <- hclust(dist(t(ref_mat)))$order
+
+ref_case <- cor_matrices[["Case_Microglia-A"]]
+row_order_case <- hclust(dist(ref_case))$order
+col_order_case <- hclust(dist(t(ref_case)))$order
+
+# Function to generate heatmaps with different clustering orders
+plot_heatmap <- function(mat, name, row_order, col_order) {
+  col_fun <- colorRamp2(c(-1, 0, 1), c("blue", "white", "red"))
+  Heatmap(mat, name = name, show_row_names = TRUE, show_column_names = TRUE,
+        col = col_fun, cluster_rows = FALSE, cluster_columns = FALSE,
+        row_order = row_order, column_order = col_order,  # Apply condition-specific order
+        column_title = name,
+        heatmap_legend_param = list(
+          title = "Correlation",
+          at = c(-1, -0.5, 0, 0.5, 1)
+        )
+  )
+}
+
+# Generate heatmaps for control and case with different clustering
+hmap_list_control <- map2(
+  cor_matrices[grepl("Control_", names(cor_matrices))],
+  names(cor_matrices)[grepl("Control_", names(cor_matrices))],
+  ~ plot_heatmap(.x, .y, row_order_control, col_order_control)
+)
+
+hmap_list_case <- map2(
+  cor_matrices[grepl("Case_", names(cor_matrices))],
+  names(cor_matrices)[grepl("Case_", names(cor_matrices))],
+  ~ plot_heatmap(.x, .y, row_order_case, col_order_case)
+)
+
+# Combine heatmaps
+hmap_control <- Reduce(`+`, hmap_list_control)
+hmap_case <- Reduce(`+`, hmap_list_case)
+
+# Capture plots for arrangement
+p1 <- grid.grabExpr(draw(hmap_control))
+p2 <- grid.grabExpr(draw(hmap_case))
+
+# Arrange plots in 2 rows
+plot <- plot_grid(p1, p2, nrow = 2)
+
+# Save
+ggsave(here::here("05_figures/control_hmap_co-expression.pdf"), p1, width = 26, height = 10)
+ggsave(here::here("05_figures/case_hmap_co-expression.pdf"), p2, width = 26, height = 10)
+```
