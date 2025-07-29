@@ -9,7 +9,9 @@ editor_options:
 ---
 
 ```{r}
-here::i_am("04_data_analysis/005_cell-cell_interactions/02_celltype_deg_overlap.qmd")
+here::i_am(
+  "04_data_analysis/005_cell-cell_interactions/02_celltype_deg_overlap.qmd"
+)
 ```
 
 # Check differential LR pairs with DEGs and risk genes
@@ -21,7 +23,9 @@ here::i_am("04_data_analysis/005_cell-cell_interactions/02_celltype_deg_overlap.
 # Load packages
 
 ```{r}
-source(here::here("04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"))
+source(here::here(
+  "04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"
+))
 ```
 
 # Read data
@@ -34,22 +38,30 @@ mast_level <- "level2"
 
 ```{r}
 # Get cellchat LR- pair data
-cellchat_lr_pairs <- readr::read_tsv(here("03_data/990_processed_data/005_cellchat/differential_lr_pairs.tsv"))
+cellchat_lr_pairs <- readr::read_tsv(here(
+  "03_data/990_processed_data/005_cellchat/differential_lr_pairs.tsv"
+))
 # Get DEG data
-if(include_apoe) {
-pseudobulk <- readr::read_csv(here::here("03_data/990_processed_data/001_snrnaseq/08_pseudobulk/pseudobulk_ad-vs-control_deseq2_subtype-annotated_apoe.csv")) |>
-  na.omit()
+if (include_apoe) {
+  pseudobulk <- readr::read_csv(here::here(
+    "03_data/990_processed_data/001_snrnaseq/08_pseudobulk/pseudobulk_ad-vs-control_deseq2_subtype-annotated_apoe.csv"
+  )) |>
+    na.omit()
 } else {
-pseudobulk <- readr::read_csv(here::here("03_data/990_processed_data/001_snrnaseq/08_pseudobulk/pseudobulk_ad-vs-control_deseq2_subtype-annotated_no-apoe.csv")) |>
-  na.omit()
+  pseudobulk <- readr::read_csv(here::here(
+    "03_data/990_processed_data/001_snrnaseq/08_pseudobulk/pseudobulk_ad-vs-control_deseq2_subtype-annotated_no-apoe.csv"
+  )) |>
+    na.omit()
 }
 ```
 
 ```{r}
 tar_load(translated_id)
 
-if(mast_level != "level1") {
-  mast_de <- qs::qread(here::here("03_data/990_processed_data/001_snrnaseq/13_mast_de/level2/mast_de_results_list.qs")) |>
+if (mast_level != "level1") {
+  mast_de <- qs::qread(here::here(
+    "03_data/990_processed_data/001_snrnaseq/13_mast_de/level2/mast_de_results_list.qs"
+  )) |>
     map(rownames_to_column, var = "ensembl") |>
     list_rbind() |>
     dplyr::left_join(translated_id, by = join_by(ensembl == ensembl_gene_id)) |>
@@ -57,7 +69,9 @@ if(mast_level != "level1") {
     dplyr::distinct(ensembl, .keep_all = TRUE) |>
     dplyr::ungroup()
 } else {
-  mast_de <- qs::qread(here::here("03_data/990_processed_data/001_snrnaseq/13_mast_de/level1/mast_de_results_list.qs")) |>
+  mast_de <- qs::qread(here::here(
+    "03_data/990_processed_data/001_snrnaseq/13_mast_de/level1/mast_de_results_list.qs"
+  )) |>
     map(rownames_to_column, var = "ensembl") |>
     list_rbind() |>
     dplyr::left_join(translated_id, by = join_by(ensembl == ensembl_gene_id)) |>
@@ -67,65 +81,92 @@ if(mast_level != "level1") {
 }
 ```
 
-```{r}
-#| eval: false
-sce@meta.data |>
-  dplyr::filter(abbreviated_idents == "In-Neuro-4") |>
-  ggplot(aes(donor, fill = diagnosis)) +
-  geom_bar() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-x = sce@meta.data |>
-  dplyr::select(subcelltype_annotations) |>
-  dplyr::mutate(abbreviated_celltype = abbreviated_idents) |>
-  dplyr::distinct()
-```
-
 # Unique LR pairs between cases and controls
 
 ```{r}
-vascular_controls_up <- c('EndoMT-1', 'EndoMT-2', 'M-Pericyte', 'Meningeal-FB',
-              'Microglia-V') |>
+vascular_controls_up <- c(
+  'EndoMT-1',
+  'EndoMT-2',
+  'M-Pericyte',
+  'Meningeal-FB',
+  'Microglia-V'
+) |>
   sort()
-vascular_cases_up <- c('Pericyte-2', 'Pericyte-FB', 'Perivascular-FB-1',
-              'Perivascular-FB-2', 'T-Pericyte') |>
+vascular_cases_up <- c(
+  'Pericyte-2',
+  'Pericyte-FB',
+  'Perivascular-FB-1',
+  'Perivascular-FB-2',
+  'T-Pericyte'
+) |>
   sort()
-parenchymal <- c('Astro-A', 'Astro-Q', 'Ex-Neuro-1', 'Ex-Neuro-2',
-                 'Ex-Neuro-3', 'Ex-Neuro-4', 'Ex-Neuro-5', 'Ex-Neuro-6',
-                 'Ex-Neuro-7', 'In-Neuro-1', 'In-Neuro-2', 'In-Neuro-3',
-                 'In-Neuro-4', 'In-Neuro-5', 'In-Neuro-6', 'In-Neuro-7',
-                 'Microglia-A', 'Microglia-Q', 'OPC-A', 'OPC-B') |> sort()
+parenchymal <- c(
+  'Astro-A',
+  'Astro-Q',
+  'Ex-Neuro-1',
+  'Ex-Neuro-2',
+  'Ex-Neuro-3',
+  'Ex-Neuro-4',
+  'Ex-Neuro-5',
+  'Ex-Neuro-6',
+  'Ex-Neuro-7',
+  'In-Neuro-1',
+  'In-Neuro-2',
+  'In-Neuro-3',
+  'In-Neuro-4',
+  'In-Neuro-5',
+  'In-Neuro-6',
+  'In-Neuro-7',
+  'Microglia-A',
+  'Microglia-Q',
+  'OPC-A',
+  'OPC-B'
+) |>
+  sort()
 
-names(vascular_controls_up) <- rep("more-interactions-in-controls",
-                                   length(vascular_controls_up))
-names(vascular_cases_up) <- rep("more-interactions-in-cases",
-                                length(vascular_cases_up))
+names(vascular_controls_up) <- rep(
+  "more-interactions-in-controls",
+  length(vascular_controls_up)
+)
+names(vascular_cases_up) <- rep(
+  "more-interactions-in-cases",
+  length(vascular_cases_up)
+)
 vascular <- c(vascular_cases_up, vascular_controls_up)
 
 
 unique_lr_pairs <- cellchat_lr_pairs |>
-  dplyr::filter(source %in% c(vascular, parenchymal) &
-                  target %in% c(vascular, parenchymal)) |>
+  dplyr::filter(
+    source %in% c(vascular, parenchymal) & target %in% c(vascular, parenchymal)
+  ) |>
   # remove cases where souce and target are vascular
   dplyr::filter(!(source %in% c(vascular) & target %in% c(vascular))) |>
   #dplyr::filter(ligand.pvalues < 0.05 | receptor.pvalues < 0.05)
   dplyr::filter(pval < 0.01)
 
 
-readr::write_tsv(unique_lr_pairs, here("03_data/990_processed_data/005_cellchat/sig_lr_pairs_vascular-parenchymal_subset.tsv"))
+readr::write_tsv(
+  unique_lr_pairs,
+  here(
+    "03_data/990_processed_data/005_cellchat/sig_lr_pairs_vascular-parenchymal_subset.tsv"
+  )
+)
 
 
 # Create a unique identifier for LR pairs
 unique_lr_pairs <- unique_lr_pairs |>
   dplyr::mutate(lr_pair = paste(source, target, ligand, receptor, sep = "_")) |>
   dplyr::distinct(lr_pair, .keep_all = TRUE) |>
-  dplyr::mutate(com_prop_thresholds = case_when(
-    prob < 0.05 ~ "low",
-    prob >= 0.05 & prob < 0.3 ~ "medium",
-    prob >= 0.3 ~ "high",
-    .default = NA
-  ), source_target = paste0(source, " -> ", target),
-  lr_pair = paste0("(L) ", ligand, " - ", receptor))
+  dplyr::mutate(
+    com_prop_thresholds = case_when(
+      prob < 0.05 ~ "low",
+      prob >= 0.05 & prob < 0.3 ~ "medium",
+      prob >= 0.3 ~ "high",
+      .default = NA
+    ),
+    source_target = paste0(source, " -> ", target),
+    lr_pair = paste0("(L) ", ligand, " - ", receptor)
+  )
 
 celltype = "Pericyte-2"
 lr_pair_df = unique_lr_pairs
@@ -133,47 +174,74 @@ plot_unique_lrs <- function(celltype, lr_pair_df) {
   source_df <- lr_pair_df |>
     dplyr::filter(source == celltype)
 
-  if(nrow(source_df != 0)) {
-  p1 <- source_df |>
-    ggplot(aes(x = target, y = lr_pair, colour = log(prob),
-               shape = com_prop_thresholds)) +
-    geom_point() +
-    scale_color_gradient(low = "blue", high = "red",
-                         limits = c(log(min(lr_pair_df$prob)),
-                                    log(max(lr_pair_df$prob)))) +
-    facet_grid(cols = vars(datasets)) +
-    labs(x = "", y = "", colour = "log\nComs prob",
-         shape = "Com prob\nthresholds") +
-    theme_bw() +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1),
-          legend.position = "top") +
-    ggtitle(paste0(celltype, " -> Target"))
+  if (nrow(source_df != 0)) {
+    p1 <- source_df |>
+      ggplot(aes(
+        x = target,
+        y = lr_pair,
+        colour = log(prob),
+        shape = com_prop_thresholds
+      )) +
+      geom_point() +
+      scale_color_gradient(
+        low = "blue",
+        high = "red",
+        limits = c(log(min(lr_pair_df$prob)), log(max(lr_pair_df$prob)))
+      ) +
+      facet_grid(cols = vars(datasets)) +
+      labs(
+        x = "",
+        y = "",
+        colour = "log\nComs prob",
+        shape = "Com prob\nthresholds"
+      ) +
+      theme_bw() +
+      theme(
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "top"
+      ) +
+      ggtitle(paste0(celltype, " -> Target"))
   } else {
     p1 <- NULL
   }
   target_df <- lr_pair_df |>
     dplyr::filter(target == celltype)
-  if(nrow(target_df != 0)) {
-  p2 <- target_df |>
-    ggplot(aes(x = source, y = lr_pair, colour = log(prob),
-               shape = com_prop_thresholds)) +
-    geom_point() +
-    scale_color_gradient(low = "blue", high = "red",
-                         limits = c(log(min(unique_lr_pairs$prob)),
-                                    log(max(unique_lr_pairs$prob)))) +
-    facet_grid(cols = vars(datasets)) +
-    labs(x = "", y = "", colour = "log\nComs prob",
-         shape = "Com prob\nthresholds") +
-    theme_bw() +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1),
-          legend.position = "top") +
-    ggtitle(paste0("Target -> ", celltype))
+  if (nrow(target_df != 0)) {
+    p2 <- target_df |>
+      ggplot(aes(
+        x = source,
+        y = lr_pair,
+        colour = log(prob),
+        shape = com_prop_thresholds
+      )) +
+      geom_point() +
+      scale_color_gradient(
+        low = "blue",
+        high = "red",
+        limits = c(
+          log(min(unique_lr_pairs$prob)),
+          log(max(unique_lr_pairs$prob))
+        )
+      ) +
+      facet_grid(cols = vars(datasets)) +
+      labs(
+        x = "",
+        y = "",
+        colour = "log\nComs prob",
+        shape = "Com prob\nthresholds"
+      ) +
+      theme_bw() +
+      theme(
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "top"
+      ) +
+      ggtitle(paste0("Target -> ", celltype))
   } else {
     p2 <- NULL
   }
-  if(is.null(p1) & !is.null(p2)) {
+  if (is.null(p1) & !is.null(p2)) {
     plot <- p2
-  } else if(!is.null(p1) & is.null(p2)) {
+  } else if (!is.null(p1) & is.null(p2)) {
     plot <- p1
   } else {
     plot <- p1 + p2
@@ -183,23 +251,49 @@ plot_unique_lrs <- function(celltype, lr_pair_df) {
 
 plots_case_up <- map(vascular_cases_up, plot_unique_lrs, unique_lr_pairs) |>
   set_names(vascular_cases_up)
-plots_controls_up <- map(vascular_controls_up, plot_unique_lrs, unique_lr_pairs) |>
+plots_controls_up <- map(
+  vascular_controls_up,
+  plot_unique_lrs,
+  unique_lr_pairs
+) |>
   set_names(vascular_controls_up)
 
-walk2(plots_controls_up, names(plots_controls_up), ~ {
-  svg(here::here("05_figures/990_shared_figures/cellchat",
-  "002_vascular-parenchymal_bubble_plots", "01_unique_lr_pairs",
-  paste0(.y, "_controls-up.svg")), width = 22, height = 12)
-  print(.x)
-  dev.off()
-})
-walk2(plots_case_up, names(plots_case_up), ~ {
-  svg(here::here("05_figures/990_shared_figures/cellchat",
-  "002_vascular-parenchymal_bubble_plots", "01_unique_lr_pairs",
-  paste0(.y, "_cases-up.svg")), width = 22, height = 12)
-  print(.x)
-  dev.off()
-})
+walk2(
+  plots_controls_up,
+  names(plots_controls_up),
+  ~ {
+    svg(
+      here::here(
+        "05_figures/990_shared_figures/cellchat",
+        "002_vascular-parenchymal_bubble_plots",
+        "01_unique_lr_pairs",
+        paste0(.y, "_controls-up.svg")
+      ),
+      width = 22,
+      height = 12
+    )
+    print(.x)
+    dev.off()
+  }
+)
+walk2(
+  plots_case_up,
+  names(plots_case_up),
+  ~ {
+    svg(
+      here::here(
+        "05_figures/990_shared_figures/cellchat",
+        "002_vascular-parenchymal_bubble_plots",
+        "01_unique_lr_pairs",
+        paste0(.y, "_cases-up.svg")
+      ),
+      width = 22,
+      height = 12
+    )
+    print(.x)
+    dev.off()
+  }
+)
 ```
 
 # ANGPT2
@@ -207,18 +301,57 @@ walk2(plots_case_up, names(plots_case_up), ~ {
 Filter to ANPGT2
 
 ```{r}
-vascular <- c('Arterial', 'Arteriolar-SMC', 'Artirial-FB', 'Capillary', 
-              'EndoMT-1', 'EndoMT-2', 'M-Pericyte', 'Meningeal-FB', 'Microglia-V', 
-              'Pericyte-1', 'Pericyte-2', 'Pericyte-FB', 'Perivascular-FB-1', 
-              'Perivascular-FB-2', 'Perivascular-M', 'T-cell-M', 'T-cell-V', 
-              'T-Pericyte', 'Vascular-SMC-1', 'Vascular-SMC-2', 'Venous') |> 
+vascular <- c(
+  'Arterial',
+  'Arteriolar-SMC',
+  'Artirial-FB',
+  'Capillary',
+  'EndoMT-1',
+  'EndoMT-2',
+  'M-Pericyte',
+  'Meningeal-FB',
+  'Microglia-V',
+  'Pericyte-1',
+  'Pericyte-2',
+  'Pericyte-FB',
+  'Perivascular-FB-1',
+  'Perivascular-FB-2',
+  'Perivascular-M',
+  'T-cell-M',
+  'T-cell-V',
+  'T-Pericyte',
+  'Vascular-SMC-1',
+  'Vascular-SMC-2',
+  'Venous'
+) |>
   sort()
-parencyhmal <- c('Astro-A', 'Astro-Q', 'Ex-Neuro-1', 'Ex-Neuro-2', 
-                 'Ex-Neuro-3', 'Ex-Neuro-4', 'Ex-Neuro-5', 'Ex-Neuro-6', 
-                 'Ex-Neuro-7', 'In-Neuro-1', 'In-Neuro-2', 'In-Neuro-3', 
-                 'In-Neuro-4', 'In-Neuro-5', 'In-Neuro-6', 'In-Neuro-7', 
-                 'Microglia-A', 'Microglia-Q', 'Oligo-A', 'Oligo-B', 'OPC-A', 
-                 'OPC-B', 'T-cell-P1', 'T-cell-P2') |> sort()
+parencyhmal <- c(
+  'Astro-A',
+  'Astro-Q',
+  'Ex-Neuro-1',
+  'Ex-Neuro-2',
+  'Ex-Neuro-3',
+  'Ex-Neuro-4',
+  'Ex-Neuro-5',
+  'Ex-Neuro-6',
+  'Ex-Neuro-7',
+  'In-Neuro-1',
+  'In-Neuro-2',
+  'In-Neuro-3',
+  'In-Neuro-4',
+  'In-Neuro-5',
+  'In-Neuro-6',
+  'In-Neuro-7',
+  'Microglia-A',
+  'Microglia-Q',
+  'Oligo-A',
+  'Oligo-B',
+  'OPC-A',
+  'OPC-B',
+  'T-cell-P1',
+  'T-cell-P2'
+) |>
+  sort()
 angp2 <- cellchat_lr_pairs |>
   dplyr::filter(pval == 0) |>
   dplyr::filter(ligand == "ANGPT2") |>
@@ -228,38 +361,62 @@ angp2 <- cellchat_lr_pairs |>
   dplyr::filter(!(source %in% c(parenchymal) & target %in% c(parenchymal))) |>
   dplyr::mutate(lr_pair = paste(source, target, ligand, receptor, sep = "_")) |>
   dplyr::distinct(lr_pair, .keep_all = TRUE) |>
-  dplyr::mutate(com_prop_thresholds = case_when(
-    prob < 0.05 ~ "low",
-    prob >= 0.05 & prob < 0.3 ~ "medium",
-    prob >= 0.3 ~ "high",
-    .default = NA
-  ), source_target = paste0(source, " -> ", target),
-  lr_pair = paste0("(L) ", ligand, " - ", receptor)) |>
-  dplyr::mutate(source_type = if_else(source %in% vascular, "Vascular source", "Parenchymal source"))
-
-
+  dplyr::mutate(
+    com_prop_thresholds = case_when(
+      prob < 0.05 ~ "low",
+      prob >= 0.05 & prob < 0.3 ~ "medium",
+      prob >= 0.3 ~ "high",
+      .default = NA
+    ),
+    source_target = paste0(source, " -> ", target),
+    lr_pair = paste0("(L) ", ligand, " - ", receptor)
+  ) |>
+  dplyr::mutate(
+    source_type = if_else(
+      source %in% vascular,
+      "Vascular source",
+      "Parenchymal source"
+    )
+  )
 
 
 p1 <- angp2 |>
-    ggplot(aes(x = source_target, y = lr_pair, colour = log(prob),
-               shape = com_prop_thresholds)) +
-    geom_point() +
-    scale_color_gradient(low = "blue", high = "red",
-                         limits = c(log(min(angp2$prob)),
-                                    log(max(angp2$prob)))) +
+  ggplot(aes(
+    x = source_target,
+    y = lr_pair,
+    colour = log(prob),
+    shape = com_prop_thresholds
+  )) +
+  geom_point() +
+  scale_color_gradient(
+    low = "blue",
+    high = "red",
+    limits = c(log(min(angp2$prob)), log(max(angp2$prob)))
+  ) +
   facet_grid(source_type ~ datasets) +
-    labs(x = "", y = "", colour = "log\nComs prob",
-         shape = "Com prob\nthresholds") +
-    theme_bw() +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1),
-          legend.position = "top")
+  labs(
+    x = "",
+    y = "",
+    colour = "log\nComs prob",
+    shape = "Com prob\nthresholds"
+  ) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.position = "top"
+  )
 
 p1
 
 
-ggsave(here("05_figures/990_shared_figures/cellchat",
-  "002_vascular-parenchymal_bubble_plots/angpt2.pdf"),
-  width = 15, height = 7)
+ggsave(
+  here(
+    "05_figures/990_shared_figures/cellchat",
+    "002_vascular-parenchymal_bubble_plots/angpt2.pdf"
+  ),
+  width = 15,
+  height = 7
+)
 
 as.data.frame(angp2) |> head()
 ```
@@ -276,39 +433,65 @@ wnt <- cellchat_lr_pairs |>
   dplyr::filter(!(source %in% c(parenchymal) & target %in% c(parenchymal))) |>
   dplyr::mutate(lr_pair = paste(source, target, ligand, receptor, sep = "_")) |>
   dplyr::distinct(lr_pair, .keep_all = TRUE) |>
-  dplyr::mutate(com_prop_thresholds = case_when(
-    prob < 0.05 ~ "low",
-    prob >= 0.05 & prob < 0.3 ~ "medium",
-    prob >= 0.3 ~ "high",
-    .default = NA
-  ), source_target = paste0(source, " -> ", target),
-  lr_pair = paste0("(L) ", ligand, " - ", receptor)) |>
-  dplyr::mutate(source_type = if_else(source %in% vascular, "Vascular source", "Parenchymal source"))
-
-
+  dplyr::mutate(
+    com_prop_thresholds = case_when(
+      prob < 0.05 ~ "low",
+      prob >= 0.05 & prob < 0.3 ~ "medium",
+      prob >= 0.3 ~ "high",
+      .default = NA
+    ),
+    source_target = paste0(source, " -> ", target),
+    lr_pair = paste0("(L) ", ligand, " - ", receptor)
+  ) |>
+  dplyr::mutate(
+    source_type = if_else(
+      source %in% vascular,
+      "Vascular source",
+      "Parenchymal source"
+    )
+  )
 
 
 p1 <- wnt |>
-    ggplot(aes(x = source_target, y = lr_pair, colour = log(prob),
-               shape = com_prop_thresholds)) +
-    geom_point() +
-    scale_color_gradient(low = "blue", high = "red",
-                         limits = c(log(min(angp2$prob)),
-                                    log(max(angp2$prob)))) +
+  ggplot(aes(
+    x = source_target,
+    y = lr_pair,
+    colour = log(prob),
+    shape = com_prop_thresholds
+  )) +
+  geom_point() +
+  scale_color_gradient(
+    low = "blue",
+    high = "red",
+    limits = c(log(min(angp2$prob)), log(max(angp2$prob)))
+  ) +
   facet_grid(source_type ~ datasets) +
-    labs(x = "", y = "", colour = "log\nComs prob",
-         shape = "Com prob\nthresholds") +
-    theme_bw() +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1),
-          legend.position = "top")
+  labs(
+    x = "",
+    y = "",
+    colour = "log\nComs prob",
+    shape = "Com prob\nthresholds"
+  ) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.position = "top"
+  )
 
 p1
 
-ggsave(here("05_figures/990_shared_figures/cellchat",
-  "002_vascular-parenchymal_bubble_plots/wnt.pdf"),
-  width = 35, height = 7)
-readr::write_csv(wnt, here("03_data/990_processed_data/005_cellchat", 
-  "sig_wnt_lr-pairs.csv"))
+ggsave(
+  here(
+    "05_figures/990_shared_figures/cellchat",
+    "002_vascular-parenchymal_bubble_plots/wnt.pdf"
+  ),
+  width = 35,
+  height = 7
+)
+readr::write_csv(
+  wnt,
+  here("03_data/990_processed_data/005_cellchat", "sig_wnt_lr-pairs.csv")
+)
 ```
 
 Try using a cutoff on prop
@@ -325,20 +508,42 @@ plots_case_up <- map(vascular_cases_up, plot_unique_lrs, most_sig_lr) |>
 plots_controls_up <- map(vascular_controls_up, plot_unique_lrs, most_sig_lr) |>
   set_names(vascular_controls_up)
 
-walk2(plots_controls_up, names(plots_controls_up), ~ {
-  svg(here::here("05_figures/990_shared_figures/cellchat",
-  "002_vascular-parenchymal_bubble_plots", "02_subset_unique_lr_pairs",
-  paste0(.y, "_controls-up.svg")), width = 22, height = 12)
-  print(.x)
-  dev.off()
-})
-walk2(plots_case_up, names(plots_case_up), ~ {
-  svg(here::here("05_figures/990_shared_figures/cellchat",
-  "002_vascular-parenchymal_bubble_plots", "02_subset_unique_lr_pairs",
-  paste0(.y, "_cases-up.svg")), width = 22, height = 12)
-  print(.x)
-  dev.off()
-})
+walk2(
+  plots_controls_up,
+  names(plots_controls_up),
+  ~ {
+    svg(
+      here::here(
+        "05_figures/990_shared_figures/cellchat",
+        "002_vascular-parenchymal_bubble_plots",
+        "02_subset_unique_lr_pairs",
+        paste0(.y, "_controls-up.svg")
+      ),
+      width = 22,
+      height = 12
+    )
+    print(.x)
+    dev.off()
+  }
+)
+walk2(
+  plots_case_up,
+  names(plots_case_up),
+  ~ {
+    svg(
+      here::here(
+        "05_figures/990_shared_figures/cellchat",
+        "002_vascular-parenchymal_bubble_plots",
+        "02_subset_unique_lr_pairs",
+        paste0(.y, "_cases-up.svg")
+      ),
+      width = 22,
+      height = 12
+    )
+    print(.x)
+    dev.off()
+  }
+)
 ```
 
 
@@ -353,9 +558,12 @@ pseudobulk <- pseudobulk |>
 
 unique(mast_de$celltype)
 
-check_cellchat_lr <- function(celltype, gene_set,
-                              cellchat_de = cellchat_lr_pairs,
-                              ligand = TRUE) {
+check_cellchat_lr <- function(
+  celltype,
+  gene_set,
+  cellchat_de = cellchat_lr_pairs,
+  ligand = TRUE
+) {
   cellchat <- cellchat_de |>
     dplyr::filter(source == celltype)
 
@@ -365,11 +573,13 @@ check_cellchat_lr <- function(celltype, gene_set,
 
     cat("Number of ligands in ", celltype, ": ", nrow(cellchat), "\n")
 
-    cat("Number of sig ligands in ",
-        celltype,
-        ": ",
-        sum(cellchat$ligand.pvalues < 0.05),
-        "\n")
+    cat(
+      "Number of sig ligands in ",
+      celltype,
+      ": ",
+      sum(cellchat$ligand.pvalues < 0.05),
+      "\n"
+    )
   } else {
     cellchat <- cellchat |>
       dplyr::filter(receptor %in% gene_set)
@@ -396,8 +606,11 @@ pseudobulk <- pseudobulk |>
   group_by(celltype) |>
   tidyr::nest()
 
-cellchat <- map2(mast_de_grouped$celltype, mast_de_grouped$data, ~
-  check_cellchat_lr(.x, .y$hgnc_symbol)) |>
+cellchat <- map2(
+  mast_de_grouped$celltype,
+  mast_de_grouped$data,
+  ~ check_cellchat_lr(.x, .y$hgnc_symbol)
+) |>
   purrr::set_names(mast_de_grouped$celltype) |>
   purrr::keep(~ nrow(.) > 0) |>
   list_rbind() |>
@@ -406,7 +619,11 @@ cellchat <- map2(mast_de_grouped$celltype, mast_de_grouped$data, ~
 table(cellchat$source)
 
 
-cellchat_pseudo <- map2(pseudobulk$celltype, pseudobulk$data, ~ check_cellchat_lr(.x, .y$gene)) |>
+cellchat_pseudo <- map2(
+  pseudobulk$celltype,
+  pseudobulk$data,
+  ~ check_cellchat_lr(.x, .y$gene)
+) |>
   purrr::set_names(pseudobulk$celltype) |>
   purrr::keep(~ nrow(.) > 0) |>
   list_rbind() |>
@@ -428,34 +645,52 @@ cellchat |>
 
 ```{r}
 # read data of sig magma genes from sig celltypes for AD all controls
-magma_genes <- readr::read_tsv(here::here("03_data/994_magma_inputs/sig_celltype_sig_genes.tsv")) |>
+magma_genes <- readr::read_tsv(here::here(
+  "03_data/994_magma_inputs/sig_celltype_sig_genes.tsv"
+)) |>
   dplyr::rename(celltype = SetName)
 
-magma_genes_sig <- dplyr::filter(magma_genes,
-                         padj < 0.05 &
-                           input_gene_list == "all_controls" &
-                           percent == "top-ten-percent") |>
-  dplyr::mutate(celltype = if_else(
-    celltype == "Pericyte" &
-      celltype_level == "level2",
-    "Pericyte-1",
-    celltype
-  )) |>
-  dplyr::mutate(celltype = if_else(
-    celltype == "Perivascular",
-    "Perivascular-M",
-    celltype
-  )) |>
+magma_genes_sig <- dplyr::filter(
+  magma_genes,
+  padj < 0.05 &
+    input_gene_list == "all_controls" &
+    percent == "top-ten-percent"
+) |>
+  dplyr::mutate(
+    celltype = if_else(
+      celltype == "Pericyte" &
+        celltype_level == "level2",
+      "Pericyte-1",
+      celltype
+    )
+  ) |>
+  dplyr::mutate(
+    celltype = if_else(
+      celltype == "Perivascular",
+      "Perivascular-M",
+      celltype
+    )
+  ) |>
   # remove gwas background not of interest
   dplyr::filter(grepl("EUROPEUKBB_35k10k", gwas_background)) |>
-  dplyr::mutate(gwas_background = str_replace_all(gwas_background, "top-ten-percent", "case"),
-                case_control = if_else(grepl("_Case_", group), "case", "control"))
+  dplyr::mutate(
+    gwas_background = str_replace_all(
+      gwas_background,
+      "top-ten-percent",
+      "case"
+    ),
+    case_control = if_else(grepl("_Case_", group), "case", "control")
+  )
 ```
 
 ```{r}
 # subset to rows with risk celltypes as source or target and sig pairs
 risk_lr_pairs <- cellchat_lr_pairs |>
-  dplyr::filter(source %in% c("Pericyte-2", "Microglia-A", "Perivascular-FB-2") | source %in% c("Pericyte-2", "Microglia-A", "Perivascular-FB-2")) |>
+  dplyr::filter(
+    source %in%
+      c("Pericyte-2", "Microglia-A", "Perivascular-FB-2") |
+      source %in% c("Pericyte-2", "Microglia-A", "Perivascular-FB-2")
+  ) |>
   dplyr::filter(ligand.pvalues < 0.05 | receptor.pvalues < 0.05)
 ```
 
@@ -467,15 +702,21 @@ risk_lr_pairs <- cellchat_lr_pairs |>
 
 ```{r}
 magma_genes |>
-  dplyr::filter(celltype == "Pericyte-2" & gwas_background == "EUROPEUKBB_35k10k")
-celltype_markers <- read_csv(here::here("03_data/990_processed_data/007_magma",
-  paste0("top_10_percent_celltype_markers_Control.csv")))
+  dplyr::filter(
+    celltype == "Pericyte-2" & gwas_background == "EUROPEUKBB_35k10k"
+  )
+celltype_markers <- read_csv(here::here(
+  "03_data/990_processed_data/007_magma",
+  paste0("top_10_percent_celltype_markers_Control.csv")
+))
 ```
 
 ```{r}
-lr_risk_enrichment <- function(cell_type,
-                               lr_df = cellchat_lr_pairs,
-                               celltype_markers_df = magma_genes) {
+lr_risk_enrichment <- function(
+  cell_type,
+  lr_df = cellchat_lr_pairs,
+  celltype_markers_df = magma_genes
+) {
   celltype_specific_genes <- lr_df |>
     dplyr::filter(source == cell_type | target == cell_type)
 
@@ -483,7 +724,7 @@ lr_risk_enrichment <- function(cell_type,
   ligands <- celltype_specific_genes |>
     dplyr::pull(ligand)
   # Get the receptors
-  receptors  <- celltype_specific_genes |>
+  receptors <- celltype_specific_genes |>
     dplyr::pull(receptor)
   # Combine
   celltype_specific_genes <- c(ligands, receptors) |> unique()
@@ -498,7 +739,6 @@ lr_risk_enrichment <- function(cell_type,
     dplyr::pull(hgnc_symbol) |>
     unique()
 
-
   # Calculate the overlap
   overlap_genes <- intersect(celltype_specific_genes, sig_risk_genes)
   num_overlap <- length(overlap_genes)
@@ -512,23 +752,19 @@ lr_risk_enrichment <- function(cell_type,
     lower.tail = FALSE
   )
 
-  cat("Number of overlapping genes for ",
-      cell_type,
-      ": ",
-      num_overlap,
-      "\n")
+  cat("Number of overlapping genes for ", cell_type, ": ", num_overlap, "\n")
   print(paste("P-value:", hg_test))
 
-  overlaping_genes <- celltype_specific_genes[celltype_specific_genes %in% sig_risk_genes]
+  overlaping_genes <- celltype_specific_genes[
+    celltype_specific_genes %in% sig_risk_genes
+  ]
   cat("Overlapping genes are: ", overlap_genes, "\n")
-
 
   df <- data.frame(
     celltype = cell_type,
     overall_lr_risk_enrichment = hg_test
   )
   return(df)
-
 }
 
 try <- map(unique(risk_lr_pairs$source), lr_risk_enrichment)
@@ -542,24 +778,18 @@ egfr <- cellchat_lr_pairs |>
   dplyr::filter(ligand == "EGFR" | receptor == "EGFR")
 ```
 
-
-```{r}
-#| eval: false
-
-tar_load(sce)
-tar_load(gene_ids)
-```
-
-
 ## Get overlap with top tradeseq genes
 
 ```{r}
-top_genes <- qs::qread(here("03_data/990_processed_data/008_pseudotime",
-                          "all_genes_of_interest.qs"))
+top_genes <- qs::qread(here(
+  "03_data/990_processed_data/008_pseudotime",
+  "all_genes_of_interest.qs"
+))
 
 tradeseq_lr <- unique_lr_pairs |>
-  dplyr::filter(ligand %in% top_genes$hgnc_symbol |
-                  receptor %in% top_genes$hgnc_symbol)
+  dplyr::filter(
+    ligand %in% top_genes$hgnc_symbol | receptor %in% top_genes$hgnc_symbol
+  )
 
 plots_case_up <- map(vascular_cases_up, plot_unique_lrs, tradeseq_lr) |>
   set_names(vascular_cases_up)
@@ -569,23 +799,49 @@ plots_controls_up <- map(vascular_controls_up, plot_unique_lrs, tradeseq_lr) |>
 plots_controls_up$`EndoMT-1`
 plots_controls_up$`EndoMT-2`
 
-walk2(plots_controls_up, names(plots_controls_up), ~ {
-  svg(here::here("05_figures/990_shared_figures/cellchat",
-  "002_vascular-parenchymal_bubble_plots", "03_unique_lr_pairs_tradeseq_overlap",
-  paste0(.y, "_controls-up.svg")), width = 22, height = 12)
-  print(.x)
-  dev.off()
-})
-walk2(plots_case_up, names(plots_case_up), ~ {
-  svg(here::here("05_figures/990_shared_figures/cellchat",
-  "002_vascular-parenchymal_bubble_plots", "03_unique_lr_pairs_tradeseq_overlap",
-  paste0(.y, "_cases-up.svg")), width = 22, height = 12)
-  print(.x)
-  dev.off()
-})
+walk2(
+  plots_controls_up,
+  names(plots_controls_up),
+  ~ {
+    svg(
+      here::here(
+        "05_figures/990_shared_figures/cellchat",
+        "002_vascular-parenchymal_bubble_plots",
+        "03_unique_lr_pairs_tradeseq_overlap",
+        paste0(.y, "_controls-up.svg")
+      ),
+      width = 22,
+      height = 12
+    )
+    print(.x)
+    dev.off()
+  }
+)
+walk2(
+  plots_case_up,
+  names(plots_case_up),
+  ~ {
+    svg(
+      here::here(
+        "05_figures/990_shared_figures/cellchat",
+        "002_vascular-parenchymal_bubble_plots",
+        "03_unique_lr_pairs_tradeseq_overlap",
+        paste0(.y, "_cases-up.svg")
+      ),
+      width = 22,
+      height = 12
+    )
+    print(.x)
+    dev.off()
+  }
+)
 
 tradeseq_lr |>
-  dplyr::filter(ligand %in% c("BACE2", "APOD", "ANGPT2") | receptor %in% c("BACE2", "APOD", "ANGPT2"))
+  dplyr::filter(
+    ligand %in%
+      c("BACE2", "APOD", "ANGPT2") |
+      receptor %in% c("BACE2", "APOD", "ANGPT2")
+  )
 ```
 
 Let's check the overlap between tradeseq and mast DEs as well
@@ -613,8 +869,9 @@ Get overlap plots for MAST DEGs
 
 ```{r}
 mast_lr <- unique_lr_pairs |>
-  dplyr::filter(ligand %in% mast_de$hgnc_symbol |
-                  receptor %in% mast_de$hgnc_symbol)
+  dplyr::filter(
+    ligand %in% mast_de$hgnc_symbol | receptor %in% mast_de$hgnc_symbol
+  )
 
 
 plots_case_up <- map(vascular_cases_up, plot_unique_lrs, mast_lr) |>
@@ -625,21 +882,42 @@ plots_controls_up <- map(vascular_controls_up, plot_unique_lrs, mast_lr) |>
 plots_controls_up$`EndoMT-1`
 plots_controls_up$`EndoMT-2`
 
-walk2(plots_controls_up, names(plots_controls_up), ~ {
-  svg(here::here("05_figures/990_shared_figures/cellchat",
-  "002_vascular-parenchymal_bubble_plots", "04_unique_lr_pairs_mast_deg_overlap",
-  paste0(.y, "_controls-up.svg")), width = 22, height = 12)
-  print(.x)
-  dev.off()
-})
-walk2(plots_case_up, names(plots_case_up), ~ {
-  svg(here::here("05_figures/990_shared_figures/cellchat",
-  "002_vascular-parenchymal_bubble_plots", "04_unique_lr_pairs_mast_deg_overlap",
-  paste0(.y, "_cases-up.svg")), width = 22, height = 12)
-  print(.x)
-  dev.off()
-})
-
+walk2(
+  plots_controls_up,
+  names(plots_controls_up),
+  ~ {
+    svg(
+      here::here(
+        "05_figures/990_shared_figures/cellchat",
+        "002_vascular-parenchymal_bubble_plots",
+        "04_unique_lr_pairs_mast_deg_overlap",
+        paste0(.y, "_controls-up.svg")
+      ),
+      width = 22,
+      height = 12
+    )
+    print(.x)
+    dev.off()
+  }
+)
+walk2(
+  plots_case_up,
+  names(plots_case_up),
+  ~ {
+    svg(
+      here::here(
+        "05_figures/990_shared_figures/cellchat",
+        "002_vascular-parenchymal_bubble_plots",
+        "04_unique_lr_pairs_mast_deg_overlap",
+        paste0(.y, "_cases-up.svg")
+      ),
+      width = 22,
+      height = 12
+    )
+    print(.x)
+    dev.off()
+  }
+)
 ```
 
 ## Upset plots
@@ -648,7 +926,10 @@ walk2(plots_case_up, names(plots_case_up), ~ {
 ```{r}
 # Extract genes from each dataset
 tradeseq_genes <- top_genes$hgnc_symbol
-cellchat_genes <- unique(c(cellchat_lr_pairs$ligand, cellchat_lr_pairs$receptor))
+cellchat_genes <- unique(c(
+  cellchat_lr_pairs$ligand,
+  cellchat_lr_pairs$receptor
+))
 
 # Filter on logfc for mast
 mast_genes <- mast_de |>
@@ -675,7 +956,6 @@ upset_df <- fromList(gene_list)
 
 # Generate UpSet plot
 upset(upset_df, order.by = "freq", sets.bar.color = "steelblue")
-
 ```
 
 
@@ -700,8 +980,10 @@ cellchat_receptors <- unique_lr_pairs |>
 
 # Combine unique genes
 all_genes <- unique(c(
-  tradeseq_genes$hgnc_symbol, mast_genes$hgnc_symbol,
-  cellchat_ligands$hgnc_symbol, cellchat_receptors$hgnc_symbol
+  tradeseq_genes$hgnc_symbol,
+  mast_genes$hgnc_symbol,
+  cellchat_ligands$hgnc_symbol,
+  cellchat_receptors$hgnc_symbol
 ))
 
 # Create a data frame with all genes
@@ -710,9 +992,20 @@ heatmap_data <- data.frame(hgnc_symbol = all_genes)
 # Add presence/absence from each dataset
 heatmap_data <- heatmap_data |>
   left_join(tradeseq_genes |> mutate(Tradeseq = 1), by = "hgnc_symbol") |>
-  left_join(mast_genes |> group_by(hgnc_symbol) |> summarize(MAST_logFC = mean(avg_log2FC, na.rm = TRUE)), by = "hgnc_symbol") |>
-  left_join(cellchat_ligands |> mutate(CellChat_Ligand = 1), by = "hgnc_symbol") |>
-  left_join(cellchat_receptors |> mutate(CellChat_Receptor = 1), by = "hgnc_symbol")
+  left_join(
+    mast_genes |>
+      group_by(hgnc_symbol) |>
+      summarize(MAST_logFC = mean(avg_log2FC, na.rm = TRUE)),
+    by = "hgnc_symbol"
+  ) |>
+  left_join(
+    cellchat_ligands |> mutate(CellChat_Ligand = 1),
+    by = "hgnc_symbol"
+  ) |>
+  left_join(
+    cellchat_receptors |> mutate(CellChat_Receptor = 1),
+    by = "hgnc_symbol"
+  )
 
 # Replace NAs with 0 for presence/absence columns
 heatmap_data[is.na(heatmap_data)] <- 0
@@ -727,10 +1020,11 @@ heatmap_matrix[, "MAST_logFC"] <- as.numeric(heatmap_matrix[, "MAST_logFC"])
 heatmap_matrix[, "MAST_logFC"] <- scale(heatmap_matrix[, "MAST_logFC"])
 heatmap_matrix[, "MAST_logFC"] |> class()
 # Plot heatmap
-pheatmap(heatmap_matrix,
+pheatmap(
+  heatmap_matrix,
   color = colorRampPalette(c("blue", "white", "red"))(50),
-  cluster_rows = TRUE, cluster_cols = FALSE,
+  cluster_rows = TRUE,
+  cluster_cols = FALSE,
   main = "Overlap of Differential Genes and CellChat Interactions"
 )
-
 ```
