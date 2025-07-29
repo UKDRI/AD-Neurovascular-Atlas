@@ -21,7 +21,7 @@ source(here::here(
 For the sake on simplicity, I'm just gonna set a variable here as to whether to process the data with or without APOE as a covariate
 
 ```{r}
-include_apoe = FALSE
+include_apoe <- FALSE
 ```
 
 # Read in data
