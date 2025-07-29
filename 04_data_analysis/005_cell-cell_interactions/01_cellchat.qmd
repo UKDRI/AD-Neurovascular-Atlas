@@ -1,0 +1,2699 @@
+---
+title: CellChat
+execute:
+  eval: true
+#self-contained: true
+code-fold: true
+editor_options:
+  chunk_output_type: console
+---
+
+```{r}
+here::i_am("04_data_analysis/005_cell-cell_interactions/01_cellchat.qmd")
+```
+
+
+# Load packages
+
+```{r}
+source(here::here(
+  "04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"
+))
+Sys.setenv(TAR_PROJECT = here::here())
+tar_config_set(store = here::here("_targets"))
+```
+
+# Read data
+
+```{r}
+#| eval: false
+
+tar_load(sce)
+tar_load(gene_ids)
+```
+
+# Compare pericyte subtypes
+
+```{r}
+#| eval: false
+rownames(sce@assays$RNA@data) <- gene_ids$ensembl
+# sce <- ScaleData(sce, features = rownames(sce))
+
+pericyte_2_vs_1 <- FindMarkers(
+  sce,
+  ident.1 = "Pericyte-2",
+  ident.2 = "Pericyte"
+)
+pericyte_2_vs_1 <- pericyte_2_vs_1 |>
+  rownames_to_column("ensembl") |>
+  dplyr::left_join(gene_ids, by = "ensembl") |>
+  dplyr::filter(p_val_adj < 0.05) |>
+  dplyr::filter(gene != "")
+
+# Save pericytes
+readr::write_csv(
+  pericyte_2_vs_1,
+  here::here(
+    "../../../gmbh_results_summaries/2024-04-52_ad_bbb/pericyte2_vs_pericyte1.csv"
+  )
+)
+sce_pericytes <- subset(
+  sce,
+  subset = subcelltype_annotations %in% c("Pericyte-2", "Pericyte")
+)
+rownames(sce@assays$RNA@data) <- df$gene
+rownames(sce_pericytes@assays$RNA@data) <- df$gene
+
+top_markers <- head(
+  pericyte_2_vs_1[order(-pericyte_2_vs_1$avg_log2FC), ],
+  n = 20
+) # Adjust 'n' as needed
+plot <- DotPlot(sce_pericytes, features = top_markers$gene) +
+  coord_flip()
+plot
+readr::write_csv(
+  pericyte_2_vs_1,
+  here::here(
+    "../../../gmbh_results_summaries/2024-04-52_ad_bbb/pericyte2_vs_pericyte1.csv"
+  )
+)
+ggsave(
+  here::here(
+    "../../../gmbh_results_summaries/2024-04-52_ad_bbb/pericyte2_vs_pericyte1_top20genes.png"
+  ),
+  plot
+)
+DoHeatmap(sce_pericytes, features = top_markers$gene, slot = "data")
+```
+
+# EndoMT markers
+
+Get top specific markers for Endo-Mt, and most expressed markers, check which are nuclear localised
+
+```{r}
+#| eval: false
+
+endo_mt <- FindMarkers(sce, ident.1 = "Trans-Endo-to-mural")
+
+endo_mt <- endo_mt |>
+  rownames_to_column("ensembl") |>
+  dplyr::left_join(gene_ids, by = "ensembl") |>
+  dplyr::filter(p_val_adj < 0.05) |>
+  dplyr::arrange(desc(avg_log2FC))
+
+readr::write_csv(
+  endo_mt,
+  here::here(
+    "../../../gmbh_results_summaries/2024-04-52_ad_bbb/endo_mt/endo-mt_markers.csv"
+  )
+)
+
+sce_endo_mt <- subset(
+  sce,
+  subset = highlevel_manual_annotations %in%
+    c("mystery-cluster", "SMC", "Pericyte", "Endothelial")
+) |>
+  subset(
+    subset = subcelltype_annotations %in% c("Oligo-A", "Astrocyte-activated"),
+    invert = TRUE
+  )
+df <- gene_ids[gene_ids$ensembl %in% rownames(sce_endo_mt@assays$RNA@data), ]
+rownames(sce_endo_mt@assays$RNA@data) <- df$gene
+
+# nuclear markers for EC and Mural
+plot <- DotPlot(sce_endo_mt, features = c("LEF1", "NOTCH3", "TBX2")) +
+  coord_flip() +
+  RotatedAxis()
+
+ggsave(
+  here::here(
+    "../../../gmbh_results_summaries/2024-04-52_ad_bbb/endo_mt/nuclear_markers.png"
+  ),
+  plot,
+  width = 6,
+  height = 5
+)
+
+endo_mt |>
+  dplyr::filter(gene %in% c("LEF1", "NOTCH3", "TBX2"))
+
+
+rownames(sce@assays$RNA@data) <- gene_ids$gene
+marker_avg_expr <- AverageExpression(
+  sce,
+  features = c("LEF1", "NOTCH3", "TBX2")
+) |>
+  as.data.frame()
+readr::write_csv(
+  marker_avg_expr,
+  here::here(
+    "../../../gmbh_results_summaries/2024-04-52_ad_bbb/endo_mt/level2_nuclear_marker_avg_expr.csv"
+  )
+)
+Idents(sce) <- sce$highlevel_manual_annotations
+marker_avg_expr <- AverageExpression(
+  sce,
+  features = c("LEF1", "NOTCH3", "TBX2")
+) |>
+  as.data.frame()
+readr::write_csv(
+  marker_avg_expr,
+  here::here(
+    "../../../gmbh_results_summaries/2024-04-52_ad_bbb/endo_mt/level1_nuclear_marker_avg_expr.csv"
+  )
+)
+```
+
+```{r}
+#| eval: false
+library(hpar)
+subcell <- hpaSubcellularLoc()
+
+# Subset to the nuclear terms
+subcell_nuc <- subcell |>
+  dplyr::filter(grepl("Nucleoli|Nucleoplasm|Nuclear membrane", Main.location))
+
+endo_mt_nucleo_markers <- endo_mt |>
+  as_tibble() |>
+  dplyr::left_join(subcell_nuc, by = join_by(ensembl == Gene)) |>
+  dplyr::filter(!is.na(Main.location))
+
+readr::write_csv(
+  endo_mt_nucleo_markers,
+  here::here(
+    "../../../gmbh_results_summaries/2024-04-52_ad_bbb/endo_mt/endo-mt_nucleo_markers.csv"
+  )
+)
+
+endo_mt_markers <- endo_mt_nucleo_markers |>
+  dplyr::slice_max(avg_log2FC, n = 30)
+endo_mt_markers <- endo_mt_nucleo_markers |>
+  dplyr::slice_min(avg_log2FC, n = 30) |>
+  rbind(endo_mt_markers)
+
+DotPlot(sce, features = endo_mt_markers$gene) + RotatedAxis()
+
+nuclea_membrane <- endo_mt_nucleo_markers |>
+  dplyr::filter(grepl("Nuclear membrane", Main.location), pct.1 > 0.5)
+nuclea_membrane <- endo_mt_nucleo_markers |>
+  dplyr::filter(pct.1 > 0.5, avg_log2FC > 1)
+
+# dplyr::filter(grepl("Nuclear membrane", Main.location))
+Idents(sce) <- sce$highlevel_manual_annotations
+DotPlot(sce, features = nuclea_membrane$gene) + RotatedAxis()
+```
+
+
+# Check complement gene expression
+
+```{r}
+#| eval: false
+complement_gene_list <- read_excel(here(
+  "03_data/991_external_data/complement_gene_list.xlsx"
+)) |>
+  janitor::clean_names() |>
+  dplyr::mutate(gene_name_cap = toupper(gene_name))
+
+head(rownames(sce))
+# need to rotate axis
+p <- DotPlot(sce, complement_gene_list$gene_name_cap) +
+  coord_flip() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+p <- DotPlot(sce, complement_gene_list$gene_name_cap) +
+  coord_flip() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    panel.background = element_rect(fill = "white", colour = "black") # Set background to white
+  )
+
+png(
+  here::here("complement_celltype_expression-dotplot.png"),
+  height = 12,
+  width = 15,
+  units = "in",
+  res = 300
+)
+p
+dev.off()
+
+p2 <- VlnPlot(
+  sce,
+  features = complement_gene_list$gene_name_cap,
+  ncol = 4,
+  pt.size = 0
+)
+png(
+  here::here("complement_celltype_expression-violin.png"),
+  height = 52,
+  width = 38,
+  units = "in",
+  res = 300
+)
+p2
+dev.off()
+
+# bbb_marker_plot <- VlnPlot(sdata_endo, features = BBB_targets, ncol = 2, pt.size = 0)
+# bbb_marker_plot
+# ggsave(here::here("05_figures/990_shared_figures/bbb_marker_expression_levelone.png"), bbb_marker_plot, device = "png", height = 18)
+```
+
+# Make UMAP for vascular fraction alone
+
+```{r}
+#| eval: false
+rownames(sce@assays$RNA@data) <- df$ensembl
+# Step 1: Subset the Seurat object for each cell type
+subsets <- subset(sce, subset = prep == "V")
+# Remove any remaining low features in the new subset
+subsets <- subset(subsets, subset = nFeature_RNA > 200)
+# Step 2: Cluster to the subsets
+subsets <- FindNeighbors(subsets, dims = 1:20)
+subsets <- FindClusters(subsets, resolution = 0.4)
+# Step 4: Run UMAP
+subsets <- RunUMAP(subsets, dims = 1:20)
+
+# Reduce size but keep reductions and graphs
+reductions <- names(subsets@reductions)
+graphs <- names(subsets@graphs)
+subsets <- DietSeurat(subsets, dimreducs = reductions, graphs = graphs)
+
+DimPlot(subsets, reduction = "umap", label = T)
+# Save the new clusters
+subsets$seurat_clusters <- Idents(subsets)
+# Restore the annotations
+Idents(subsets) <- subsets$subcelltype_annotations
+DimPlot(subsets, reduction = "umap", label = T, repel = T)
+DimPlot(
+  subsets,
+  reduction = "umap",
+  group.by = "seurat_clusters",
+  label = T,
+  repel = T
+)
+
+subsets$new_subtype_annotations <- subsets$subcelltype_annotations
+subsets$new_subtype_annotations[subsets$seurat_clusters == 4] <- "Capillary"
+DimPlot(
+  subsets,
+  reduction = "umap",
+  group.by = "new_subtype_annotations",
+  label = T,
+  repel = T
+)
+
+readr::write_rds(
+  subsets,
+  here::here(
+    "../../../bbb-project_2023-06-30/data/vascular_fraction_subset_seurat.rds"
+  )
+)
+subsets_controls <- subset(sce, subset = diagnosis == "Control")
+rownames(subsets_controls@assays$RNA@data) <- df$gene
+readr::write_rds(
+  subsets_controls,
+  here::here(
+    "../../../bbb-project_2023-06-30/data/controls_subset_seurat.rds"
+  )
+)
+
+# # Find markers
+# cluster_markers <- FindAllMarkers(
+#   subsets,
+#   only.pos = TRUE,
+#   min.pct = 0.2,
+#   logfc.threshold = 0.5
+# )
+```
+
+```{r}
+#| eval: false
+DimPlot(sce, reduction = "umap", label = T)
+```
+
+
+# CellChat
+
+`CellChat` is a package for looking at cell-cell interaction networks
+
+It requires a normalised matrix of gene expression data (genes as rows, cells as columns).
+I assume from [the vignette](https://htmlpreview.github.io/?https://github.com/jinworks/CellChat/blob/master/tutorial/CellChat-vignette.html#load-the-required-libraries) that one should look at one group at a time, in this case each fraction per disease state, so 4 groups total.
+
+Since a lot of CellChats processing steps take a fair while to run, I've switched to using the lovely `targets` package to precompute and just read in the results of that.
+Refer to the `_targets.R` script in the project root for the code used.
+
+### Set the ligand-receptor interaction database
+
+There's the option to use a subset of the CellChatDB, for example, just using cell-cell interactions.
+I'll start with that as they recommend not using all of the database.
+I assume this is because there are non-protein signalling stuff in there that we wouldn't have relevant data for?
+
+This can be modified in the `_targets.R` file, but here is more or less the code used to start with.
+
+```{r}
+#| eval: false
+CellChatDB <- CellChatDB.human # use CellChatDB.mouse if running on mouse data
+showDatabaseCategory(CellChatDB)
+
+# Show the structure of the database
+dplyr::glimpse(CellChatDB$interaction)
+```
+
+```{r}
+#| eval: false
+# use a subset of CellChatDB for cell-cell communication analysis
+CellChatDB.use <- subsetDB(
+  CellChatDB,
+  search = "Secreted Signaling",
+  key = "annotation"
+) # use Secreted Signaling
+
+# Only uses the Secreted Signaling from CellChatDB v1
+#  CellChatDB.use <- subsetDB(CellChatDB, search = list(c("Secreted Signaling"), c("CellChatDB v1")), key = c("annotation", "version"))
+
+# use all CellChatDB except for "Non-protein Signaling" for cell-cell communication analysis
+# CellChatDB.use <- subsetDB(CellChatDB)
+
+# use all CellChatDB for cell-cell communication analysis
+# CellChatDB.use <- CellChatDB # simply use the default CellChatDB. We do not suggest to use it in this way because CellChatDB v2 includes "Non-protein Signaling" (i.e., metabolic and synaptic signaling).
+
+# set the used database in the object
+cellchat@DB <- CellChatDB.use
+```
+
+## Part 1
+
+### Read in merged cellchat object
+
+In order to contrast the controls and cases one needs to process them separately and then merge the 2 cellchat objects, see [this vignette](https://htmlpreview.github.io/?https://github.com/jinworks/CellChat/blob/master/tutorial/Comparison_analysis_of_multiple_datasets.html) for more details.
+I've done all that in `_targets.R` so we just need to load the object here.
+
+```{r}
+tar_load(cellchat)
+# check group numbers
+names(cellchat@idents)
+```
+
+### Identify altered interactions and cell populations
+
+```{r}
+ptm <- Sys.time()
+gg1 <- compareInteractions(cellchat, show.legend = F, group = c(1, 2))
+gg2 <- compareInteractions(
+  cellchat,
+  show.legend = F,
+  group = c(1, 2),
+  measure = "weight"
+)
+gg1 + gg2
+```
+
+### Heatmap showing differential number of interactions or interaction strength among different cell populations across two datasets
+
+Note that red colours denote increased signalling in the second dataset compared to the first, and blue the inverse.
+In our case cases are the first group and controls the second.
+
+```{r}
+gg1 <- netVisual_heatmap(cellchat)
+gg2 <- netVisual_heatmap(cellchat, measure = "weight")
+gg1 + gg2
+
+svg(
+  here::here("05_figures/990_shared_figures/cellchat/differential_heatmap.svg"),
+  width = 15,
+  height = 10
+)
+gg1 + gg2
+dev.off()
+
+
+# Assuming netP is a list within cellchat
+submat_list <- cellchat@net
+
+# Function to clean a single matrix
+clean_matrix <- function(mat) {
+  mat$prob[is.na(mat$prob)] <- 0
+  mat$prob[is.nan(mat$prob)] <- 0
+  mat$prob[is.infinite(mat$prob)] <- 0
+  return(mat)
+}
+
+# Iterate through each element in the list and clean it
+for (i in seq_along(submat_list)) {
+  submat_list[[i]] <- clean_matrix(submat_list[[i]])
+}
+
+# Update the cellchat object with the cleaned list
+cellchat@net <- submat_list
+
+# Re-run the heatmap function
+# gg1 <- netVisual_heatmap(cellchat, cluster.rows = TRUE)
+# print(gg1)
+
+gg1 <- netVisual_heatmap(cellchat)
+gg2 <- netVisual_heatmap(cellchat, measure = "weight")
+
+# Modify legend and axis labels after creation
+gg2@right_annotation_param$width <- unit(10, "mm")
+gg2@matrix_legend_param$title_gp <- gpar(fontsize = 6)
+gg2@matrix_legend_param$labels_gp <- gpar(fontsize = 6)
+gg2@matrix_legend_param$grid_width <- unit(1, "mm")
+gg2@matrix_legend_param$grid_height <- unit(2, "mm")
+
+gg2@right_annotation@anno_list[[1]]@legend_param$labels_gp <- gpar(fontsize = 2)
+gg2@right_annotation@width <- unit(2, "mm")
+gg2@row_title_param$gp <- gpar(fontsize = 7)
+gg2@row_title_param$gap <- unit(0.1, "mm")
+gg2@row_title_param$margin <- unit(0.1, "mm")
+gg2@row_title_param$just <- c(0.1, 0.0)
+
+gg2@column_names_param$gp <- gpar(fontsize = 5)
+gg2@row_names_param$gp <- gpar(fontsize = 5)
+
+gg1@right_annotation_param$width <- unit(10, "mm")
+
+gg1@matrix_legend_param$title_gp <- gpar(fontsize = 6)
+gg1@matrix_legend_param$labels_gp <- gpar(fontsize = 6)
+gg1@matrix_legend_param$grid_width <- unit(1, "mm")
+gg1@matrix_legend_param$grid_height <- unit(2, "mm")
+gg1@right_annotation@anno_list[[1]]@legend_param$labels_gp <- gpar(fontsize = 2)
+gg1@right_annotation@width <- unit(2, "mm")
+
+gg1@row_title_param$gp <- gpar(fontsize = 6)
+gg1@row_title_param$gap <- unit(0.1, "mm")
+gg1@row_title_param$margin <- unit(0.1, "mm")
+gg1@row_title_param$just <- c(0.05, 0.0)
+gg1@column_names_param$gp <- gpar(fontsize = 5)
+gg1@row_names_param$gp <- gpar(fontsize = 5)
+
+gg2@right_annotation@anno_list[[1]]@width <- unit(2, "mm") # Adjust width to make it smaller
+gg1@right_annotation@anno_list[[1]]@width <- unit(2, "mm") # Adjust width to make it smaller
+gg1@row_names_param$max_width <- sum(unit(1.3, "cm"), unit(2, "mm"))
+gg2@row_names_param$max_width <- sum(unit(1.3, "cm"), unit(2, "mm"))
+
+gg1@column_names_param$max_height <- sum(unit(1.4, "cm"), unit(2, "mm"))
+gg2@column_names_param$max_height <- sum(unit(1.4, "cm"), unit(2, "mm"))
+
+gg1@right_annotation@anno_list[[1]]@legend_param$direction <- "horizontal"
+gg2@right_annotation@anno_list[[1]]@legend_param$direction <- "horizontal"
+gg1@matrix_legend_param$direction <- "horizontal"
+gg2@matrix_legend_param$direction <- "horizontal"
+gg1@matrix_legend_param$title_position <- "leftcenter"
+gg2@matrix_legend_param$title_position <- "leftcenter"
+
+gg1@right_annotation_param$width <- unit(4, "mm")
+gg2@right_annotation_param$width <- unit(4, "mm")
+
+# gg1@right_annotation@anno_size <- unit(3, "mm")
+# gg2@right_annotation@anno_size <- unit(3, "mm")
+
+gg1@right_annotation@param$simple_anno_size <- unit(3, "mm")
+gg2@right_annotation@param$simple_anno_size <- unit(3, "mm")
+
+gg1@right_annotation <- NULL
+gg2@right_annotation <- NULL
+
+
+# First, create a named vector that assigns each cell type to either parenchymal or vascular
+vascular <- c(
+  "Arterial",
+  "Arteriolar-SMC",
+  "Artirial-FB",
+  "Capillary",
+  "EndoMT-1",
+  "EndoMT-2",
+  "M-Pericyte",
+  "Meningeal-FB",
+  "Microglia-V",
+  "Pericyte-1",
+  "Pericyte-2",
+  "Pericyte-FB",
+  "Perivascular-FB-1",
+  "Perivascular-FB-2",
+  "Perivascular-M",
+  "T-cell-M",
+  "T-cell-V",
+  "T-Pericyte",
+  "Vascular-SMC-1",
+  "Vascular-SMC-2",
+  "Venous"
+) |>
+  sort()
+parencyhmal <- c(
+  "Astro-A",
+  "Astro-Q",
+  "Ex-Neuro-1",
+  "Ex-Neuro-2",
+  "Ex-Neuro-3",
+  "Ex-Neuro-4",
+  "Ex-Neuro-5",
+  "Ex-Neuro-6",
+  "Ex-Neuro-7",
+  "In-Neuro-1",
+  "In-Neuro-2",
+  "In-Neuro-3",
+  "In-Neuro-4",
+  "In-Neuro-5",
+  "In-Neuro-6",
+  "In-Neuro-7",
+  "Microglia-A",
+  "Microglia-Q",
+  "Oligo-A",
+  "Oligo-B",
+  "OPC-A",
+  "OPC-B",
+  "T-cell-P1"
+) |>
+  sort()
+names(vascular) <- rep("Vascular", length(vascular))
+names(parencyhmal) <- rep("Parenchymal", length(parencyhmal))
+cell_groups <- c(vascular, parencyhmal)
+# Flip names and values
+cell_test <- names(cell_groups)
+names(cell_test) <- cell_groups
+
+# Create the row annotation object
+row_ha <- HeatmapAnnotation(
+  Compartment = cell_test,
+  which = "row",
+  col = list(
+    Compartment = c(
+      "Parenchymal" = "#E64B35",
+      "Vascular" = "#4DBBD5"
+    )
+  ),
+  show_annotation_name = FALSE,
+  # annotation_name_side = "top",
+  annotation_width = unit(1, "cm")
+)
+col_ha <- columnAnnotation(
+  Compartment = cell_test,
+  col = list(
+    Compartment = c(
+      "Parenchymal" = "#E64B35",
+      "Vascular" = "#4DBBD5"
+    )
+  ),
+  show_annotation_name = FALSE,
+  # annotation_name_side = "top",
+  annotation_width = unit(1, "cm")
+)
+
+gg1 + row_ha + gg2
+
+svg(
+  here::here("05_figures/990_shared_figures/cellchat/differential_heatmap.svg"),
+  width = 15,
+  height = 10
+)
+gg1 + row_ha + gg2
+dev.off()
+```
+
+```{r}
+# Get the matrix for dimentions
+mat <- gg1@matrix
+
+draw(
+  gg1,
+  legend_title_gp = gpar(fontsize = 8),
+  legend_labels_gp = gpar(fontsize = 6),
+  legend_grid_width = unit(1, "mm"),
+  # heatmap_legend_side = "bottom",
+  legend_gap = unit(1, "mm")
+)
+
+gg2@name <- "heatmap2"
+# Capture both heatmaps with annotations
+p_combined <- grid.grabExpr({
+  # Draw the heatmaps together
+  draw(gg1 + gg2, heatmap_legend_side = "bottom")
+
+  # Annotate the first heatmap (gg1)
+  decorate_heatmap_body("Relative values", {
+    grid.rect(
+      x = (21 - 0.5) / ncol(mat),
+      y = (1 - (5 - 0.5) / nrow(mat)),
+      width = (43 - 21 + 1) / ncol(mat),
+      height = (9 - 5 + 1) / nrow(mat),
+      just = c("left", "top"),
+      gp = gpar(col = "red", lwd = 2, fill = NA, alpha = 0.8)
+    )
+  })
+
+  # Annotate the second heatmap (gg2), shifting the box **one row higher**
+  decorate_heatmap_body("heatmap2", {
+    grid.rect(
+      x = (21 - 0.5) / ncol(mat),
+      y = (1 - (4 - 0.5) / nrow(mat)), # Shift up by one row
+      width = (43 - 21 + 1) / ncol(mat),
+      height = (9 - 5 + 1) / nrow(mat),
+      just = c("left", "top"),
+      gp = gpar(col = "blue", lwd = 2, fill = NA, alpha = 0.8)
+    )
+  })
+})
+
+# Display combined annotated heatmaps
+ggdraw(p_combined)
+ggsave(
+  here::here("05_figures/990_shared_figures/cellchat/differential_heatmap.svg"),
+  width = 15,
+  height = 10
+)
+
+svg(
+  here::here("05_figures/990_shared_figures/cellchat/differential_heatmap.svg"),
+  width = 15,
+  height = 10
+)
+gg1 + row_ha + gg2
+dev.off()
+```
+
+## Part II - Identify altered signaling with distinct network architecture and interaction strength
+
+### Identify signaling networks with larger (or less) difference as well as signaling groups based on their functional/structure similarity
+
+#### Identify signaling groups based on their functional similarity
+
+```{r}
+#| eval: true
+tar_load(cellchat_case)
+tar_load(cellchat_control)
+```
+
+```{r}
+object.list <- list(Case = cellchat_case, Control = cellchat_control)
+```
+
+
+```{r}
+#| eval: false
+
+# Zam wants a plot of the heatmaps just for controls
+# Visualize the interaction strength
+g1 <- netVisual_heatmap(cellchat_control, cluster.rows = TRUE)
+g2 <- netVisual_heatmap(
+  cellchat_control,
+  measure = "weight",
+  cluster.rows = TRUE
+)
+
+g1 + g2
+svg(
+  here::here(
+    "05_figures/990_shared_figures/cellchat/differential_heatmap_controls.svg"
+  ),
+  width = 15,
+  height = 10
+)
+g1 + g2
+dev.off()
+
+# Can't add both row and column in this way...
+svg(
+  here::here(
+    "05_figures/990_shared_figures/cellchat/differential_heatmap_controls.svg"
+  ),
+  width = 15,
+  height = 10
+)
+g1 + row_ha + g2
+dev.off()
+
+
+g1 <- netVisual_heatmap(cellchat_case)
+g2 <- netVisual_heatmap(cellchat_case, measure = "weight")
+g1 + row_ha + g2
+svg(
+  here::here(
+    "05_figures/990_shared_figures/cellchat/differential_heatmap_cases.svg"
+  ),
+  width = 15,
+  height = 10
+)
+g1 + row_ha + g2
+dev.off()
+```
+
+## Vascular and parenchymal comparison
+
+Let's try visualise the vascular - parenchyaml crosstalk
+
+```{r}
+#| eval: false
+# Assuming cellchat_case and cellchat_control are your preprocessed CellChat objects
+
+# 2. Identify vascular and parenchymal cell types
+vascular <- c(
+  "Arterial",
+  "Arteriolar-SMC",
+  "Artirial-FB",
+  "Capillary",
+  "EndoMT",
+  "M-Pericyte",
+  "Meningeal-FB",
+  "Microglia-V",
+  "Pericyte-1",
+  "Pericyte-2",
+  "Pericyte-FB",
+  "Perivascular-FB-1",
+  "Perivascular-FB-2",
+  "Perivascular-M",
+  "T-cell-M",
+  "T-cell-V",
+  "T-Pericyte",
+  "Vascular-SMC-1",
+  "Vascular-SMC-2",
+  "Venous"
+) |>
+  sort()
+parenchymal <- c(
+  "Astro-A",
+  "Astro-Q",
+  "Ex-Neuro-1",
+  "Ex-Neuro-2",
+  "Ex-Neuro-3",
+  "Ex-Neuro-4",
+  "Ex-Neuro-5",
+  "Ex-Neuro-6",
+  "Ex-Neuro-7",
+  "In-Neuro-1",
+  "In-Neuro-2",
+  "In-Neuro-3",
+  "In-Neuro-4",
+  "In-Neuro-5",
+  "In-Neuro-6",
+  "In-Neuro-7",
+  "Microglia-A",
+  "Microglia-Q",
+  "Oligo-A",
+  "Oligo-B",
+  "OPC-A",
+  "OPC-B",
+  "T-cell-P1",
+  "T-cell-P2"
+) |>
+  sort()
+
+weight.max <- getMaxWeight(object.list, attribute = c("idents", "count"))
+par(mfrow = c(1, 2), xpd = TRUE)
+for (i in 1:length(object.list)) {
+  netVisual_circle(
+    object.list[[i]]@net$count,
+    weight.scale = T,
+    label.edge = F,
+    edge.weight.max = weight.max[2],
+    edge.width.max = 12,
+    title.name = paste0("Number of interactions - ", names(object.list)[i])
+  )
+}
+for (i in 1:length(object.list)) {
+  netVisual_circle(
+    object.list[[i]]@net$count,
+    sources.use = vascular,
+    targets.use = parenchymal,
+    weight.scale = T,
+    label.edge = F,
+    edge.weight.max = weight.max[2],
+    edge.width.max = 12,
+    title.name = paste0("Number of interactions - ", names(object.list)[i])
+  )
+}
+
+# 5. Differential number of interactions for your cell type of interest
+celltype_of_interest <- "EndoMT"
+svg(
+  here::here(
+    "05_figures/990_shared_figures/cellchat/differential_interactions_endomt_source.svg"
+  ),
+  width = 25,
+  height = 8
+)
+par(mfrow = c(1, 2), xpd = TRUE)
+gg_differential_number <- netVisual_diffInteraction(
+  cellchat,
+  sources.use = celltype_of_interest,
+  weight.scale = T,
+  label.edge = T,
+  measure = "count",
+  vertex.size.max = 5,
+  title.name = "Differential interaction number\nfor EndoMT as source"
+)
+gg_differential_strength <- netVisual_diffInteraction(
+  cellchat,
+  sources.use = celltype_of_interest,
+  weight.scale = T,
+  label.edge = T,
+  measure = "weight",
+  vertex.size.max = 5,
+  title.name = "Differential interaction strength\nfor EndoMT as source"
+)
+dev.off()
+svg(
+  here::here(
+    "05_figures/990_shared_figures/cellchat/differential_interactions_endomt_target.svg"
+  ),
+  width = 15,
+  height = 8
+)
+par(mfrow = c(1, 2), xpd = TRUE)
+gg_differential_number <- netVisual_diffInteraction(
+  cellchat,
+  targets.use = celltype_of_interest,
+  weight.scale = T,
+  label.edge = T,
+  measure = "count",
+  vertex.size.max = 5,
+  title.name = "Differential interaction number\nfor EndoMT as target"
+)
+gg_differential_strength <- netVisual_diffInteraction(
+  cellchat,
+  targets.use = celltype_of_interest,
+  weight.scale = T,
+  label.edge = T,
+  measure = "weight",
+  vertex.size.max = 5,
+  alpha.edge = 0.2,
+  title.name = "Differential interaction strength\nfor EndoMT as target"
+)
+dev.off()
+
+
+# 7. Chord diagram of differential interactions
+gg_chord_diagram <- netVisual_chord_gene(
+  comparison,
+  sources.use = celltype_of_interest,
+  targets.use = setdiff(unique(comparison@idents$group), celltype_of_interest),
+  lab.cex = 0.5,
+  title.name = paste("Differential interactions -", celltype_of_interest)
+)
+
+# 8. Combine plots into a compound figure
+library(patchwork)
+compound_figure <- (gg_interaction_changes +
+  gg_case_network +
+  gg_control_network) /
+  (gg_differential_number + gg_differential_strength + gg_chord_diagram) +
+  plot_layout(heights = c(1, 1))
+
+# Save the compound figure
+ggsave(
+  "celltype_and_vascular_parenchymal_comparison.png",
+  compound_figure,
+  width = 24,
+  height = 16,
+  dpi = 300
+)
+
+# 9. Pathway analysis for differential signaling
+pathways.show <- c("TGFb") # Add other pathways of interest
+gg_pathway_case <- netAnalysis_pathwayCircle(
+  cellchat_case,
+  pathways.show = pathways.show,
+  sources.use = vascular_cells,
+  targets.use = parenchymal_cells,
+  title.name = "Case: Signaling Pathways"
+)
+gg_pathway_control <- netAnalysis_pathwayCircle(
+  cellchat_control,
+  pathways.show = pathways.show,
+  sources.use = vascular_cells,
+  targets.use = parenchymal_cells,
+  title.name = "Control: Signaling Pathways"
+)
+
+# Save pathway analysis figures
+ggsave(
+  "pathway_analysis_case.png",
+  gg_pathway_case,
+  width = 12,
+  height = 10,
+  dpi = 300
+)
+ggsave(
+  "pathway_analysis_control.png",
+  gg_pathway_control,
+  width = 12,
+  height = 10,
+  dpi = 300
+)
+
+# 1. Compare overall cell-cell communication patterns
+comparison <- compareInteractions(list(
+  Case = cellchat_case,
+  Control = cellchat_control
+))
+gg_interaction_changes <- netVisual_diffInteraction(
+  comparison,
+  weight.scale = T,
+  measure = "weight"
+)
+
+# 2. Identify vascular and parenchymal cell types
+vascular_cells <- c("Endothelial", "Pericytes", "Smooth_Muscle") # Update with your specific cell type names
+parenchymal_cells <- c("Neurons", "Astrocytes", "Oligodendrocytes", "Microglia") # Update as needed
+
+# 3. Analyze vascular-parenchymal cross-talk
+cellchat_case <- computeCommunProb(cellchat_case, population.size = TRUE)
+cellchat_case <- filterCommunication(cellchat_case, min.cells = 10)
+cellchat_control <- computeCommunProb(cellchat_control, population.size = TRUE)
+cellchat_control <- filterCommunication(cellchat_control, min.cells = 10)
+
+# 4. Visualize vascular-parenchymal interactions
+gg_case_network <- netVisual_circle(
+  cellchat_case,
+  sources.use = vascular_cells,
+  targets.use = parenchymal_cells,
+  title.name = "Case: Vascular-Parenchymal Interactions"
+)
+gg_control_network <- netVisual_circle(
+  cellchat_control,
+  sources.use = vascular_cells,
+  targets.use = parenchymal_cells,
+  title.name = "Control: Vascular-Parenchymal Interactions"
+)
+
+# 5. Differential number of interactions for your cell type of interest
+celltype_of_interest <- "YourCellType" # Replace with your specific cell type
+gg_differential_number <- netVisual_diffInteraction(
+  comparison,
+  source.group = celltype_of_interest,
+  weight.scale = T,
+  measure = "count"
+)
+
+# 6. Differential interaction strength for your cell type of interest
+gg_differential_strength <- netVisual_diffInteraction(
+  comparison,
+  source.group = celltype_of_interest,
+  weight.scale = T,
+  measure = "weight"
+)
+
+# 7. Chord diagram of differential interactions
+gg_chord_diagram <- netVisual_chord_gene(
+  comparison,
+  sources.use = celltype_of_interest,
+  targets.use = setdiff(unique(comparison@idents$group), celltype_of_interest),
+  lab.cex = 0.5,
+  title.name = paste("Differential interactions -", celltype_of_interest)
+)
+
+# 8. Combine plots into a compound figure
+library(patchwork)
+compound_figure <- (gg_interaction_changes +
+  gg_case_network +
+  gg_control_network) /
+  (gg_differential_number + gg_differential_strength + gg_chord_diagram) +
+  plot_layout(heights = c(1, 1))
+
+# Save the compound figure
+ggsave(
+  "celltype_and_vascular_parenchymal_comparison.png",
+  compound_figure,
+  width = 24,
+  height = 16,
+  dpi = 300
+)
+
+# 9. Pathway analysis for differential signaling
+pathways.show <- c("TGFb") # Add other pathways of interest
+gg_pathway_case <- netAnalysis_pathwayCircle(
+  cellchat_case,
+  pathways.show = pathways.show,
+  sources.use = vascular_cells,
+  targets.use = parenchymal_cells,
+  title.name = "Case: Signaling Pathways"
+)
+gg_pathway_control <- netAnalysis_pathwayCircle(
+  cellchat_control,
+  pathways.show = pathways.show,
+  sources.use = vascular_cells,
+  targets.use = parenchymal_cells,
+  title.name = "Control: Signaling Pathways"
+)
+
+# Save pathway analysis figures
+ggsave(
+  "pathway_analysis_case.png",
+  gg_pathway_case,
+  width = 12,
+  height = 10,
+  dpi = 300
+)
+ggsave(
+  "pathway_analysis_control.png",
+  gg_pathway_control,
+  width = 12,
+  height = 10,
+  dpi = 300
+)
+```
+
+## Focused vascular parenchymal crosstalk
+
+The differential number of interaction seems to be highlighting some particular vascular celltypes and parenchymal (mostly neurons) that are different in cases/controls, let's focus on those
+
+```{r}
+# Define your cell populations of interest
+vascular <- c(
+  "Arterial",
+  "Arteriolar-SMC",
+  "Artirial-FB",
+  "Capillary",
+  "EndoMT-1",
+  "M-Pericyte",
+  "Meningeal-FB",
+  "Microglia-V",
+  "Pericyte-1",
+  "Pericyte-2",
+  "Pericyte-FB",
+  "Perivascular-FB-1",
+  "Perivascular-FB-2",
+  "Perivascular-M",
+  "T-cell-M",
+  "T-cell-V",
+  "T-Pericyte",
+  "Vascular-SMC-1",
+  "Vascular-SMC-2",
+  "Venous",
+  "EndoMT-2"
+) |>
+  sort()
+parenchymal <- c(
+  "Astro-A",
+  "Astro-Q",
+  "Ex-Neuro-1",
+  "Ex-Neuro-2",
+  "Ex-Neuro-3",
+  "Ex-Neuro-4",
+  "Ex-Neuro-5",
+  "Ex-Neuro-6",
+  "Ex-Neuro-7",
+  "In-Neuro-1",
+  "In-Neuro-2",
+  "In-Neuro-3",
+  "In-Neuro-4",
+  "In-Neuro-5",
+  "In-Neuro-6",
+  "In-Neuro-7",
+  "Microglia-A",
+  "Microglia-Q",
+  "Oligo-A",
+  "Oligo-B",
+  "OPC-A",
+  "OPC-B",
+  "T-cell-P1",
+  "T-cell-P2"
+) |>
+  sort()
+# vascular increased parenchymal interaction in controls - note endomt-1 looks
+# weaker but is of interest
+vascular_controls_up <- c(
+  "EndoMT-1",
+  "EndoMT-2",
+  "M-Pericyte",
+  "Meningeal-FB",
+  "Microglia-V"
+) |>
+  sort()
+vascular_cases_up <- c(
+  "Pericyte-2",
+  "Pericyte-FB",
+  "Perivascular-FB-1",
+  "Perivascular-FB-2",
+  "T-Pericyte"
+) |>
+  sort()
+parenchymal <- c(
+  "Astro-A",
+  "Astro-Q",
+  "Ex-Neuro-1",
+  "Ex-Neuro-2",
+  "Ex-Neuro-3",
+  "Ex-Neuro-4",
+  "Ex-Neuro-5",
+  "Ex-Neuro-6",
+  "Ex-Neuro-7",
+  "In-Neuro-1",
+  "In-Neuro-2",
+  "In-Neuro-3",
+  "In-Neuro-4",
+  "In-Neuro-5",
+  "In-Neuro-6",
+  "In-Neuro-7",
+  "Microglia-A",
+  "Microglia-Q",
+  "OPC-A",
+  "OPC-B"
+) |>
+  sort()
+
+# Create focused visualizations of differential interactions
+# Create separate plots for cases
+walk(
+  vascular_controls_up,
+  ~ {
+    pdf(
+      here::here(
+        "05_figures/990_shared_figures/cellchat",
+        "001_vascular-parenchymal_gene_chord_plots",
+        paste0(.x, ".pdf")
+      ),
+      width = 18,
+      height = 12
+    )
+    p1 <- netVisual_chord_gene(
+      cellchat_case,
+      sources.use = .x,
+      targets.use = parenchymal,
+      title.name = paste0("Case: ", .x, " to parenchymal")
+    )
+    p2 <- netVisual_chord_gene(
+      cellchat_control,
+      sources.use = .x,
+      targets.use = parenchymal,
+      title.name = paste0("Control: ", .x, " to parenchymal")
+    )
+    p1
+    p2
+    dev.off()
+  }
+)
+
+names(vascular_controls_up) <- rep(
+  "more-interactions-in-controls",
+  length(vascular_controls_up)
+)
+names(vascular_cases_up) <- rep(
+  "more-interactions-in-cases",
+  length(vascular_cases_up)
+)
+vascular <- c(vascular_cases_up, vascular_controls_up)
+walk(
+  vascular,
+  ~ {
+    svg(
+      here::here(
+        "05_figures/990_shared_figures/cellchat",
+        "002_vascular-parenchymal_bubble_plots",
+        paste0(.x, ".svg")
+      ),
+      width = 18,
+      height = 12
+    )
+    p1 <- netVisual_bubble(
+      cellchat,
+      sources.use = .x,
+      targets.use = parenchymal,
+      remove.isolate = TRUE,
+      comparison = c(1, 2),
+      angle.x = 45,
+      title.name = paste0("Source -> ", .x)
+    )
+    p2 <- netVisual_bubble(
+      cellchat,
+      sources.use = parenchymal,
+      targets.use = .x,
+      remove.isolate = TRUE,
+      comparison = c(1, 2),
+      angle.x = 45,
+      title.name = paste0("Target -> ", .x)
+    )
+    print(p1 + p2)
+    dev.off()
+  }
+)
+
+
+# To specifically look at unique interactions:
+# walk(vascular, ~{
+#   # Find unique L-R pairs in each condition
+#   unique.case <- extractEnrichedLR(cellchat, signaling = NULL,
+#                                   #sources.use = .x,
+#                                   #targets.use = parenchymal,
+#                                   dataset = "Case",
+#                                   comparison = c(1, 2))
+#
+#   unique.control <- extractEnrichedLR(cellchat, signaling = NULL,
+#                                     sources.use = .x,
+#                                     targets.use = parenchymal,
+#                                     dataset = "Control",
+#                                     comparison = c(1, 2))
+#
+#   # Visualize these unique interactions
+#   p <- netVisual_bubble(cellchat, sources.use = .x,
+#                    targets.use = parenchymal,
+#                    comparison = c(1, 2),
+#                    features.name = unique(c(unique.case$ligand_receptor,
+#                                           unique.control$ligand_receptor)),
+#                    angle.x = 45,
+#                    title.name = paste0("Unique L-R: ", .x, " to Parenchymal"))
+#   svg(here::here("05_figures/990_shared_figures/cellchat",
+#   "002_vascular-parenchymal_bubble_plots",
+#   paste0("unique_", .x, ".svg")), width = 12, height = 10)
+#   print(p)
+#   dev.off()
+# })
+# Compare specific signaling patterns
+netVisual_bubble(
+  cellchat,
+  sources.use = vascular_controls_up,
+  targets.use = parenchymal,
+  comparison = c(1, 2),
+  angle.x = 45
+)
+
+netVisual_bubble(
+  cellchat,
+  sources.use = "EndoMT-2",
+  targets.use = parenchymal,
+  comparison = c(1, 2),
+  angle.x = 45
+)
+
+# For EndoMT-2 specific analysis:
+# netVisual_chord_gene(cellchat_case, sources.use = "EndoMT-2", targets.use = neuronal_cells)
+
+# show all the significant interactions (L-R pairs) based on user's input (defined by `pairLR.use`; the order of L-R is also based on user's input)
+pairLR.use <- extractEnrichedLR(
+  cellchat,
+  signaling = c(
+    "SLIT",
+    "VEGF",
+    "ANGPT",
+    "BMP",
+    "PTN"
+  )
+)
+netVisual_bubble(
+  cellchat,
+  sources.use = vascular_controls_up,
+  targets.use = parenchymal,
+  pairLR.use = pairLR.use,
+  comparison = c(1, 2),
+  remove.isolate = TRUE
+)
+netVisual_bubble(
+  cellchat,
+  sources.use = vascular_controls_up,
+  thresh = 0.01,
+  targets.use = parenchymal,
+  pairLR.use = pairLR.use,
+  comparison = c(1, 2),
+  remove.isolate = TRUE,
+  max.dataset = 2
+)
+```
+
+```{r}
+generate_plot_differential <- function(source, cellchat, targets) {
+  # Remove the source celltype from the target
+  print(source)
+  plot1 <- netVisual_bubble(
+    cellchat,
+    sources.use = source,
+    targets.use = targets,
+    comparison = c(1, 2),
+    max.dataset = 1,
+    title.name = "Increased signaling in Cases",
+    angle.x = 45
+  ) +
+    labs(subtitle = paste("Source: Cell Type", source))
+  plot2 <- netVisual_bubble(
+    cellchat,
+    sources.use = source,
+    targets.use = targets,
+    comparison = c(1, 2),
+    max.dataset = 2,
+    title.name = "Decreased signaling in Cases",
+    angle.x = 45
+  ) +
+    labs(subtitle = paste("Source: Cell Type", source))
+
+  plot <- plot1 + plot2
+  # Define the filename
+  filename <- here::here(
+    "05_figures/990_shared_figures/cellchat/003_differential_bubble_plots",
+    paste0(source, "_differential_signalling.png")
+  )
+
+  # Save the plot
+  ggsave(filename, plot, width = 30, height = 14)
+  return(plot)
+}
+
+plots <- map(
+  vascular,
+  generate_plot_differential,
+  cellchat = cellchat,
+  targets = parenchymal
+)
+
+# Note that to check the levels for datasets one can use
+```
+
+
+```{r}
+#| eval: false
+ptm <- Sys.time()
+
+cellchat <- computeNetSimilarityPairwise(cellchat, type = "functional")
+cellchat <- netEmbedding(cellchat, type = "functional")
+cellchat <- netClustering(cellchat, type = "functional")
+# Visualization in 2D-space
+netVisual_embeddingPairwise(cellchat, type = "functional", label.size = 3.5)
+execution.time <- Sys.time() - ptm
+print(execution.time)
+rankSimilarity(cellchat, type = "functional")
+```
+
+```{r}
+group.cellType <- c(
+  rep("Pericyte-2", 4),
+  rep("Microglia-A", 4),
+  rep("Perivascular-FB-2", 4)
+)
+group.cellType <- factor(
+  group.cellType,
+  levels = c("Pericyte-2", "Microglia-A", "Perivascular-FB-2")
+)
+object.list_1 <- lapply(object.list, function(x) {
+  mergeInteractions(x, group.cellType)
+})
+cellchat_2 <- mergeCellChat(object.list_1, add.names = names(object.list_1))
+
+weight.max <- getMaxWeight(
+  object.list_1,
+  slot.name = c("idents", "net", "net"),
+  attribute = c("idents", "count", "count.merged")
+)
+par(mfrow = c(1, 2), xpd = TRUE)
+for (i in 1:length(object.list_1)) {
+  netVisual_circle(
+    object.list_1[[i]]@net$count.merged,
+    weight.scale = T,
+    label.edge = T,
+    edge.weight.max = weight.max[3],
+    edge.width.max = 12,
+    title.name = paste0("Number of interactions - ", names(object.list_1)[i]),
+    vertex.label.cex = 0.6
+  )
+}
+png(
+  here::here(
+    "05_figures/990_shared_figures/cellchat",
+    "pericyte2_microglia-active_peri-fb_interactions_coord.png"
+  ),
+  height = 10,
+  width = 8,
+  units = "in",
+  res = 300
+)
+par(mfrow = c(1, 2), xpd = TRUE)
+for (i in 1:length(object.list_1)) {
+  netVisual_circle(
+    object.list_1[[i]]@net$count.merged,
+    weight.scale = T,
+    label.edge = T,
+    edge.weight.max = weight.max[3],
+    edge.width.max = 12,
+    title.name = paste0("Number of interactions - ", names(object.list_1)[i])
+  )
+}
+dev.off()
+```
+
+```{r}
+par(mfrow = c(1, 2), xpd = TRUE)
+netVisual_diffInteraction(
+  cellchat_2,
+  weight.scale = T,
+  measure = "count.merged",
+  label.edge = T
+)
+netVisual_diffInteraction(
+  cellchat_2,
+  weight.scale = T,
+  measure = "weight.merged",
+  label.edge = T
+)
+```
+
+For some reason this refused to save both plots...
+I'll save manually from RStudio the above chunk
+
+```{r}
+png(
+  here::here(
+    "05_figures/990_shared_figures/cellchat",
+    "pericyte2_microglia-active_peri-fb_interactions_coord_differential.png"
+  ),
+  height = 10,
+  width = 8,
+  units = "in",
+  res = 300
+)
+par(mfrow = c(1, 2), xpd = TRUE)
+measures <- c("count.merged", "weight.merged")
+for (i in seq_along(measures)) {
+  netVisual_diffInteraction(
+    cellchat_2,
+    weight.scale = T,
+    measure = measures[i],
+    label.edge = T,
+    vertex.label.cex = 0.6
+  )
+}
+dev.off()
+```
+
+#### Identify signaling groups based on structure similarity
+
+```{r}
+#| eval: false
+cellchat <- computeNetSimilarityPairwise(cellchat, type = "structural")
+cellchat <- netEmbedding(cellchat, type = "structural")
+cellchat <- netClustering(cellchat, type = "structural")
+# Visualization in 2D-space
+netVisual_embeddingPairwise(cellchat, type = "structural", label.size = 3.5)
+netVisual_embeddingPairwiseZoomIn(cellchat, type = "structural", nCol = 2)
+```
+
+### Identify altered signaling with distinct interaction strength
+
+#### Compare the overall information flow of each signaling pathway or ligand-receptor pair
+
+CellChat can identify the conserved and context-specific signalling pathways by simply comparing the information flow for each signalling pathway, which is defined by the sum of communication probability among all pairs of cell groups in the inferred network (i.e., the total weights in the network).
+
+Note that terms in the following plot highlighted red are significantly enriched in the first condition and the other colour (cyan?) are enriched in the other.
+
+```{r}
+gg1 <- rankNet(
+  cellchat,
+  mode = "comparison",
+  measure = "weight",
+  sources.use = NULL,
+  targets.use = NULL,
+  stacked = T,
+  do.stat = TRUE
+)
+gg2 <- rankNet(
+  cellchat,
+  mode = "comparison",
+  measure = "weight",
+  sources.use = NULL,
+  targets.use = NULL,
+  stacked = F,
+  do.stat = TRUE
+)
+
+gg1 + gg2
+
+svg(
+  here::here(
+    "05_figures/990_shared_figures/cellchat/differential_information_flow.svg"
+  ),
+  width = 8,
+  height = 10
+)
+gg1 + gg2
+dev.off()
+svg(
+  here::here(
+    "05_figures/990_shared_figures/cellchat/differential_information_flow_stacked.svg"
+  ),
+  width = 8,
+  height = 10
+)
+gg1
+dev.off()
+```
+
+#### Compare outgoing (or incoming) signaling patterns associated with each cell population
+
+```{r}
+options(future.globals.maxSize = 7145728000)
+object.list <- map(object.list, netAnalysis_computeCentrality)
+i <- 1
+# combining all the identified signaling pathways from different datasets
+pathway.union <- union(
+  object.list[[i]]@netP$pathways,
+  object.list[[i + 1]]@netP$pathways
+)
+ht1 <- netAnalysis_signalingRole_heatmap(
+  object.list[[i]],
+  pattern = "outgoing",
+  signaling = pathway.union,
+  title = names(object.list)[i],
+  width = 14,
+  height = 12
+)
+ht2 <- netAnalysis_signalingRole_heatmap(
+  object.list[[i + 1]],
+  pattern = "outgoing",
+  signaling = pathway.union,
+  title = names(object.list)[i + 1],
+  width = 14,
+  height = 12
+)
+draw(ht1 + ht2, ht_gap = unit(0.5, "cm"))
+
+svg(
+  here::here(
+    "05_figures/990_shared_figures/cellchat/differential_heatmap_outgoing.svg"
+  ),
+  width = 15,
+  height = 10
+)
+draw(ht1 + ht2, ht_gap = unit(0.5, "cm"))
+dev.off()
+```
+
+```{r}
+pathways_of_interest <- c("SLIT", "VEGF", "ANGPT", "BMP", "PTN", "PDGF")
+ht1 <- netAnalysis_signalingRole_heatmap(
+  object.list[[i]],
+  pattern = "outgoing",
+  signaling = pathways_of_interest,
+  title = names(object.list)[i]
+)
+ht2 <- netAnalysis_signalingRole_heatmap(
+  object.list[[i + 1]],
+  pattern = "outgoing",
+  signaling = pathways_of_interest,
+  title = names(object.list)[i + 1]
+)
+ht3 <- netAnalysis_signalingRole_heatmap(
+  object.list[[i]],
+  pattern = "incoming",
+  signaling = pathways_of_interest,
+  title = names(object.list)[i]
+)
+ht4 <- netAnalysis_signalingRole_heatmap(
+  object.list[[i + 1]],
+  pattern = "incoming",
+  signaling = pathways_of_interest,
+  title = names(object.list)[i + 1]
+)
+draw(ht1 + ht2, ht_gap = unit(0.5, "cm"))
+ht1 + ht2
+ht3 + ht4
+```
+
+
+```{r}
+ht1 <- netAnalysis_signalingRole_heatmap(
+  object.list[[i]],
+  pattern = "incoming",
+  signaling = pathway.union,
+  title = names(object.list)[i],
+  width = 14,
+  height = 12,
+  color.heatmap = "GnBu"
+)
+ht2 <- netAnalysis_signalingRole_heatmap(
+  object.list[[i + 1]],
+  pattern = "incoming",
+  signaling = pathway.union,
+  title = names(object.list)[i + 1],
+  width = 14,
+  height = 12,
+  color.heatmap = "GnBu"
+)
+draw(ht1 + ht2, ht_gap = unit(0.5, "cm"))
+
+svg(
+  here::here(
+    "05_figures/990_shared_figures/cellchat/differential_heatmap_incoming.svg"
+  ),
+  width = 15,
+  height = 8
+)
+draw(ht1 + ht2, ht_gap = unit(0.5, "cm"))
+dev.off()
+```
+
+```{r}
+ht1 <- netAnalysis_signalingRole_heatmap(
+  object.list[[i]],
+  pattern = "all",
+  signaling = pathway.union,
+  title = names(object.list)[i],
+  width = 14,
+  height = 12,
+  color.heatmap = "OrRd"
+)
+ht2 <- netAnalysis_signalingRole_heatmap(
+  object.list[[i + 1]],
+  pattern = "all",
+  signaling = pathway.union,
+  title = names(object.list)[i + 1],
+  width = 14,
+  height = 12,
+  color.heatmap = "OrRd"
+)
+
+svg(
+  here::here(
+    "05_figures/990_shared_figures/cellchat/differential_heatmap_overall.svg"
+  ),
+  width = 15,
+  height = 8
+)
+draw(ht1 + ht2, ht_gap = unit(0.5, "cm"))
+dev.off()
+```
+
+```{r}
+# replace nas with 0 for each
+case <- ht1@matrix
+control <- ht2@matrix
+case[is.na(case)] <- 0
+control[is.na(control)] <- 0
+case_subtracted_from_controls <- case - control
+assertthat::assert_that(sum(is.na(case_subtracted_from_controls)) == 0)
+
+hmap <- Heatmap(
+  case_subtracted_from_controls,
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  name = "Relative strength"
+)
+svg(
+  here::here(
+    "05_figures/990_shared_figures/cellchat/differential_heatmap_overall_subtracted.svg"
+  ),
+  width = 15,
+  height = 8
+)
+draw(hmap)
+dev.off()
+```
+
+
+## Part III - Identify the up-gulated and down-regulated signaling ligand-receptor pairs
+
+### Identify dysfunctional signaling by comparing the communication probabities
+
+```{r}
+# get celltype index
+levels(cellchat@idents$case)
+assertthat::are_equal(
+  levels(cellchat@idents$case),
+  levels(cellchat@idents$control)
+)
+
+# Look at interactions between pericyte 2, microglia activated and perivascular FB KAZN
+celltypes_of_interest_plot <-
+  netVisual_bubble(
+    cellchat,
+    sources.use = c(4, 25, 12),
+    targets.use = c(4, 25, 12),
+    comparison = c(1, 2),
+    angle.x = 45
+    # remove.isolate = FALSE
+  )
+png(
+  here::here(
+    "05_figures/990_shared_figures/cellchat",
+    "pericyte2_microglia-active_peri-fb_interactions.png"
+  ),
+  height = 10,
+  width = 8,
+  units = "in",
+  res = 300
+)
+print(celltypes_of_interest_plot)
+dev.off()
+```
+
+Note that this plot shows ligand-receptor pairs that are up/downregulated in one group VS the other.
+The comparison group may still have a hit for a given pair, but it will be a lower level relative to the other group, which should be reflected in the communication prop.
+
+```{r}
+gg1 <- netVisual_bubble(
+  cellchat,
+  sources.use = c(4, 25, 12),
+  targets.use = c(4, 25, 12),
+  comparison = c(1, 2),
+  max.dataset = 2,
+  title.name = "Increased signaling in Controls",
+  angle.x = 45,
+  remove.isolate = T
+)
+gg2 <- netVisual_bubble(
+  cellchat,
+  sources.use = c(4, 25, 12),
+  targets.use = c(4, 25, 12),
+  comparison = c(1, 2),
+  max.dataset = 1,
+  title.name = "Decreased signaling in Controls",
+  angle.x = 45,
+  remove.isolate = T
+)
+gg1 + gg2
+
+png(
+  here::here(
+    "05_figures/990_shared_figures/cellchat",
+    "pericyte2_microglia-active_peri-fb_interactions_differential.png"
+  ),
+  height = 10,
+  width = 12,
+  units = "in",
+  res = 300
+)
+gg1 + gg2
+dev.off()
+```
+
+```{r}
+# Define your cell types
+cell_types <- unlist(cellchat@idents) |>
+  levels() |>
+  length()
+cell_types <- 1:cell_types
+names(cell_types) <- unlist(cellchat@idents) |> levels()
+
+# Function to generate plots for each cell type
+generate_plot <- function(cell_type, cellchat, cell_types) {
+  # Remove the source celltype from the target
+  source_celltype <- names(cell_types)[cell_types %in% cell_type]
+  cell_types <- cell_types[!cell_types %in% cell_type]
+  print(source_celltype)
+  plot <- netVisual_bubble(
+    cellchat,
+    sources.use = cell_type,
+    targets.use = cell_types,
+    comparison = c(1, 2),
+    angle.x = 45
+  ) +
+    ggtitle(paste("Source: Cell Type", source_celltype))
+
+  # Define the filename
+  filename <- here::here(
+    "05_figures/990_shared_figures/cellchat/bubble_plots_per_celltype",
+    paste0(source_celltype, ".png")
+  )
+
+  # Save the plot
+  ggsave(filename, plot, width = 20, height = 8)
+  return(plot)
+}
+
+# Generate plots using purrr::map
+plots <- map(
+  cell_types,
+  generate_plot,
+  cellchat = cellchat,
+  cell_types = cell_types
+)
+
+# Function to generate plots for each cell type comparing groups
+generate_plot_differential <- function(cell_type, cellchat, cell_types) {
+  # Remove the source celltype from the target
+  source_celltype <- names(cell_types)[cell_types %in% cell_type]
+  cell_types <- cell_types[!cell_types %in% cell_type]
+  print(source_celltype)
+  plot1 <- netVisual_bubble(
+    cellchat,
+    sources.use = cell_type,
+    targets.use = cell_types,
+    comparison = c(1, 2),
+    max.dataset = 1,
+    title.name = "Increased signaling in Cases",
+    angle.x = 45
+  ) +
+    labs(subtitle = paste("Source: Cell Type", source_celltype))
+  plot2 <- netVisual_bubble(
+    cellchat,
+    sources.use = cell_type,
+    targets.use = cell_types,
+    comparison = c(1, 2),
+    max.dataset = 2,
+    title.name = "Decreased signaling in Cases",
+    angle.x = 45
+  ) +
+    labs(subtitle = paste("Source: Cell Type", source_celltype))
+
+  plot <- plot1 + plot2
+  # Define the filename
+  filename <- here::here(
+    "05_figures/990_shared_figures/cellchat/bubble_plots_per_celltype",
+    paste0(source_celltype, "_differential_signalling.png")
+  )
+
+  # Save the plot
+  ggsave(filename, plot, width = 30, height = 14)
+  return(plot)
+}
+
+plots <- map(
+  cell_types,
+  generate_plot_differential,
+  cellchat = cellchat,
+  cell_types = cell_types
+)
+
+# Note that to check the levels for datasets one can use
+# str(cellchat@meta)
+# To look at the `datasets` column
+```
+
+
+### Identify dysfunctional signaling by using differential expression analysis
+
+The above method for identifying the upgulated and down-regulated signaling is perfomed by comparing the communication probability between two datasets for each L-R pair and each pair of cell groups. Alternative, we can identify the upgulated and down-regulated signaling ligand-receptor pairs based on the differential expression analysis (DEA). Specifically, we perform differential expression analysis between two biological conditions (i.e., NL and LS) for each cell group, and then obtain the upgulated and down-regulated signaling based on the fold change of ligands in the sender cells and receptors in the receiver cells.
+
+Of note, users may observe the same LR pairs appearing in both the up-regulated and down-regulated results due to the fact that DEA between conditions is performed for each cell group. To perform DEA between conditions by ignoring cell group information, users can set group.DE.combined = TRUE in identifyOverExpressedGenes for CellChat v2.1.1.
+
+```{r}
+# define a positive dataset, i.e., the dataset with positive fold change against the other dataset
+pos.dataset <- "case"
+# define a char name used for storing the results of differential expression analysis
+features.name <- paste0(pos.dataset, ".merged")
+
+# perform differential expression analysis
+# Of note, compared to CellChat version < v2, CellChat v2 now performs an ultra-fast Wilcoxon test using the presto package, which gives smaller values of logFC. Thus we here set a smaller value of thresh.fc compared to the original one (thresh.fc = 0.1). Users can also provide a vector and dataframe of customized DEGs by modifying the cellchat@var.features$LS.merged and cellchat@var.features$LS.merged.info.
+
+cellchat <- identifyOverExpressedGenes(
+  cellchat,
+  group.dataset = "datasets",
+  pos.dataset = pos.dataset,
+  features.name = features.name,
+  only.pos = FALSE,
+  thresh.pc = 0.1,
+  thresh.fc = 0.5,
+  thresh.p = 0.01,
+  group.DE.combined = FALSE,
+  min.cells = 100,
+  # idents.use = c(vascular_cases_up,
+  #               vascular_controls_up,
+  idents.use = c(
+    vascular,
+    parenchymal
+  )
+)
+
+# map the results of differential expression analysis onto the inferred cell-cell
+# communications to easily manage/subset the ligand-receptor pairs of interest
+net <- netMappingDEG(
+  cellchat,
+  features.name = features.name,
+  variable.all = TRUE
+)
+# extract the ligand-receptor pairs with upregulated ligands in LS
+net.up <- subsetCommunication(
+  cellchat,
+  net = net,
+  datasets = "case",
+  ligand.logFC = 0.05,
+  receptor.logFC = NULL
+)
+# extract the ligand-receptor pairs with upregulated ligands and upregulated receptors in NL, i.e.,downregulated in LS
+net.down <- subsetCommunication(
+  cellchat,
+  net = net,
+  datasets = "control",
+  ligand.logFC = -0.05,
+  receptor.logFC = NULL
+)
+```
+
+```{r}
+net.up |>
+  dplyr::filter(ligand == "ANGPT2" | grepl("wnt", ligand))
+lr_pairs <- net |>
+  dplyr::filter(ligand == "ANGPT2" | grepl("WNT", ligand))
+lr_pairs <- net.up |>
+  dplyr::filter(ligand == "ANGPT2")
+
+# Try filtering just to ANGPT2
+
+pairLR.use.up <- lr_pairs[, "interaction_name", drop = F]
+gg1_v <- netVisual_bubble(
+  cellchat,
+  pairLR.use = pairLR.use.up,
+  sources.use = vascular,
+  targets.use = parenchymal,
+  comparison = c(1, 2),
+  angle.x = 90,
+  remove.isolate = TRUE,
+  title.name = paste0(
+    "Up-regulated signaling in ",
+    names(object.list)[1],
+    "s | Vascular -> Parenchyma"
+  )
+)
+gg2_v <- netVisual_bubble(
+  cellchat,
+  pairLR.use = pairLR.use.up,
+  sources.use = parenchymal,
+  targets.use = vascular,
+  comparison = c(1, 2),
+  angle.x = 90,
+  remove.isolate = T,
+  title.name = paste0(
+    "Up-regulated signaling in ",
+    names(object.list)[1],
+    "s | Parenchyma -> Vascular"
+  )
+)
+gg1_v + gg2_v
+
+
+angpt2_v_v <- netVisual_bubble(
+  cellchat,
+  pairLR.use = pairLR.use.up,
+  sources.use = vascular,
+  targets.use = vascular,
+  comparison = c(1, 2),
+  angle.x = 90,
+  remove.isolate = TRUE,
+  title.name = paste0(
+    "Up-regulated signaling in
+    ",
+    names(object.list)[1],
+    "s | Vascular -> Vascular"
+  )
+)
+
+angpt2_v <- gg1_v +
+  # scale_size_continuous(range = c(0.5, 2)) +
+  theme(
+    plot.title = element_text(size = 6),
+    axis.text = element_text(
+      size = 5.5
+    ),
+    legend.position = "none"
+  )
+
+angpt2_p <- gg2_v +
+  theme(
+    plot.title = element_text(size = 6),
+    axis.text = element_text(size = 5.5),
+    legend.position = "none"
+  )
+
+legend <- get_legend(
+  angpt2_p +
+    # guides(color = guide_legend(nrow = 1)) +
+    theme(legend.position = "bottom") +
+    guides(color = guide_colourbar(barwidth = 10, barheight = 0.5))
+)
+
+# angpt2_plot <- plot_grid(angpt2_v + angpt2_p, legend,
+#   ncol = 1, rel_heights =
+#     c(1, 0.3)
+# )
+
+angpt2_left <- plot_grid(angpt2_v, angpt2_v_v, ncol = 1)
+angpt2_plot <- plot_grid(
+  angpt2_left + angpt2_p,
+  legend,
+  ncol = 1,
+  rel_heights = c(1, 0.3)
+)
+
+ggsave(here::here(
+  "05_figures/990_shared_figures",
+  "003_final_figures/001_data_for_plots/cellchat-angpt2.pdf"
+))
+
+qs::qsave(
+  gg1_v,
+  here(
+    "05_figures/990_shared_figures",
+    "003_final_figures/001_data_for_plots",
+    "cellchat-angpt2_vascular-parenchymal_ggplot.qs"
+  )
+)
+qs::qsave(
+  gg2_v,
+  here(
+    "05_figures/990_shared_figures",
+    "003_final_figures/001_data_for_plots",
+    "cellchat-angpt2_parenchymal-vascular_ggplot.qs"
+  )
+)
+qs::qsave(
+  angpt2_v_v,
+  here(
+    "05_figures/990_shared_figures",
+    "003_final_figures/001_data_for_plots",
+    "cellchat-angpt2_vascular-vascular_ggplot.qs"
+  )
+)
+```
+
+```{r}
+lr_pairs <- net |>
+  dplyr::filter(grepl("WNT", ligand))
+
+# Try filtering just to ANGPT2
+
+pairLR.use.up <- lr_pairs[, "interaction_name", drop = F]
+gg1_v <- netVisual_bubble(
+  cellchat,
+  pairLR.use = pairLR.use.up,
+  sources.use = vascular,
+  targets.use = parenchymal,
+  comparison = c(1, 2),
+  angle.x = 90,
+  remove.isolate = TRUE,
+  title.name = "WNT signalling | Vascular -> Parenchyma"
+)
+gg2_v <- netVisual_bubble(
+  cellchat,
+  pairLR.use = pairLR.use.up,
+  sources.use = parenchymal,
+  targets.use = vascular,
+  comparison = c(1, 2),
+  angle.x = 90,
+  remove.isolate = T,
+  title.name = "WNT signalling | Parenchyma -> Vascular"
+)
+gg1_v + gg2_v
+
+wnt_v <- gg1_v +
+  # scale_size_continuous(range = c(0.5, 2)) +
+  theme(
+    plot.title = element_text(size = 6),
+    axis.text = element_text(
+      size = 5.5
+    ),
+    legend.position = "none"
+  )
+
+wnt_p <- gg2_v +
+  theme(
+    plot.title = element_text(size = 6),
+    axis.text = element_text(size = 5.5),
+    legend.position = "none"
+  )
+
+legend <- get_legend(
+  wnt_p +
+    # guides(color = guide_legend(nrow = 1)) +
+    theme(legend.position = "bottom") +
+    guides(color = guide_colourbar(barwidth = 10, barheight = 0.5))
+)
+
+wnt_plot <- plot_grid(wnt_v + wnt_p, legend, ncol = 1, rel_heights = c(1, 0.3))
+```
+
+
+```{r}
+vas_of_interest <- c(vascular_cases_up, vascular_controls_up)
+genes_of_interest <- net |>
+  dplyr::filter(pathway_name %in% pathways_of_interest) |>
+  dplyr::filter(
+    source %in%
+      c(vas_of_interest, parenchymal) &
+      target %in% c(vas_of_interest, parenchymal)
+  )
+
+genes_of_interest <- genes_of_interest |>
+  # remove cases where souce and target are vascular
+  dplyr::filter(
+    !(source %in% c(vas_of_interest) & target %in% c(vas_of_interest))
+  ) |>
+  dplyr::filter(!(source %in% c(parenchymal) & target %in% c(parenchymal))) |>
+  dplyr::mutate(
+    source_fraction = if_else(
+      source %in% vas_of_interest,
+      "Vascular -> Parenchymal",
+      "Parenchymal -> Vascular"
+    )
+  )
+```
+
+```{r}
+#| eval: false
+
+# genes_of_interest |>
+#   dplyr::filter(abs(ligand.logFC) > 0.5 | abs(receptor.logFC) > 0.5)
+
+# Create a complex visualization highlighting cell types and interactions
+p <- ggplot(genes_of_interest, aes(x = source, y = target)) +
+  geom_point(aes(size = prob, color = prob), alpha = 0.7) +
+  scale_size_continuous(range = c(3, 10)) +
+  scale_color_gradient(low = "lightblue", high = "darkblue") +
+  geom_text_repel(
+    aes(label = paste(ligand, receptor, sep = "-")),
+    size = 3,
+    max.overlaps = Inf
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    panel.grid.major = element_line(color = "lightgrey", linetype = "dashed")
+  ) +
+  labs(
+    title = "Ligand-Receptor Interactions Between Cell Types",
+    x = "Source Cell Type",
+    y = "Target Cell Type",
+    size = "Interaction Probability",
+    color = "Interaction Probability"
+  )
+p
+
+# Aggregate at pathway level
+pathway_summary <- genes_of_interest |>
+  group_by(pathway_name, datasets) |>
+  summarise(
+    mean_prob = mean(prob),
+    total_interactions = n(),
+    .groups = "drop"
+  )
+
+# Create a comparative pathway visualization
+p <- ggplot(pathway_summary, aes(x = pathway_name, y = mean_prob)) +
+  geom_bar(
+    aes(fill = datasets),
+    stat = "identity",
+    position = position_dodge(width = 0.9)
+  ) +
+  geom_text(
+    aes(label = round(mean_prob, 3), group = datasets),
+    position = position_dodge(width = 0.9),
+    vjust = -0.5,
+    size = 3
+  ) +
+  scale_fill_manual(values = c("case" = "#1E90FF", "control" = "#FF6347")) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    panel.grid.major.y = element_line(color = "lightgrey", linetype = "dashed")
+  ) +
+  labs(
+    title = "Pathway Interactions: Case vs Control",
+    x = "Pathway Name",
+    y = "Mean Interaction Probability",
+    fill = "Dataset"
+  ) +
+  coord_cartesian(ylim = c(0, max(pathway_summary$mean_prob) * 1.1))
+p
+
+# Perform statistical test
+# Pivot the data for statistical comparison
+pathway_stats <- genes_of_interest |>
+  select(pathway_name, datasets, prob) |>
+  group_by(pathway_name, datasets) |>
+  summarise(prob_group = list(prob), .groups = "drop")
+
+# Perform t-tests
+perform_ttest <- function(data) {
+  # Perform t-test
+  if (length(data[[2]]) > 0 && length(data[[3]]) > 0) {
+    test_result <- t.test(unlist(data[[2]]), unlist(data[[3]]))
+    df <- data.frame(
+      pathway_name = data$pathway_name,
+      p_value = test_result$p.value
+    )
+    return(df)
+  }
+  return(NA)
+}
+
+# Calculate p-values
+pathway_pvalues <- pathway_stats |>
+  pivot_wider(names_from = datasets, values_from = prob_group) |>
+  # split into list per row
+  split(1:nrow(.)) |>
+  purrr::map_dfr(perform_ttest)
+
+# Merge p-values with summary
+pathway_summary_final <- pathway_summary |>
+  group_by(pathway_name) |>
+  arrange(desc(mean_prob)) |>
+  mutate(
+    pathway_label = paste0(pathway_name, "\n(n=", total_interactions, ")")
+  ) |>
+  left_join(pathway_pvalues, by = "pathway_name") |>
+  ungroup() |>
+  mutate(
+    pathway_label = forcats::fct_reorder(pathway_label, mean_prob),
+    significance = cut(
+      p_value,
+      breaks = c(-Inf, 0.001, 0.01, 0.05, Inf),
+      labels = c("***", "**", "*", "ns")
+    )
+  )
+
+# Create the plot
+p <- ggplot(pathway_summary_final, aes(x = pathway_label, y = mean_prob)) +
+  geom_bar(
+    aes(fill = datasets),
+    stat = "identity",
+    position = position_dodge(width = 0.9)
+  ) +
+  geom_text(
+    aes(label = significance, group = datasets),
+    position = position_dodge(width = 0.9),
+    vjust = -0.5,
+    size = 3,
+    color = "red"
+  ) +
+  scale_fill_manual(values = c("case" = "#1E90FF", "control" = "#FF6347")) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    panel.grid.major.y = element_line(color = "lightgrey", linetype = "dashed")
+  ) +
+  labs(
+    title = "Pathway Interactions: Case vs Control",
+    x = "Pathway Name",
+    y = "Mean Interaction Probability",
+    fill = "Dataset"
+  ) +
+  coord_cartesian(ylim = c(0, max(pathway_summary_final$mean_prob) * 1.1))
+
+p
+```
+
+```{r}
+# Aggregate at pathway level
+pathway_summary <- genes_of_interest |>
+  group_by(datasets, source_fraction, interaction_name) |>
+  summarise(
+    mean_prob = mean(prob),
+    total_interactions = n(),
+    .groups = "drop"
+  )
+
+pathway_summary |>
+  ggplot(aes(
+    source_fraction,
+    interaction_name,
+    colour = log(mean_prob),
+    size = total_interactions
+  )) +
+  geom_point() +
+  facet_wrap(~datasets)
+
+# Summarize mean probability per LR pair in cases and controls
+df_summary <- genes_of_interest |>
+  group_by(interaction_name, datasets) |>
+  summarize(mean_prob = mean(prob, na.rm = TRUE), .groups = "drop")
+
+# Barplot comparing cases and controls
+ggplot(df_summary, aes(x = interaction_name, y = mean_prob, fill = datasets)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(x = "Ligand-Receptor Pair", y = "Mean Probability", fill = "Group") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+#### LR pair summary for paper
+
+```{r}
+source(here::here("04_data_analysis/999_results_summary/00_figures_source.R"))
+
+# Compute mean probability per LR pair, dataset, and communication direction
+df_summary <- genes_of_interest |>
+  group_by(interaction_name, datasets, source_fraction) |>
+  summarize(mean_prob = mean(prob, na.rm = TRUE), .groups = "drop") |>
+  pivot_wider(
+    names_from = datasets,
+    values_from = mean_prob,
+    values_fill = 0
+  ) |>
+  mutate(diff_percent = abs((case - control) / ((case + control) / 2)) * 100) |>
+  filter(diff_percent >= 50) # Keep only LR pairs with at least 40% difference
+
+# Convert back to long format for ggplot
+df_long <- df_summary |>
+  pivot_longer(
+    cols = c(case, control),
+    names_to = "datasets",
+    values_to = "mean_prob"
+  ) |>
+  dplyr::mutate(
+    interaction_name_clean = str_replace(interaction_name, "_", " -> ") |>
+      str_replace("_", "/"),
+    group = if_else(datasets == "case", "AD", "Control")
+  )
+
+# Barplot with facet for communication direction
+lr_summary_p <- ggplot(
+  df_long,
+  aes(
+    x = reorder(interaction_name_clean, mean_prob),
+    y = mean_prob,
+    fill = group
+  )
+) +
+  geom_bar(stat = "identity", position = "dodge") +
+  facet_wrap(~source_fraction, scales = "free_x") + # Separate by directionality
+  labs(x = "", y = "Mean Probability", fill = "") +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+    axis.text = element_text(size = 6),
+    axis.title = element_text(size = 7)
+  ) +
+  scale_fill_npg()
+
+lr_summary_p
+```
+
+```{r}
+final_plot <- plot_grid(
+  p_combined,
+  lr_summary_p,
+  ncol = 1,
+  labels = "AUTO",
+  label_colour = "black",
+  rel_heights = c(2, 1)
+)
+final_plot <- plot_grid(
+  p_combined,
+  angpt2_plot,
+  ncol = 1,
+  labels = "AUTO",
+  label_colour = "black",
+  rel_heights = c(2, 1)
+)
+
+cairo_pdf(
+  file = here::here(
+    "05_figures/990_shared_figures/003_final_figures",
+    "figure_cellchat_angpt2.pdf"
+  ),
+  width = 7,
+  height = 9
+)
+print(final_plot)
+dev.off()
+```
+
+```{r}
+# Count the number of interactions per dataset and source_fraction
+df_count <- genes_of_interest |>
+  group_by(datasets, source_fraction, pathway_name) |>
+  summarise(num_interactions = n(), .groups = "drop")
+
+# Barplot of LR counts per condition
+ggplot(df_count, aes(x = pathway_name, y = num_interactions, fill = datasets)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(
+    x = "Communication Direction",
+    y = "Number of LR Pairs",
+    fill = "Group"
+  ) +
+  theme_minimal() +
+  facet_wrap(~source_fraction) +
+  ggtitle("Number of LR Pairs per Condition and Communication Direction")
+
+library(ggridges)
+
+# Density ridgeline plot of interaction probabilities
+ggplot(genes_of_interest, aes(x = prob, y = pathway_name, fill = datasets)) +
+  geom_density_ridges(alpha = 0.7) +
+  facet_wrap(~source_fraction) +
+  labs(x = "Interaction Probability", y = "Group", fill = "Dataset") +
+  theme_minimal() +
+  ggtitle(
+    "Distribution of LR Interaction Probabilities by Condition and Communication Direction"
+  )
+```
+Since the signaling genes in the `net.up` and `net.down` might be complex with multi-subunits, we can do further deconvolution to obtain the individual signaling genes.
+
+```{r}
+gene.up <- extractGeneSubsetFromPair(net.up, cellchat)
+gene.down <- extractGeneSubsetFromPair(net.down, cellchat)
+```
+
+Users can also find all the significant outgoing/incoming/both signaling according to the customized features and cell groups of interest
+
+```{r}
+df <- findEnrichedSignaling(
+  object.list[[2]],
+  features = pathways_of_interest,
+  idents = c("Pericyte-2", "Microglia-activated", "Perivascular-FB-KAZN2"),
+  pattern = "outgoing"
+)
+```
+
+```{r}
+# Save LR pairs data
+readr::write_tsv(
+  net,
+  here("03_data/990_processed_data/005_cellchat/differential_lr_pairs.tsv")
+)
+```
+
+#### Visualize the identified up-regulated and down-regulated signaling ligand-receptor pairs
+
+```{r}
+pairLR.use.up <- net.up[, "interaction_name", drop = F]
+gg1_v <- netVisual_bubble(
+  cellchat,
+  pairLR.use = pairLR.use.up,
+  sources.use = vascular,
+  targets.use = parenchymal,
+  comparison = c(1, 2),
+  angle.x = 90,
+  remove.isolate = T,
+  title.name = paste0(
+    "Up-regulated signaling in ",
+    names(object.list)[2],
+    " | Vascular -> Parenchyma"
+  )
+)
+pairLR.use.down <- net.down[, "interaction_name", drop = F]
+gg2_v <- netVisual_bubble(
+  cellchat,
+  pairLR.use = pairLR.use.down,
+  sources.use = vascular,
+  targets.use = parenchymal,
+  comparison = c(1, 2),
+  angle.x = 90,
+  remove.isolate = T,
+  title.name = paste0(
+    "Down-regulated signaling in ",
+    names(object.list)[2],
+    " | Vascular -> Parenchyma"
+  )
+)
+gg1_v + gg2_v
+
+gg1_p <- netVisual_bubble(
+  cellchat,
+  pairLR.use = pairLR.use.up,
+  sources.use = parenchymal,
+  targets.use = vascular,
+  comparison = c(1, 2),
+  angle.x = 90,
+  remove.isolate = T,
+  title.name = paste0(
+    "Up-regulated signaling in ",
+    names(object.list)[2],
+    " | Parenchyma -> Vascular"
+  )
+)
+# Nothing is sig downregulated
+# gg2_p <- netVisual_bubble(cellchat, pairLR.use = pairLR.use.down, sources.use = parenchymal, targets.use = vascular, comparison = c(1, 2),  angle.x = 90, remove.isolate = T,title.name = paste0("Down-regulated signaling in ", names(object.list)[2], " | Parenchyma -> Vascular"))
+gg1_p
+
+
+pdf(
+  here::here(
+    "05_figures/990_shared_figures/cellchat",
+    "vascular-parenchymal_differential_interactions.pdf"
+  ),
+  height = 6,
+  width = 19
+)
+gg1_v + gg2_v
+dev.off()
+pdf(
+  here::here(
+    "05_figures/990_shared_figures/cellchat",
+    "parenchymal-vascular_differential_interactions.pdf"
+  ),
+  height = 6,
+  width = 23
+)
+gg1_p
+dev.off()
+
+gg1_v <- netVisual_bubble(
+  cellchat,
+  pairLR.use = pairLR.use.up,
+  sources.use = vascular,
+  targets.use = vascular,
+  comparison = c(1, 2),
+  angle.x = 90,
+  remove.isolate = T,
+  title.name = paste0(
+    "Up-regulated signaling in ",
+    names(object.list)[2],
+    " | Vascular -> Vascular"
+  )
+)
+gg2_v <- netVisual_bubble(
+  cellchat,
+  pairLR.use = pairLR.use.down,
+  sources.use = vascular,
+  targets.use = vascular,
+  comparison = c(1, 2),
+  angle.x = 90,
+  remove.isolate = T,
+  title.name = paste0(
+    "Down-regulated signaling in ",
+    names(object.list)[2],
+    " | Vascular -> Vascular"
+  )
+)
+
+pdf(
+  here::here(
+    "05_figures/990_shared_figures/cellchat",
+    "vascular-vascular_differential_interactions_upreg.pdf"
+  ),
+  height = 6,
+  width = 29
+)
+gg1_v
+dev.off()
+pdf(
+  here::here(
+    "05_figures/990_shared_figures/cellchat",
+    "vascular-vascular_differential_interactions_downreg.pdf"
+  ),
+  height = 6,
+  width = 13
+)
+gg2_v
+dev.off()
+
+
+gg1_p <- netVisual_bubble(
+  cellchat,
+  pairLR.use = pairLR.use.up,
+  sources.use = parenchymal,
+  targets.use = parenchymal,
+  comparison = c(1, 2),
+  angle.x = 90,
+  remove.isolate = T,
+  title.name = paste0(
+    "Up-regulated signaling in ",
+    names(object.list)[2],
+    " | Parenchyma -> Vascular"
+  )
+)
+# Nothing is sig downregulated
+# gg2_p <- netVisual_bubble(cellchat, pairLR.use = pairLR.use.down, sources.use = parenchymal, targets.use = parenchymal, comparison = c(1, 2),  angle.x = 90, remove.isolate = T,title.name = paste0("Down-regulated signaling in ", names(object.list)[2], " | Parenchyma -> Vascular"))
+pdf(
+  here::here(
+    "05_figures/990_shared_figures/cellchat",
+    "parenchymal-parenchymal_differential_interactions.pdf"
+  ),
+  height = 6,
+  width = 23
+)
+gg1_p
+dev.off()
+```
+
+```{r}
+pairLR.use.up <- net.up |>
+  dplyr::filter(ligand == "ANGPT2") |>
+  dplyr::select(interaction_name)
+gg1 <- netVisual_bubble(
+  cellchat,
+  pairLR.use = pairLR.use.up,
+  sources.use = vascular,
+  targets.use = parenchymal,
+  comparison = c(1, 2),
+  angle.x = 45,
+  remove.isolate = T,
+  title.name = paste0("Up-regulated signaling in ", names(object.list)[2])
+)
+
+gg1_p <- netVisual_bubble(
+  cellchat,
+  pairLR.use = pairLR.use.up,
+  sources.use = parenchymal,
+  targets.use = vascular,
+  comparison = c(1, 2),
+  angle.x = 45,
+  remove.isolate = T,
+  title.name = paste0("Up-regulated signaling in ", names(object.list)[2])
+)
+
+gg1 + gg1_p
+
+pairLR.use.down <- net.down |>
+  dplyr::filter(grepl("ANGPT2", interaction_name)) |>
+  dplyr::select(interaction_name)
+gg2 <- netVisual_bubble(
+  cellchat,
+  pairLR.use = pairLR.use.down,
+  sources.use = vascular,
+  targets.use = parenchymal,
+  comparison = c(1, 2),
+  angle.x = 45,
+  remove.isolate = T,
+  title.name = paste0("Down-regulated signaling in ", names(object.list)[2])
+)
+gg1 + gg2
+```
+
+## Part IV: Visually compare cell-cell communication using Hierarchy plot, Circle plot or Chord diagram
+
+Similar to the CellChat analysis of individual dataset, CellChat can visually compare cell-cell communication networks using hierarchy plot, circle plot, chord diagram, or heatmap. More details on the visualization can be found in the CellChat analysis of individual dataset.
+
+Edge color/weight, node color/size/shape: In all visualization plots, edge colors are consistent with the sources as sender, and edge weights are proportional to the interaction strength. Thicker edge line indicates a stronger signal. In the Hierarchy plot and Circle plot, circle sizes are proportional to the number of cells in each cell group. In the hierarchy plot, solid and open circles represent source and target, respectively. In the Chord diagram, the inner thinner bar colors represent the targets that receive signal from the corresponding outer bar. The inner bar size is proportional to the signal strength received by the targets. Such inner bar is helpful for interpreting the complex chord diagram. Note that there exist some inner bars without any chord for some cell groups, please just igore it because this is an issue that has not been addressed by circlize package.
+
+```{r}
+#| eval: false
+pathway.union <- union(
+  object.list[[i]]@netP$pathways,
+  object.list[[i + 1]]@netP$pathways
+)
+
+pathways.show <- c("ANNEXIN")
+par(mfrow = c(1, 2), xpd = TRUE)
+ht <- list()
+for (i in 1:length(object.list)) {
+  ht[[i]] <- netVisual_heatmap(
+    object.list[[i]],
+    signaling = pathways.show,
+    color.heatmap = "Reds",
+    title.name = paste(pathways.show, "signaling ", names(object.list)[i])
+  )
+}
+netVisual_heatmap(
+  object.list[[1]],
+  signaling = pathways.show,
+  color.heatmap = "Reds",
+  title.name = paste(pathways.show, "signaling ", names(object.list)[1])
+)
+
+#> Do heatmap based on a single object
+#>
+#> Do heatmap based on a single object
+ComplexHeatmap::draw(ht[[1]] + ht[[2]], ht_gap = unit(0.5, "cm"))
+```
+
+```{r}
+plotGeneExpression(
+  cellchat,
+  signaling = "GRN",
+  split.by = "datasets",
+  colors.ggplot = T,
+  type = "violin"
+)
+plotGeneExpression(
+  cellchat,
+  signaling = "PSAP",
+  split.by = "datasets",
+  colors.ggplot = T,
+  type = "violin"
+)
+```
