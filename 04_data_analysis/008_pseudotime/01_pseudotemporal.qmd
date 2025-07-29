@@ -14,13 +14,21 @@ The "EndoMT" population looks to be some kind of transitioning celltype, perhaps
 # Load packages
 
 ```{r}
-source(here::here("04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"))
+source(here::here(
+  "04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"
+))
+source("04_data_analysis/998_paper_figures/00_figures_source.R")
 Sys.setenv(TAR_PROJECT = here::here())
 tar_config_set(store = here::here("_targets"))
 library(SeuratWrappers)
 library(monocle3)
 library(slingshot)
 library(GGally)
+library(ggpointdensity)
+library(switchde)
+library(tradeSeq)
+# tidy species gene data for GSEA
+library(msigdbr)
 ```
 
 ```{r}
@@ -29,17 +37,30 @@ tar_load(sce)
 tar_load(gene_ids)
 tar_load(translated_id)
 
-assertthat::assert_that(sum(rownames(sce@assays$RNA@counts) ==
-                              gene_ids$ensembl) == nrow(gene_ids))
+assertthat::assert_that(
+  sum(rownames(sce@assays$RNA@counts) == gene_ids$ensembl) == nrow(gene_ids)
+)
 ```
 
 ```{r}
-DimPlot(sce, reduction = "umap", group.by = "highlevel_manual_annotations",
-        label = TRUE)
-DimPlot(sce, reduction = "umap", group.by = "subcelltype_annotations",
-        label = TRUE)
-DimPlot(sce, reduction = "pca", group.by = "highlevel_manual_annotations",
-        label = TRUE)
+DimPlot(
+  sce,
+  reduction = "umap",
+  group.by = "highlevel_manual_annotations",
+  label = TRUE
+)
+DimPlot(
+  sce,
+  reduction = "umap",
+  group.by = "subcelltype_annotations",
+  label = TRUE
+)
+DimPlot(
+  sce,
+  reduction = "pca",
+  group.by = "highlevel_manual_annotations",
+  label = TRUE
+)
 ```
 
 ## EndoMT
@@ -48,10 +69,34 @@ DimPlot(sce, reduction = "pca", group.by = "highlevel_manual_annotations",
 
 ```{r}
 # Subset to EndoMT
+dim(sce)
 rownames(sce@assays$RNA@data) <- gene_ids$ensembl
-sce <- subset(sce, highlevel_manual_annotations %in% c("SMC", "Pericyte", "mystery-cluster", "Endothelial"))
+sce <- subset(
+  sce,
+  highlevel_manual_annotations %in%
+    c("SMC", "Pericyte", "mystery-cluster", "Endothelial")
+)
 # remove unneded cells
-sce <- subset(sce, subcelltype_annotations %in% c("Oligo-A", "Astrocyte-activated"), invert = TRUE)
+sce <- subset(
+  sce,
+  subcelltype_annotations %in% c("Oligo-A", "Astrocyte-activated"),
+  invert = TRUE
+)
+```
+
+```{r}
+# Extract the raw counts matrix (genes x cells)
+counts_matrix <- Seurat::GetAssayData(sce, slot = "counts")
+
+# Calculate how many cells each gene is expressed in
+expressed_in_cells <- Matrix::rowSums(counts_matrix > 0)
+
+# Keep only genes expressed in ≥100 cells
+genes_to_keep <- names(expressed_in_cells[expressed_in_cells >= 100])
+
+# Subset the Seurat object
+sce <- subset(sce, features = genes_to_keep)
+dim(sce)
 ```
 
 ```{r}
@@ -68,32 +113,50 @@ ElbowPlot(sce, ndims = 30)
 
 ```{r}
 # This resolution is good to recapture the level 2 celltypes
-#sce <- FindClusters(sce, resolution = 0.3)
+# sce <- FindClusters(sce, resolution = 0.3)
 # this is good to reduce the celltypes to three main clusters
 sce <- FindClusters(sce, resolution = 0.05)
 ```
 
 
 ```{r}
-DimPlot(sce, reduction = "umap", group.by = "seurat_clusters",
-              label = TRUE)
-DimPlot(sce, reduction = "umap", group.by = "highlevel_manual_annotations",
-              label = TRUE)
-DimPlot(sce, reduction = "pca", group.by = "seurat_clusters",
-              label = TRUE)
+DimPlot(sce, reduction = "umap", group.by = "seurat_clusters", label = TRUE)
+DimPlot(
+  sce,
+  reduction = "umap",
+  group.by = "highlevel_manual_annotations",
+  label = TRUE
+)
+DimPlot(sce, reduction = "pca", group.by = "seurat_clusters", label = TRUE)
 ```
 
 ```{r}
-p1 <- DimPlot(sce, reduction = "umap", group.by = "subcelltype_annotations",
-              label = TRUE)
-p2 <- DimPlot(sce, reduction = "umap", group.by = "seurat_clusters",
-              label = TRUE)
-p1|p2
-p1 <- DimPlot(sce, reduction = "umap", group.by = "highlevel_manual_annotations",
-              label = TRUE)
-p2 <- DimPlot(sce, reduction = "pca", group.by = "highlevel_manual_annotations",
-              label = TRUE)
-p1|p2
+p1 <- DimPlot(
+  sce,
+  reduction = "umap",
+  group.by = "subcelltype_annotations",
+  label = TRUE
+)
+p2 <- DimPlot(
+  sce,
+  reduction = "umap",
+  group.by = "seurat_clusters",
+  label = TRUE
+)
+p1 | p2
+p1 <- DimPlot(
+  sce,
+  reduction = "umap",
+  group.by = "highlevel_manual_annotations",
+  label = TRUE
+)
+p2 <- DimPlot(
+  sce,
+  reduction = "pca",
+  group.by = "highlevel_manual_annotations",
+  label = TRUE
+)
+p1 | p2
 ```
 
 ```{r}
@@ -101,32 +164,41 @@ p1|p2
 pca_embeddings <- Embeddings(sce, reduction = "pca")
 
 # Create a data frame for the first two principal components
-pca_df <- data.frame(PC1 = pca_embeddings[, 1], PC2 = pca_embeddings[, 2],
-                     celltype = sce$highlevel_manual_annotations)
+pca_df <- data.frame(
+  PC1 = pca_embeddings[, 1],
+  PC2 = pca_embeddings[, 2],
+  celltype = sce$highlevel_manual_annotations
+)
 
-library(ggpointdensity)
 # Generate the density plot
 p1 <- ggplot(pca_df, aes(x = PC1, y = PC2)) +
   geom_pointdensity() +
-  #geom_point(alpha = 0.5) +
+  # geom_point(alpha = 0.5) +
   theme_minimal() +
-  labs(title = "Density Plot of First Two Principal Components",
-       x = "PC1",
-       y = "PC2") +
+  labs(
+    title = "Density Plot of First Two Principal Components",
+    x = "PC1",
+    y = "PC2"
+  ) +
   facet_wrap(~celltype)
 p2 <- ggplot(pca_df, aes(x = PC1, y = PC2, colour = celltype)) +
   geom_pointdensity() +
-  #geom_point(alpha = 0.5) +
+  # geom_point(alpha = 0.5) +
   theme_minimal() +
-  labs(title = "Density Plot of First Two Principal Components",
-       x = "PC1",
-       y = "PC2")
-p1|p2
+  labs(
+    title = "Density Plot of First Two Principal Components",
+    x = "PC1",
+    y = "PC2"
+  )
+p1 | p2
 ```
 
 ```{r}
 # Create a data frame for the first 30 principal components and cell type annotations
-pca_df <- data.frame(pca_embeddings[, 1:30], CellType = sce$highlevel_manual_annotations)
+pca_df <- data.frame(
+  pca_embeddings[, 1:30],
+  CellType = sce$highlevel_manual_annotations
+)
 
 # Function to create scatter plots for each pair of PCs
 plot_pcs <- function(i) {
@@ -135,10 +207,12 @@ plot_pcs <- function(i) {
   ggplot(pca_df, aes_string(x = pc_x, y = pc_y, color = "CellType")) +
     geom_point(alpha = 0.5) +
     theme_minimal() +
-    labs(title = paste(pc_x, "vs", pc_y),
-         x = pc_x,
-         y = pc_y,
-         color = "Cell Type")
+    labs(
+      title = paste(pc_x, "vs", pc_y),
+      x = pc_x,
+      y = pc_y,
+      color = "Cell Type"
+    )
 }
 
 # Generate scatter plots for PC1 vs PC2, PC3 vs PC4, ..., PC29 vs PC30 using lapply
@@ -146,7 +220,12 @@ plots <- lapply(seq(1, 29, by = 2), plot_pcs)
 
 # Arrange plots in a grid
 plots <- do.call(grid.arrange, c(plots, ncol = 3))
-ggsave(here::here("05_figures/990_shared_figures/004_pseudotime/first_30_pcs.png"), plots, width = 20, height = 15)
+ggsave(
+  here::here("05_figures/990_shared_figures/004_pseudotime/first_30_pcs.png"),
+  plots,
+  width = 20,
+  height = 15
+)
 
 # Function to create scatter plots for each pair of PCs
 plot_pcs <- function(i) {
@@ -155,11 +234,13 @@ plot_pcs <- function(i) {
   ggplot(pca_df, aes_string(x = pc_x, y = pc_y)) +
     geom_pointdensity() +
     theme_minimal() +
-    labs(title = paste(pc_x, "vs", pc_y),
-         x = pc_x,
-         y = pc_y,
-         color = "Cell Type") +
-    facet_wrap(~ CellType)
+    labs(
+      title = paste(pc_x, "vs", pc_y),
+      x = pc_x,
+      y = pc_y,
+      color = "Cell Type"
+    ) +
+    facet_wrap(~CellType)
 }
 
 # Generate scatter plots for PC1 vs PC2, PC3 vs PC4, ..., PC29 vs PC30 using lapply
@@ -167,7 +248,14 @@ plots <- lapply(seq(1, 29, by = 2), plot_pcs)
 
 # Arrange plots in a grid
 plots <- do.call(grid.arrange, c(plots, ncol = 3))
-ggsave(here::here("05_figures/990_shared_figures/004_pseudotime/first_30_pcs_facet.png"), plots, width = 20, height = 15)
+ggsave(
+  here::here(
+    "05_figures/990_shared_figures/004_pseudotime/first_30_pcs_facet.png"
+  ),
+  plots,
+  width = 20,
+  height = 15
+)
 ```
 
 ```{r}
@@ -178,7 +266,11 @@ sce <- RunUMAP(sce, dims = 1:2)
 ```
 
 ```{r}
-sce$highlevel_manual_annotations <- if_else(sce$highlevel_manual_annotations == "mystery-cluster", "EndoMT", sce$highlevel_manual_annotations)
+sce$highlevel_manual_annotations <- if_else(
+  sce$highlevel_manual_annotations == "mystery-cluster",
+  "EndoMT",
+  sce$highlevel_manual_annotations
+)
 ```
 
 ```{r}
@@ -196,17 +288,26 @@ endo_transition <- RunUMAP(endo_transition, dims = 1:2)
 endo_transition <- FindNeighbors(endo_transition, dims = 1:2)
 endo_transition <- FindClusters(endo_transition, resolution = 0.02)
 
-DimPlot(endo_transition, reduction = "pca", group.by = "seurat_clusters",
-              label = TRUE)
-DimPlot(endo_transition, reduction = "umap", group.by = "seurat_clusters",
-              label = TRUE)
+DimPlot(
+  endo_transition,
+  reduction = "pca",
+  group.by = "seurat_clusters",
+  label = TRUE
+)
+DimPlot(
+  endo_transition,
+  reduction = "umap",
+  group.by = "seurat_clusters",
+  label = TRUE
+)
 
 # Get new clusters
 subclusters <- case_when(
   Idents(endo_transition) == 0 ~ "EndoMT_1",
   Idents(endo_transition) == 1 ~ "EndoMT_2",
   Idents(endo_transition) == 2 ~ "EndoMT_1",
-  .default = NA)
+  .default = NA
+)
 
 names(subclusters) <- colnames(endo_transition)
 
@@ -221,26 +322,37 @@ new_clusters[names(subclusters)] <- subclusters
 sce$endomt_subclusters <- new_clusters
 
 # Update Idents
-new_clusters[is.na(new_clusters)] <- sce$highlevel_manual_annotations[is.na(new_clusters)]
-qs::qsave(new_clusters,
-          here("03_data/990_processed_data/008_pseudotime",
-          "endomt_subclusters.qs"))
+new_clusters[is.na(new_clusters)] <- sce$highlevel_manual_annotations[is.na(
+  new_clusters
+)]
+qs::qsave(
+  new_clusters,
+  here(
+    "03_data/990_processed_data/008_pseudotime",
+    "endomt_subclusters.qs"
+  )
+)
 Idents(sce) <- new_clusters
 sce$level1_celltypes_with_endomt_subclusters <- Idents(sce)
 ```
 
 
 ```{r}
-DimPlot(sce, reduction = "umap", group.by = "seurat_clusters",
-              label = TRUE)
-DimPlot(sce, reduction = "umap", group.by = "highlevel_manual_annotations",
-              label = TRUE)
-DimPlot(sce, reduction = "pca", group.by = "seurat_clusters",
-              label = TRUE)
-DimPlot(sce, reduction = "pca", group.by = "level1_celltypes_with_endomt_subclusters",
-              label = TRUE)
-DimPlot(sce, reduction = "pca", group.by = "diagnosis",
-              label = TRUE)
+DimPlot(sce, reduction = "umap", group.by = "seurat_clusters", label = TRUE)
+DimPlot(
+  sce,
+  reduction = "umap",
+  group.by = "highlevel_manual_annotations",
+  label = TRUE
+)
+DimPlot(sce, reduction = "pca", group.by = "seurat_clusters", label = TRUE)
+DimPlot(
+  sce,
+  reduction = "pca",
+  group.by = "level1_celltypes_with_endomt_subclusters",
+  label = TRUE
+)
+DimPlot(sce, reduction = "pca", group.by = "diagnosis", label = TRUE)
 ```
 
 ### Slingshot
@@ -255,12 +367,19 @@ sce_slingshot <- as.SingleCellExperiment(sce)
 ```{r}
 sce_slingshot <- slingshot(
   sce_slingshot,
-  clusterLabels = 'level1_celltypes_with_endomt_subclusters',
+  clusterLabels = "level1_celltypes_with_endomt_subclusters",
   start.clus = "Endothelial",
-  reducedDim = 'PCA'
+  reducedDim = "PCA"
 )
-png(here::here("05_figures/990_shared_figures/004_pseudotime/slingshot_pca_endothelial_start_ndim2_res0.1.png"))
-plot(reducedDims(sce_slingshot)$PCA, col = sce$level1_celltypes_with_endomt_subclusters, pch = 16, asp = 1)
+png(here::here(
+  "05_figures/990_shared_figures/004_pseudotime/slingshot_pca_endothelial_start_ndim2_res0.1.png"
+))
+plot(
+  reducedDims(sce_slingshot)$PCA,
+  col = sce$level1_celltypes_with_endomt_subclusters,
+  pch = 16,
+  asp = 1
+)
 lines(SlingshotDataSet(sce_slingshot), lwd = 2)
 dev.off()
 ```
@@ -269,54 +388,113 @@ dev.off()
 # 1. Plot PCA with Slingshot trajectory
 pca <- reducedDims(sce_slingshot)$PCA
 lineages <- slingCurves(sce_slingshot)
+# Extract pseudotimes
+pseudotime <- slingPseudotime(sce_slingshot)
 
-qs::qsave(sce_slingshot, here("03_data/990_processed_data/008_pseudotime",
-                              "slingshot_obj.qs"))
+
+qs::qsave(
+  sce_slingshot,
+  here(
+    "03_data/990_processed_data/008_pseudotime",
+    "slingshot_obj.qs"
+  )
+)
 # sce_slingshot <- qs::qread(here("03_data/990_processed_data/008_pseudotime",
 #                               "slingshot_obj.qs"))
 
 celltype <- sce_slingshot$level1_celltypes_with_endomt_subclusters
-#celltype <- sce_slingshot$subcelltype_annotations
+celltype_level2 <- sce_slingshot$subcelltype_annotations
+# want to make a celltype vector that has endothelial/endomt sublevels, but pericyte and smc level1
+celltype_mix <- if_else(celltype == "Endothelial", celltype_level2, celltype) |>
+  str_replace("_", "-")
+table(celltype)
+table(celltype_level2)
+table(celltype_mix)
 celltype <- str_replace(celltype, "_", "-")
+celltype_lineage <- pseudotime |>
+  as.data.frame() |>
+  rownames_to_column("cell") |>
+  dplyr::mutate(
+    celltype_lineage = if_else(is.na(pseudotime[, 1]), "Lineage 2", "Lineage 1")
+  )
 
+# Define your manual colour mapping
+mypal <- pal_npg("nrc")(9)
+scales::show_col(mypal)
+celltype_colors <- c(
+  "Capillary" = "#4DBBD5FF",
+  "Arterial" = "#F39B7FFF",
+  "Venous" = "#7E6148FF",
+  "Pericyte" = "#91D1C2FF",
+  "SMC" = "#00A087FF",
+  "EndoMT-1" = "#DC0000FF",
+  "EndoMT-2" = "#E64B35FF",
+  "EndoMT-SMC Lienage" = "#8491B4FF",
+  "EndoMT-PC Lineage" = "#3C5488FF"
+)
 # Plot PCA colored by cell type
 # Flip x-axis
-p_pca <- ggplot(as.data.frame(pca), aes(x = -PC_1, y = PC_2)) +
-  geom_point(aes(color = celltype),
-             size = 0.8, alpha = 0.6) +
+p_pca <- pca |>
+  as.data.frame() |>
+  rownames_to_column("cell") |>
+  dplyr::left_join(celltype_lineage, by = "cell") |>
+  ggplot(aes(x = -PC_1, y = PC_2)) +
+  # geom_point(aes(color = celltype_mix),
+  #            size = 0.8, alpha = 0.6) +
+  ggrastr::geom_point_rast(
+    size = 0.8,
+    alpha = 0.6,
+    aes(color = celltype_mix),
+    raster.dpi = 300
+  ) +
   scale_color_brewer(palette = "Set1") +
   theme_minimal() +
   labs(x = "PC1", y = "PC2", color = "Celltype &\nLineage") +
-  scale_color_npg()
-  #scale_color_brewer(palette = "Dark2")
+  scale_color_manual(values = celltype_colors)
+# scale_color_npg()
+# scale_color_brewer(palette = "Dark2")
 
 # Add arrows to the curves
-curves <- map2_dfr(lineages, names(lineages), ~ .x$s |>
-           as.data.frame() |>
-           mutate(lineage = .y)) |>
-  mutate(lineage = if_else(lineage == "Lineage1", "EndoMT-SMC Lienage",
-                           "EndoMT-PC Lineage"))
+curves <- map2_dfr(
+  lineages,
+  names(lineages),
+  ~ .x$s |>
+    as.data.frame() |>
+    mutate(lineage = .y)
+) |>
+  mutate(
+    lineage = if_else(
+      lineage == "Lineage1",
+      "EndoMT-SMC Lienage",
+      "EndoMT-PC Lineage"
+    )
+  )
 
 # Add arrows using geom_path and arrow.decoration
 p_pca <- p_pca +
-  geom_path(data = curves,
-            aes(x = -PC_1, y = PC_2, colour = lineage), # Note the negative PC_1
-            linewidth = 1.1,
-            arrow = arrow(type = "closed",
-                         length = unit(0.1, "inches"),
-                         ends = "last"))
+  geom_path(
+    data = curves,
+    aes(x = -PC_1, y = PC_2, colour = lineage), # Note the negative PC_1
+    linewidth = 1.1,
+    arrow = arrow(
+      type = "closed",
+      length = unit(0.1, "inches"),
+      ends = "last"
+    )
+  )
 
 # Calculate centroids for each cell type
 centroids <- data.frame(
   PC_1 = pca[, 1],
   PC_2 = pca[, 2],
-  CellType = celltype) |>
+  CellType = celltype_mix
+) |>
   group_by(CellType) |>
   summarise(
     mean_PC1 = mean(PC_1),
     mean_PC2 = mean(PC_2)
   )
- p_pca_labeled <- p_pca +
+p_pca_labeled <- p_pca +
   geom_text_repel(
     data = centroids,
     aes(x = -mean_PC1, y = mean_PC2, label = CellType),
@@ -331,18 +509,29 @@ centroids <- data.frame(
   )
 
 print(p_pca_labeled)
+p_level2 <- p_pca_labeled + facet_wrap(~celltype_lineage)
 
-ggsave(here("05_figures/990_shared_figures/004_pseudotime/slingshot_pca_npc2_res0.1.png"), height = 8, width = 10)
-#ggsave(here("05_figures/990_shared_figures/004_pseudotime/slingshot_pca_npc2_res0.1_level-2-celltypes.png"), height = 8, width = 10)
+ggsave(
+  here(
+    "05_figures/990_shared_figures/004_pseudotime/slingshot_pca_npc2_res0.1.png"
+  ),
+  height = 8,
+  width = 10
+)
+ggsave(
+  here(
+    "05_figures/990_shared_figures/004_pseudotime/slingshot_pca_npc2_res0.1_level-2-celltypes_facet.png"
+  ),
+  plot = p_level2,
+  height = 8,
+  width = 10
+)
 
-
-# Extract pseudotimes
-pseudotime <- slingPseudotime(sce_slingshot)
 
 # Convert to data frame for ggplot
 pseudotime_df <- data.frame(
-  Pseudotime1 = pseudotime[,1],
-  Pseudotime2 = pseudotime[,2],
+  Pseudotime1 = pseudotime[, 1],
+  Pseudotime2 = pseudotime[, 2],
   Group = sce_slingshot$diagnosis
 )
 
@@ -350,24 +539,32 @@ pseudotime_df <- data.frame(
 p1 <- ggplot(pseudotime_df, aes(x = Pseudotime1, fill = Group)) +
   geom_density(alpha = 0.5) +
   theme_minimal() +
-  labs(title = "Pseudotime Distribution for Lineage 1", x = "Pseudotime", y = "Density")
+  labs(
+    title = "Pseudotime Distribution for Lineage 1",
+    x = "Pseudotime",
+    y = "Density"
+  )
 
 # Plot Pseudotime for Lineage 2
 p2 <- ggplot(pseudotime_df, aes(x = Pseudotime2, fill = Group)) +
   geom_density(alpha = 0.5) +
   theme_minimal() +
-  labs(title = "Pseudotime Distribution for Lineage 2", x = "Pseudotime", y = "Density")
+  labs(
+    title = "Pseudotime Distribution for Lineage 2",
+    x = "Pseudotime",
+    y = "Density"
+  )
 
 # Combine the density plots side by side
-p_density <- plot_grid(p1, p2, labels = c("A", "B"))
+p_density <- plot_grid(p1, p2, labels = c("A", "B"), label_colour = "black")
 
 print(p_density)
 
 # Convert to data frame for ggplot
 pseudotime_df <- data.frame(
   Cell = colnames(sce_slingshot),
-  Pseudotime1 = pseudotime[,1],
-  Pseudotime2 = pseudotime[,2],
+  Pseudotime1 = pseudotime[, 1],
+  Pseudotime2 = pseudotime[, 2],
   Group = sce_slingshot$diagnosis,
   CellType = sce_slingshot$level1_celltypes_with_endomt_subclusters
 )
@@ -376,62 +573,269 @@ pseudotime_df <- data.frame(
 p1_diagnosis <- ggplot(pseudotime_df, aes(x = Pseudotime1, fill = Group)) +
   geom_density(alpha = 0.5) +
   theme_minimal() +
-  labs(title = "Pseudotime Distribution for Lineage 1", x = "Pseudotime", y = "Density")
+  labs(
+    title = "Pseudotime Distribution for Lineage 1",
+    x = "Pseudotime",
+    y = "Density"
+  )
 
 # Plot Pseudotime for Lineage 2
 p2_diagnosis <- ggplot(pseudotime_df, aes(x = Pseudotime2, fill = Group)) +
   geom_density(alpha = 0.5) +
   theme_minimal() +
-  labs(title = "Pseudotime Distribution for Lineage 2", x = "Pseudotime", y = "Density")
+  labs(
+    title = "Pseudotime Distribution for Lineage 2",
+    x = "Pseudotime",
+    y = "Density"
+  )
 
 # Plot Pseudotime for Lineage 1 with Cell Type
 p1_no_facet <- ggplot(pseudotime_df, aes(x = Pseudotime1, fill = Group)) +
   geom_density(alpha = 0.5) +
   theme_minimal() +
-  labs(title = "Pseudotime Distribution for Lineage 1 by Cell Type", x = "Pseudotime", y = "Density")
+  labs(
+    title = "Pseudotime Distribution for Lineage 1 by Cell Type",
+    x = "Pseudotime",
+    y = "Density"
+  )
 
 p2_no_facet <- ggplot(pseudotime_df, aes(x = Pseudotime2, fill = Group)) +
   geom_density(alpha = 0.5) +
   theme_minimal() +
-  labs(title = "Pseudotime Distribution for Lineage 2 by Cell Type", x = "Pseudotime", y = "Density")
+  labs(
+    title = "Pseudotime Distribution for Lineage 2 by Cell Type",
+    x = "Pseudotime",
+    y = "Density"
+  )
 
 # Plot Pseudotime for Lineage 2 with Cell Type
 p1 <- ggplot(pseudotime_df, aes(x = Pseudotime1, fill = CellType)) +
   geom_density(alpha = 0.5) +
   theme_minimal() +
-  facet_wrap(~ Group) +  # Separate plots for cases and controls
+  facet_wrap(~Group) + # Separate plots for cases and controls
   labs(x = "Pseudotime", y = "Density")
 
 # Plot Pseudotime for Lineage 2 with Cell Type
 p2 <- ggplot(pseudotime_df, aes(x = Pseudotime2, fill = CellType)) +
   geom_density(alpha = 0.5) +
   theme_minimal() +
-  facet_wrap(~ Group) +  # Separate plots for cases and controls
+  facet_wrap(~Group) + # Separate plots for cases and controls
   labs(x = "Pseudotime", y = "Density")
 
 # Combine the density plots side by side
-p_density <- plot_grid(p1, p2, labels = c("A", "B"))
+p_density <- plot_grid(p1, p2, labels = c("A", "B"), label_colour = "black")
 
 (p1_no_facet + p2_no_facet) / (p1 + p2)
 
-ggsave(here("05_figures/990_shared_figures/004_pseudotime/slingshot_density_npc2_res0.1.png"), height = 8, width = 10)
+ggsave(
+  here(
+    "05_figures/990_shared_figures/004_pseudotime/slingshot_density_npc2_res0.1.png"
+  ),
+  height = 8,
+  width = 10
+)
 
 print(p_density)
 
 
 p1 <- ggplot(data.frame(pca, pseudotime), aes(PC_1, PC_2, color = Lineage1)) +
   geom_point(alpha = 0.7) +
-  scale_color_viridis_c(option = 'plasma', name = 'Pseudotime') +
-  labs(x = 'PC1', y = 'PC2') +
+  scale_color_viridis_c(option = "plasma", name = "Pseudotime") +
+  labs(x = "PC1", y = "PC2") +
   theme_minimal()
 ```
+
+## PCA supp figure
+
+```{r}
+# merge pseudotimes
+merge_pseudotime <- if_else(
+  is.na(sce_slingshot$slingPseudotime_1),
+  sce_slingshot$slingPseudotime_2,
+  sce_slingshot$slingPseudotime_1
+)
+
+sce_slingshot$diag_plot <- if_else(
+  sce_slingshot$diagnosis == "Case",
+  "AD",
+  "Control"
+)
+sce_slingshot$sex_plot <- if_else(sce_slingshot$sex == "M", "Male", "Female")
+
+facet_counts <- data.frame(
+  diag_plot = sce_slingshot$diag_plot,
+  sex_plot = sce_slingshot$sex_plot,
+  donor_id = sce_slingshot$donor
+) |>
+  summarise(n_donors = n_distinct(donor_id), .by = c(diag_plot, sex_plot))
+
+facet_counts <- facet_counts |>
+  mutate(
+    facet_label = paste0(diag_plot, " | ", sex_plot, "\n(n=", n_donors, ")")
+  )
+
+label_vec <- setNames(
+  facet_counts$facet_label,
+  paste(facet_counts$diag_plot, facet_counts$sex_plot, sep = "___")
+)
+
+pca_p <- as.data.frame(pca)
+pca_p$facet_group <- paste(
+  sce_slingshot$diag_plot,
+  sce_slingshot$sex_plot,
+  sep = "___"
+)
+
+# Plot PCA colored by cell type
+# Flip x-axis
+p_pca_diagnostic <- ggplot(pca_p, aes(x = -PC_1, y = PC_2)) +
+  geom_point(aes(color = merge_pseudotime), size = 0.8, alpha = 0.3) +
+  facet_wrap(~facet_group, labeller = as_labeller(label_vec)) +
+  theme_minimal() +
+  labs(x = "PC1", y = "PC2", color = "Pseudotime") +
+  scale_color_viridis_c()
+
+print(p_pca_diagnostic)
+
+ggsave(
+  here(
+    "05_figures/990_shared_figures/004_pseudotime",
+    "slingshot_pca_diagnosis-sex.pdf"
+  ),
+  width = 7,
+  height = 8
+)
+# ggsave(here("05_figures/990_shared_figures/004_pseudotime/slingshot_pca_npc2_res0.1_level-2-celltypes.png"), height = 8, width = 10)
+```
+
+```{r}
+head(pca_p)
+
+vascular_markers <- list(
+  endothelial = c("CLDN5", "PECAM1", "VWF", "ENG", "FLT1"),
+  pericyte = c("PDGFRB", "RGS5", "FOXP2", "ABCC9"),
+  smc = c("ACTA2", "MYH11", "LMOD1")
+)
+
+markers <- translated_id |>
+  dplyr::filter(hgnc_symbol %in% unlist(vascular_markers))
+
+# for SingleCellExperiment
+exprs_data <- logcounts(sce_slingshot)[markers$ensembl_gene_id, , drop = FALSE]
+exprs_data[1:3, 1:5]
+
+exprs <- exprs_data |>
+  as.data.frame() |>
+  rownames_to_column("ensembl_gene_id") |>
+  pivot_longer(
+    !ensembl_gene_id,
+    names_to = "cellid",
+    values_to = "logcounts"
+  ) |>
+  dplyr::left_join(markers, by = "ensembl_gene_id")
+head(exprs)
+
+# Assert that all the cellids are present
+assertthat::assert_that(sum(!(exprs$cellid %in% rownames(pca_p))) == 0)
+
+# Make a data frame of gene → cell type
+marker_df <- tibble::enframe(
+  vascular_markers,
+  name = "celltype",
+  value = "hgnc_symbol"
+) |>
+  unnest(hgnc_symbol)
+
+plot_data <- pca_p |>
+  rownames_to_column("cellid") |>
+  dplyr::left_join(x = exprs, y = _, by = "cellid") |>
+  dplyr::inner_join(marker_df, by = "hgnc_symbol") |>
+  as_tibble() |>
+  dplyr::mutate(facet_label = paste0(celltype, ": ", hgnc_symbol)) |>
+  dplyr::mutate(logcount_capped = pmin(logcounts, 3))
+
+
+# Join to your main long-format data
+p <- ggplot(plot_data, aes(x = -PC_1, y = PC_2, colour = logcount_capped)) +
+  geom_point_rast(size = 0.1, alpha = 0.6, raster.dpi = 300) + # see next step
+  scale_color_viridis_c() +
+  facet_wrap(~facet_label, ncol = 4) +
+  theme_minimal(base_size = 10) +
+  theme(strip.text = element_text(face = "bold"), legend.position = "bottom")
+
+ggsave(
+  here::here(
+    "05_figures/990_shared_figures/003_final_figures",
+    "000_sup_figures",
+    "endomt-pca-markers.pdf"
+  ),
+  plot = p,
+  width = 7,
+  height = 9,
+  units = "in",
+  device = cairo_pdf
+)
+
+p <- plot_data |>
+  dplyr::filter(
+    hgnc_symbol %in% c("FLT1", "PDGFRB", "RGS5", "MYH11", "PECAM1", "LMOD1")
+  ) |>
+  ggplot(aes(x = -PC_1, y = PC_2, colour = logcount_capped)) +
+  geom_point_rast(size = 0.1, alpha = 0.6, raster.dpi = 300) + # see next step
+  scale_color_viridis_c() +
+  facet_wrap(~facet_label, ncol = 2) +
+  theme_minimal(base_size = 10) +
+  theme(strip.text = element_text(face = "bold"), legend.position = "bottom")
+
+ggsave(
+  here::here(
+    "05_figures/990_shared_figures/003_final_figures",
+    "000_sup_figures",
+    "endomt-pca-markers-reduced.pdf"
+  ),
+  plot = p,
+  width = 7,
+  height = 9,
+  units = "in",
+  device = cairo_pdf
+)
+```
+
 
 ```{r}
 metadata <- data.frame(
   donor = colData(sce_slingshot)$donor,
   celltype = sce_slingshot@colData$level1_celltypes_with_endomt_subclusters,
-  diagnosis = sce_slingshot@colData$diagnosis
+  diagnosis = sce_slingshot@colData$diagnosis,
+  apoe = sce_slingshot@colData$apoe_status,
+  sex = sce_slingshot@colData$sex
 )
+
+metadata |>
+  dplyr::distinct(donor, .keep_all = TRUE) |>
+  dplyr::count(diagnosis, sex, apoe)
+
+
+percent_overall <- metadata |>
+  dplyr::count(donor, celltype, diagnosis, sex, apoe) |>
+  dplyr::mutate(percent = n / sum(n) * 100, .by = donor)
+
+p <- percent_overall |>
+  dplyr::filter(grepl("EndoMT", celltype)) |>
+  ggplot(aes(celltype, percent, colour = apoe)) +
+  geom_boxplot(width = 0.5) +
+  geom_jitter(width = 0.15, size = 0.4, alpha = 0.9) +
+  facet_wrap(sex ~ diagnosis)
+
+cairo_pdf(
+  file = here::here(
+    "05_figures/990_shared_figures/endomt-prop_apoe_by_sex_and_diagnosis.pdf"
+  ),
+  width = 7,
+  height = 9
+)
+print(p)
+dev.off()
 
 percent_overall <- metadata |>
   dplyr::count(donor, celltype, diagnosis) |>
@@ -439,7 +843,9 @@ percent_overall <- metadata |>
 # get the percent of endomt in endothelial cells per donor
 percent_endomt <- metadata |>
   dplyr::filter(!celltype %in% c("Pericyte", "SMC")) |>
-  dplyr::mutate(celltype = if_else(grepl("EndoMT", celltype), "EndoMT", celltype)) |>
+  dplyr::mutate(
+    celltype = if_else(grepl("EndoMT", celltype), "EndoMT", celltype)
+  ) |>
   dplyr::count(donor, celltype, diagnosis) |>
   dplyr::mutate(percent = n / sum(n) * 100, .by = donor) |>
   dplyr::filter(grepl("EndoMT", celltype)) |>
@@ -457,20 +863,23 @@ wide_df <- percent_overall |>
 
 # Move diagnosis column to rownames for annotation
 rownames(wide_df) <- wide_df$donor
-diagnosis_annotation <- wide_df %>%
-  select(donor, diagnosis) %>%
+diagnosis_annotation <- wide_df |>
+  select(donor, diagnosis) |>
   column_to_rownames("donor")
 
 # Remove non-numeric columns before correlation
-wide_numeric <- wide_df %>% select(-donor, -diagnosis)
+wide_numeric <- wide_df |> select(-donor, -diagnosis)
 
 pdf(here::here(
   "05_figures/990_shared_figures/003_final_figures",
-  "001_data_for_plots", "donor-celltype-percent-corrgram.pdf"
+  "001_data_for_plots",
+  "donor-celltype-percent-corrgram.pdf"
 ))
-corrgram::corrgram(wide_numeric,
+corrgram::corrgram(
+  wide_numeric,
   main = "Endothelial and mural celltype proportions",
-  lower.panel = panel.pts, upper.panel = panel.conf,
+  lower.panel = panel.pts,
+  upper.panel = panel.conf,
   diag.panel = panel.density
 )
 dev.off()
@@ -479,7 +888,8 @@ dev.off()
 cor_matrix <- cor(wide_numeric, use = "pairwise.complete.obs")
 
 # Plot
-ggcorrplot(cor_matrix,
+ggcorrplot(
+  cor_matrix,
   method = "circle", # or "square" for heatmap-like look
   type = "upper", # Show only upper triangle
   lab = TRUE, # Show correlation values
@@ -500,10 +910,15 @@ ggpairs(
 
 
 # Compute correlation matrix (Spearman)
-cor_matrix <- cor(wide_numeric, method = "spearman", use = "pairwise.complete.obs")
+cor_matrix <- cor(
+  wide_numeric,
+  method = "spearman",
+  use = "pairwise.complete.obs"
+)
 
 # Plot heatmap with case/control annotation
-hmap <- pheatmap(as.matrix(wide_numeric),
+hmap <- pheatmap(
+  as.matrix(wide_numeric),
   annotation_row = diagnosis_annotation, # Annotate donors by diagnosis
   clustering_distance_rows = "euclidean",
   clustering_distance_cols = "euclidean",
@@ -514,20 +929,22 @@ hmap
 pdf(
   here::here(
     "05_figures/990_shared_figures/003_final_figures",
-    "001_data_for_plots", "donor-celltype-percent.pdf"
+    "001_data_for_plots",
+    "donor-celltype-percent.pdf"
   ),
-  height = 15, width = 12
+  height = 15,
+  width = 12
 )
 print(hmap)
 dev.off()
 
-pheatmap(cor_matrix,
+pheatmap(
+  cor_matrix,
   clustering_distance_rows = "euclidean",
   clustering_distance_cols = "euclidean",
   display_numbers = TRUE,
   main = "Cell Type Proportion Correlations"
 )
-
 
 
 # Scatterplot: EndoMT vs Pericytes with color by Diagnosis
@@ -549,16 +966,25 @@ ggplot(wide_df, aes(x = EndoMT_2, y = SMC, color = diagnosis)) +
 wide_df <- wide_df |>
   as.data.frame()
 rownames(wide_df) <- wide_df$donor
-wide_numeric <- wide_df %>% dplyr::select(-donor, -diagnosis) # Remove donor column for numeric operations
+wide_numeric <- wide_df |> dplyr::select(-donor, -diagnosis) # Remove donor column for numeric operations
 
 # Compute correlation of EndoMT with all other cell types across donors
-cor_vector <- cor(wide_numeric, method = "spearman", use = "pairwise.complete.obs")[, "EndoMT_2"]
+cor_vector <- cor(
+  wide_numeric,
+  method = "spearman",
+  use = "pairwise.complete.obs"
+)[, "EndoMT_2"]
 
 # Convert to a dataframe for visualization
 cor_df <- data.frame(CellType = names(cor_vector), Correlation = cor_vector)
 
 # Heatmap of correlations
-pheatmap(matrix(cor_vector, ncol = 1, dimnames = list(names(cor_vector), "Correlation")),
+pheatmap(
+  matrix(
+    cor_vector,
+    ncol = 1,
+    dimnames = list(names(cor_vector), "Correlation")
+  ),
   display_numbers = TRUE,
   main = "Correlation of EndoMT with Other Cell Types Across Donors"
 )
@@ -566,9 +992,9 @@ pheatmap(matrix(cor_vector, ncol = 1, dimnames = list(names(cor_vector), "Correl
 
 ```{r}
 # Pivot to wide format
-percent_wide <- percent_overall %>%
-  select(donor, celltype, percent) %>%
-  pivot_wider(names_from = celltype, values_from = percent, values_fill = 0) %>%
+percent_wide <- percent_overall |>
+  select(donor, celltype, percent) |>
+  pivot_wider(names_from = celltype, values_from = percent, values_fill = 0) |>
   column_to_rownames("donor")
 
 pca_res <- prcomp(percent_wide, scale. = TRUE, center = TRUE)
@@ -588,7 +1014,8 @@ print(cor_results)
 
 rownames(pca_merged) <- pca_merged$donor
 pca_merged$donor <- NULL
-correlations <- cor(pca_merged[, grep("^PC", colnames(pca_merged))],
+correlations <- cor(
+  pca_merged[, grep("^PC", colnames(pca_merged))],
   pca_merged[, -grep("^PC", colnames(pca_merged))],
   method = "spearman"
 )
@@ -602,7 +1029,11 @@ ggplot(pca_merged, aes(x = PC1, y = EndoMT_1)) +
 
 # Convert PCA scores to long format
 pca_long <- pca_scores |>
-  pivot_longer(cols = starts_with("PC"), names_to = "PC", values_to = "PC_value")
+  pivot_longer(
+    cols = starts_with("PC"),
+    names_to = "PC",
+    values_to = "PC_value"
+  )
 
 
 # Convert cell type proportions to long format
@@ -616,7 +1047,11 @@ ggplot(plot_data, aes(x = PC_value, y = percent)) +
   geom_point(alpha = 0.7) +
   geom_smooth(method = "lm", se = FALSE, color = "blue") + # Add trendline
   facet_grid(celltype ~ PC, scales = "free") + # Facet by both PC and cell type
-  labs(x = "PC Value", y = "Cell Type Proportion", title = "PCA vs Cell Type Proportions") +
+  labs(
+    x = "PC Value",
+    y = "Cell Type Proportion",
+    title = "PCA vs Cell Type Proportions"
+  ) +
   theme_minimal() +
   theme(strip.text = element_text(size = 10, face = "bold"))
 ```
@@ -630,13 +1065,18 @@ pseudotime_data <- pseudotime_data |>
     Group = sce_slingshot$diagnosis,
     CellType = sce_slingshot$level1_celltypes_with_endomt_subclusters
   ) |>
-  pivot_longer(cols = starts_with("Lineage"),
-               names_to = "lineage",
-               values_to = "Pseudotime") |>
-  dplyr::mutate(celltype_reduced = case_when(
-    CellType %in% c("EndoMT_1", "EndoMT_2") ~ "EndoMT-1/2",
-    CellType %in% c("Pericyte", "SMC") ~ "Pericyte/SMC",
-    .default = CellType)) |>
+  pivot_longer(
+    cols = starts_with("Lineage"),
+    names_to = "lineage",
+    values_to = "Pseudotime"
+  ) |>
+  dplyr::mutate(
+    celltype_reduced = case_when(
+      CellType %in% c("EndoMT_1", "EndoMT_2") ~ "EndoMT-1/2",
+      CellType %in% c("Pericyte", "SMC") ~ "Pericyte/SMC",
+      .default = CellType
+    )
+  ) |>
   dplyr::filter(!is.na(Pseudotime))
 ```
 
@@ -645,27 +1085,31 @@ pseudotime_data <- pseudotime_data |>
 
 # Calculate cell type abundance per pseudotime bin
 celltype_abundance <- pseudotime_data |>
-  dplyr::group_by(Pseudotime = cut(Pseudotime, breaks = 5)) %>%
-  dplyr::count(celltype_reduced) %>%
-  dplyr::group_by(Pseudotime) %>%
-  dplyr::slice_max(n, n = 1) %>%
+  dplyr::group_by(Pseudotime = cut(Pseudotime, breaks = 5)) |>
+  dplyr::count(celltype_reduced) |>
+  dplyr::group_by(Pseudotime) |>
+  dplyr::slice_max(n, n = 1) |>
   dplyr::ungroup()
 
 density <- celltype_abundance$Pseudotime |>
-  str_remove_all("]") |> str_remove_all("\\(") |> str_split(",") |>
+  str_remove_all("]") |>
+  str_remove_all("\\(") |>
+  str_split(",") |>
   map_dfr(~ data.frame("min" = as.numeric(.x[1]), "max" = as.numeric(.x[2]))) |>
   cbind("celltype" = celltype_abundance$celltype_reduced) |>
   dplyr::mutate(Pseudotime = 10)
 
 # Prepare density data for each lineage and group
 density_data <- lapply(lineage_names, function(lineage) {
-  pseudotime_data %>%
-    filter(!is.na(Pseudotime[, lineage])) %>%
-    group_by(Group) %>%
+  pseudotime_data |>
+    filter(!is.na(Pseudotime[, lineage])) |>
+    group_by(Group) |>
     summarise(
-      density = density(Pseudotime[, lineage],
-                        from = min(Pseudotime[, lineage], na.rm = TRUE),
-                        to = max(Pseudotime[, lineage], na.rm = TRUE))
+      density = density(
+        Pseudotime[, lineage],
+        from = min(Pseudotime[, lineage], na.rm = TRUE),
+        to = max(Pseudotime[, lineage], na.rm = TRUE)
+      )
     )
 })
 
@@ -674,17 +1118,30 @@ density_plot <- ggplot(pseudotime_data, aes(x = Pseudotime, fill = Group)) +
   theme_minimal() +
   labs(x = "Pseudotime", y = "Density") +
   facet_wrap(~lineage) +
-  geom_rect(data = density,
-            aes(xmin = min, xmax = max, ymin = 0, ymax = 0.15,
-                fill = celltype), alpha = 0.2)
+  geom_rect(
+    data = density,
+    aes(
+      xmin = min,
+      xmax = max,
+      ymin = 0,
+      ymax = 0.15,
+      fill = celltype
+    ),
+    alpha = 0.2
+  )
 density_plot
 ```
 
 ```{r}
 pseudotime_data <- pseudotime_data |>
-  dplyr::mutate(Group = if_else(Group == "Case", "AD", Group),
-                lineage = if_else(lineage == "Lineage1", "EndoMT-SMC Lienage",
-                           "EndoMT-PC Lineage"))
+  dplyr::mutate(
+    Group = if_else(Group == "Case", "AD", Group),
+    lineage = if_else(
+      lineage == "Lineage1",
+      "EndoMT-SMC Lienage",
+      "EndoMT-PC Lineage"
+    )
+  )
 
 # Calculate cell type proportions per pseudotime bin
 celltype_proportions <- pseudotime_data |>
@@ -710,7 +1167,10 @@ annotation_bars <- celltype_proportions |>
   dplyr::group_by(lineage) |>
   dplyr::arrange(lineage, xmin) |>
   dplyr::mutate(
-    group_id = cumsum(celltype_reduced != dplyr::lag(celltype_reduced, default = dplyr::first(celltype_reduced)))
+    group_id = cumsum(
+      celltype_reduced !=
+        dplyr::lag(celltype_reduced, default = dplyr::first(celltype_reduced))
+    )
   ) |>
   dplyr::group_by(lineage, celltype_reduced, group_id) |>
   dplyr::summarise(
@@ -727,20 +1187,30 @@ annotation_bars <- celltype_proportions |>
 
 # Create the density plot with consolidated annotation bars
 density_plot <- ggplot() +
-  geom_density(data = pseudotime_data,
-               aes(x = Pseudotime, fill = Group),
-               alpha = 0.7) +
-  geom_rect(data = annotation_bars,
-            aes(xmin = xmin, xmax = xmax,
-                ymin = ymin, ymax = ymax,
-                fill = celltype_reduced),
-            inherit.aes = FALSE) +
-  geom_text(data = annotation_bars,
-            aes(x = x_mid, y = label_y, label = celltype_reduced),
-            size = 2,
-            #angle = 45,
-            hjust = 0.5,
-            inherit.aes = FALSE) +
+  geom_density(
+    data = pseudotime_data,
+    aes(x = Pseudotime, fill = Group),
+    alpha = 0.7
+  ) +
+  geom_rect(
+    data = annotation_bars,
+    aes(
+      xmin = xmin,
+      xmax = xmax,
+      ymin = ymin,
+      ymax = ymax,
+      fill = celltype_reduced
+    ),
+    inherit.aes = FALSE
+  ) +
+  geom_text(
+    data = annotation_bars,
+    aes(x = x_mid, y = label_y, label = celltype_reduced),
+    size = 2,
+    # angle = 45,
+    hjust = 0.5,
+    inherit.aes = FALSE
+  ) +
   scale_fill_manual(
     values = c(
       "Control" = "#DC0000FF",
@@ -752,12 +1222,13 @@ density_plot <- ggplot() +
     ),
     breaks = c("Control", "AD")
   ) +
-  #scale_fill_npg(breaks = c("Control", "AD")) +
+  # scale_fill_npg(breaks = c("Control", "AD")) +
   theme_minimal() +
   labs(x = "Pseudotime", y = "Density", fill = "") +
   facet_wrap(~lineage) +
+  theme(legend.position = "bottom") +
   scale_y_continuous(expand = expansion(mult = c(0, 0.2)))
-  #theme(plot.margin = margin(t = 40, r = 20, b = 20, l = 20, unit = "pt"))
+# theme(plot.margin = margin(t = 40, r = 20, b = 20, l = 20, unit = "pt"))
 
 density_plot
 ```
@@ -772,27 +1243,42 @@ pseudotime_data <- pseudotime_data |>
     CellType = sce_slingshot$level1_celltypes_with_endomt_subclusters,
     donor = sce_slingshot$donor
   ) |>
-  pivot_longer(cols = starts_with("Lineage"),
-               names_to = "lineage",
-               values_to = "Pseudotime") |>
-  dplyr::mutate(celltype_reduced = case_when(
-    CellType %in% c("EndoMT_1", "EndoMT_2") ~ "EndoMT-1/2",
-    CellType %in% c("Pericyte", "SMC") ~ "Pericyte/SMC",
-    .default = CellType)) |>
+  pivot_longer(
+    cols = starts_with("Lineage"),
+    names_to = "lineage",
+    values_to = "Pseudotime"
+  ) |>
+  dplyr::mutate(
+    celltype_reduced = case_when(
+      CellType %in% c("EndoMT_1", "EndoMT_2") ~ "EndoMT-1/2",
+      CellType %in% c("Pericyte", "SMC") ~ "Pericyte/SMC",
+      .default = CellType
+    )
+  ) |>
   dplyr::filter(!is.na(Pseudotime))
 
 pseudotime_data <- pseudotime_data |>
-  dplyr::mutate(Group = if_else(Group == "Case", "AD", Group),
-                lineage = if_else(lineage == "Lineage1", "EndoMT-SMC Lienage",
-                           "EndoMT-PC Lineage"))
+  dplyr::mutate(
+    Group = if_else(Group == "Case", "AD", Group),
+    lineage = if_else(
+      lineage == "Lineage1",
+      "EndoMT-SMC Lienage",
+      "EndoMT-PC Lineage"
+    )
+  )
 
 # Convert the donor column to a factor with the specified order
-pseudotime_data$donor <- factor(pseudotime_data$donor, levels = percent_endomt$donor)
+pseudotime_data$donor <- factor(
+  pseudotime_data$donor,
+  levels = percent_endomt$donor
+)
 
 density_plot_donor <- ggplot() +
-  geom_density(data = pseudotime_data,
-               aes(x = Pseudotime, fill = Group),
-               alpha = 0.7) +
+  geom_density(
+    data = pseudotime_data,
+    aes(x = Pseudotime, fill = Group),
+    alpha = 0.7
+  ) +
   scale_fill_manual(
     values = c(
       "Control" = "#DC0000FF",
@@ -804,18 +1290,24 @@ density_plot_donor <- ggplot() +
     ),
     breaks = c("Control", "AD")
   ) +
-  #scale_fill_npg(breaks = c("Control", "AD")) +
+  # scale_fill_npg(breaks = c("Control", "AD")) +
   theme_minimal() +
   labs(x = "Pseudotime", y = "Density", fill = "") +
   facet_wrap(vars(donor, lineage)) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.2)))
-  #theme(plot.margin = margin(t = 40, r = 20, b = 20, l = 20, unit = "pt"))
+# theme(plot.margin = margin(t = 40, r = 20, b = 20, l = 20, unit = "pt"))
 
 density_plot_donor
 
-ggsave(filename = here("05_figures/990_shared_figures/003_final_figures",
-                       "001_data_for_plots", "donor-density-plots.pdf"),
-       height = 15, width = 12)
+ggsave(
+  filename = here(
+    "05_figures/990_shared_figures/003_final_figures",
+    "001_data_for_plots",
+    "donor-density-plots.pdf"
+  ),
+  height = 15,
+  width = 12
+)
 ```
 
 #### switchDE for pericyte lineage
@@ -827,7 +1319,7 @@ pseudotime <- slingPseudotime(sce_slingshot)
 weights <- slingCurveWeights(sce_slingshot)
 
 # Get pseudotime for lineage 2
-pt_pericyte <- pseudotime[, 2]  # adjust index if lineage order is different
+pt_pericyte <- pseudotime[, 2] # adjust index if lineage order is different
 
 # Get weights for lineage 2
 w_pericyte <- weights[, 2]
@@ -837,20 +1329,20 @@ cells_pericyte <- which(w_pericyte > 0.5 & !is.na(pt_pericyte))
 ```
 
 ```{r}
-library(switchde)
-
 counts <- assay(sce_slingshot, "logcounts")[, cells_pericyte]
 # filter out genes based on mean expression and at least 20% of cells should express it.
-counts <- counts[rowMeans(counts) > 0.1 & rowMeans(counts > 0) > 0.2,]
+counts <- counts[rowMeans(counts) > 0.1 & rowMeans(counts > 0) > 0.2, ]
 pt <- pt_pericyte[cells_pericyte]
 
-file <- here::here("03_data/990_processed_data/008_pseudotime",
-  "pericyte_switchde_results.qs")
-if(!file.exists(file)) {
+file <- here::here(
+  "03_data/990_processed_data/008_pseudotime",
+  "pericyte_switchde_results.qs"
+)
+if (!file.exists(file)) {
   res <- switchde(as.matrix(counts), pseudotime = pt)
   res <- res[order(res$qval), ]
   head(res)
-  
+
   qs::qsave(res, file)
 } else {
   res <- qs::qread(file)
@@ -869,8 +1361,9 @@ res_sig <- res |>
   dplyr::filter(pval == 0)
 
 
-tf_link_table <- readr::read_tsv(here("03_data/991_external_data/TFLink_Homo_sapiens_interactions_All_simpleFormat_v1.0.tsv")) |> 
-  dplyr::select(!contains("Target"))
+tf_link_table <- readr::read_tsv(here(
+  "03_data/991_external_data/TFLink_Homo_sapiens_interactions_All_simpleFormat_v1.0.tsv"
+))
 head(tf_link_table)
 
 res_sig <- res_sig |>
@@ -879,13 +1372,20 @@ res_sig <- res_sig |>
 res_sig_tf <- res_sig |>
   dplyr::filter(is_tf & qval < 0.05)
 
+readr::write_csv(
+  res_sig_tf,
+  here(
+    "03_data/990_processed_data/008_pseudotime",
+    "pericyte-switchde-sig-tfs.csv"
+  )
+)
 
-top_tf_hits <- res_sig_tf[order(-abs(res_sig_tf$k)), ]  # strongest effect
+
+top_tf_hits <- res_sig_tf[order(-abs(res_sig_tf$k)), ] # strongest effect
 head(top_tf_hits, 10)
 
 res_sig_tf |>
   dplyr::filter(hgnc_symbol == "FOXP2")
-
 ```
 
 ```{r}
@@ -897,7 +1397,7 @@ plots <- lapply(top_tf_hits$gene, function(g) {
     expression = counts[g, ],
     gene = g
   )
-  
+
   ggplot(df, aes(x = pseudotime, y = expression)) +
     geom_point(alpha = 0.4, size = 1) +
     geom_smooth(method = "loess", se = FALSE, color = "steelblue") +
@@ -908,6 +1408,7 @@ plots <- lapply(top_tf_hits$gene, function(g) {
 # Combine into a grid
 plot_grid(plotlist = plots, ncol = 2)
 ```
+
 ### tradeseq results
 
 The associationTest function gives the wald stat, the degrees of freedom and the unadjusted p-vals associated with each gene.
@@ -915,17 +1416,592 @@ By default it doesn't test for each lineage independently.
 
 
 ```{r}
-library(tradeSeq)
 # Read in data from hawk
-sce_subset <- qs::qread(here("03_data/990_processed_data/008_pseudotime/slingshot_tradeseq_3k_case_and_control.qs"))
+sce_subset <- qs::qread(here(
+  "03_data/990_processed_data/008_pseudotime/slingshot_tradeseq_3k_case_and_control.qs"
+))
 ```
+
+#### Early progenitor genes
+
+```{r}
+# How many genes converged
+table(rowData(sce_subset)$tradeSeq$converged)
+
+start_res <- startVsEndTest(sce_subset)
+
+o_start <- order(start_res$waldStat, decreasing = TRUE)
+# Get the most sig gene
+sigGeneStart <- names(sce_subset)[o_start[1]]
+
+counts <- assays(sce_subset)$counts
+
+top_ten_progenitors <- translated_id |>
+  dplyr::filter(ensembl_gene_id %in% names(sce_subset)[o_start[1:10]])
+
+# Get stats for the all genes overall across all lineages and conditions
+plot_gene_pseudotime <- function(gene, gene_symbol, sce, counts) {
+  plot <- plotSmoothers(sce, counts, gene, curvesCols = pal_npg("nrc")(4)) +
+    scale_colour_npg(
+      labels = c(
+        "EndoMT-SMC - AD",
+        "EndoMT-SMC - Control",
+        "EndoMT-PC - AD",
+        "EndoMT-PC - Control"
+      )
+    ) +
+    ggtitle(if_else(gene_symbol == "", gene, gene_symbol)) +
+    labs(colour = "Lineage") +
+    theme(legend.position = "none")
+  return(plot)
+}
+
+plot_progenitors <- map2(
+  unique(top_ten_progenitors$ensembl_gene_id),
+  unique(top_ten_progenitors$hgnc_symbol),
+  plot_gene_pseudotime,
+  sce_subset,
+  counts
+)
+
+plot_progenitors[[5]] <- plot_progenitors[[5]] +
+  theme(legend.position = "right")
+
+
+plot <- plot_grid(plotlist = plot_progenitors, ncol = 5)
+plot
+
+plot_progenitors_pca <- map2(
+  unique(top_ten_progenitors$ensembl_gene_id),
+  unique(top_ten_progenitors$hgnc_symbol),
+  ~ plotGeneCount(sce_slingshot, counts, gene = .x) +
+    ggtitle(.y) +
+    theme(legend.position = "none") +
+    scale_x_reverse()
+)
+
+plot_progenitors_pca[[5]] <- plot_progenitors_pca[[5]] +
+  theme(legend.position = "right")
+
+plot_pca <- plot_grid(plotlist = plot_progenitors_pca, ncol = 5)
+plot_pca
+```
+
+```{r}
+# try limiting to earlier pseudotime to get the endomt drivers
+custom_res <- startVsEndTest(sce_subset, pseudotimeValues = c(0.1, 20))
+o_start <- order(custom_res$waldStat, decreasing = TRUE)
+
+top_ten_early_progenitors <- translated_id |>
+  dplyr::filter(ensembl_gene_id %in% names(sce_subset)[o_start[1:15]]) |>
+  dplyr::filter(!ensembl_gene_id %in% top_ten_progenitors$ensembl_gene_id)
+
+plotGeneCount(
+  curve = sce_slingshot,
+  counts = counts,
+  clusters = apply(slingClusterLabels(sce_slingshot), 1, which.max),
+  models = sce_subset
+) +
+  scale_x_reverse()
+
+earlyDERes <- earlyDETest(sce_subset, knots = c(2, 3))
+oEarly <- order(earlyDERes$waldStat, decreasing = TRUE)
+
+top_ten_endoth_endomtpc <- translated_id |>
+  dplyr::filter(
+    ensembl_gene_id %in%
+      names(sce_subset)[oEarly[1:29]] |
+      hgnc_symbol == "FOXP2"
+  )
+
+
+plots <- map2(
+  unique(top_ten_endoth_endomtpc$ensembl_gene_id),
+  unique(top_ten_endoth_endomtpc$hgnc_symbol),
+  plot_gene_pseudotime,
+  sce_subset,
+  counts
+)
+
+plots[[5]] <- plots[[5]] +
+  theme(legend.position = "right")
+
+
+# Save 4 plots per page (2 rows x 2 columns)
+pdf(
+  here(
+    "05_figures/990_shared_figures/004_pseudotime/01_tradeseq",
+    "differential-genes_knots2-3.pdf"
+  ),
+  width = 10,
+  height = 8
+)
+marrangeGrob(grobs = plots, nrow = 2, ncol = 3)
+dev.off()
+
+plot <- plot_grid(plotlist = plots, ncol = 5)
+plot
+```
+
+```{r}
+earlyDERes <- earlyDETest(sce_subset, knots = c(3, 4))
+oEarly <- order(earlyDERes$waldStat, decreasing = TRUE)
+
+top_ten_endoth_endomtpc <- translated_id |>
+  dplyr::filter(ensembl_gene_id %in% names(sce_subset)[oEarly[1:30]])
+
+
+plots <- map2(
+  unique(top_ten_endoth_endomtpc$ensembl_gene_id),
+  unique(top_ten_endoth_endomtpc$hgnc_symbol),
+  plot_gene_pseudotime,
+  sce_subset,
+  counts
+)
+
+plots[[5]] <- plots[[5]] +
+  theme(legend.position = "right")
+
+
+# Save 4 plots per page (2 rows x 2 columns)
+pdf(
+  here(
+    "05_figures/990_shared_figures/004_pseudotime/01_tradeseq",
+    "differential-genes_knots3-4.pdf"
+  ),
+  width = 10,
+  height = 8
+)
+marrangeGrob(grobs = plots, nrow = 2, ncol = 3)
+dev.off()
+```
+
+```{r}
+earlyDERes <- earlyDETest(sce_subset, knots = c(4, 5))
+oEarly <- order(earlyDERes$waldStat, decreasing = TRUE)
+
+top_ten_endoth_endomtpc <- translated_id |>
+  dplyr::filter(ensembl_gene_id %in% names(sce_subset)[oEarly[1:30]])
+
+
+plots <- map2(
+  unique(top_ten_endoth_endomtpc$ensembl_gene_id),
+  unique(top_ten_endoth_endomtpc$hgnc_symbol),
+  plot_gene_pseudotime,
+  sce_subset,
+  counts
+)
+
+plots[[5]] <- plots[[5]] +
+  theme(legend.position = "right")
+
+
+# Save 4 plots per page (2 rows x 2 columns)
+pdf(
+  here(
+    "05_figures/990_shared_figures/004_pseudotime/01_tradeseq",
+    "differential-genes_knots4-5.pdf"
+  ),
+  width = 10,
+  height = 8
+)
+marrangeGrob(grobs = plots, nrow = 2, ncol = 3)
+dev.off()
+```
+
+#### Pathways
+
+```{r}
+earlyDERes <- earlyDETest(sce_subset, knots = c(4, 5)) |>
+  dplyr::filter(!is.na(waldStat)) |>
+  rownames_to_column("ensembl_gene_id") |>
+  dplyr::left_join(translated_id, by = "ensembl_gene_id") |>
+  dplyr::filter(!is.na(hgnc_symbol) & hgnc_symbol != "")
+
+## C5 category is according to gene ontology grouping: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4707969/pdf/nihms-743907.pdf
+geneSets <- msigdbr(
+  species = "Homo sapiens",
+  category = "C5",
+  subcategory = "BP"
+)
+### filter background to only include genes that we assessed.
+geneSets$gene_symbol <- toupper(geneSets$gene_symbol)
+geneSets <- geneSets[geneSets$ensembl_gene %in% names(sce_subset), ]
+m_list <- geneSets %>% split(x = .$gene_symbol, f = .$gs_name)
+
+de_genes <- earlyDERes |>
+  dplyr::distinct(hgnc_symbol, .keep_all = TRUE)
+stats <- de_genes$waldStat
+names(stats) <- de_genes$hgnc_symbol
+summary(stats)
+eaRes <- fgsea(pathways = m_list, stats = stats, minSize = 10)
+ooEA <- order(eaRes$pval, decreasing = FALSE)
+kable(head(eaRes[ooEA, 1:3], n = 20))
+```
+
+```{r}
+# Define genes of interest
+genes_of_interest <- c("ANGPT2", "ANGPT1", "FOXP2")
+genes_of_interest <- c("BCL6", "FOXP2", "MECOM")
+genes <- translated_id |>
+  dplyr::filter(hgnc_symbol %in% genes_of_interest)
+
+# --- User Input ---
+
+# *** Important: Assign your objects here ***
+sce_tradeseq_fit <- sce_subset # The output from fitGAM
+sce_original_data <- sce_slingshot # The larger SCE with logcounts and metadata
+
+# *** Important: Specify column names in your *sce_original_data* colData ***
+diagnosis_column <- "diagnosis" # Replace with the actual column name for Case/Control status
+apoe_status_column <- "apoe_status" # Replace with the actual column name for APOE status
+
+# *** Important: Specify the pseudotime column from *sce_tradeseq_fit* colData ***
+# Look at names(colData(sce_tradeseq_fit)) and choose the correct one(s)
+# e.g., "crv.pseudotime.Lineage1" or "tradeSeq.dm.t1" if using the design matrix time
+pseudotime_column <- "crv.pseudotime.Lineage1" # CHOOSE THE CORRECT LINEAGE COLUMN
+
+# Define the genes you want to plot (must be present in rownames(sce_original_data))
+genes_to_plot <- genes$ensembl_gene_id
+
+# Specify the assay slot in sce_original_data containing normalized data
+norm_assay_name <- "logcounts"
+
+# --- Get the list of cells used in the tradeSeq fit ---
+cells_in_fit <- colnames(sce_tradeseq_fit)
+if (length(cells_in_fit) == 0) {
+  stop("Could not retrieve cell names from sce_tradeseq_fit.")
+}
+
+# --- Extract Data Components ---
+
+# 1. Pseudotime (from sce_tradeseq_fit)
+sce_fit_coldata <- as.data.frame(colData(sce_tradeseq_fit)) |>
+  mutate(CellID = rownames(.)) # Add CellID column
+
+if (!pseudotime_column %in% names(sce_fit_coldata)) {
+  stop(paste(
+    "Pseudotime column '",
+    pseudotime_column,
+    "' not found in colData(sce_tradeseq_fit). Available columns: ",
+    paste(names(sce_fit_coldata), collapse = ", ")
+  ))
+}
+
+pseudotime_df <- sce_fit_coldata |>
+  select(CellID, Pseudotime = all_of(pseudotime_column)) |>
+  filter(CellID %in% cells_in_fit) # Ensure we only have the cells from the fit
+pseudotime_df |>
+  dplyr::filter(CellID == "V06_TGATGGTGTGTCACAT-1")
+
+# 2. Cell Metadata (from sce_original_data)
+sce_orig_coldata <- data.frame(
+  diagnosis = sce_original_data$diagnosis,
+  apoe_status = sce_original_data$apoe_status,
+  CellID = colnames(sce_original_data)
+)
+
+# Check needed metadata columns exist
+required_meta_cols <- c(diagnosis_column, apoe_status_column)
+missing_meta_cols <- required_meta_cols[
+  !required_meta_cols %in% names(sce_orig_coldata)
+]
+if (length(missing_meta_cols) > 0) {
+  stop(paste(
+    "Metadata columns not found in colData(sce_original_data):",
+    paste(missing_meta_cols, collapse = ", ")
+  ))
+}
+
+# Subset metadata for the cells present in the tradeSeq fit
+cell_meta <- sce_orig_coldata |>
+  filter(CellID %in% cells_in_fit) |>
+  select(CellID, all_of(required_meta_cols))
+
+# Rename columns to standard names used later in the script
+cell_meta <- cell_meta |>
+  rename(
+    diagnosis = all_of(diagnosis_column),
+    apoe_status = all_of(apoe_status_column)
+  )
+
+# Add APOE4 Dose column
+cell_meta <- cell_meta |>
+  mutate(
+    APOE4_Dose = case_when(
+      apoe_status %in% c("2/3", "3/3") ~ 0,
+      apoe_status %in% c("2/4", "3/4") ~ 1,
+      apoe_status %in% c("4/4") ~ 2,
+      TRUE ~ NA_integer_ # Handle unexpected/missing values
+    ),
+    # Convert to factor for discrete colors/shapes in ggplot
+    APOE4_Dose = factor(APOE4_Dose, levels = c(0, 1, 2))
+  )
+
+# 3. Normalized Expression Data (from sce_original_data)
+if (!norm_assay_name %in% assayNames(sce_original_data)) {
+  stop(paste(
+    "Assay",
+    norm_assay_name,
+    "not found in sce_original_data. Available assays:",
+    paste(assayNames(sce_original_data), collapse = ", ")
+  ))
+}
+norm_expr_full <- assay(sce_original_data, norm_assay_name)
+
+# Filter for genes of interest (and check they exist in the original SCE)
+genes_exist <- genes_to_plot %in% rownames(norm_expr_full)
+if (!all(genes_exist)) {
+  warning(
+    "The following genes were not found in rownames(sce_original_data): ",
+    paste(genes_to_plot[!genes_exist], collapse = ", ")
+  )
+}
+genes_to_plot <- genes_to_plot[genes_exist]
+if (length(genes_to_plot) == 0) {
+  stop("None of the specified genes were found in the expression data.")
+}
+
+# Subset expression for the genes AND the cells used in the fit
+norm_expr_subset <- norm_expr_full[genes_to_plot, cells_in_fit, drop = FALSE]
+
+# --- Combine all data for plotting ---
+
+# Convert expression matrix to long format
+expr_long <- as.matrix(norm_expr_subset) |> # Ensure it's a base matrix
+  t() |> # Transpose: cells x genes
+  as.data.frame() |>
+  mutate(CellID = rownames(.)) |>
+  pivot_longer(
+    cols = -CellID,
+    names_to = "Gene",
+    values_to = "Expression"
+  ) |>
+  # Ensure Gene is factor in desired order
+  mutate(Gene = factor(Gene, levels = genes_to_plot))
+
+# Merge expression with metadata and pseudotime
+# Make sure CellIDs match between all sources
+plot_data <- expr_long |>
+  inner_join(
+    cell_meta |> select(CellID, diagnosis, apoe_status, APOE4_Dose),
+    by = "CellID"
+  ) |>
+  inner_join(pseudotime_df |> select(CellID, Pseudotime), by = "CellID") |>
+  dplyr::filter(!is.na(Pseudotime) & !is.na(APOE4_Dose) & !is.na(diagnosis)) |> # Ensure no missing values
+  dplyr::left_join(genes, by = join_by(Gene == ensembl_gene_id))
+
+# Check counts per group (useful for interpreting plots!)
+print("Data counts per group for plotting:")
+print(
+  plot_data |>
+    dplyr::distinct(CellID, diagnosis, APOE4_Dose) |> # Count unique cells
+    dplyr::count(diagnosis, APOE4_Dose)
+)
+
+# --- Create the Plots (Code identical to previous example) ---
+
+# Define colors (adjust as needed)
+apoe_colors <- c("0" = "blue", "1" = "orange", "2" = "red")
+
+# Create the plot using geom_smooth
+p <- ggplot(
+  plot_data,
+  aes(x = Pseudotime, y = Expression, color = APOE4_Dose)
+) +
+  geom_smooth(
+    method = "gam",
+    formula = y ~ s(x, bs = "cs"),
+    se = FALSE,
+    size = 0.8
+  ) +
+  facet_grid(hgnc_symbol ~ diagnosis, scales = "free_y") +
+  scale_color_manual(values = apoe_colors, name = "APOE4 Dose") +
+  labs(
+    title = paste("Gene Expression along", pseudotime_column),
+    x = "Pseudotime",
+    y = paste("Normalized Expression (", norm_assay_name, ")", sep = "")
+  ) +
+  theme_bw() +
+  theme(
+    strip.text.y = element_text(angle = 0, hjust = 0),
+    strip.background = element_rect(fill = "grey90"),
+    legend.position = "bottom",
+    plot.title = element_text(hjust = 0.5)
+  )
+
+# --- Display the Plot ---
+print(p)
+
+# --- (Optional) Save the Plot ---
+file <- here(
+  "05_figures/990_shared_figures/004_pseudotime/01_tradeseq/",
+  "apoe4_dose_expression.pdf"
+)
+ggsave(filename = file, plot = p, width = 8, height = 3 * length(genes_to_plot))
+```
+
+### Senecence markers
+
+Try plotting all the senescence markers in the tradeseq data to look for early changes
+
+```{r}
+cell_age <- readr::read_tsv(here::here(
+  "03_data/991_external_data/cellAge/cellage3.tsv"
+)) |>
+  janitor::clean_names()
+head(cell_age)
+cell_age$senescence_effect |> unique()
+cell_age_induces <- cell_age |>
+  dplyr::filter(senescence_effect %in% c("Induces", "Unclear"))
+
+senescence_genes <- c(
+  # Mentioned in paper
+  "CD9",
+  "UPAR",
+  "BLVRA",
+  "NRF2",
+  # Cell cycle arrest / classical senescence markers
+  "CDKN2A",
+  "CDKN1A",
+  "TP53",
+  "RB1",
+
+  # SASP cytokines and chemokines
+  "IL6",
+  "IL8",
+  "CCL2",
+  "CXCL1",
+  "CXCL2",
+  "CXCL10",
+  "TNF",
+  "ICAM1",
+  "VCAM1",
+
+  # Matrix remodelling
+  "MMP1",
+  "MMP3",
+  "MMP9",
+
+  # DNA damage / stress response
+  "GADD45A",
+  "ATM",
+  "ATR",
+  "H2AFX",
+  "SOD2",
+  "NOX4",
+
+  # Nuclear lamina
+  "LMNB1",
+  "LMNA",
+
+  # Endothelial-relevant and regulatory
+  "SERPINE1",
+  "CD44",
+  "SELE",
+  "THBD",
+  "E2F2",
+  "KLF2",
+  "KLF4"
+)
+
+library(org.Hs.eg.db)
+
+keytypes(org.Hs.eg.db)
+# Map to gene symbols
+mapped_symbols <- AnnotationDbi::mapIds(
+  org.Hs.eg.db,
+  keys = unique(c(cell_age_induces$gene_symbol, senescence_genes)),
+  column = "ENSEMBL",
+  keytype = "SYMBOL",
+  multiVals = "first"
+)
+head(mapped_symbols)
+
+head(rownames(sce_subset))
+mapped_symbols |> length()
+mapped_symbols_matches <- mapped_symbols[
+  mapped_symbols %in% rownames(sce_subset)
+]
+```
+
+```{r}
+#| eval: false
+pdf(
+  here(
+    "05_figures/990_shared_figures/004_pseudotime/01_tradeseq/",
+    "senescence_markers.pdf"
+  ),
+  height = 12,
+  width = 20
+)
+map2(
+  mapped_symbols_matches,
+  names(mapped_symbols_matches),
+  ~ plotSmoothers(sce_subset, counts, .x) +
+    ggtitle(.y)
+)
+dev.off()
+```
+
+From those plots I'll pull out some promissing looking ones
+
+```{r}
+genes <- c(
+  "ABCB1",
+  "ARRB1",
+  "ATG10",
+  "AXL",
+  "BHLHE40",
+  "BNIP3L",
+  "BTG1",
+  "BTG2",
+  "CAVIN1",
+  "CCN2",
+  "CD34",
+  "IL1R1",
+  "ITPKB",
+  "ITPR2",
+  "NOTCH1",
+  "NUAK1",
+  "SPARC",
+  "XAF1",
+  "CXCL2"
+)
+
+mapped_symbols_matches <- mapped_symbols[
+  names(mapped_symbols) %in% genes
+]
+
+
+plots <- map2(
+  mapped_symbols_matches,
+  names(mapped_symbols_matches),
+  ~ plotSmoothers(sce_subset, counts, .x) +
+    ggtitle(.y)
+)
+plot <- plot_grid(plotlist = plots, ncol = 4)
+
+pdf(
+  here::here(
+    "05_figures/990_shared_figures/004_pseudotime",
+    "01_tradeseq",
+    "top_senescence_markers.pdf"
+  ),
+  height = 8,
+  width = 14,
+)
+marrangeGrob(grobs = plots, nrow = 2, ncol = 2)
+dev.off()
+```
+
+
+
+
 
 ```{r}
 asso_res <- associationTest(sce_subset, lineages = TRUE)
 asso_res_overall <- associationTest(sce_subset)
-asso_res |> head(2) |> write_tsv("temp.txt")
-# asso_res_consec <- associationTest(sce_subset, lineages = TRUE, contrastType = "consecutive")
-# asso_res_consec |> head()
 
 # Function to tidy the tradeseq output
 tidy_tradeseq <- function(data) {
@@ -965,8 +2041,8 @@ tidy_tradeseq <- function(data) {
   result <- rbind(split_data, base_df)
   # Add logfc back in
   if (sum(grepl("condition", split_cols)) > 0) {
-  result <- data[c("ensembl_gene_id", "meanLogFC")] |>
-    dplyr::left_join(x = result, y = _, by = "ensembl_gene_id")
+    result <- data[c("ensembl_gene_id", "meanLogFC")] |>
+      dplyr::left_join(x = result, y = _, by = "ensembl_gene_id")
   }
   return(result)
 }
@@ -989,40 +2065,64 @@ top_controls <- top_genes |>
   slice_max(waldStat, n = 25, with_ties = FALSE, by = c(condition, lineage)) |>
   dplyr::distinct(hgnc_symbol, .keep_all = TRUE)
 
-pdf(here("05_figures/990_shared_figures/004_pseudotime/01_tradeseq/",
-                       "top_controls_pseudotime_degs.pdf"),
-       height = 12, width = 20)
-map2(top_controls$ensembl_gene_id, top_controls$hgnc_symbol, ~ plotSmoothers(sce_subset, counts, .x) +
-    ggtitle(.y))
+pdf(
+  here(
+    "05_figures/990_shared_figures/004_pseudotime/01_tradeseq/",
+    "top_controls_pseudotime_degs.pdf"
+  ),
+  height = 12,
+  width = 20
+)
+map2(
+  top_controls$ensembl_gene_id,
+  top_controls$hgnc_symbol,
+  ~ plotSmoothers(sce_subset, counts, .x) +
+    ggtitle(.y)
+)
 dev.off()
 
 # CNTN1 looks unique to lineage 1!
-lineage_genes <- c("CHF", "TFPI", "PDK4", "ITGA3", "JARID2", "CYTH3", "ZNF207",
-                   "SLC6A13", "FYN", "MRC2", "DCN", "RUFY3", "CNTN1", "ATP1A2",
-                   "NR1H3", "PRKCH", "ZFHX3", "FLT1", "ATP10A", "PLEKHG1",
-                   "RORA", "IGF1R", "SLC6A1", "LAMA2", "SLC6A12", "SORBS1",
-                   "SEC14L1", "PDE3A")
+lineage_genes <- c(
+  "CHF",
+  "TFPI",
+  "PDK4",
+  "ITGA3",
+  "JARID2",
+  "CYTH3",
+  "ZNF207",
+  "SLC6A13",
+  "FYN",
+  "MRC2",
+  "DCN",
+  "RUFY3",
+  "CNTN1",
+  "ATP1A2",
+  "NR1H3",
+  "PRKCH",
+  "ZFHX3",
+  "FLT1",
+  "ATP10A",
+  "PLEKHG1",
+  "RORA",
+  "IGF1R",
+  "SLC6A1",
+  "LAMA2",
+  "SLC6A12",
+  "SORBS1",
+  "SEC14L1",
+  "PDE3A"
+)
 
 top_lineage_degs <- top_genes |>
   dplyr::filter(hgnc_symbol %in% lineage_genes)
 
-# Get stats for the all genes overall across all lineages and conditions
-plot_gene_pseudotime <- function(gene, gene_symbol, sce, counts) {
-  plot <- plotSmoothers(sce, counts, gene, curvesCols = pal_npg("nrc")(4)) +
-    scale_colour_npg(labels = c("EndoMT-SMC - AD", "EndoMT-SMC - Control",
-                                "EndoMT-PC - AD",
-                                "EndoMT-PC - Control")) +
-    ggtitle(if_else(gene_symbol == "", gene, gene_symbol)) +
-    labs(colour = "Lineage") +
-    theme(legend.position = "none")
-  return(plot)
-}
-
-counts <- assays(sce_subset)$counts
-
-plot_lineages <- map2(unique(top_lineage_degs$ensembl_gene_id),
-                      unique(top_lineage_degs$hgnc_symbol),
-              plot_gene_pseudotime, sce_subset, counts)
+plot_lineages <- map2(
+  unique(top_lineage_degs$ensembl_gene_id),
+  unique(top_lineage_degs$hgnc_symbol),
+  plot_gene_pseudotime,
+  sce_subset,
+  counts
+)
 
 plot_lineages[[5]] <- plot_lineages[[5]] +
   theme(legend.position = "right")
@@ -1031,20 +2131,32 @@ plot_lineages[[5]] <- plot_lineages[[5]] +
 plot <- plot_grid(plotlist = plot_lineages, ncol = 5)
 plot
 
-ggsave(filename = here("05_figures/990_shared_figures/004_pseudotime",
-                       "01_tradeseq", "top_lineage_pseudotime_degs.png"),
-       height = 14, width = 18)
+ggsave(
+  filename = here(
+    "05_figures/990_shared_figures/004_pseudotime",
+    "01_tradeseq",
+    "top_lineage_pseudotime_degs.png"
+  ),
+  height = 14,
+  width = 18
+)
 ```
 
 ## Key genes for figure
 
 ```{r}
+#| eval: false
+
 key_genes <- translated_id |>
   dplyr::filter(hgnc_symbol %in% c("BACE2", "APOD"))
 
-plot_lineages <- map2(unique(key_genes$ensembl_gene_id),
-                      unique(key_genes$hgnc_symbol),
-              plot_gene_pseudotime, sce_subset, counts)
+plot_lineages <- map2(
+  unique(key_genes$ensembl_gene_id),
+  unique(key_genes$hgnc_symbol),
+  plot_gene_pseudotime,
+  sce_subset,
+  counts
+)
 apod <- plot_lineages[[2]] +
   theme(legend.position = "bottom")
 
@@ -1061,9 +2173,13 @@ key_genes <- translated_id |>
   dplyr::filter(grepl("^ANG", hgnc_symbol)) |>
   dplyr::filter(ensembl_gene_id %in% rownames(counts))
 
-plot_lineages <- map2(unique(key_genes$ensembl_gene_id),
-                      unique(key_genes$hgnc_symbol),
-              plot_gene_pseudotime, sce_subset, counts)
+plot_lineages <- map2(
+  unique(key_genes$ensembl_gene_id),
+  unique(key_genes$hgnc_symbol),
+  plot_gene_pseudotime,
+  sce_subset,
+  counts
+)
 plot_lineages[[5]] <- plot_lineages[[5]] +
   theme(legend.position = "right")
 
@@ -1071,44 +2187,272 @@ plot_lineages[[5]] <- plot_lineages[[5]] +
 plot <- plot_grid(plotlist = plot_lineages, ncol = 3)
 plot
 
-ggsave(filename = here("05_figures/990_shared_figures/004_pseudotime",
-                       "01_tradeseq", "ANG_genes.png"),
-       height = 14, width = 18)
+ggsave(
+  filename = here(
+    "05_figures/990_shared_figures/004_pseudotime",
+    "01_tradeseq",
+    "ANG_genes.png"
+  ),
+  height = 14,
+  width = 18
+)
+```
+```{r}
+# Get stats for the all genes overall across all lineages and conditions
+plot_gene_pseudotime <- function(gene, gene_symbol, sce, counts) {
+  plot <- plotSmoothers(
+    sce,
+    counts,
+    gene,
+    curvesCols = pal_npg("nrc")(4),
+    size = 0.2,
+    lwd = 0.8
+  ) +
+    scale_colour_npg(
+      labels = c(
+        "EndoMT-SMC - AD",
+        "EndoMT-SMC - Control",
+        "EndoMT-PC - AD",
+        "EndoMT-PC - Control"
+      )
+    ) +
+    ggtitle(if_else(gene_symbol == "", gene, gene_symbol)) +
+    labs(colour = "Lineage") +
+    theme(legend.position = "none")
+  return(plot)
+}
+
+genes <- translated_id |>
+  dplyr::filter(
+    hgnc_symbol %in%
+      c(
+        "FOXP2",
+        "BCL6",
+        "MECOM",
+        "LEF1",
+        "ARID5B",
+        "SOX13",
+        "BACE2",
+        "APOD"
+      )
+  )
+
+plot_genes <- map2(
+  genes$ensembl_gene_id,
+  genes$hgnc_symbol,
+  plot_gene_pseudotime,
+  sce_subset,
+  counts
+) |>
+  purrr::set_names(genes$hgnc_symbol)
+
+plot_genes_cleaned <- map(
+  plot_genes,
+  ~ .x +
+    theme(
+      title = element_text(size = 8),
+      axis.text = element_text(size = 5),
+      axis.title = element_text(size = 6)
+    )
+)
+genes_for_supp <- plot_genes_cleaned[c("BACE2", "APOD")]
+plot_genes_cleaned[c("BACE2", "APOD")]
+tfs <- plot_genes_cleaned[!names(plot_genes_cleaned) %in% c("BACE2", "APOD")]
+plot <- plot_grid(plotlist = tfs, ncol = 3)
+
+
+legend_b <- get_legend(
+  plot_genes_cleaned[[1]] +
+    guides(color = guide_legend(nrow = 1, override.aes = list(size = 4))) +
+    labs(colour = "") +
+    theme(legend.position = "bottom")
+)
+right_plot <- plot_grid(plot, legend_b, ncol = 1, rel_heights = c(1, 0.1))
+```
+
+```{r}
+mat <- qs::qread(here(
+  "05_figures/990_shared_figures/003_final_figures/001_data_for_plots/scenic_tf_matrix.qs"
+))
+
+# Create the heatmap and split columns by diagnosis
+manual_column_order <- c(
+  "Arterial",
+  "Capillary",
+  "EndoMT_1",
+  "EndoMT_2",
+  "Pericyte-2",
+  "T-Pericyte",
+  "M-Pericyte",
+  "Pericyte-1",
+  "Arteriolar-SMC",
+  "Vascular-SMC-1",
+  "Vascular-SMC-2"
+)
+manual_column_order[manual_column_order %in% rownames(mat)]
+ordered_matrix <- mat[manual_column_order, ]
+rownames(ordered_matrix) <- str_replace_all(rownames(ordered_matrix), "_", "-")
+
+# Extract clean regulon names and diagnosis
+col_names_split <- str_match(colnames(ordered_matrix), "^(.*)_(AD|Control)$")
+regulon_labels <- col_names_split[, 2]
+diagnosis_vec <- col_names_split[, 3]
+
+
+# Extract diagnosis from column names
+col_diagnosis <- ifelse(grepl("_AD", colnames(ordered_matrix)), "AD", "Control")
+
+# Update column names in the matrix
+colnames(ordered_matrix) <- regulon_labels
+
+# Subset to just controls
+ordered_matrix <- ordered_matrix[, col_diagnosis == "Control"]
+
+hmap <- Heatmap(
+  ordered_matrix,
+  name = "Mean AUC",
+  col = colorRamp2(c(0, max(mat)), c("blue", "red")),
+  # column_split = col_diagnosis, # This is what creates the facets
+  column_title_gp = gpar(fontsize = 10),
+  cluster_columns = FALSE,
+  cluster_rows = FALSE,
+  row_names_gp = gpar(fontsize = 9), # Set row label text size
+  width = unit(2.2, "cm"),
+  column_names_gp = gpar(fontsize = 8),
+  # height = unit(9, "cm"),
+  heatmap_legend_param = list(
+    direction = "horizontal",
+    labels_gp = gpar(fontsize = 7),
+    title_gp = gpar(
+      fontsize = 8,
+      fontface = "bold"
+    ),
+    # title_position = "leftcenter",
+    gap = unit(0.1, "mm"),
+    grid_height = unit(1.5, "mm")
+  ),
+  show_column_names = TRUE
+)
+# height = unit(3, "mm"),
+
+draw(hmap)
+p2 <- grid.grabExpr(
+  draw(hmap, heatmap_legend_side = "bottom"),
+  ht_gap = unit(100, "mm")
+)
 ```
 
 ## Build figure
 
 ```{r}
-plot <- plot_grid(p_pca_labeled, density_plot, key_genes_plot,
-                   ncol = 1, labels = "AUTO",
-                  rel_heights = c(1.2, 1, 1))
-plot
-ggsave(here::here("05_figures/990_shared_figures/003_final_figures",
-                  "endomt_fig.pdf"), plot, width = 7, height = 9, units = "in")
-#plot_grid(p_pca_labeled, density_plot, key_genes_plot, labels = "AUTO", nrow = 3)
+row_2 <- plot_grid(
+  density_plot,
+  p2,
+  nrow = 1,
+  rel_widths = c(1, 0.6),
+  labels = c("B", "C"),
+  label_colour = "black"
+)
+row_2 <- plot_grid(
+  p2,
+  density_plot,
+  nrow = 1,
+  rel_widths = c(0.6, 1),
+  labels = c("C", "B"),
+  label_colour = "black"
+)
+
+# plot <- plot_grid(p_pca_labeled, density_plot, key_genes_plot,
+#   ncol = 1, labels = "AUTO",
+#   rel_heights = c(1.2, 1, 1)
+# )
+
+plot_endomt <- plot_grid(
+  p_pca_labeled,
+  row_2,
+  right_plot,
+  ncol = 1,
+  labels = c("A", "", "D"),
+  label_colour = "black",
+  rel_heights = c(1.1, 1, 1.1)
+)
+plot_endomt
+ggsave(
+  here::here(
+    "05_figures/990_shared_figures/003_final_figures",
+    "endomt_fig2.pdf"
+  ),
+  plot_endomt,
+  device = cairo_pdf,
+  width = 7,
+  height = 9,
+  units = "in"
+)
+
+df <- read_tsv(here(
+  "03_data/993_additional_metadata/sample_fastq_mapping.tsv"
+)) |>
+  dplyr::filter(!is.na(FASTQ_Files)) |>
+  dplyr::arrange(New_Sample_ID)
+sce@meta.data |>
+  dplyr::select(donor, diagnosis) |>
+  unique() |>
+  dplyr::arrange(donor)
 ```
 
+```{r}
+plot <- plot_grid(
+  plotlist = genes_for_supp,
+  ncol = 2,
+  labels = "AUTO",
+  label_colour = "black"
+)
+
+
+legend_b <- get_legend(
+  genes_for_supp[[1]] +
+    guides(color = guide_legend(nrow = 2, override.aes = list(size = 4))) +
+    labs(colour = "") +
+    theme(legend.position = "bottom")
+)
+right_plot <- plot_grid(plot, legend_b, ncol = 1, rel_heights = c(1, 0.3))
+
+ggsave(
+  here::here(
+    "05_figures/990_shared_figures/003_final_figures",
+    "000_sup_figures",
+    "ad_risk_pseudotime.pdf"
+  ),
+  right_plot,
+  device = cairo_pdf,
+  width = 4,
+  height = 4,
+  units = "in"
+)
+```
 
 ```{r}
 x <- predictSmooth(sce_subset, "ENSG00000000971")
 
-x <- x |> dplyr::mutate(lineage_condition = paste0("Lienage-", lineage, "_", condition))
+x <- x |>
+  dplyr::mutate(lineage_condition = paste0("Lienage-", lineage, "_", condition))
 plot_example <- plotSmoothers(sce_subset, counts, "ENSG00000000971")
 
 
 ggplot(x, aes(x = time, y = log(yhat + 1), colour = lineage_condition)) +
   geom_point() +
-#  geom_smooth(linewidth = 1) +
+  #  geom_smooth(linewidth = 1) +
   # Add confidence interval ribbon if you have SE columns
   # geom_ribbon(aes(ymin = yhat - 2 * SE, ymax = yhat + 2 * SE),
   #             alpha = 0.2,
   #             fill = "blue")+
   theme_bw() +
-  labs(x = "Pseudotime",
-       y = "Expression",
-       title = "Gene Expression over Pseudotime") +
+  labs(
+    x = "Pseudotime",
+    y = "Expression",
+    title = "Gene Expression over Pseudotime"
+  ) +
   theme(panel.grid.minor = element_blank())
-
 ```
 
 ### Get best lineage genes
@@ -1124,9 +2468,11 @@ all_top_genes <- top_genes |>
 
 table(all_top_genes$condition, all_top_genes$lineage)
 
-smoothed_values <- predictSmooth(sce_subset,
-                                 gene = unique(all_top_genes$ensembl_gene_id),
-                                 nPoints = 100)
+smoothed_values <- predictSmooth(
+  sce_subset,
+  gene = unique(all_top_genes$ensembl_gene_id),
+  nPoints = 100
+)
 library(pracma)
 
 compute_auc <- function(pseudotime, expression) {
@@ -1134,21 +2480,42 @@ compute_auc <- function(pseudotime, expression) {
   return(auc)
 }
 
-pseudotime_ranges = list(c(0, 10), c(11, 20), c(21, 30),
-                         c(31, max(smoothed_values$time)), c(15, 28),
-                         c(0, max(smoothed_values$time)))
-names(pseudotime_ranges) <- c("0-10", "11-20", "21-30", "30+", "15-28", "overall")
-subset_smoothed_values <- map(pseudotime_ranges, ~ {
-  smoothed_values |>
-    dplyr::filter(time >= .x[1] & time <= .x[2])
-})
+pseudotime_ranges <- list(
+  c(0, 10),
+  c(11, 20),
+  c(21, 30),
+  c(31, max(smoothed_values$time)),
+  c(15, 28),
+  c(0, max(smoothed_values$time))
+)
+names(pseudotime_ranges) <- c(
+  "0-10",
+  "11-20",
+  "21-30",
+  "30+",
+  "15-28",
+  "overall"
+)
+subset_smoothed_values <- map(
+  pseudotime_ranges,
+  ~ {
+    smoothed_values |>
+      dplyr::filter(time >= .x[1] & time <= .x[2])
+  }
+)
 
-auc_results <- map2(subset_smoothed_values, names(subset_smoothed_values), ~ {
-  .x |>
-    summarize(AUC = compute_auc(time, yhat),
-              pseudotime_range = .y,
-              .by = c(gene, lineage, condition))
-}) |>
+auc_results <- map2(
+  subset_smoothed_values,
+  names(subset_smoothed_values),
+  ~ {
+    .x |>
+      summarize(
+        AUC = compute_auc(time, yhat),
+        pseudotime_range = .y,
+        .by = c(gene, lineage, condition)
+      )
+  }
+) |>
   list_rbind()
 ```
 
@@ -1157,7 +2524,10 @@ auc_results <- map2(subset_smoothed_values, names(subset_smoothed_values), ~ {
 lin_diff <- auc_results |>
   as_tibble() |>
   dplyr::filter(condition == "Control") |>
-  dplyr::summarise(lin1_minus_lin2 = AUC[lineage == 1] - AUC[lineage == 2], .by = c(pseudotime_range, gene))
+  dplyr::summarise(
+    lin1_minus_lin2 = AUC[lineage == 1] - AUC[lineage == 2],
+    .by = c(pseudotime_range, gene)
+  )
 
 top_lin_diff <- lin_diff |>
   dplyr::left_join(translated_id, by = join_by(gene == ensembl_gene_id)) |>
@@ -1166,8 +2536,13 @@ top_lin_diff <- lin_diff |>
   dplyr::distinct(hgnc_symbol, .keep_all = TRUE)
 head(top_lin_diff)
 
-top_lin_plots <- map2(top_lin_diff$gene, top_lin_diff$hgnc_symbol,
-              plot_gene_pseudotime, sce_subset, counts)
+top_lin_plots <- map2(
+  top_lin_diff$gene,
+  top_lin_diff$hgnc_symbol,
+  plot_gene_pseudotime,
+  sce_subset,
+  counts
+)
 
 top_lin_plots[[1]]
 top_lin_plots[[5]] <- top_lin_plots[[5]] +
@@ -1175,36 +2550,58 @@ top_lin_plots[[5]] <- top_lin_plots[[5]] +
 
 plot <- plot_grid(plotlist = top_lin_plots, ncol = 5)
 plot
-ggsave(filename = here("05_figures/990_shared_figures/004_pseudotime",
-                       "01_tradeseq", "top_lineage_4_pseudotime_bins.png"),
-       height = 18, width = 18)
+ggsave(
+  filename = here(
+    "05_figures/990_shared_figures/004_pseudotime",
+    "01_tradeseq",
+    "top_lineage_4_pseudotime_bins.png"
+  ),
+  height = 18,
+  width = 18
+)
 ```
 
 ```{r}
 # Get the difference between cases and controls per lineage
 condition_diff <- auc_results |>
   as_tibble() |>
-  dplyr::summarise(case_minus_control = AUC[condition == "Case"] -
-                     AUC[condition == "Control"],
-                   .by = c(pseudotime_range, gene, lineage))
+  dplyr::summarise(
+    case_minus_control = AUC[condition == "Case"] -
+      AUC[condition == "Control"],
+    .by = c(pseudotime_range, gene, lineage)
+  )
 
 top_cond_diff <- condition_diff |>
   dplyr::left_join(translated_id, by = join_by(gene == ensembl_gene_id)) |>
   dplyr::filter(hgnc_symbol != "") |>
-  dplyr::slice_max(abs(case_minus_control), by = c(pseudotime_range, lineage),
-                   n = 10) |>
+  dplyr::slice_max(
+    abs(case_minus_control),
+    by = c(pseudotime_range, lineage),
+    n = 10
+  ) |>
   dplyr::distinct(hgnc_symbol, .keep_all = TRUE)
 head(top_cond_diff)
 
-top_cond_plots <- map2(top_cond_diff$gene, top_cond_diff$hgnc_symbol,
-              plot_gene_pseudotime, sce_subset, counts)
+top_cond_plots <- map2(
+  top_cond_diff$gene,
+  top_cond_diff$hgnc_symbol,
+  plot_gene_pseudotime,
+  sce_subset,
+  counts
+)
 top_cond_plots[[5]] <- top_cond_plots[[5]] +
   theme(legend.position = "right")
 plot <- plot_grid(plotlist = top_cond_plots, ncol = 5)
 plot
-ggsave(filename = here("05_figures/990_shared_figures/004_pseudotime",
-                       "01_tradeseq", "top_condition_4_pseudotime_bins.png"),
-       height = 15, width = 18)
+ggsave(
+  filename = here(
+    "05_figures/990_shared_figures/004_pseudotime",
+    "01_tradeseq",
+    "top_condition_4_pseudotime_bins.png"
+  ),
+  height = 15,
+  width = 18
+)
 ```
 
 
@@ -1230,22 +2627,32 @@ get_top_genes <- function(df, fc_column, fc_filter = 2) {
 
 top_lin_genes <- get_top_genes(lineage_genes, fcMedian)
 
-readr::write_csv(top_lin_genes,
-                 here("03_data/990_processed_data/008_pseudotime",
-                      "top_pseudotime_lineage_genes.csv"))
+readr::write_csv(
+  top_lin_genes,
+  here(
+    "03_data/990_processed_data/008_pseudotime",
+    "top_pseudotime_lineage_genes.csv"
+  )
+)
 
 lineage_genes |>
-    rownames_to_column("ensembl_gene_id") |>
-    readr::write_csv(here("03_data/990_processed_data/008_pseudotime",
-                      "all_pseudotime_lineage_genes.csv"))
+  rownames_to_column("ensembl_gene_id") |>
+  readr::write_csv(here(
+    "03_data/990_processed_data/008_pseudotime",
+    "all_pseudotime_lineage_genes.csv"
+  ))
 
 dim(top_lin_genes)
 top_genes <- top_lin_genes |>
   slice_max(fcMedian, n = 20)
 
-plots <- map2(top_genes$ensembl_gene_id,
-              top_genes$hgnc_symbol,
-              plot_gene_pseudotime, sce_subset, counts)
+plots <- map2(
+  top_genes$ensembl_gene_id,
+  top_genes$hgnc_symbol,
+  plot_gene_pseudotime,
+  sce_subset,
+  counts
+)
 
 plots[[5]]
 plots[[5]] <- plots[[5]] +
@@ -1254,9 +2661,15 @@ plots[[5]] <- plots[[5]] +
 plot <- plot_grid(plotlist = plots, ncol = 5)
 plot
 
-ggsave(filename = here("05_figures/990_shared_figures/004_pseudotime",
-                       "01_tradeseq", "lineage_patterntest_top20.png"),
-       height = 8, width = 18)
+ggsave(
+  filename = here(
+    "05_figures/990_shared_figures/004_pseudotime",
+    "01_tradeseq",
+    "lineage_patterntest_top20.png"
+  ),
+  height = 8,
+  width = 18
+)
 ```
 
 #### Lineage differentiating genes
@@ -1276,16 +2689,24 @@ diff_early_genes <- tradeSeq::earlyDETest(sce_subset)
 
 top_diff_early_genes <- get_top_genes(diff_early_genes, fcMedian)
 
-readr::write_csv(top_diff_early_genes,
-                 here("03_data/990_processed_data/008_pseudotime",
-                      "top_pseudotime_diff_early_genes.csv"))
+readr::write_csv(
+  top_diff_early_genes,
+  here(
+    "03_data/990_processed_data/008_pseudotime",
+    "top_pseudotime_diff_early_genes.csv"
+  )
+)
 
 top_genes <- top_diff_early_genes |>
   slice_max(logFC1_2, n = 20)
 
-plots <- map2(top_genes$ensembl_gene_id,
-              top_genes$hgnc_symbol,
-              plot_gene_pseudotime, sce_subset, counts)
+plots <- map2(
+  top_genes$ensembl_gene_id,
+  top_genes$hgnc_symbol,
+  plot_gene_pseudotime,
+  sce_subset,
+  counts
+)
 
 plots[[5]]
 plots[[5]] <- plots[[5]] +
@@ -1294,9 +2715,15 @@ plots[[5]] <- plots[[5]] +
 plot <- plot_grid(plotlist = plots, ncol = 5)
 plot
 
-ggsave(filename = here("05_figures/990_shared_figures/004_pseudotime",
-                       "01_tradeseq", "diff_early_genes_top20.png"),
-       height = 10, width = 18)
+ggsave(
+  filename = here(
+    "05_figures/990_shared_figures/004_pseudotime",
+    "01_tradeseq",
+    "diff_early_genes_top20.png"
+  ),
+  height = 10,
+  width = 18
+)
 ```
 
 ### Top end genes
@@ -1310,18 +2737,26 @@ diff_end_genes <- tradeSeq::diffEndTest(sce_subset)
 # Adjust p-values and filter logfc
 top_diff_end_genes <- get_top_genes(diff_end_genes, logFC1_2)
 
-readr::write_csv(top_diff_end_genes,
-                 here("03_data/990_processed_data/008_pseudotime",
-                      "top_pseudotime_diff_end_genes.csv"))
+readr::write_csv(
+  top_diff_end_genes,
+  here(
+    "03_data/990_processed_data/008_pseudotime",
+    "top_pseudotime_diff_end_genes.csv"
+  )
+)
 
 top_genes <- top_diff_end_genes |>
   # get genes that are unique to end genes
   dplyr::filter(!(ensembl_gene_id %in% top_diff_early_genes$ensembl_gene_id)) |>
   slice_max(logFC1_2, n = 20)
 
-plots <- map2(top_genes$ensembl_gene_id,
-              top_genes$hgnc_symbol,
-              plot_gene_pseudotime, sce_subset, counts)
+plots <- map2(
+  top_genes$ensembl_gene_id,
+  top_genes$hgnc_symbol,
+  plot_gene_pseudotime,
+  sce_subset,
+  counts
+)
 
 plots[[5]]
 plots[[5]] <- plots[[5]] +
@@ -1330,9 +2765,15 @@ plots[[5]] <- plots[[5]] +
 plot <- plot_grid(plotlist = plots, ncol = 5)
 plot
 
-ggsave(filename = here("05_figures/990_shared_figures/004_pseudotime",
-                       "01_tradeseq", "diff_end_genes_top20.png"),
-       height = 10, width = 18)
+ggsave(
+  filename = here(
+    "05_figures/990_shared_figures/004_pseudotime",
+    "01_tradeseq",
+    "diff_end_genes_top20.png"
+  ),
+  height = 10,
+  width = 18
+)
 ```
 
 ### Condition test
@@ -1342,6 +2783,7 @@ It can give overall genes, and per lineage, so I'll check both
 
 ```{r}
 lineages <- conditionTest(sce_subset, lineages = TRUE, pairwise = TRUE)
+head(lineages)
 
 lineages_tidy <- tidy_tradeseq(lineages)
 
@@ -1353,16 +2795,24 @@ top_genes_condition <- lineages_tidy |>
 length(unique(top_genes_condition$hgnc_symbol))
 table(top_genes_condition$lineage)
 
-readr::write_csv(top_genes_condition,
-                 here("03_data/990_processed_data/008_pseudotime",
-                      "top_pseudotime_condition_genes.csv"))
+readr::write_csv(
+  top_genes_condition,
+  here(
+    "03_data/990_processed_data/008_pseudotime",
+    "top_pseudotime_condition_genes.csv"
+  )
+)
 
 top_genes <- top_genes_condition |>
   slice_sample(n = 10, by = lineage)
 
-plots <- map2(top_genes$ensembl_gene_id,
-              top_genes$hgnc_symbol,
-              plot_gene_pseudotime, sce_subset, counts)
+plots <- map2(
+  top_genes$ensembl_gene_id,
+  top_genes$hgnc_symbol,
+  plot_gene_pseudotime,
+  sce_subset,
+  counts
+)
 
 plots[[5]]
 plots[[5]] <- plots[[5]] +
@@ -1371,9 +2821,55 @@ plots[[5]] <- plots[[5]] +
 plot <- plot_grid(plotlist = plots, ncol = 5)
 plot
 
-ggsave(filename = here("05_figures/990_shared_figures/004_pseudotime",
-                       "01_tradeseq", "top_condition_genes.png"),
-       height = 14, width = 18)
+ggsave(
+  filename = here(
+    "05_figures/990_shared_figures/004_pseudotime",
+    "01_tradeseq",
+    "top_condition_genes.png"
+  ),
+  height = 14,
+  width = 18
+)
+```
+
+```{r}
+#| eval: false
+## C5 category is according to gene ontology grouping: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4707969/pdf/nihms-743907.pdf
+geneSets <- msigdbr(
+  species = "Homo sapiens",
+  collection = "C5",
+  subcollection = "BP"
+)
+### filter background to only include genes that we assessed.
+geneSets$gene_symbol <- toupper(geneSets$gene_symbol)
+geneSets <- geneSets[geneSets$ensembl_gene %in% names(sce_subset), ]
+m_list <- geneSets %>% split(x = .$gene_symbol, f = .$gs_name)
+head(m_list)
+
+de_genes_celltype <- split(
+  mast_de_tradeseq_and_switchde_overlap,
+  mast_de_tradeseq_and_switchde_overlap$celltype
+)
+# Create a named vector of adjusted p-values for each celltype
+logfc_list <- lapply(de_genes_celltype, function(subdf) {
+  setNames(subdf$avg_log2FC, subdf$hgnc_symbol)
+})
+head(logfc_list[[1]])
+
+pathways <- logfc_list |>
+  map(\(x) fgsea(pathways = m_list, stats = x, minSize = 10))
+pathways <- map2(
+  pathways,
+  names(pathways),
+  \(x, y) {
+    x |>
+      dplyr::mutate(celltype = y) |>
+      as_tibble()
+  }
+) |>
+  list_rbind()
+# No pathways are signficant
+pathways |> dplyr::filter(padj < 0.05)
 ```
 
 #### Hypergeometric pathways
@@ -1385,10 +2881,17 @@ genes <- top_genes_condition |>
   tidyr::nest(.by = lineage)
 
 # plan("multisession", workers = parallel::detectCores() - 1)
-go_results_all <- map(genes$data, ~ enrichGO(gene = .x$ensembl_gene_id, OrgDb = "org.Hs.eg.db",
-                                    keyType = "ENSEMBL", ont = "ALL",
-                                    universe = rownames(sce_subset)))
-                           # .options = furrr_options(seed = 123))
+go_results_all <- map(
+  genes$data,
+  ~ enrichGO(
+    gene = .x$ensembl_gene_id,
+    OrgDb = "org.Hs.eg.db",
+    keyType = "ENSEMBL",
+    ont = "ALL",
+    universe = rownames(sce_subset)
+  )
+)
+# .options = furrr_options(seed = 123))
 
 names(go_results_all) <- genes$lineage
 
@@ -1397,20 +2900,24 @@ go_results_filtered <- go_results_all |>
   purrr::keep(~ nrow(.) > 0)
 
 # Apply pairwise_termism where possible
-go_results_filtered <- map(go_results_filtered, ~{
-  if(length(.x$ID) >= 2) {
-    pairwise_termsim(.x)
-  } else {
-    .x
+go_results_filtered <- map(
+  go_results_filtered,
+  ~ {
+    if (length(.x$ID) >= 2) {
+      pairwise_termsim(.x)
+    } else {
+      .x
+    }
   }
-})
+)
 
 # dotplots
 dotplots <-
   map2(
     go_results_filtered,
     names(go_results_filtered),
-    ~ dotplot(.x, showCategory = 20, split = "ONTOLOGY") + facet_grid(. ~ ONTOLOGY) +
+    ~ dotplot(.x, showCategory = 20, split = "ONTOLOGY") +
+      facet_grid(. ~ ONTOLOGY) +
       ggtitle(paste0(.y, " - Sig genes only"))
   )
 dotplots
@@ -1422,10 +2929,18 @@ dotplots
 It might be nice to make a list and perhaps pdf of all the unique genes of interest accross the comparisons
 
 ```{r}
-df <- list(top_diff_early_genes, top_diff_end_genes, top_genes_condition,
-           top_lin_genes)
-names(df) <- c("top_early_genes", "top_end_genes", "top_genes_condition",
-  "top_lin_genes")
+df <- list(
+  top_diff_early_genes,
+  top_diff_end_genes,
+  top_genes_condition,
+  top_lin_genes
+)
+names(df) <- c(
+  "top_early_genes",
+  "top_end_genes",
+  "top_genes_condition",
+  "top_lin_genes"
+)
 genes <- map(df, dplyr::pull, hgnc_symbol)
 genes <- unique(unlist(genes))
 
@@ -1434,12 +2949,158 @@ test <- df
 
 cat("Number of unique genes of interest:", length(genes))
 
-qs::qsave(test, here::here("05_figures/990_shared_figures/003_final_figures",
-  "001_data_for_plots/tradeseq_sig_degs.qs"))
-readr::write_rds(df, here::here("05_figures/990_shared_figures/003_final_figures",
-  "001_data_for_plots/tradeseq_sig_degs.rds"))
+qs::qsave(
+  test,
+  here::here(
+    "05_figures/990_shared_figures/003_final_figures",
+    "001_data_for_plots/tradeseq_sig_degs.qs"
+  )
+)
+readr::write_rds(
+  df,
+  here::here(
+    "05_figures/990_shared_figures/003_final_figures",
+    "001_data_for_plots/tradeseq_sig_degs.rds"
+  )
+)
 ```
 
+```{r}
+#| eval: false
+genes = c(
+  "NOTCH1",
+  "ZIC1",
+  "SETBP1",
+  "SOX5",
+  "HIF3A",
+  "YBX3",
+  "BCL6",
+  "RBM17",
+  "BHLHE40",
+  "PBX1",
+  "ZNF423",
+  "RFX3",
+  "ZBTB20",
+  "PTEN"
+)
+
+x <- map(df, \(x) x |> dplyr::filter(hgnc_symbol %in% genes))
+x$top_genes_condition |> write_csv(here("zam_tfs.csv"))
+
+additional_genes <- translated_id |>
+  dplyr::filter(hgnc_symbol %in% genes) |>
+  dplyr::distinct(hgnc_symbol, .keep_all = TRUE)
+
+plots <- map2(
+  additional_genes$ensembl_gene_id,
+  additional_genes$hgnc_symbol,
+  plot_gene_pseudotime,
+  sce_subset,
+  counts
+)
+
+plots[[4]] <- plots[[4]] +
+  theme(legend.position = "right")
+
+
+pdf(
+  here(
+    "05_figures/990_shared_figures/004_pseudotime/01_tradeseq",
+    "zam_tfs.pdf"
+  ),
+  width = 10,
+  height = 8
+)
+marrangeGrob(grobs = plots, nrow = 2, ncol = 3)
+dev.off()
+```
+#### Tradeseq - switchde - MAST DE overlap
+
+Want to check the overlap of sig genes found by these different approaches
+
+```{r}
+celltype_abbrev_df <- readr::read_tsv(here::here(
+  "05_figures/990_shared_figures/003_final_figures/001_data_for_plots/celltype_abbreviations.tsv"
+))
+mast_de <- qs::qread(here::here(
+  "03_data/990_processed_data/001_snrnaseq/13_mast_de/level2/mast_de_results_list.qs"
+)) |>
+  map(rownames_to_column, var = "ensembl") |>
+  list_rbind() |>
+  dplyr::left_join(translated_id, by = join_by(ensembl == ensembl_gene_id)) |>
+  dplyr::group_by(celltype) |>
+  dplyr::distinct(ensembl, .keep_all = TRUE) |>
+  dplyr::ungroup() |>
+  dplyr::left_join(celltype_abbrev_df, by = join_by(celltype)) |>
+  dplyr::mutate(
+    celltypes_abbrev = if_else(
+      is.na(celltypes_abbrev),
+      celltype,
+      celltypes_abbrev
+    ),
+    deg_direction = if_else(avg_log2FC > 0, "Up Regulated", "Down Regulated")
+  ) |>
+  dplyr::filter(p_val_adj < 0.05) |>
+  dplyr::mutate(is_tf = hgnc_symbol %in% tf_link_table$Name.TF)
+
+mast_de |>
+  dplyr::filter(is_tf) |>
+  # Add count of how many celltypes
+  add_count(hgnc_symbol, name = "n_celltype") |>
+  write_csv(here(
+    "./03_data/990_processed_data/001_snrnaseq/13_mast_de/sig_mast_tf_degs.csv"
+  ))
+
+mast_de_tradeseq_overlap <- mast_de |>
+  dplyr::filter(hgnc_symbol %in% unique(genes))
+
+mast_de_tradeseq_overlap |> dplyr::count(celltype, sort = TRUE)
+write_csv(
+  mast_de_tradeseq_overlap,
+  here(
+    "03_data/990_processed_data/008_pseudotime/sig_mast_de_tradeseq_overlap.csv"
+  )
+)
+
+mast_de_tradeseq_and_switchde_overlap <- mast_de |>
+  dplyr::filter(hgnc_symbol %in% res_sig$hgnc_symbol) |>
+  dplyr::filter(hgnc_symbol %in% unique(top_genes_condition$hgnc_symbol))
+mast_de_tradeseq_and_switchde_overlap |> dplyr::count(celltype, sort = TRUE)
+write_csv(
+  mast_de_tradeseq_and_switchde_overlap,
+  here(
+    "03_data/990_processed_data/008_pseudotime/sig_mast_de_tradeseq_and_switchde_overlap.csv"
+  )
+)
+```
+
+Get overlap between tradeseq genes and FOXP2 targets
+
+```{r}
+foxp2_targets <- tf_link_table |>
+  dplyr::filter(Name.TF == "FOXP2")
+
+top_lin_foxp2_targets <- top_lin_genes |>
+  dplyr::filter(hgnc_symbol %in% foxp2_targets$Name.Target) |>
+  dplyr::mutate(is_tf = hgnc_symbol %in% tf_link_table$Name.TF)
+top_condition_foxp2_targets <- top_genes_condition |>
+  dplyr::filter(hgnc_symbol %in% foxp2_targets$Name.Target) |>
+  dplyr::mutate(is_tf = hgnc_symbol %in% tf_link_table$Name.TF)
+write_csv(
+  top_lin_foxp2_targets,
+  here(
+    "./03_data/990_processed_data/008_pseudotime",
+    "top_tradeseq_lineage_gene-overlap_foxp2_targets.csv"
+  )
+)
+write_csv(
+  top_condition_foxp2_targets,
+  here(
+    "./03_data/990_processed_data/008_pseudotime",
+    "top_tradeseq_condition_gene-overlap_foxp2_targets.csv"
+  )
+)
+```
 ### Additional genes to plot
 
 
@@ -1448,9 +3109,13 @@ additional_genes <- translated_id |>
   dplyr::filter(hgnc_symbol %in% c("BACE2", "APOD", "MEF2C", "NOTCH1")) |>
   dplyr::distinct(hgnc_symbol, .keep_all = TRUE)
 
-plots <- map2(additional_genes$ensembl_gene_id,
-              additional_genes$hgnc_symbol,
-              plot_gene_pseudotime, sce_subset, counts)
+plots <- map2(
+  additional_genes$ensembl_gene_id,
+  additional_genes$hgnc_symbol,
+  plot_gene_pseudotime,
+  sce_subset,
+  counts
+)
 
 plots[[2]]
 plots[[2]] <- plots[[2]] +
@@ -1459,9 +3124,15 @@ plots[[2]] <- plots[[2]] +
 plot <- plot_grid(plotlist = plots, ncol = 2)
 plot
 
-ggsave(filename = here("05_figures/990_shared_figures/004_pseudotime",
-                       "01_tradeseq", "additional_genes.png"),
-       height = 6, width = 12)
+ggsave(
+  filename = here(
+    "05_figures/990_shared_figures/004_pseudotime",
+    "01_tradeseq",
+    "additional_genes.png"
+  ),
+  height = 6,
+  width = 12
+)
 ```
 
 ### Transcription factors
@@ -1486,31 +3157,55 @@ comprehensive_tf_check <- function(gene_list) {
   )
 
   # 1. GO Annotation Check
-  go_tf_term <- "GO:0003700"  # Transcription factor activity
-  go_results <- tryCatch({
-    go_annotations <- AnnotationDbi::select(org.Hs.eg.db,
-                             keys = gene_list,
-                             columns = c("GOALL"),
-                             keytype = "SYMBOL")
-    go_tf_genes <- go_annotations$SYMBOL[grep(go_tf_term, go_annotations$GOALL)]
-    go_tf_genes
-  }, error = function(e) c())
+  go_tf_term <- "GO:0003700" # Transcription factor activity
+  go_results <- tryCatch(
+    {
+      go_annotations <- AnnotationDbi::select(
+        org.Hs.eg.db,
+        keys = gene_list,
+        columns = c("GOALL"),
+        keytype = "SYMBOL"
+      )
+      go_tf_genes <- go_annotations$SYMBOL[grep(
+        go_tf_term,
+        go_annotations$GOALL
+      )]
+      go_tf_genes
+    },
+    error = function(e) c()
+  )
 
   # 2. TFClass Database Check (via manual API/web query simulation)
   tfclass_check <- sapply(gene_list, function(gene) {
-    tryCatch({
-      # Note: This is a simulated approach as TFClass doesn't have a direct R API
-      url <- paste0("http://tfclass.bioinf.med.uni-goettingen.de/tfclass/cgi-bin/tfclass.py?VERSION=1.22&DATASET=TF&SPECIES=Homo%20sapiens&GENE=", gene)
-      response <- GET(url)
-      content <- content(response, "text")
-      grepl("Transcription Factor", content)
-    }, error = function(e) FALSE)
+    tryCatch(
+      {
+        # Note: This is a simulated approach as TFClass doesn't have a direct R API
+        url <- paste0(
+          "http://tfclass.bioinf.med.uni-goettingen.de/tfclass/cgi-bin/tfclass.py?VERSION=1.22&DATASET=TF&SPECIES=Homo%20sapiens&GENE=",
+          gene
+        )
+        response <- GET(url)
+        content <- content(response, "text")
+        grepl("Transcription Factor", content)
+      },
+      error = function(e) FALSE
+    )
   })
 
   # 3. Literature-based TF Databases (simulated with known TFs)
   known_tfs <- c(
-    "STAT3", "TP53", "MYC", "FOXO1", "NRF2", "CREB1",
-    "ELK1", "SP1", "NFKB1", "HIF1A", "REST", "BRCA1"
+    "STAT3",
+    "TP53",
+    "MYC",
+    "FOXO1",
+    "NRF2",
+    "CREB1",
+    "ELK1",
+    "SP1",
+    "NFKB1",
+    "HIF1A",
+    "REST",
+    "BRCA1"
   )
 
   # Combine results
@@ -1535,9 +3230,11 @@ comprehensive_tf_check <- function(gene_list) {
 
     # Determine overall TF status
     results$Is_TF[i] <- length(sources) > 0
-    results$TF_Sources[i] <- ifelse(length(sources) > 0,
-                                    paste(sources, collapse = "; "),
-                                    "No TF Evidence")
+    results$TF_Sources[i] <- ifelse(
+      length(sources) > 0,
+      paste(sources, collapse = "; "),
+      "No TF Evidence"
+    )
   }
 
   return(results)
@@ -1552,14 +3249,22 @@ early_tf <- early_tf |>
   dplyr::left_join(translated_id, by = join_by(Gene == hgnc_symbol))
 
 tf_link_match <- top_diff_early_genes |>
-  dplyr::filter(hgnc_symbol %in% tf_link_table$Name.TF & !hgnc_symbol %in% early_tf$Gene)
+  dplyr::filter(
+    hgnc_symbol %in% tf_link_table$Name.TF & !hgnc_symbol %in% early_tf$Gene
+  )
 
-all_tfs <- data.frame(gene = c(early_tf$Gene, tf_link_match$hgnc_symbol),
-  ensembl_gene_id = c(early_tf$ensembl_gene_id, tf_link_match$ensembl_gene_id))
+all_tfs <- data.frame(
+  gene = c(early_tf$Gene, tf_link_match$hgnc_symbol),
+  ensembl_gene_id = c(early_tf$ensembl_gene_id, tf_link_match$ensembl_gene_id)
+)
 
-plots <- map2(all_tfs$ensembl_gene_id,
-              all_tfs$gene,
-              plot_gene_pseudotime, sce_subset, counts)
+plots <- map2(
+  all_tfs$ensembl_gene_id,
+  all_tfs$gene,
+  plot_gene_pseudotime,
+  sce_subset,
+  counts
+)
 
 plots[[4]]
 plots[[4]] <- plots[[4]] +
@@ -1568,9 +3273,15 @@ plots[[4]] <- plots[[4]] +
 plot <- plot_grid(plotlist = plots, ncol = 4)
 plot
 
-ggsave(filename = here("05_figures/990_shared_figures/004_pseudotime",
-                       "01_tradeseq", "early_diff_tf_genes.png"),
-       height = 6, width = 14)
+ggsave(
+  filename = here(
+    "05_figures/990_shared_figures/004_pseudotime",
+    "01_tradeseq",
+    "early_diff_tf_genes.png"
+  ),
+  height = 6,
+  width = 14
+)
 
 
 all_tf <- comprehensive_tf_check(unique(genes))
@@ -1578,25 +3289,39 @@ all_tf <- all_tf |>
   dplyr::filter(Is_TF) |>
   dplyr::left_join(translated_id, by = join_by(Gene == hgnc_symbol))
 
-readr::write_csv(all_tf,
-                 here("03_data/990_processed_data/008_pseudotime",
-                      "all_transcription_factors.csv"))
+readr::write_csv(
+  all_tf,
+  here(
+    "03_data/990_processed_data/008_pseudotime",
+    "all_transcription_factors.csv"
+  )
+)
 
-plots <- map2(all_tf$ensembl_gene_id,
-              all_tf$Gene,
-              plot_gene_pseudotime, sce_subset, counts)
+plots <- map2(
+  all_tf$ensembl_gene_id,
+  all_tf$Gene,
+  plot_gene_pseudotime,
+  sce_subset,
+  counts
+)
 
 plots[[4]]
 plots[[4]] <- plots[[4]] +
   theme(legend.position = "right")
 
 # Vectorized PDF creation
-pdf(here::here("05_figures/990_shared_figures/004_pseudotime",
-         "01_tradeseq", "all_transcription_factors.pdf"),
-    width = 11, height = 8)
+pdf(
+  here::here(
+    "05_figures/990_shared_figures/004_pseudotime",
+    "01_tradeseq",
+    "all_transcription_factors.pdf"
+  ),
+  width = 11,
+  height = 8
+)
 
 # Split the plot list into chunks of 4
-plot_chunks <- split(plots, ceiling(seq_along(plots)/4))
+plot_chunks <- split(plots, ceiling(seq_along(plots) / 4))
 
 # Use map to apply grid.arrange to each chunk
 walk(plot_chunks, function(chunk) {
@@ -1615,29 +3340,59 @@ genes <- c("FOXP2", "RORA", "ZBTB7C", "PRDM16", "NR4A1")
 genes <- translated_id |>
   dplyr::filter(hgnc_symbol %in% genes)
 
-plots <- map2(genes$ensembl_gene_id,
-              genes$hgnc_symbol,
-              plot_gene_pseudotime, sce_subset, counts)
+plots <- map2(
+  genes$ensembl_gene_id,
+  genes$hgnc_symbol,
+  plot_gene_pseudotime,
+  sce_subset,
+  counts
+)
 
 plot <- plot_grid(plotlist = plots, nrow = 2)
 
 # extract the legend from one of the plots
 legend <- get_legend(
   # create some space to the left of the legend
-  plots[[1]] + theme(legend.position = "right", legend.box.margin = margin(0, 0, 0, 12))
+  plots[[1]] +
+    theme(legend.position = "right", legend.box.margin = margin(0, 0, 0, 12))
 )
 
-plot_grid(plots[[3]], plots[[1]], plots[[2]], plots[[4]], plots[[5]], 
-  legend, nrow = 2, labels = c("A", "B", "C", "D", "E", ""))
+plot_grid(
+  plots[[3]],
+  plots[[1]],
+  plots[[2]],
+  plots[[4]],
+  plots[[5]],
+  legend,
+  nrow = 2,
+  labels = c("A", "B", "C", "D", "E", "")
+)
 
-ggsave(filename = here("05_figures/990_shared_figures/003_final_figures",
-                       "000_sup_figures", "endomt-lineage-transcription-factors.pdf"),
-       width = 7, height = 7, units = "in")
+ggsave(
+  filename = here(
+    "05_figures/990_shared_figures/003_final_figures",
+    "000_sup_figures",
+    "endomt-lineage-transcription-factors.pdf"
+  ),
+  width = 7,
+  height = 7,
+  units = "in"
+)
 ```
 Zam flagged there TFs as being visually interesting
 
 ```{r}
-lineage1_genes <- c("ZBTB7C", "PRDM17", "JPH2", "NR4A1", "PPARG", "ZFHX3", "NR4A3", "FOSL2", "ETV6")
+lineage1_genes <- c(
+  "ZBTB7C",
+  "PRDM17",
+  "JPH2",
+  "NR4A1",
+  "PPARG",
+  "ZFHX3",
+  "NR4A3",
+  "FOSL2",
+  "ETV6"
+)
 lineage2_genes <- c("RORA", "FOXP2", "ESRRG", "DACH1", "TCF4")
 
 # If you want a named vector approach
@@ -1681,19 +3436,27 @@ assertthat::assert_that(sum(rownames(pseudotime) != plot_data$cell) == 0)
 
 # Melt the data for easier plotting
 plot_data <- plot_data |>
-  pivot_longer(contains("_lineage"), names_to = "lineage", values_to = "pseudotime") |>
+  pivot_longer(
+    contains("_lineage"),
+    names_to = "lineage",
+    values_to = "pseudotime"
+  ) |>
   dplyr::filter(!is.na(pseudotime)) |>
   dplyr::mutate(lineage = str_remove(lineage, "pseudotime_"))
 
 # Plotting
-ggplot(plot_data,
-       aes(x = pseudotime,
-           y = expression,
-           color = condition,
-           group = interaction(condition, lineage))) +
+ggplot(
+  plot_data,
+  aes(
+    x = pseudotime,
+    y = expression,
+    color = condition,
+    group = interaction(condition, lineage)
+  )
+) +
   geom_density(alpha = 0.5) +
-#  geom_smooth(method = "loess", se = TRUE) +
-  facet_wrap(~ lineage, scales = "free") +
+  #  geom_smooth(method = "loess", se = TRUE) +
+  facet_wrap(~lineage, scales = "free") +
   labs(
     title = paste("Expression of", "blah", "Across Pseudotime"),
     x = "Pseudotime",
@@ -1714,9 +3477,15 @@ BPPARAM$workers <- parallel::detectCores() - 2
 BPPARAM
 
 # Evaluate the optimal number of knots
-set.seed(123)  # For reproducibility
-k_values <- evaluateK(counts = assays(sce_slingshot)$counts, sds = sds,
-                      nGenes = 500, k = 3:10, parallel = TRUE, BPPARAM = BPPARAM)
+set.seed(123) # For reproducibility
+k_values <- evaluateK(
+  counts = assays(sce_slingshot)$counts,
+  sds = sds,
+  nGenes = 500,
+  k = 3:10,
+  parallel = TRUE,
+  BPPARAM = BPPARAM
+)
 k_values
 # Plot the evaluation results to choose the best k
 plot(k_values)
@@ -1724,7 +3493,14 @@ plot(k_values)
 optimal_k <- which.min(k_values$ic$BIC)
 # Having a hard time running evaluateK, it's slow and seems to crash, I'll just try progressing with nknots of 6 (the default)
 # Fit GAMs for each gene along the pseudotime
-sce_slingshot <- fitGAM(counts = assays(sce_slingshot)$counts, pseudotime = slingPseudotime(sds, na = FALSE), cellWeights = slingCurveWeights(sds), nknots = 6, parallel = TRUE, BPPARAM = BPPARAM)
+sce_slingshot <- fitGAM(
+  counts = assays(sce_slingshot)$counts,
+  pseudotime = slingPseudotime(sds, na = FALSE),
+  cellWeights = slingCurveWeights(sds),
+  nknots = 6,
+  parallel = TRUE,
+  BPPARAM = BPPARAM
+)
 
 # Extract the model results
 gam_results <- rowData(sce_slingshot)$tradeSeq
