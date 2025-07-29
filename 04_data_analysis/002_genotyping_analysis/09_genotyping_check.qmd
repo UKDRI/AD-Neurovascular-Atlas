@@ -38,7 +38,7 @@ samples_meta <- fread(samples_meta_file, colClasses = c(donor = "character"))
 samples_meta_print <- copy(samples_meta)
 setnames(samples_meta_print, "Diagnosis", "______________________________Diagnosis______________________________")
 
-samples_meta_print %>% DT::datatable(caption="Samples overview", escape=F, rownames = F, extensions = 'Buttons', options = list(dom = 'Blfrtip', buttons = list('colvis', list(extend = 'copy', exportOptions = list(columns=':visible')), list(extend = 'csv', exportOptions = list(columns=':visible')), list(extend = 'excel', exportOptions = list(columns=':visible')))))
+samples_meta_print |> DT::datatable(caption="Samples overview", escape=F, rownames = F, extensions = 'Buttons', options = list(dom = 'Blfrtip', buttons = list('colvis', list(extend = 'copy', exportOptions = list(columns=':visible')), list(extend = 'csv', exportOptions = list(columns=':visible')), list(extend = 'excel', exportOptions = list(columns=':visible')))))
 ```
 
 # Genotyping: DNA vs RNA
@@ -69,10 +69,10 @@ samples_order <- GT |>
   dplyr::arrange(NumericPart) |>
   dplyr::pull(S2)
 
-order_s1 <- GT %>%
-  dplyr::group_by(S2) %>%
-  dplyr::arrange(desc(pct_identity)) %>%
-  dplyr::slice_head(n = 1) %>%
+order_s1 <- GT |>
+  dplyr::group_by(S2) |>
+  dplyr::arrange(desc(pct_identity)) |>
+  dplyr::slice_head(n = 1) |>
   dplyr::ungroup() |>
   dplyr::pull(S1)
 
@@ -80,7 +80,7 @@ GT <- GT |>
   mutate(S2 = factor(S2, levels = samples_order))
 
 # Reorder levels of S1 based on the calculated order
-custom_order <- GT %>%
+custom_order <- GT |>
   mutate(S1 = factor(S1, levels = unique(order_s1)))
  
 p <- ggplot(GT, aes(S1, S2))
@@ -123,7 +123,7 @@ p
 
 ```{r genotyping_DNA_RNA_table, cache=F}
 
-GT %>% DT::datatable(caption="Genotyping, pairwise comparison, donor DNA (NeuroChip) vs RNA", escape=F, rownames = F, extensions = 'Buttons', options = list(dom = 'Blfrtip', buttons = list('colvis', list(extend = 'copy', exportOptions = list(columns=':visible')), list(extend = 'csv', exportOptions = list(columns=':visible')), list(extend = 'excel', exportOptions = list(columns=':visible')))))
+GT |> DT::datatable(caption="Genotyping, pairwise comparison, donor DNA (NeuroChip) vs RNA", escape=F, rownames = F, extensions = 'Buttons', options = list(dom = 'Blfrtip', buttons = list('colvis', list(extend = 'copy', exportOptions = list(columns=':visible')), list(extend = 'csv', exportOptions = list(columns=':visible')), list(extend = 'excel', exportOptions = list(columns=':visible')))))
 ```
 
 
