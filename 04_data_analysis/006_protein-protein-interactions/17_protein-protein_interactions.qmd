@@ -32,7 +32,7 @@ similar_gene_list  <- function(gene_list, attr_matrix, rango = 100){
   d_gl <- as.numeric(rownames(attr_matrix)[attr_matrix$ensembl_gene_id %in% gene_list])
   # Random sample of genes (most with a similar attribute)
   rango2 <- setdiff(seq(-rango/2, rango/2, 1), 0)
-  rnd_ind <- sample(rango2, size = length(gene_list), replace = TRUE) 
+  rnd_ind <- sample(rango2, size = length(gene_list), replace = TRUE)
   rnd_ind <- d_gl + rnd_ind
   # check the extremes (all should be within the range of D)
   if(length(which(rnd_ind < 1)) > 0) {
@@ -53,7 +53,7 @@ similar_gene_list  <- function(gene_list, attr_matrix, rango = 100){
 # Divide genes according to an attribute #
 attribute_2_list20bins <- function(attr_matrix, gene_col = 1, attr_col = 2, do_log = TRUE){
   if(do_log == TRUE){
-    at <- rescale01(log(attr_matrix[, attr_col] + 1))  
+    at <- rescale01(log(attr_matrix[, attr_col] + 1))
   } else{
     at <- rescale01(attr_matrix[, attr_col])
   }
@@ -65,8 +65,8 @@ attribute_2_list20bins <- function(attr_matrix, gene_col = 1, attr_col = 2, do_l
                                      attr_matrix[which(at < bines[k + 1]), gene_col]))
      } else {
        if(k == 20){
-         gps[[k]] <- as.character(intersect(attr_matrix[which(at >= bines[k]), gene_col], 
-                                            attr_matrix[which(at <= bines[k +  1]), gene_col]))  
+         gps[[k]] <- as.character(intersect(attr_matrix[which(at >= bines[k]), gene_col],
+                                            attr_matrix[which(at <= bines[k +  1]), gene_col]))
          } else {
            gps[[k]] <- as.character(intersect(attr_matrix[which(at >= bines[k]), gene_col],
                                               attr_matrix[which(at < bines[k + 1]), gene_col]))
@@ -94,10 +94,10 @@ res <- readr::read_csv(here::here("03_data/990_processed_data/001_snrnaseq/08_ps
 
 
 # if(include_apoe) {
-# res <- readr::read_csv(here::here("03_data/990_processed_data/001_snrnaseq/08_pseudobulk/pseudobulk_ad-vs-control_deseq2_subtype-annotated_apoe.csv")) %>%
+# res <- readr::read_csv(here::here("03_data/990_processed_data/001_snrnaseq/08_pseudobulk/pseudobulk_ad-vs-control_deseq2_subtype-annotated_apoe.csv")) |>
 #   na.omit()
 # } else {
-# res <- readr::read_csv(here::here("03_data/990_processed_data/001_snrnaseq/08_pseudobulk/pseudobulk_ad-vs-control_deseq2_subtype-annotated_no-apoe.csv")) %>%
+# res <- readr::read_csv(here::here("03_data/990_processed_data/001_snrnaseq/08_pseudobulk/pseudobulk_ad-vs-control_deseq2_subtype-annotated_no-apoe.csv")) |>
 #   na.omit()
 # }
 ```
@@ -116,7 +116,7 @@ We need ensembl IDs for the PPI, so let's get them
 # Gene ensembl IDs
 tar_load(gene_ids)
 gene_ensembl_ids <- gene_ids
-# remove duplicated gene IDs 
+# remove duplicated gene IDs
 unique_ids = gene_ensembl_ids[which(!duplicated(gene_ensembl_ids$gene)),]
 
 # Join dataframes
@@ -179,9 +179,9 @@ assertthat::assert_that(sum(!magma_sig$entrezgene_id %in% translated_id$entrezge
 # get gene lists per celltype, gwas and percent
 magma_list <- magma_sig |>
   dplyr::rename(ensembl = ensembl_gene_id) |>
-  dplyr::mutate(case_or_control = if_else(grepl("_Case_", group), "case", 
+  dplyr::mutate(case_or_control = if_else(grepl("_Case_", group), "case",
                                           "control")) |>
-  dplyr::group_by(gwas_background, input_gene_list, case_or_control, percent, 
+  dplyr::group_by(gwas_background, input_gene_list, case_or_control, percent,
                   celltype_level, set_name) |>
   tidyr::nest() |>
   dplyr::rename(celltype = set_name) |>
@@ -204,14 +204,14 @@ x <- sig_celltypes_magma$data[[1]] |>
   dplyr::left_join(unique_ids, by = join_by(ensembl)) |>
   dplyr::group_by(set_name) |>
   dplyr::summarise(genes = gene)
-extra_genes <- data.frame(set_name = c("Microglia-activated"), 
+extra_genes <- data.frame(set_name = c("Microglia-activated"),
                           genes = c("ADAM17", "MARCHF7", "PLEKHA1", "MINK1"))
-mg <- x |> dplyr::filter(set_name == "Microglia-activated") |> 
+mg <- x |> dplyr::filter(set_name == "Microglia-activated") |>
   rbind(extra_genes)
 extra_genes <- data.frame(set_name = c("Pericyte-2"), genes = c("IQCK"))
-p2 <- x |> dplyr::filter(set_name == "Pericyte-2") |> 
+p2 <- x |> dplyr::filter(set_name == "Pericyte-2") |>
   rbind(extra_genes)
-extra_genes <- data.frame(set_name = c("Perivascular-FB-KAZN2"), 
+extra_genes <- data.frame(set_name = c("Perivascular-FB-KAZN2"),
                           genes = c("TRANK1", "EGFR"))
 all <- x |> dplyr::filter(set_name == "Perivascular-FB-KAZN2") |>
   rbind(extra_genes) |>
@@ -225,7 +225,7 @@ all <- x |> dplyr::filter(set_name == "Perivascular-FB-KAZN2") |>
     set_name == "Pericyte-2" ~ "Pericyte-2_sig_magma_extended",
     set_name == "Perivascular-FB-KAZN2" ~ "Perivascular-FB-KAZN2_sig_magma_extended",
     .default = set_name
-  ), input_gene_list = "all_controls", percent = "top-ten-percent", 
+  ), input_gene_list = "all_controls", percent = "top-ten-percent",
   gwas_background = unique(sig_celltypes_magma$data[[1]]$gwas_background)) |>
   dplyr::ungroup() |>
   dplyr::select(celltype, input_gene_list, gwas_background, percent, data)
@@ -269,18 +269,18 @@ rm(all, mg, p2)
 ```{r}
 #| eval: false
 
-# Note that it can take a while to download the gene lists, so I've set eval 
+# Note that it can take a while to download the gene lists, so I've set eval
 # to false for this chunk.
 
 # ensembl <- useEnsembl(biomart = "genes", dataset = "hsapiens_gene_ensembl")
-# 
+#
 # # Background population (protein coding genes)
 # bg <- getBM(attributes = c("ensembl_gene_id", "gene_biotype"), mart = ensembl)
 # bg <- bg[which(bg$gene_biotype == "protein_coding"), ]
-# write.table(bg$ensembl_gene_id, here::here("03_data/993_protein_protein_interaction_data/full_background"), 
+# write.table(bg$ensembl_gene_id, here::here("03_data/993_protein_protein_interaction_data/full_background"),
 #             sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
 
-# CDS length # 
+# CDS length #
 cds <- getBM(attributes = c("ensembl_gene_id", "cds_length"),
             mart = ensembl)
 colnames(cds) <- c("ensembl_gene_id", "cds_length")
@@ -289,7 +289,7 @@ cds <- cds[order(cds$ensembl_gene_id), ]
 cds_max <- aggregate.data.frame(cds, by = list(cds$ensembl_gene_id), FUN = max)
 cds_max <- cds_max[, c("ensembl_gene_id", "cds_length")]
 cds_max <- cds_max[cds_max$ensembl_gene_id %in% bg$ensembl_gene_id, ]
-write.table(cds_max, here::here("03_data/993_protein_protein_interaction_data/EnsemblGeneID_MaxCDSlength.txt"), 
+write.table(cds_max, here::here("03_data/993_protein_protein_interaction_data/EnsemblGeneID_MaxCDSlength.txt"),
             sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
 ```
 
@@ -306,13 +306,13 @@ use_known_interactions_only = TRUE
 ```
 
 ```{r}
-# # # SELECT YOUR NETWORK FILE # # # 
+# # # SELECT YOUR NETWORK FILE # # #
 # Merged protein protein interactions.
 if(use_known_interactions_only) {
-ppi_data <- read.table(here::here("03_data/993_protein_protein_interaction_data/MergedPPI_2024Feb.txt"), 
+ppi_data <- read.table(here::here("03_data/993_protein_protein_interaction_data/MergedPPI_2024Feb.txt"),
                        header = FALSE, as.is = TRUE)
 } else {
-ppi_data <- read.table(here::here("03_data/993_protein_protein_interaction_data/MergedPPI_2024Feb.txt"), 
+ppi_data <- read.table(here::here("03_data/993_protein_protein_interaction_data/MergedPPI_2024Feb.txt"),
                        header = FALSE, as.is = TRUE)
 }
 
@@ -339,10 +339,10 @@ background_population <- list("full_background" = background_population)
 ```
 
 ```{r}
-# # #  INPUT gene attributes  # # # 
+# # #  INPUT gene attributes  # # #
 # Gene length / max CDS length
-gene_length <- read.table(here::here("03_data/993_protein_protein_interaction_data/EnsemblGeneID_MaxCDSlength.txt"), 
-                         sep = "\t", header = FALSE, 
+gene_length <- read.table(here::here("03_data/993_protein_protein_interaction_data/EnsemblGeneID_MaxCDSlength.txt"),
+                         sep = "\t", header = FALSE,
                          stringsAsFactors = FALSE)
 colnames(gene_length) <- c("ensembl_gene_id", "gene_length")
 
@@ -350,8 +350,8 @@ colnames(gene_length) <- c("ensembl_gene_id", "gene_length")
 # # # SETUP NUMBER OF RANDOM SAMPLES to create your NULL # # #
 m <- 10000
 
-# # # Set to "D" to take into account degree, 
-# # # "GL" to taken into account Gene length, 
+# # # Set to "D" to take into account degree,
+# # # "GL" to taken into account Gene length,
 # # # or "B" to take into account both degree and Gene length
 gene_attribute <- "B"
 
@@ -379,7 +379,7 @@ if(gene_attribute == "D") {
   if(gene_attribute == "GL") {
   output_file <- paste(output_file, "MatchGenelength", sep = "_")} else {
     if(gene_attribute == "B"){
-  output_file <- paste(output_file, "MatchDegreeAndGenelength", sep = "_")   
+  output_file <- paste(output_file, "MatchDegreeAndGenelength", sep = "_")
     }
   }
   }
@@ -387,13 +387,13 @@ if(gene_attribute == "D") {
 if(use_known_interactions_only) {
   output_file <- paste(output_file, "known-interactions", sep = "_")
   output_file2 <- paste(output_file2, "known-interactions", sep = "_")
-} 
-    
+}
+
 # Pull out the ensembl list for each celltype
 my_gene_list <- map(gene_list$data, ~ dplyr::pull(.x, ensembl) |> unique()) |>
-  set_names(paste(gene_list$celltype, gene_list$apoe_included, 
-                  gene_list$gwas_background, gene_list$input_gene_list, 
-                  gene_list$percent, gene_list$celltype_level, 
+  set_names(paste(gene_list$celltype, gene_list$apoe_included,
+                  gene_list$gwas_background, gene_list$input_gene_list,
+                  gene_list$percent, gene_list$celltype_level,
                   gene_list$case_or_control, sep = "_"))
 names(my_gene_list) <- str_replace(names(my_gene_list), "_NA_NA_NA_NA_NA", "") |>
   str_replace("_NA_NA", "") |>
@@ -408,28 +408,28 @@ process_network <- function(background) {
   Gbg <- vertex_attr(my_network)$name
   BG <- intersect(background, intersect(Gbg, gene_length$ensembl_gene_id))
   my_network <- induced_subgraph(graph = my_network, vids = BG)
-  
+
   # Create tables with the GENE attributes provided for the background population found in my network #
   # Calculate and order genes according to their degree in my network #
   D <- igraph::degree(my_network, mode = "all")
   D <- data.frame(ensembl_gene_id = names(D), degree = D)
   D <- D[order(D$degree, decreasing = TRUE),]
   rownames(D) <- 1:nrow(D)
-  
+
   # Order genes by Gene length #
   gene_length <- gene_length[gene_length$ensembl_gene_id %in% BG, ]
   gene_length <- gene_length[order(gene_length$gene_length, decreasing = TRUE), ]
   rownames(gene_length) <- 1:nrow(gene_length)
-  
+
   # Combined score Degree and Gene length
   B <- merge(D, gene_length, by = "ensembl_gene_id")
-  B <- data.frame(B, 
-                  scaled_degree = rescale01(B$degree), 
-                  scaled_gene_length = rescale01(B$gene_length), 
+  B <- data.frame(B,
+                  scaled_degree = rescale01(B$degree),
+                  scaled_gene_length = rescale01(B$gene_length),
                   score = rescale01(B$degree) + rescale01(B$gene_length))
   B <- B[order(B$score,  decreasing = TRUE), ]
   rownames(B) <- 1:nrow(gene_length)
-  
+
   # Report numbers
   print(paste0("Background population: ", length(background), " genes"))
   print(paste0("Genes in the network: ", length(Gbg), " genes"))
@@ -440,10 +440,10 @@ process_network <- function(background) {
       " genes"
     )
   )
-  
+
   x <- map(my_gene_list, ~ length(intersect(.x, BG)))
   x <- map2(x, names(my_gene_list), ~ print(paste0("Genes of interest contained in the network and used for analysis: ", .x, " for celltype ", .y)))
-  
+
   return(list("BG" = BG, "network" = my_network, "D" = D, "B" = B))
 }
 
@@ -501,9 +501,9 @@ map(my_subgraph, ~ map2(
 
 ```{r}
 perform_permutation <- function(gene_list, gene_list_name, my_network, BG, gene_attribute, m, num_cores = detectCores() - 1) {
-  
+
   print(paste0("Processing ", gene_list_name))
-  
+
   # Gene population of interest
   gene_list_A <- intersect(gene_list, BG)
 
@@ -511,7 +511,7 @@ perform_permutation <- function(gene_list, gene_list_name, my_network, BG, gene_
   mynet_gl <- induced_subgraph(my_network, vids = gene_list_A)
   w_mynet_gl <- edge.attributes(mynet_gl)$weight
   o <- sum(w_mynet_gl)
-  
+
   # Sum of the edges from within a random gene list size A
   # Use mclapply to parallelize the replicate function
   e <- mclapply(1:m, function(i) {
@@ -528,7 +528,7 @@ perform_permutation <- function(gene_list, gene_list_name, my_network, BG, gene_
   # Write to dataframe
   df <- data.frame("gene_list" = gene_list_name, "o" = o, "e" = mean(e), "sem" = sd(e), "p" = p)
   return(df)
-  
+
   print(paste0("Finished processing ", gene_list_name))
 }
 
@@ -585,7 +585,7 @@ sig_celltypes <- results |>
 results |>
   dplyr::filter(padj < 0.05) |>
   DT::datatable(caption = "Test if the number of interactions is higher than expected by chance",
-                rownames = FALSE) %>% formatRound(columns = c("e", "sem"), digits = c(2))
+                rownames = FALSE) |> formatRound(columns = c("e", "sem"), digits = c(2))
 ```
 
 + **o** observed number of interactions.
@@ -598,7 +598,7 @@ results |>
 
 + **Note** If a weighted network is provided then it is a test for the sum of the edge's weights.
 
-## Louvain clustering 
+## Louvain clustering
 
 - run through funciton code and make sure it's working
 
@@ -610,30 +610,30 @@ perform_louvain_clustering <- function(graph,
                                        label) {
   # Perform Louvain clustering
   louvain <- cluster_louvain(graph)
-  
+
   # Get module membership
   module_membership <- membership(louvain)
   # Get the sizes of each module
   module_sizes <- sizes(louvain)
   # Filter out small clusters
   large_modules <- names(module_sizes[module_sizes >= min_cluster_size])
-  
+
   # Create a filtered membership vector
   filtered_membership <- ifelse(module_membership %in% large_modules, module_membership, 0)
   # Get the number of remaining modules
   num_modules <- length(unique(filtered_membership[filtered_membership != 0]))
-  
+
 # Generate distinct colors for each module
   colors <- brewer.pal(n = num_modules, name = color_palette)
-  
+
   # Create a color vector with the default color for small clusters
   module_colors <- rep(default_color, length(filtered_membership))
   # Assign colors to large modules
   module_colors[filtered_membership != 0] <- colors[as.integer(factor(filtered_membership[filtered_membership != 0]))]
-  
+
   # Get gene names
   gene_names <- V(graph)$name
-  
+
   # Create dataframe
   result <- data.frame(
     gene = gene_names,
@@ -641,7 +641,7 @@ perform_louvain_clustering <- function(graph,
     module_color = module_colors,
     label = label
   )
-  
+
   return(result)
 }
 
@@ -664,7 +664,7 @@ ddd <- load(here::here("04_data_analysis/994_scripts_from_emeka/table_gene_full.
 info_annot_gene<-read.table(here::here("04_data_analysis/994_scripts_from_emeka/NCBI37.3.gene.loc"),h=F,sep="\t")
 colnames(info_annot_gene) <- c('entrezid', 'chr', 'start', 'stop', 'strand', "hgnc_symbol")
 table_gene_du_id<-merge(table_gene_du,info_annot_gene,by=c("hgnc_symbol"))
-colnames(table_gene_du_id)[2] <- "gene" 
+colnames(table_gene_du_id)[2] <- "gene"
 
 module_assignment <- map(module_assignment, dplyr::left_join, table_gene_du_id, by = "gene")
 module_assignment <- map(module_assignment, ~ .x |>
@@ -711,6 +711,9 @@ module_labels <-
 
 modules <- modules |>
   left_join(module_labels, by = join_by(label, module))
+
+modules$label <- str_replace_all(modules$label, "Perivascular-FB-KAZN2",
+  "Perivascular-FB-2")
 ```
 
 ```{r}
@@ -718,7 +721,7 @@ plot_network_ggraph <- function(group, module_df, overall_network = my_network,
                                 network_layout = "auto") {
   require(ggraph)
   require(tidygraph)
-  
+
   df <- module_df |>
     dplyr::filter(label == group) |>
     dplyr::group_by(module) |>
@@ -727,13 +730,13 @@ plot_network_ggraph <- function(group, module_df, overall_network = my_network,
     dplyr::filter(genes_in_module > 1) |>
     # If there's no module labels just replace with module numbers
     dplyr::mutate(module_label = if_else(is.na(module_label), NA, module_label))
-  
+
   # Add filter to isolated nodes
   if(grepl("Perivascular-FB-KAZN2", group)) {
     df <- df |>
       dplyr::filter(!hgnc_symbol %in% c("JAZF1", "ZNF652"))
   }
-  
+
   subgraph <- induced_subgraph(graph = overall_network, vids = df$gene)
   # Create a named vector for easy lookup
 ensembl_to_symbol <- setNames(df$hgnc_symbol, df$gene)
@@ -742,7 +745,7 @@ ensembl_to_symbol <- setNames(df$hgnc_symbol, df$gene)
 V(subgraph)$hgnc_symbol <- ensembl_to_symbol[V(subgraph)$name]
   # Convert igraph to tidygraph
   tbl_graph <- as_tbl_graph(subgraph)
-  
+
   # Add module information to the graph
   tbl_graph <- tbl_graph |>
     activate(nodes) |>
@@ -752,10 +755,10 @@ V(subgraph)$hgnc_symbol <- ensembl_to_symbol[V(subgraph)$name]
            group = df$label,
            gene_name = df$gene_symbol) |>
     dplyr::filter(centrality_degree() > 1)
-  
+
   # Plot using ggraph
   p <- ggraph(tbl_graph, layout = network_layout) +  # 'fr' layout for Fruchterman-Reingold
-    geom_edge_link(aes(edge_alpha = 0.5), edge_colour = "grey", 
+    geom_edge_link(aes(edge_alpha = 0.5), edge_colour = "grey",
                    edge_linetype = "solid", show.legend = FALSE) +
     geom_node_point(aes(color = module_label), size = 1.2, alpha = 0.7) +
     geom_node_text(aes(label = gene_name), repel = TRUE, size = 1.8) +
@@ -765,26 +768,26 @@ V(subgraph)$hgnc_symbol <- ensembl_to_symbol[V(subgraph)$name]
     theme(legend.position = "top", plot.title = element_text(size = 5,
                                                              hjust = 0.5,
                                                              face = "bold"),
-          legend.text = element_text(size = 4), 
+          legend.text = element_text(size = 4),
           legend.title = element_text(size = 4, hjust = 0.5, vjust = -7),
-          legend.spacing.x = unit(0.1, "mm"), 
-          legend.spacing.y = unit(0.1, "mm"), 
+          legend.spacing.x = unit(0.1, "mm"),
+          legend.spacing.y = unit(0.1, "mm"),
           legend.key.width = unit(0.8, "mm"),
           legend.key.spacing.x = unit(1, "mm"),
           legend.title.position = "top") +
-  
+
   if(length(unique(df$label)) > 1) {
     p <- p + facet_wrap(~ group)  # Facet by group
   }
-  
+
   return(p)
 }
 
 # Define the function to subset a single string up to the last underscore
 subset_until_last_underscore <- function(input_string) {
   # Find the position of the last underscore
-  last_underscore_position <- str_locate_all(input_string, "_")[[1]][, 1] %>% max()
-  
+  last_underscore_position <- str_locate_all(input_string, "_")[[1]][, 1] |> max()
+
   # Subset the string up to the last underscore
   if (!is.na(last_underscore_position)) {
     return(str_sub(input_string, 1, last_underscore_position - 1))
@@ -801,16 +804,16 @@ modules$celltype <- str_extract(modules$label, "^[^_]*")
 # I want to make sure the Amyloid groups get the same colour label
 # Function to assign colors
 assign_amyloid_color <- function(df, amyloid_color) {
-  df <- df %>%
-    dplyr::group_by(label) %>%
+  df <- df |>
+    dplyr::group_by(label) |>
     dplyr::mutate(
       # Check if "Amyloid" is in the group
       amyloid_present = any(module_label == "Amyloid"),
       # Get the original color of "Amyloid" if present
       original_amyloid_color = ifelse(module_label == "Amyloid", module_color, NA),
       original_amyloid_color = dplyr::first(na.omit(original_amyloid_color))
-    ) %>%
-    dplyr::ungroup() %>%
+    ) |>
+    dplyr::ungroup() |>
     dplyr::mutate(
       # Assign the desired color to "Amyloid"
       module_color = case_when(
@@ -820,9 +823,9 @@ assign_amyloid_color <- function(df, amyloid_color) {
     dplyr::mutate(module_color = case_when(
       module_color == amyloid_color & module_label != "Amyloid" ~ original_amyloid_color,
       .default = module_color)
-    ) %>%
+    ) |>
     dplyr::select(-amyloid_present, -original_amyloid_color)
-  
+
   return(df)
 }
 modules <- assign_amyloid_color(modules, "#D95F02")
@@ -856,15 +859,15 @@ module_sub <- modules |>
                 celltype_level = if_else(grepl("level1", label), "level1", "level2"))
 
 # Summarise the presence of each gene in the case_control groups
-gene_summary <- module_sub %>%
+gene_summary <- module_sub |>
   summarize(
     in_case = any(case_control == "case"),
     in_control = any(case_control == "control"),
   .by = c(celltypes_abbrev, celltype_level, gene_symbol))
 
 # Join the summary back to the original dataframe
-module_sub <- module_sub %>%
-  left_join(gene_summary, by = join_by(celltypes_abbrev, celltype_level, gene_symbol)) %>%
+module_sub <- module_sub |>
+  left_join(gene_summary, by = join_by(celltypes_abbrev, celltype_level, gene_symbol)) |>
   dplyr::mutate(
     unique_genes_per_celltype = case_when(
       in_case & !in_control ~ "case_only",
@@ -872,18 +875,18 @@ module_sub <- module_sub %>%
       in_case & in_control ~ "both",
       .default = NA
     )
-  ) %>%
+  ) |>
   dplyr::select(-in_case, -in_control)
 
 # Do the same for overall genes
-gene_summary <- module_sub %>%
+gene_summary <- module_sub |>
   summarize(
     in_case = any(case_control == "case"),
     in_control = any(case_control == "control"),
   .by = c(gene_symbol))
 
-module_sub <- module_sub %>%
-  left_join(gene_summary, by = join_by(gene_symbol)) %>%
+module_sub <- module_sub |>
+  left_join(gene_summary, by = join_by(gene_symbol)) |>
   dplyr::mutate(
     unique_genes_overall = case_when(
       in_case & !in_control ~ "case_only",
@@ -891,7 +894,7 @@ module_sub <- module_sub %>%
       in_case & in_control ~ "both",
       .default = NA
     )
-  ) %>%
+  ) |>
   dplyr::select(-in_case, -in_control)
 
 table(module_sub$unique_genes_per_celltype)
@@ -902,7 +905,7 @@ df <- module_sub |>
 overall_network = my_network
 network_layout = "auto"
 
-  
+
 set.seed(1234)
 subgraph <- induced_subgraph(graph = overall_network, vids = df$gene)
 all_genes <- unique(df$hgnc_symbol)
@@ -913,23 +916,23 @@ ensembl_to_symbol <- setNames(df$hgnc_symbol, df$gene)
 V(subgraph)$hgnc_symbol <- ensembl_to_symbol[V(subgraph)$name]
   # Convert igraph to tidygraph
   tbl_graph <- as_tbl_graph(subgraph)
-  
+
   microglia_risk_genes <- df |>
-    dplyr::select(gene, gene_symbol, unique_genes_per_celltype, 
+    dplyr::select(gene, gene_symbol, unique_genes_per_celltype,
                   celltypes_abbrev) |>
     dplyr::distinct() |>
     pivot_wider(names_from = unique_genes_per_celltype, values_from = unique_genes_per_celltype) |>
     unite("case_control", case_only:control_only, na.rm = TRUE)
-  
+
   # Add module information to the graph
-  tbl_graph <- tbl_graph %>%
-    activate(nodes) %>%
+  tbl_graph <- tbl_graph |>
+    activate(nodes) |>
     mutate(group = microglia_risk_genes$case_control,
            gene_name = microglia_risk_genes$gene_symbol)
-  
+
   # Plot using ggraph
   p <- ggraph(tbl_graph, layout = network_layout) +  # 'fr' layout for Fruchterman-Reingold
-    geom_edge_link(aes(edge_alpha = 0.5), edge_colour = "grey", 
+    geom_edge_link(aes(edge_alpha = 0.5), edge_colour = "grey",
                    edge_linetype = "solid", show.legend = FALSE) +
     geom_node_point(aes(color = group), size = 5) +
     geom_node_text(aes(label = gene_name), repel = TRUE, size = 5) +
@@ -937,7 +940,7 @@ V(subgraph)$hgnc_symbol <- ensembl_to_symbol[V(subgraph)$name]
     theme(legend.position = "right") +
     guides(color = guide_legend(override.aes = list(size = 5))) +
     labs(color = "case_control", title = microglia_risk_genes$celltypes_abbrev)
-  
+
 p
 ggsave(here::here("05_figures/990_shared_figures/001_magma/ppi_sig_networks", "microglia-a_case-control.png"), height = 12, width = 14)
 ```
@@ -946,7 +949,7 @@ ggsave(here::here("05_figures/990_shared_figures/001_magma/ppi_sig_networks", "m
 df <- module_sub |>
   dplyr::filter(celltype_level == "level2" & grepl("Pericyte", celltypes_abbrev))
 
-gene_summary <- df %>%
+gene_summary <- df |>
   summarize(
     in_case = any(case_control == "case"),
     in_control = any(case_control == "control"),
@@ -962,12 +965,12 @@ df <- df |>
       in_case & in_control ~ "both",
       .default = NA
     )
-  ) %>%
+  ) |>
   dplyr::select(-in_case, -in_control)
 
 overall_network = my_network
 network_layout = "auto"
-  
+
 set.seed(1234)
 subgraph <- induced_subgraph(graph = overall_network, vids = df$gene)
 all_genes <- unique(df$hgnc_symbol)
@@ -978,22 +981,22 @@ ensembl_to_symbol <- setNames(df$hgnc_symbol, df$gene)
 V(subgraph)$hgnc_symbol <- ensembl_to_symbol[V(subgraph)$name]
   # Convert igraph to tidygraph
   tbl_graph <- as_tbl_graph(subgraph)
-  
+
   df <- df |>
     dplyr::select(gene, gene_symbol, unique_genes_per_celltype) |>
     dplyr::distinct() |>
     pivot_wider(names_from = unique_genes_per_celltype, values_from = unique_genes_per_celltype) |>
     unite("case_control", both:control_only, na.rm = TRUE)
-  
+
   # Add module information to the graph
-  tbl_graph <- tbl_graph %>%
-    activate(nodes) %>%
+  tbl_graph <- tbl_graph |>
+    activate(nodes) |>
     mutate(group = df$case_control,
            gene_name = df$gene_symbol)
-  
+
   # Plot using ggraph
   p <- ggraph(tbl_graph, layout = network_layout) +  # 'fr' layout for Fruchterman-Reingold
-    geom_edge_link(aes(edge_alpha = 0.5), edge_colour = "grey", 
+    geom_edge_link(aes(edge_alpha = 0.5), edge_colour = "grey",
                    edge_linetype = "solid", show.legend = FALSE) +
     geom_node_point(aes(color = group), size = 5) +
     geom_node_text(aes(label = gene_name), repel = TRUE, size = 5) +
@@ -1001,10 +1004,10 @@ V(subgraph)$hgnc_symbol <- ensembl_to_symbol[V(subgraph)$name]
     theme(legend.position = "right") +
     guides(color = guide_legend(override.aes = list(size = 5))) +
     labs(color = "case_control", title = "Level 2 periyte overlaps")
-  
+
 p
 ggsave(here::here("05_figures/990_shared_figures/001_magma/ppi_sig_networks", "pericyte_case-control.png"), height = 12, width = 14)
-  
+
 
 ```
 
@@ -1069,7 +1072,7 @@ if (!file.exists(file)) {
     set_names(paste0(gene_list$case_control, "_MF"))
   result_list <- c(result_list_bp, result_list_mf, result_list_cc)
   rm(result_list_bp, result_list_cc, result_list_mf)
-  
+
   qs::qsave(result_list, file)
 } else {
   result_list <- qs::qread(file)
@@ -1132,12 +1135,12 @@ walk2(plots, names(plots), ~ ggsave(
 
 ```{r}
 # Plot clustering
-map2(subgraphs, module_assignment, ~ plot(.x, 
-     vertex.size = 3, 
-     vertex.color = as.character(.y$module_color), 
-     vertex.frame.color = .y$module_color, 
-     edge.color = "grey",  
-     rescale = TRUE, 
+map2(subgraphs, module_assignment, ~ plot(.x,
+     vertex.size = 3,
+     vertex.color = as.character(.y$module_color),
+     vertex.frame.color = .y$module_color,
+     edge.color = "grey",
+     rescale = TRUE,
      vertex.label = NA,
      main = paste0("Celltype: ", .y$label[1])))
 
@@ -1185,8 +1188,8 @@ modules_sig <- modules_sig |>
 ```
 
 ```{r}
-gene_list <- modules_sig %>% 
-  group_by(label, module) %>% 
+gene_list <- modules_sig |>
+  group_by(label, module) |>
   tidyr::nest()
 ```
 
@@ -1241,7 +1244,7 @@ if(use_known_interactions_only) {
     )
 }
 
-  
+
 if (!file.exists(file)) {
   plan("multisession", workers = parallel::detectCores() - 1)
   result_list_bp <- future_map2(
@@ -1294,7 +1297,7 @@ if (!file.exists(file)) {
     set_names(paste0(gene_list$label, "_module", gene_list$module, "_MF"))
   result_list <- c(result_list_bp, result_list_mf, result_list_cc)
   rm(result_list_bp, result_list_cc, result_list_mf)
-  
+
   qs::qsave(result_list, file)
 } else {
   result_list <- qs::qread(file)
@@ -1400,7 +1403,7 @@ get_celltype_ontology_plots <- function(celltype, ontology, plot_list) {
   combined_plot <- wrap_plots(plots_ont, ncol = 1)
   if(length(plots_ont) == 0) {
   combined_plot <- NULL
-  } 
+  }
   combined_plot
 }
 
@@ -1442,7 +1445,7 @@ result_df <- map2_dfr(result_list, names(result_list), ~ {
   .x@result |>
     dplyr::filter(p.adjust < 0.05) |>
     dplyr::mutate(label = .y, ontology = str_extract(label, "[^_]+$"),
-                  module = str_extract(label, "(?:.*_)?([^_]+)(?=_[^_]+$)", 
+                  module = str_extract(label, "(?:.*_)?([^_]+)(?=_[^_]+$)",
                                        group = 1),
                   group = str_replace(label, "^((.*?_){2}.*?)_.*$", "\\1"))
 }) |> as_tibble()
@@ -1455,7 +1458,7 @@ unique_module_genes <- lineage_pathways |>
   dplyr::mutate(genes = str_split(geneID, "/")) |>
   dplyr::select(group, module, ontology, genes) |>
   unique() |>
-  summarise(unique_genes = list(unique(unlist(genes))), 
+  summarise(unique_genes = list(unique(unlist(genes))),
             .by = c(group, module, ontology)) |>
   dplyr::mutate(plot_title = paste0(group, "-", ontology))
 
@@ -1467,8 +1470,8 @@ plots <- map2(unique_module_genes$unique_genes, unique_module_genes$plot_title,
                   dplyr::filter(hgnc_symbol %in% .x) |>
                   dplyr::mutate(plot_title = paste0(.y, " - ", hgnc_symbol))
                 print(module_genes)
-                plots <- map2(module_genes$ensembl_gene_id, 
-                              module_genes$plot_title, ~ 
+                plots <- map2(module_genes$ensembl_gene_id,
+                              module_genes$plot_title, ~
                                 plotSmoothers(sce_subset, counts, .x) +
                                 ggtitle(.y))
   return(plots)
@@ -1480,7 +1483,7 @@ plot_grids[[1]]
 map(plots, length) |> unlist() |> sum()
 
 pdf(here("05_figures/990_shared_figures/004_pseudotime",
-         "01_tradeseq", "sig_ppi_module_pathways.pdf"), 
+         "01_tradeseq", "sig_ppi_module_pathways.pdf"),
     width = 11, height = 8.5)
 walk(plot_grids, print)
 dev.off()
@@ -1662,4 +1665,3 @@ readr::write_csv(
   )
 )
 ```
-
