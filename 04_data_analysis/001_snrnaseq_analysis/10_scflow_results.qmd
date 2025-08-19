@@ -652,168 +652,8 @@ sce_markers_plot <- map2(
   set_names(paste0("cluster_", top5$cluster))
 ```
 
-Cluster 0 looks nicely like oligodendrocytes.
-
-```{r}
-sce_markers_plot$cluster_0
-```
-
-Cluster 1 looks like either venous or capillary.
-I'll go with capillary for now.
-
-```{r}
-sce_markers_plot$cluster_1
-```
-
-Cluster 2 looks nicely like pericytes of some flavour.
-Seems to align best with the solute transport-pericytes in the Yang data.
-
-```{r}
-sce_markers_plot$cluster_2
-```
-
-Cluster 3 looks strongly like astrocytes.
-Aligns best with cortex astrocytes in the Yang data.
-
-```{r}
-sce_markers_plot$cluster_3
-```
-
-Cluster 4 looks nicely like arterial cells.
-THSD4 is most abundant in Meningeal Fibroblasts in the Yang data, but second most in arterial.
-
-```{r}
-sce_markers_plot$cluster_4
-```
-
-Cluster 5 matches with vascular smooth muscle.
-PDE3A is most abundant in ECM-regulating pericytes in Yang.
-
-```{r}
-sce_markers_plot$cluster_5
-```
-
-Cluster 6 looks like neurons.
-MEG3 is abundant in Menigeal firbroblasts
-
-```{r}
-sce_markers_plot$cluster_6
-```
-
-Cluster 7 is vascular, either capillary or venous, not super clear.
-
-```{r}
-sce_markers_plot$cluster_7
-```
-
-Cluster 8 is oligodendrocyte precursors
-
-```{r}
-sce_markers_plot$cluster_8
-```
-
-Cluster 9 looks like microglia
-
-```{r}
-sce_markers_plot$cluster_9
-```
-
-Cluster 10 mostly looks like neurons, but has some oligodendrocyte precursor overlap
-
-```{r}
-sce_markers_plot$cluster_10
-```
-
-Similar to 10, cluster 11 mostly looks like neurons, but has some oligodendrocyte precursor overlap
-
-```{r}
-sce_markers_plot$cluster_11
-```
-
-Cluster 12 looks decently like oligodendrocytes
-
-```{r}
-sce_markers_plot$cluster_12
-```
-
-Similar to 10/11, cluster 12 looks like neurons with some oligodendrocyte precursor mixed in
-
-```{r}
-sce_markers_plot$cluster_13
-```
-
-Cluster 14 looks like neurons
-
-```{r}
-sce_markers_plot$cluster_14
-```
-
-Cluster 15 looks nicely like Perivascular Fibroblasts
-
-```{r}
-sce_markers_plot$cluster_15
-```
-
-Cluster 16 is astrocytes, cortex astrocytes in the Yang data
-
-```{r}
-sce_markers_plot$cluster_16
-```
-
-Cluster 17 is either venous or capillary, looks more like capillary
-
-```{r}
-sce_markers_plot$cluster_17
-```
-
-18 is pretty inconclusive.
-Even the top 5 markers are defuse.
-In the Yang data, EYS is only really present in Meningeal Fibroblasts.
-LINC02055 is only in Ependymal cells, but the other markers are also evenly spread across the clusters...
-
-```{r}
-sce_markers_plot$cluster_18
-```
-
-Cluster 19 looks like neurons.
-
-```{r}
-sce_markers_plot$cluster_19
-```
-
-20 seems to be either oligodendrocytes or microglia, it's inconclusive
-
-```{r}
-sce_markers_plot$cluster_20
-```
-
-21 looks strongly like T-cells
-
-```{r}
-sce_markers_plot$cluster_21
-```
-
-22 looks like astrocytes
-
-```{r}
-sce_markers_plot$cluster_22
-```
-
-23 looks mainly like neurons
-
-```{r}
-sce_markers_plot$cluster_23
-```
-
-24 looks like pericytes, but not clear if solute transport or ECM-regulating
-
-```{r}
-sce_markers_plot$cluster_24
-```
-
 ## Neuronal subtypes
 
-Hannah is keen to get excitatory and inhibitory neuronal subtypes annotated.
 I'll use the top markers from Franks prior annotation and see how they map.
 
 I'll start by focusing on the top 10 markers that are exclusively found in each subtype.
@@ -843,8 +683,6 @@ DotPlot(seurat, features = neuro_i$gene) +
   coord_flip()
 ```
 
-Clusters 11 and 13 look likes they've good expression for ERBB4 and ADARB2 in particular, so I'd say they're inhibitory neurons.
-
 ```{r}
 #| label: plot excitatory neuronal markers
 #| fig-width: 9
@@ -863,29 +701,11 @@ DotPlot(seurat, features = neuro_e$gene) +
   coord_flip()
 ```
 
-Clusters 10 and 14 has pretty much all the markers expressed quite nicely and most aren't too defuse to other clusters, so they're our excitatory neurons.
-
-From these marker plots and the Yang data, here are the manual annotations.
-Clusters 18 and 20 are pretty inconclusive from the top markers, but having looked at the cluster markers, Hannah thinks 18 looks neuronal and 20 definitely looks like astrocytes.
-Those labels also fit nicely with the neighbouring clusters.
-We may want to exclude cluster 18 from the pseudobulk though as it still doesn't cleanly annotate.
-
-Clusters 6 doesn't easily fall into excitatory or inhibitory neurons based on Franks unique markers, but Hannah has labelled them as excitatory and would like them all neuronal clusters in one category or the other, so I'll update the annotations accordingly.
-
 ```{r}
 top_genes <- top10 |>
   dplyr::filter(cluster == 32)
 DotPlot(seurat, features = top_genes$hgnc_symbol) + coord_flip()
 ```
-
-Cluster 9 is an odd one, `SLC38A11` is a marker that isn't expressed in endothelial cells at all in Yang 2022 but is in SMCs, but several of the other top markers are not very expressed in SMCs...
-I guess I'll label it as capillary for now since more markers are expressed in them.
-
-Cluster 14 looks like neurons, but doesn't fit super well into either of my inhibitory or excitatory neurons.
-It looks slightly more like excitatory neurons and the cluster is closer to them, so I'll apply that label for now.
-
-Cluster 29 is kinda between astrocytes and microglia curiously.
-The cluster is physically closer to the other astrocyte clusters so I'll use that label for now.
 
 ```{r}
 smc_markers <- c("ACTA2", "MYH11", "TAGLN")
@@ -954,9 +774,6 @@ DotPlot(seurat, features = smc_markers) +
 DotPlot(seurat, features = aaSMC_markers) +
   coord_flip()
 ```
-
-Cluster 7 looks half like endothelial and half like SMC...
-Cluster 28 looks like a mix of neurons and astrocytes.
 
 ```{r}
 celltypes <- c(
@@ -1685,8 +1502,6 @@ VlnPlot(sdata_endo, features = BBB_targets, ncol = 3, pt.size = 0)
 Here're the final counts of the celltypes.
 I'll start with the subtypes included, and then do counts for the main types.
 
-Note that Hannah is after the unified samples, so this is merging the vascular and parenchyma fractions.
-
 ```{r}
 #| tbl-cap: Total counts per celltype
 # show cell numbers
@@ -1962,105 +1777,4 @@ readr::write_rds(
     "03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-sce-annotated-highlevel.rds"
   )
 )
-```
-
-```{r}
-# Empty environment
-rm(list = ls())
-```
-
-------------------------------------------------------------------------
-
-# Hannah annotations
-
-Hannah has done her own annotations of the sce objects with 35 dimensions.
-She wants the cell counts for these cell types, and I'll plot them out of curiosity.
-
-```{r}
-# read in sce
-sce <- readr::read_rds(here::here(
-  "03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-sce-updated_dim-35.rds"
-))
-# read in hannahs annotations
-hannah_annotations <-
-  readxl::read_excel(
-    here::here(
-      "03_data/990_processed_data/001_snrnaseq/92_data_from_hannah/hannah_cluster_annotations.xlsx"
-    ),
-    sheet = "cluster_annotations"
-  )
-
-# counts per cluster
-cluster_count_by_sample <- table(Idents(sce), sce$individual) |>
-  as.data.frame() |>
-  dplyr::mutate(Var2 = as.numeric(Var2)) |>
-  dplyr::arrange(Var2) |>
-  dplyr::mutate(Var2 = paste0("sample_", Var2)) |>
-  pivot_wider(names_from = Var2, values_from = Freq) |>
-  dplyr::rename(cell_type = Var1)
-
-cluster_count_by_sample |>
-  DT::datatable(
-    escape = F,
-    rownames = F,
-    extensions = 'Buttons',
-    options = list(
-      dom = 'Blfrtip',
-      buttons = list(
-        'colvis',
-        list(
-          extend = 'copy',
-          exportOptions = list(columns = ':visible')
-        ),
-        list(
-          extend = 'csv',
-          exportOptions = list(columns = ':visible')
-        ),
-        list(
-          extend = 'excel',
-          exportOptions = list(columns = ':visible')
-        )
-      )
-    )
-  )
-
-celltypes <- hannah_annotations$Cell
-names(celltypes) <- as.character(hannah_annotations$cluster)
-
-sce <- RenameIdents(sce, celltypes)
-DimPlot(sce, reduction = "umap", label = TRUE, raster = FALSE)
-
-# counts per celltype
-cluster_count_by_sample <- table(Idents(sce), sce$individual) |>
-  as.data.frame() |>
-  dplyr::mutate(Var2 = as.numeric(Var2)) |>
-  dplyr::arrange(Var2) |>
-  dplyr::mutate(Var2 = paste0("sample_", Var2)) |>
-  pivot_wider(names_from = Var2, values_from = Freq) |>
-  dplyr::rename(cell_type = Var1)
-
-cluster_count_by_sample |>
-  DT::datatable(
-    escape = F,
-    rownames = F,
-    extensions = 'Buttons',
-    options = list(
-      dom = 'Blfrtip',
-      buttons = list(
-        'colvis',
-        list(
-          extend = 'copy',
-          exportOptions = list(columns = ':visible')
-        ),
-        list(
-          extend = 'csv',
-          exportOptions = list(columns = ':visible')
-        ),
-        list(
-          extend = 'excel',
-          exportOptions = list(columns = ':visible')
-        )
-      )
-    )
-  )
 ```
