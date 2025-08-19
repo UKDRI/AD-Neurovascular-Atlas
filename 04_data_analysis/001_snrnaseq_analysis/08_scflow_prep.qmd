@@ -81,17 +81,26 @@ We also need to sort out the sample metadata for the Yang data.
 #| label: load packages
 #| eval: true
 library(purrr)
-pkg <- c("readr", "dplyr", "here", "GEOquery", "magrittr", "tidyr", "yaml", 
-         "gt")
+pkg <- c(
+  "readr",
+  "dplyr",
+  "here",
+  "GEOquery",
+  "magrittr",
+  "tidyr",
+  "yaml",
+  "gt"
+)
 map(pkg, library, character.only = TRUE)
-
 ```
 
 ```{r}
 # current metadata structure for first 2 sample batches
-metadata <- read_tsv(here("03_data/990_processed_data/001_snrnaseq/90_sample_info/samples_meta_merged_final.txt"))
+metadata <- read_tsv(here(
+  "03_data/990_processed_data/001_snrnaseq/90_sample_info/samples_meta_merged_final.txt"
+))
 names(metadata)
-# add a column for the technique 
+# add a column for the technique
 metadata$technique <- "oxford"
 # also don't know brain region
 metadata$brain_region <- "dunno"
@@ -115,7 +124,9 @@ phenodata <- phenodata |>
   )
 
 # load scflow test sample sheet
-example_samplesheet <- read_tsv(here("03_data/990_processed_data/001_snrnaseq/90_sample_info/scflowSampleSheet_example.tsv"))
+example_samplesheet <- read_tsv(here(
+  "03_data/990_processed_data/001_snrnaseq/90_sample_info/scflowSampleSheet_example.tsv"
+))
 ```
 
 There are nice geo accessions that would be handy to use as unique sample IDs for the yang manifest file
@@ -141,7 +152,10 @@ yang_manifest$supplementary_file_1 <-
 # update names to be in line with scflow manifest file
 names(yang_manifest) <- c("key", "filepath")
 # save to tsv
-write_tsv(yang_manifest, here("03_data/990_processed_data/001_snrnaseq/06_scflow/yang_manifest.tsv"))
+write_tsv(
+  yang_manifest,
+  here("03_data/990_processed_data/001_snrnaseq/06_scflow/yang_manifest.tsv")
+)
 ```
 
 Then we just need to merge the two manifest files together.
@@ -153,19 +167,21 @@ Then we just need to merge the two manifest files together.
 It turns out that you can't have delimiters in the key for the mainfest/sample files, so I need to remove the underscores too
 
 ```{r}
-awk 'BEGIN{FS=OFS="\t"} {gsub("_", "", $1)} 1'  scflow_manifest_both.tsv > scflow_manifest_final.tsv
+awk
+'BEGIN{FS=OFS="\t"} {gsub("_", "", $1)} 1'
+scflow_manifest_both.tsv > scflow_manifest_final.tsv
 ```
 
-
 We need to get the phenotype data from the yang GEO data in line with our phenotype data to join them.
-My understanding from the Yang paper is that they only looked at the vascular/perivascular component, so I'll label the `prep` as `V` for now.
 
 ```{r}
 # sort yang phenotype data and join to ours
 merged_meta <- phenodata |>
-  dplyr::rename(sample = geo_accession,
-                brain_region = `brain region:ch1`,
-                type = `disease:ch1`) |>
+  dplyr::rename(
+    sample = geo_accession,
+    brain_region = `brain region:ch1`,
+    type = `disease:ch1`
+  ) |>
   # add cell subsetting technique and cell population
   dplyr::mutate(technique = "VINE-seq", prep = "V") |>
   # select cols of interest
@@ -175,16 +191,22 @@ merged_meta <- phenodata |>
   # make control label consistent
   dplyr::mutate(type = ifelse(type == "CT", "Control", type)) |>
   # add final group column for differential expression
-  dplyr::mutate(group = paste(type, prep, technique, brain_region, sep = "_"),
-                sample = gsub("_", "", sample)) |>
+  dplyr::mutate(
+    group = paste(type, prep, technique, brain_region, sep = "_"),
+    sample = gsub("_", "", sample)
+  ) |>
   # rename to sample sheet style
-  dplyr::rename(manifest = sample,
-                diagnosis = type)
+  dplyr::rename(manifest = sample, diagnosis = type)
 ```
 
 ```{r}
 # save metadata
-write_tsv(merged_meta, file = here("03_data/990_processed_data/001_snrnaseq/90_sample_info/sample_metadata.tsv"))
+write_tsv(
+  merged_meta,
+  file = here(
+    "03_data/990_processed_data/001_snrnaseq/90_sample_info/sample_metadata.tsv"
+  )
+)
 ```
 
 ## Getting marker genes
@@ -220,9 +242,11 @@ gene_markers <-
 # the odd column headers are the experiment ID and the values are expression
 # pivot long
 gene_markers <- gene_markers |>
-  pivot_longer(!c(Category, annotation),
-               names_to = "experiment_id",
-               values_to = "expression") |>
+  pivot_longer(
+    !c(Category, annotation),
+    names_to = "experiment_id",
+    values_to = "expression"
+  ) |>
   # remove cases where expression is 0
   dplyr::filter(!is.na(expression)) |>
   dplyr::rename(gene = Category)
