@@ -14,7 +14,9 @@ here::i_am("04_data_analysis/001_snrnaseq_analysis/14_cell_populations.qmd")
 # Load packages
 
 ```{r}
-source(here::here("04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"))
+source(here::here(
+  "04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"
+))
 ```
 
 # Read in data
@@ -22,19 +24,30 @@ source(here::here("04_data_analysis/990_code_libraries/02_library-calls-for-renv
 ```{r}
 #| eval: true
 # read data
-sce <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-sce-annotated-highlevel.rds"))
-updated_annotations <- readr::read_rds(here::here("03_data/990_processed_data/001_snrnaseq/10_cell_subtypes/subcluster_annotations.rds"))
+sce <- readr::read_rds(here::here(
+  "03_data/990_processed_data/001_snrnaseq/07_scflow_analysis/scflow-sce-annotated-highlevel.rds"
+))
+updated_annotations <- readr::read_rds(here::here(
+  "03_data/990_processed_data/001_snrnaseq/10_cell_subtypes/subcluster_annotations.rds"
+))
 ```
 
 Exclude the strange donor 31 cells
 
 ```{r}
 # need to fix rownames in order to subset
-df <- data.frame(gene = rownames(sce@assays$RNA@data), ensembl = rownames(sce@assays$RNA@counts))
+df <- data.frame(
+  gene = rownames(sce@assays$RNA@data),
+  ensembl = rownames(sce@assays$RNA@counts)
+)
 
 # Exclude the donor 31 cells
 rownames(sce@assays$RNA@data) <- df$ensembl
-sce <- subset(sce, idents = c("Ependymal-donor31", "Astro-donor31"), invert = TRUE)
+sce <- subset(
+  sce,
+  idents = c("Ependymal-donor31", "Astro-donor31"),
+  invert = TRUE
+)
 rownames(sce@assays$RNA@data) <- df$gene
 
 # Exclude these cells from the updated annotations
@@ -47,7 +60,6 @@ updated_annotations <- updated_annotations[rownames(sce@meta.data)] |>
 sce$highlevel_manual_annotations <- Idents(sce)
 ```
 
-
 Add the updated sub-celltype annotations.
 
 Note that because I filter out features with less than 200 features when I subset, I could have lost a small number of cells.
@@ -56,11 +68,15 @@ Note that because I filter out features with less than 200 features when I subse
 # check if there're less cells with subtype annotations
 length(Idents(sce)) == length(updated_annotations)
 # get their names
-missing_cells <- names(Idents(sce))[which(!(names(Idents(sce)) %in% names(updated_annotations)))]
-matching_cells <- names(Idents(sce))[which(names(Idents(sce)) %in% names(updated_annotations))]
+missing_cells <- names(Idents(sce))[which(
+  !(names(Idents(sce)) %in% names(updated_annotations))
+)]
+matching_cells <- names(Idents(sce))[which(
+  names(Idents(sce)) %in% names(updated_annotations)
+)]
 
 # subset sce to matching cells with subtype annotations
-sce <- sce[,matching_cells]
+sce <- sce[, matching_cells]
 rm(matching_cells)
 
 # Add subtypes as a new column in sce
@@ -73,9 +89,15 @@ sum(names(Idents(sce)) != names(sce$subcelltype_annotations))
 Add in the new EndoMT subtypes for level 1
 
 ```{r}
-endomt <- qs::qread(here("03_data/990_processed_data/008_pseudotime/endomt_subclusters.qs"))
+endomt <- qs::qread(here(
+  "03_data/990_processed_data/008_pseudotime/endomt_subclusters.qs"
+))
 sce$level1_celltypes_with_endomt_subclusters <- endomt
-sce$subcelltype_annotations <- if_else(sce$subcelltype_annotations == "Trans-Endo-to-mural", sce$level1_celltypes_with_endomt_subclusters, sce$seurat_clusters)
+sce$subcelltype_annotations <- if_else(
+  sce$subcelltype_annotations == "Trans-Endo-to-mural",
+  sce$level1_celltypes_with_endomt_subclusters,
+  sce$seurat_clusters
+)
 
 # Updated Idents with subtypes
 Idents(sce) <- sce$subcelltype_annotations
@@ -95,9 +117,15 @@ Let's check the subtype labels relative to the highlevel labels
 
 ```{r}
 # Check UMAP
-umap_annotated <- DimPlot(sce, reduction = "umap", label = TRUE,
-                          raster = "FALSE", repel = TRUE,
-                          cols = pals::brewer.paired(n = 47)) + NoLegend()
+umap_annotated <- DimPlot(
+  sce,
+  reduction = "umap",
+  label = TRUE,
+  raster = "FALSE",
+  repel = TRUE,
+  cols = pals::brewer.paired(n = 47)
+) +
+  NoLegend()
 
 umap_annotated
 
@@ -108,18 +136,38 @@ umap_level1 <- DimPlot(
   raster = FALSE,
   label = TRUE,
   repel = TRUE
-) + NoLegend()
+) +
+  NoLegend()
 seurat_clusters <- DimPlot(
   sce,
   reduction = "umap",
   group.by = "seurat_clusters",
   raster = FALSE,
   label = TRUE
-) + NoLegend()
+) +
+  NoLegend()
 
-ggsave(here::here("05_figures/990_shared_figures/scflow_umap_seurat_clusters.png"), seurat_clusters, device = "png")
-ggsave(here::here("05_figures/990_shared_figures/scflow_umap_manually_annotated_subtypes.png"), umap_annotated, device = "png", width = 16, height = 10)
-ggsave(here::here("05_figures/990_shared_figures/scflow_umap_manually_annotated.png"), umap_level1, device = "png")
+ggsave(
+  here::here("05_figures/990_shared_figures/scflow_umap_seurat_clusters.png"),
+  seurat_clusters,
+  device = "png"
+)
+ggsave(
+  here::here(
+    "05_figures/990_shared_figures/scflow_umap_manually_annotated_subtypes.png"
+  ),
+  umap_annotated,
+  device = "png",
+  width = 16,
+  height = 10
+)
+ggsave(
+  here::here(
+    "05_figures/990_shared_figures/scflow_umap_manually_annotated.png"
+  ),
+  umap_level1,
+  device = "png"
+)
 rm(umap_annotated, seurat_clusters, umap_level1)
 ```
 
@@ -148,7 +196,7 @@ Might be easier to parse as a plot
 # Stacked bar plot
 ggplot(counts_df, aes(x = fraction, y = Freq, fill = celltype)) +
   geom_bar(stat = "identity") +
-  facet_wrap(~ diagnosis) +
+  facet_wrap(~diagnosis) +
   labs(x = "Fraction", y = "Counts") +
   scale_fill_viridis_d() +
   theme_minimal()
@@ -156,7 +204,7 @@ ggplot(counts_df, aes(x = fraction, y = Freq, fill = celltype)) +
 # Grouped bar plot
 ggplot(counts_df, aes(x = fraction, y = Freq, fill = celltype)) +
   geom_bar(stat = "identity", position = "dodge") +
-  facet_wrap(~ diagnosis) +
+  facet_wrap(~diagnosis) +
   labs(x = "Fraction", y = "Counts") +
   scale_fill_viridis_d() +
   theme_minimal()
@@ -187,19 +235,24 @@ plot_data <- counts_df |>
   dplyr::mutate(pct = nuclei / nuclei_total * 100) |>
   dplyr::ungroup()
 
-p_nuclei <- ggplot(plot_data, aes(x=celltype, y=nuclei + 1, fill=fraction)) +
-  geom_bar(stat="identity", position=position_dodge()) +
+p_nuclei <- ggplot(
+  plot_data,
+  aes(x = celltype, y = nuclei + 1, fill = fraction)
+) +
+  geom_bar(stat = "identity", position = position_dodge()) +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   scale_fill_viridis(discrete = TRUE, option = "D") +
   scale_y_log10() +
   labs(x = "", y = "Nuclei (log10)")
 p_pct <- plot_data |>
-  ggplot(aes(x=celltype, y=pct, fill=fraction)) +
-  geom_bar(stat="identity") +
+  ggplot(aes(x = celltype, y = pct, fill = fraction)) +
+  geom_bar(stat = "identity") +
   theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        axis.text = element_text(size = 10)) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    axis.text = element_text(size = 10)
+  ) +
   scale_fill_viridis(discrete = TRUE, option = "D") +
   labs(x = "", y = "%")
 
@@ -233,9 +286,14 @@ Caleb mentioned a reviewer flagging [this tool](https://github.com/rpolicastro/s
 
 ```{r}
 # update myster-cluster label in the level 1 labels
-sce$highlevel_manual_annotations <- factor(sce$highlevel_manual_annotations, levels = c(levels(sce$highlevel_manual_annotations), "Trans-Endo-to-mural"))
+sce$highlevel_manual_annotations <- factor(
+  sce$highlevel_manual_annotations,
+  levels = c(levels(sce$highlevel_manual_annotations), "Trans-Endo-to-mural")
+)
 
-sce$highlevel_manual_annotations[sce$highlevel_manual_annotations == "mystery-cluster"] <- "Trans-Endo-to-mural"
+sce$highlevel_manual_annotations[
+  sce$highlevel_manual_annotations == "mystery-cluster"
+] <- "Trans-Endo-to-mural"
 sce$highlevel_manual_annotations <- droplevels(sce$highlevel_manual_annotations)
 
 rownames(sce@assays$RNA@data) <- df$ensembl
@@ -244,65 +302,128 @@ sce_p <- sce[, sce$prep == "P"]
 rownames(sce@assays$RNA@data) <- df$gene
 
 
-
-vascular_celltypes_level1 <- c("Trans-Endo-to-mural", "Endothelial", "Pericyte",
-                               "SMC", "Fibroblast", "T-cell")
-vascular_celltypes_level2 <- c('T-Pericyte', 'M-Pericyte', 'Pericyte',
-                               'Pericyte-2', 'Vascular-SMC', 'Arteriolar-SMC',
-                               'Vascular-SMC-LINC00486', 'EndoMT_1', 'EndoMT_2',
-                               'Perivascular-FB-KAZN2', 'Perivascular-FB',
-                               'Meningeal-FB', 'Artirial-FB', 'Pericyte-FB',
-                               'Capillary', 'Arterial', 'Venous',
-                               'T-cell-vascular')
+vascular_celltypes_level1 <- c(
+  "Trans-Endo-to-mural",
+  "Endothelial",
+  "Pericyte",
+  "SMC",
+  "Fibroblast",
+  "T-cell"
+)
+vascular_celltypes_level2 <- c(
+  'T-Pericyte',
+  'M-Pericyte',
+  'Pericyte',
+  'Pericyte-2',
+  'Vascular-SMC',
+  'Arteriolar-SMC',
+  'Vascular-SMC-LINC00486',
+  'EndoMT_1',
+  'EndoMT_2',
+  'Perivascular-FB-KAZN2',
+  'Perivascular-FB',
+  'Meningeal-FB',
+  'Artirial-FB',
+  'Pericyte-FB',
+  'Capillary',
+  'Arterial',
+  'Venous',
+  'T-cell-vascular'
+)
 
 # Subset the Seurat object to keep only the desired cell types
-sce_v <- sce_v[,sce_v$highlevel_manual_annotations %in% c(vascular_celltypes_level1, "Microglia") & sce_v$subcelltype_annotations %in% c(vascular_celltypes_level2, 'Microglia-vascular', 'T-cell-mixed')]
-sce_p <- sce_p[,!sce_p$highlevel_manual_annotations %in% vascular_celltypes_level1 & !sce_p$subcelltype_annotations %in% c(vascular_celltypes_level2, "ambiguous", "low-feature-cells")]
+sce_v <- sce_v[,
+  sce_v$highlevel_manual_annotations %in%
+    c(vascular_celltypes_level1, "Microglia") &
+    sce_v$subcelltype_annotations %in%
+      c(vascular_celltypes_level2, 'Microglia-vascular', 'T-cell-mixed')
+]
+sce_p <- sce_p[,
+  !sce_p$highlevel_manual_annotations %in% vascular_celltypes_level1 &
+    !sce_p$subcelltype_annotations %in%
+      c(vascular_celltypes_level2, "ambiguous", "low-feature-cells")
+]
 
 table(sce_v$highlevel_manual_annotations)
 table(sce_p$highlevel_manual_annotations)
 table(sce_p$subcelltype_annotations)
-sce_v$highlevel_manual_annotations <- droplevels(sce_v$highlevel_manual_annotations)
-sce_p$highlevel_manual_annotations <- droplevels(sce_p$highlevel_manual_annotations)
+sce_v$highlevel_manual_annotations <- droplevels(
+  sce_v$highlevel_manual_annotations
+)
+sce_p$highlevel_manual_annotations <- droplevels(
+  sce_p$highlevel_manual_annotations
+)
 ```
 
 ```{r}
-sce_v$subcelltype_annotations<- droplevels(sce_v$subcelltype_annotations)
-sce_p$subcelltype_annotations<- droplevels(sce_p$subcelltype_annotations)
+sce_v$subcelltype_annotations <- droplevels(sce_v$subcelltype_annotations)
+sce_p$subcelltype_annotations <- droplevels(sce_p$subcelltype_annotations)
 ```
 
 ```{r}
 prop_test_v <- sc_utils(sce_v)
 prop_test_p <- sc_utils(sce_p)
 prop_test_level1_v <- permutation_test(
-	prop_test_v, cluster_identity = "highlevel_manual_annotations",
-	sample_1 = "Control", sample_2 = "Case",
-	sample_identity = "diagnosis"
+  prop_test_v,
+  cluster_identity = "highlevel_manual_annotations",
+  sample_1 = "Control",
+  sample_2 = "Case",
+  sample_identity = "diagnosis"
 )
 prop_test_level1_p <- permutation_test(
-	prop_test_p, cluster_identity = "highlevel_manual_annotations",
-	sample_1 = "Control", sample_2 = "Case",
-	sample_identity = "diagnosis"
+  prop_test_p,
+  cluster_identity = "highlevel_manual_annotations",
+  sample_1 = "Control",
+  sample_2 = "Case",
+  sample_identity = "diagnosis"
 )
 permutation_plot(prop_test_level1_v)
-ggsave(here::here("05_figures/990_shared_figures/cell_pop_difference_level1_vascular_scproptest.png"), height = 8, width = 6)
+ggsave(
+  here::here(
+    "05_figures/990_shared_figures/cell_pop_difference_level1_vascular_scproptest.png"
+  ),
+  height = 8,
+  width = 6
+)
 permutation_plot(prop_test_level1_p)
-ggsave(here::here("05_figures/990_shared_figures/cell_pop_difference_level1_parenchymal_scproptest.png"), height = 8, width = 6)
+ggsave(
+  here::here(
+    "05_figures/990_shared_figures/cell_pop_difference_level1_parenchymal_scproptest.png"
+  ),
+  height = 8,
+  width = 6
+)
 
 prop_test_level2_v <- permutation_test(
-	prop_test_v, cluster_identity = "subcelltype_annotations",
-	sample_1 = "Control", sample_2 = "Case",
-	sample_identity = "diagnosis"
+  prop_test_v,
+  cluster_identity = "subcelltype_annotations",
+  sample_1 = "Control",
+  sample_2 = "Case",
+  sample_identity = "diagnosis"
 )
 prop_test_level2_p <- permutation_test(
-	prop_test_p, cluster_identity = "subcelltype_annotations",
-	sample_1 = "Control", sample_2 = "Case",
-	sample_identity = "diagnosis"
+  prop_test_p,
+  cluster_identity = "subcelltype_annotations",
+  sample_1 = "Control",
+  sample_2 = "Case",
+  sample_identity = "diagnosis"
 )
 permutation_plot(prop_test_level2_v)
-ggsave(here::here("05_figures/990_shared_figures/cell_pop_difference_level2_vascular_scproptest.png"), height = 8, width = 8)
+ggsave(
+  here::here(
+    "05_figures/990_shared_figures/cell_pop_difference_level2_vascular_scproptest.png"
+  ),
+  height = 8,
+  width = 8
+)
 permutation_plot(prop_test_level2_p)
-ggsave(here::here("05_figures/990_shared_figures/cell_pop_difference_level2_parenchymal_scproptest.png"), height = 8, width = 8)
+ggsave(
+  here::here(
+    "05_figures/990_shared_figures/cell_pop_difference_level2_parenchymal_scproptest.png"
+  ),
+  height = 8,
+  width = 8
+)
 ```
 
 ```{r}
@@ -323,14 +444,18 @@ prop_test_v <- sc_utils(sce_v)
 prop_test_p <- sc_utils(sce_p)
 
 prop_test_level2_v <- permutation_test(
-	prop_test_v, cluster_identity = "subcelltype_annotations",
-	sample_1 = "Control", sample_2 = "Case",
-	sample_identity = "diagnosis"
+  prop_test_v,
+  cluster_identity = "subcelltype_annotations",
+  sample_1 = "Control",
+  sample_2 = "Case",
+  sample_identity = "diagnosis"
 )
 prop_test_level2_p <- permutation_test(
-	prop_test_p, cluster_identity = "subcelltype_annotations",
-	sample_1 = "Control", sample_2 = "Case",
-	sample_identity = "diagnosis"
+  prop_test_p,
+  cluster_identity = "subcelltype_annotations",
+  sample_1 = "Control",
+  sample_2 = "Case",
+  sample_identity = "diagnosis"
 )
 
 permutation_plot(prop_test_level2_v)
@@ -362,14 +487,20 @@ prop <-
 prop |>
   dplyr::arrange(FDR) |>
   gt() |>
-  tab_style(style = cell_fill(color = "yellow"),
-            locations = cells_body(rows = FDR < 0.05)) |>
-  tab_style(style = cell_fill(color = "red"),
-    locations = cells_body(rows = P.Value < 0.05))
+  tab_style(
+    style = cell_fill(color = "yellow"),
+    locations = cells_body(rows = FDR < 0.05)
+  ) |>
+  tab_style(
+    style = cell_fill(color = "red"),
+    locations = cells_body(rows = P.Value < 0.05)
+  )
 
 # Plot cell type proportions
-speckle::plotCellTypeProps(clusters = vascular_fraction$highlevel_manual_annotations,
-                           sample = vascular_fraction$donor) +
+speckle::plotCellTypeProps(
+  clusters = vascular_fraction$highlevel_manual_annotations,
+  sample = vascular_fraction$donor
+) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   scale_fill_viridis(discrete = TRUE)
 
@@ -386,10 +517,12 @@ prop |>
   ggplot(aes(x = BaselineProp.clusters, y = mean_proportion, fill = group)) +
   geom_bar(stat = "identity", position = position_dodge()) +
   scale_fill_manual(values = c("blue", "red")) + # Colors for the groups
-  labs(x = "Cell Type",
-       y = "Mean Proportion",
-       fill = "Group",
-       title = "Significant proportion differences") +
+  labs(
+    x = "Cell Type",
+    y = "Mean Proportion",
+    fill = "Group",
+    title = "Significant proportion differences"
+  ) +
   geom_text(
     aes(label = sprintf("%.4f", mean_proportion)),
     position = position_dodge(width = 0.9),
@@ -409,14 +542,20 @@ prop <-
   )
 
 gt(prop) |>
-  tab_style(style = cell_fill(color = "yellow"),
-    locations = cells_body(rows = FDR < 0.05)) |>
-  tab_style(style = cell_fill(color = "red"),
-    locations = cells_body(rows = P.Value < 0.05))
+  tab_style(
+    style = cell_fill(color = "yellow"),
+    locations = cells_body(rows = FDR < 0.05)
+  ) |>
+  tab_style(
+    style = cell_fill(color = "red"),
+    locations = cells_body(rows = P.Value < 0.05)
+  )
 
 # Plot cell type proportions
-speckle::plotCellTypeProps(clusters = parenchymal_fraction$highlevel_manual_annotations,
-                           sample = parenchymal_fraction$donor) +
+speckle::plotCellTypeProps(
+  clusters = parenchymal_fraction$highlevel_manual_annotations,
+  sample = parenchymal_fraction$donor
+) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   scale_fill_viridis(discrete = TRUE)
 
@@ -433,10 +572,12 @@ prop |>
   ggplot(aes(x = BaselineProp.clusters, y = mean_proportion, fill = group)) +
   geom_bar(stat = "identity", position = position_dodge()) +
   scale_fill_manual(values = c("blue", "red")) + # Colors for the groups
-  labs(x = "Cell Type",
-       y = "Mean Proportion",
-       fill = "Group",
-       title = "Significant proportion differences") +
+  labs(
+    x = "Cell Type",
+    y = "Mean Proportion",
+    fill = "Group",
+    title = "Significant proportion differences"
+  ) +
   geom_text(
     aes(label = sprintf("%.4f", mean_proportion)),
     position = position_dodge(width = 0.9),
@@ -457,13 +598,22 @@ prop <-
     group = vascular_fraction$diagnosis
   )
 
-readr::write_csv(prop, here::here("03_data/990_processed_data/001_snrnaseq/10_cell_subtypes/speckle_level2_celltype_proportions_vascular.csv"))
+readr::write_csv(
+  prop,
+  here::here(
+    "03_data/990_processed_data/001_snrnaseq/10_cell_subtypes/speckle_level2_celltype_proportions_vascular.csv"
+  )
+)
 
 gt(prop) |>
-  tab_style(style = cell_fill(color = "yellow"),
-    locations = cells_body(rows = FDR < 0.05)) |>
-  tab_style(style = cell_fill(color = "red"),
-    locations = cells_body(rows = P.Value < 0.05))
+  tab_style(
+    style = cell_fill(color = "yellow"),
+    locations = cells_body(rows = FDR < 0.05)
+  ) |>
+  tab_style(
+    style = cell_fill(color = "red"),
+    locations = cells_body(rows = P.Value < 0.05)
+  )
 
 # vascular_fraction <- sce_v@meta.data |>
 #   dplyr::filter(subcelltype_annotations %in% sig_v_celltypes$clusters)
@@ -478,7 +628,10 @@ gt(prop) |>
 head(prop)
 prop |>
   dplyr::mutate(prop_mean_diff = PropMean.Case - PropMean.Control) |>
-  ggplot(aes(x = prop_mean_diff, y = reorder(BaselineProp.clusters, prop_mean_diff))) +
+  ggplot(aes(
+    x = prop_mean_diff,
+    y = reorder(BaselineProp.clusters, prop_mean_diff)
+  )) +
   geom_point()
 prop |>
   ggplot(aes(x = PropRatio, y = reorder(BaselineProp.clusters, PropRatio))) +
@@ -486,14 +639,20 @@ prop |>
 
 
 gt(prop) |>
-  tab_style(style = cell_fill(color = "yellow"),
-    locations = cells_body(rows = FDR < 0.05)) |>
-  tab_style(style = cell_fill(color = "red"),
-    locations = cells_body(rows = P.Value < 0.05))
+  tab_style(
+    style = cell_fill(color = "yellow"),
+    locations = cells_body(rows = FDR < 0.05)
+  ) |>
+  tab_style(
+    style = cell_fill(color = "red"),
+    locations = cells_body(rows = P.Value < 0.05)
+  )
 
 # Plot cell type proportions
-speckle::plotCellTypeProps(clusters = vascular_fraction$subcelltype_annotations,
-                           sample = vascular_fraction$donor) +
+speckle::plotCellTypeProps(
+  clusters = vascular_fraction$subcelltype_annotations,
+  sample = vascular_fraction$donor
+) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   scale_fill_viridis(discrete = TRUE)
 
@@ -509,10 +668,12 @@ vascular_cell_diff <- prop |>
   ggplot(aes(x = BaselineProp.clusters, y = mean_proportion, fill = group)) +
   geom_bar(stat = "identity", position = position_dodge()) +
   scale_fill_manual(values = c("blue", "red")) + # Colors for the groups
-  labs(x = "Cell Type",
-       y = "Mean Proportion",
-       fill = "Group",
-       title = "Significant proportion differences") +
+  labs(
+    x = "Cell Type",
+    y = "Mean Proportion",
+    fill = "Group",
+    title = "Significant proportion differences"
+  ) +
   geom_text(
     aes(label = sprintf("%.4f", mean_proportion)),
     position = position_dodge(width = 0.9),
@@ -524,8 +685,20 @@ vascular_cell_diff <- prop |>
 
 vascular_cell_diff
 
-readr::write_rds(vascular_cell_diff, here::here("05_figures/990_shared_figures/cell_pop_difference_level2_vascular.rds"))
-ggsave(here::here("05_figures/990_shared_figures/cell_pop_difference_level2_vascular.png"), vascular_cell_diff, height = 8, width = 8)
+readr::write_rds(
+  vascular_cell_diff,
+  here::here(
+    "05_figures/990_shared_figures/cell_pop_difference_level2_vascular.rds"
+  )
+)
+ggsave(
+  here::here(
+    "05_figures/990_shared_figures/cell_pop_difference_level2_vascular.png"
+  ),
+  vascular_cell_diff,
+  height = 8,
+  width = 8
+)
 ```
 
 ```{r}
@@ -538,13 +711,22 @@ prop <-
     group = parenchymal_fraction$diagnosis
   )
 
-readr::write_csv(prop, here::here("03_data/990_processed_data/001_snrnaseq/10_cell_subtypes/speckle_level2_celltype_proportions_parenchymal.csv"))
+readr::write_csv(
+  prop,
+  here::here(
+    "03_data/990_processed_data/001_snrnaseq/10_cell_subtypes/speckle_level2_celltype_proportions_parenchymal.csv"
+  )
+)
 
 gt(prop) |>
-  tab_style(style = cell_fill(color = "red"),
-    locations = cells_body(rows = P.Value < 0.05)) |>
-  tab_style(style = cell_fill(color = "yellow"),
-    locations = cells_body(rows = FDR < 0.05))
+  tab_style(
+    style = cell_fill(color = "red"),
+    locations = cells_body(rows = P.Value < 0.05)
+  ) |>
+  tab_style(
+    style = cell_fill(color = "yellow"),
+    locations = cells_body(rows = FDR < 0.05)
+  )
 
 parenchymal_fraction <- sce_p@meta.data |>
   dplyr::filter(subcelltype_annotations %in% sig_p_celltypes$clusters)
@@ -557,14 +739,20 @@ prop <-
   )
 
 gt(prop) |>
-  tab_style(style = cell_fill(color = "red"),
-    locations = cells_body(rows = P.Value < 0.05)) |>
-  tab_style(style = cell_fill(color = "yellow"),
-    locations = cells_body(rows = FDR < 0.05))
+  tab_style(
+    style = cell_fill(color = "red"),
+    locations = cells_body(rows = P.Value < 0.05)
+  ) |>
+  tab_style(
+    style = cell_fill(color = "yellow"),
+    locations = cells_body(rows = FDR < 0.05)
+  )
 
 # Plot cell type proportions
-speckle::plotCellTypeProps(clusters = parenchymal_fraction$subcelltype_annotations,
-                           sample = parenchymal_fraction$donor) +
+speckle::plotCellTypeProps(
+  clusters = parenchymal_fraction$subcelltype_annotations,
+  sample = parenchymal_fraction$donor
+) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   scale_fill_viridis(discrete = TRUE)
 
@@ -580,10 +768,12 @@ parenchymal_cell_diff <- prop |>
   ggplot(aes(x = BaselineProp.clusters, y = mean_proportion, fill = group)) +
   geom_bar(stat = "identity", position = position_dodge()) +
   scale_fill_manual(values = c("blue", "red")) + # Colors for the groups
-  labs(x = "Cell Type",
-       y = "Mean Proportion",
-       fill = "Group",
-       title = "Significant proportion differences") +
+  labs(
+    x = "Cell Type",
+    y = "Mean Proportion",
+    fill = "Group",
+    title = "Significant proportion differences"
+  ) +
   geom_text(
     aes(label = sprintf("%.4f", mean_proportion)),
     position = position_dodge(width = 0.9),
@@ -593,8 +783,20 @@ parenchymal_cell_diff <- prop |>
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-readr::write_rds(parenchymal_cell_diff, here::here("05_figures/990_shared_figures/cell_pop_difference_level2_parenchymal.rds"))
-ggsave(here::here("05_figures/990_shared_figures/cell_pop_difference_level2_parenchymal.png"), parenchymal_cell_diff, height = 8, width = 8)
+readr::write_rds(
+  parenchymal_cell_diff,
+  here::here(
+    "05_figures/990_shared_figures/cell_pop_difference_level2_parenchymal.rds"
+  )
+)
+ggsave(
+  here::here(
+    "05_figures/990_shared_figures/cell_pop_difference_level2_parenchymal.png"
+  ),
+  parenchymal_cell_diff,
+  height = 8,
+  width = 8
+)
 ```
 
 ## Endo-MT
@@ -608,12 +810,14 @@ nuclei_counts_per_sample <- vascular_fraction |>
   summarise(nuclei_count = n())
 
 # Plot the data with ordered bars within ggplot2
-p <- ggplot(nuclei_counts_per_sample,
-       aes(
-         x = reorder(donor, nuclei_count),
-         y = nuclei_count,
-         fill = diagnosis
-       )) +
+p <- ggplot(
+  nuclei_counts_per_sample,
+  aes(
+    x = reorder(donor, nuclei_count),
+    y = nuclei_count,
+    fill = diagnosis
+  )
+) +
   geom_bar(stat = "identity") +
   facet_grid(subcelltype_annotations ~ diagnosis, scales = "free_x") +
   theme_minimal() +
@@ -626,7 +830,12 @@ p <- ggplot(nuclei_counts_per_sample,
   ) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
 p
-ggsave(here::here("05_figures/990_shared_figures/endomt_numbers.png"), p, height = 8, width = 10)
+ggsave(
+  here::here("05_figures/990_shared_figures/endomt_numbers.png"),
+  p,
+  height = 8,
+  width = 10
+)
 ```
 
 ## Check for significant differences in celltypes between groups
@@ -638,7 +847,10 @@ Add a simple pairwise t-test/wilcox for the cell counts per celltype per fractio
 sce$fraction_disesase_doner <-
   paste0(sce$prep, "_", sce$diagnosis, "_", sce$donor)
 
-cell_counts <- table(sce$subcelltype_annotations, sce$fraction_disesase_doner) |>
+cell_counts <- table(
+  sce$subcelltype_annotations,
+  sce$fraction_disesase_doner
+) |>
   # convert to dataframe and rename columns
   as.data.frame() |>
   dplyr::rename(
@@ -661,13 +873,21 @@ cell_counts <- cell_counts |>
   # Group by celltype and fraction to perform pairwise t-tests/wilcox
   dplyr::group_by(celltype, fraction) |>
   dplyr::summarize(
-    ttest_adj_pval = round(pairwise.t.test(count, diagnosis, p.adjust.method = "BH")$p.value, 4),
-    wilcox_adj_pval = round(pairwise.wilcox.test(count, diagnosis, p.adjust.method = "BH")$p.value, 4)
+    ttest_adj_pval = round(
+      pairwise.t.test(count, diagnosis, p.adjust.method = "BH")$p.value,
+      4
+    ),
+    wilcox_adj_pval = round(
+      pairwise.wilcox.test(count, diagnosis, p.adjust.method = "BH")$p.value,
+      4
+    )
   ) |>
   # The outputs are matrices, this corrects that
-  dplyr::mutate(ttest_adj_pval = as.numeric(ttest_adj_pval),
-                wilcox_adj_pval = as.numeric(wilcox_adj_pval)) |>
-dplyr::left_join(mean_counts, by = c("celltype", "fraction")) |>
+  dplyr::mutate(
+    ttest_adj_pval = as.numeric(ttest_adj_pval),
+    wilcox_adj_pval = as.numeric(wilcox_adj_pval)
+  ) |>
+  dplyr::left_join(mean_counts, by = c("celltype", "fraction")) |>
   pivot_wider(names_from = diagnosis, values_from = mean_cell_count) |>
   dplyr::rename(case_mean_cell_count = Case, control_mean_cell_count = Control)
 
@@ -678,77 +898,6 @@ cell_counts |>
 cell_counts |>
   dplyr::filter(wilcox_adj_pval < 0.05) |>
   DT::datatable()
-```
-
-# Hooke
-
-Hooke is a tool from the monocle team and aims to do differential celltype proportions, but also give networks, let's try it.
-
-Nothing is sig having tried it...
-The lab works on very high throughput stuff, so I guess it's intended to be relatively conservative for bigger sample sizes, though it's funny that we validated a significant difference via FACS in independent samples
-
-```{r}
-#| eval: false
-tar_load(sce)
-
-# need to fix rownames in order to subset
-df <- data.frame(gene = rownames(sce@assays$RNA@data), ensembl = rownames(sce@assays$RNA@counts))
-
-vascular_celltypes_level1 <- c("Trans-Endo-to-mural", "Endothelial", "Pericyte",
-                               "SMC", "Fibroblast", "T-cell")
-vascular_celltypes_level2 <- c('T-Pericyte', 'M-Pericyte', 'Pericyte',
-                               'Pericyte-2', 'Vascular-SMC', 'Arteriolar-SMC',
-                               'Vascular-SMC-LINC00486', 'EndoMT_1', 'EndoMT_2',
-                               'Perivascular-FB-KAZN2', 'Perivascular-FB',
-                               'Meningeal-FB', 'Artirial-FB', 'Pericyte-FB',
-                               'Capillary', 'Arterial', 'Venous',
-                               'T-cell-vascular')
-
-# Exclude the donor 31 cells
-rownames(sce@assays$RNA@data) <- df$ensembl
-sce_v <- subset(sce, prep == "V")
-sce_v <- subset(sce_v, idents = vascular_celltypes_level2)
-sce_p <- subset(sce, prep == "P")
-sce_p <- subset(sce_p, idents = vascular_celltypes_level2, invert = TRUE)
-
-cds_v <- as.cell_data_set(sce_v)
-cds_p <- as.cell_data_set(sce_p)
-
-library(hooke)
-
-ccs_v <- new_cell_count_set(cds_v, sample_group = "manifest", cell_group =
-  "subcelltype_annotations")
-ccs_p <- new_cell_count_set(cds_p, sample_group = "manifest", cell_group =
-  "subcelltype_annotations")
-
-ccm_v <- new_cell_count_model(ccs_v, main_model_formula_str = "~ diagnosis")
-ccm_p <- new_cell_count_model(ccs_p, main_model_formula_str = "~ diagnosis")
-
-cond_case = estimate_abundances(ccm_v, tibble::tibble(diagnosis = "Case"))
-cond_control = estimate_abundances(ccm_v, tibble::tibble(diagnosis = "Control"))
-
-cond_control |> head()
-
-cond_ne_v_e_tbl <- compare_abundances(ccm_v, cond_control, cond_case)
-
-cond_ne_v_e_tbl |>
-  dplyr::select(cell_group, diagnosis_x, diagnosis_y,
-                delta_log_abund, delta_log_abund_se, delta_q_value)
-
-plot_contrast(ccm_v, cond_ne_v_e_tbl, q_value_thresh = 0.05)
-
-cond_case = estimate_abundances(ccm_p, tibble::tibble(diagnosis = "Case"))
-cond_control = estimate_abundances(ccm_p, tibble::tibble(diagnosis = "Control"))
-
-cond_control |> head()
-
-cond_ne_v_e_tbl <- compare_abundances(ccm_p, cond_control, cond_case)
-
-cond_ne_v_e_tbl |>
-  dplyr::select(cell_group, diagnosis_x, diagnosis_y,
-                delta_log_abund, delta_log_abund_se, delta_q_value)
-
-plot_contrast(ccm_p, cond_ne_v_e_tbl, q_value_thresh = 0.05)
 ```
 
 # Average expression
