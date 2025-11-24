@@ -242,25 +242,6 @@ Together, these findings provide new insights into the neurovascular unit in AD 
 
 # Results
 
-## Isolating the neurovascular unit
-
-Single-cell and single-nuclei RNA sequencing (snRNAseq) has yielded significant insights into health and disease, particularly brain disorders.
-Traditionally, the brain vasculature has been highly challenging to isolate but recent studies have begun to examine neurovascular biology through vascular enrichment [@yang2022; @tsartsalis2024].
-Whilst a significant advance, the reported vascular nuclei isolation protocols remain relatively inefficient and achieve this enrichment at the expense of parenchymal cells, thereby losing the opportunity to examine the complexity of whole tissue brain biology.
-
-We developed a novel method for the simultaneous isolation of highly pure microvascular nuclei with high-quality parenchymal nuclei from human post-mortem brain issue in a single procedure.
-Current protocols use a traditional 4⁰C dissection of brain tissue, where critical issues that need to be addressed included the poor removal of meningeal tissue, poor control of dissection and loss of valuable tissue mass.
-We therefore first developed a simple holding unit (@fig-method A) to enable dissection on dry ice to maintain tissue temperature at approximately -80C and allowing careful removal of meninges and other contaminants.
-We further created a 3D printed tissue chopper (@fig-method A) to process unthawed brain tissue blocks into a coarse powder optimal for nuclei isolation, which can then be stored as required.
-
-Brain vessels are typically lost in standard isolation protocols through under-or over-homogenisation.
-To mitigate this, we designed a 3D printed pestle to allow multiple rounds of large-volume pestle-driven homogenisation combined with low speed centrifugation.
-This enabled efficient release of vessels whilst minimising vessel damage (@fig-method B), yielding vascular pellets and a vessel-free supernatant for parenchymal isolation – which is then processed using standard protocols.
-Purification of the vascular fraction involves two multi-layer dextran gradient centrifugation steps to trap contaminants and filtering to remove unwanted larger vessels.
-The basement membrane of microvessels is enzymatically digested to release endothelial nuclei, supported by a 3D printed assembly to grind nuclei out of vessels (@fig-method C).
-
-![Simultaneous isolation of vascular and parenchymal fractions from post-mortem human brain tissue. (A) A 3D printed holding unit and tissue chopper allows dissection of brain tissue whilst keeping the temperature at -80C to avoid thawing. (B) Isolation of microvessels from the brain parenchymal fraction involves repeated homogenization using a 3D printed pestle; followed by alternating centrifugation and dounce homogenization. (C) To release vascular nuclei from isolated microvessels, samples are subjected to multi-layer dextran centrifugation, removal of large vessels and debris using filters; Collagenase II enzymatic digestion of the basement membrane followed by extrusion of vascular nuclei using a 3D printed funnel and pestle.](05_figures/990_shared_figures/003_final_figures/figure1.pdf){#fig-method}
-
 ## A single cell atlas of the neurovascular unit
 
 We used our new method to examine the role of the neurovascular unit in Alzheimer's Disease (AD).
