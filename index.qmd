@@ -226,25 +226,19 @@ The brain's microvasculature is the interface between blood and brain and plays 
 It serves as a barrier (the blood-brain-barrier, BBB) [@cai2018; @nehra2022] preventing harmful substances, such as toxins and pathogens, from entering the central nervous system.
 The BBB regulates the transport of essential nutrients and aids in the removal of waste products thereby maintaining the brain's stable environment, essential for proper neural function.
 This is achieved through specialized vascular cells, including brain endothelial cells (ECs) and mural cells.
-The concept of the neurovascular unit (NVU) emphasizes the intimate relationship between brain parenchymal and vascular cells for example ensuring sufficient supply of oxygen and glucose to meet the metabolic demands of neurons and glia [@Iadecola2017].
+The concept of the neurovascular unit (NVU) emphasizes the intimate relationship between brain parenchymal and vascular cells, for example by ensuring sufficient supply of oxygen and glucose to meet the metabolic demands of neurons and glia [@Iadecola2017].
 
 ECs contribute to the clearance of Aβ and other toxins, regulate the exclusion of harmful blood proteins, and facilitate immune cell trafficking [@Zhang2022; @Daneman2015; @Amersfoort2022].
 Both ECs and pericytes (PCs) are essential for maintaining brain perfusion, endothelial permeability, and immune activation [@Brown2019; @Procter2021].
 Evidence from imaging, neuropathological studies, and preclinical models indicates chronic tissue hypoxia, impaired cerebral blood flow regulation, and BBB integrity loss in early AD stages, often linked to increased Aβ levels [@Nehra2022; @Korte2020].
 Knowledge of cell-type specific gene expression has transformed the interpretation of AD genetic risk and our understanding of AD molecular pathology [@mcquade2019; @yang2023].
-However, despite similar numbers of glia and vascular cells within the brain [@Keller2018], the processes of extracting nuclei from human post-mortem tissue have favoured retrieval of parenchymal nuclei over vascular cells, resulting in an incomplete picture of the NVU.
-The first human brain single nuclei atlases examining AD at scale obtained less than a few hundred endothelial cell nuclei as compared to tens of thousands from parenchymal cells, which precluded analyses of the NVU [@Mathys2019; @Grubman2019].
-However, the development of extraction approaches focused on vascular cells has recently enabled the study of these cell types.
-Enrichment approaches have focused on specifically isolating the neurovasculature from brain samples via mechanical approaches yielding \~50% enrichment of vascular nuclei [@yang2022; @Tsartsalis2024], revealing AD-associated impaired angiogenesis and inflammation.
-Furthermore, both studies highlight potential roles for cerebrovascular cell types in mediating AD genetic risk.
 
-Given the paucity of approaches to efficiently extract brain vascular cells whilst preserving retrieval of parenchymal cells, we developed a new method for simultaneous vascular and parenchymal cell type extraction.
-We applied this to prefrontal cortex (PFC) from 20 AD and 20 control donors and performed single nuclei RNA sequencing.
-This revealed distinct enrichments of AD genetic risk in pericytes, perivascular fibroblasts and activated microglia – representing the first robust association of AD genetic risk with brain vascular cells types.
-Furthermore, we find that the genes underlying these associations are centred on amyloid biology in all three cell types, suggesting the involvement of these specific cell types in early AD pathobiology.
-Our isolation approach also revealed a transitional cell population simultaneously expressing markers of endothelial and mural cells whose existence we validate in the mouse.
-We find this population is significantly reduced in AD suggesting changes in vascular plasticity in the AD brain.
-Our method provides a means to fully capture vascular and parenchymal cell types in a given brain region and the single nuclei gene expression dataset is a valuable resource to more fully understand brain neurovascular changes in AD.
+We analysed 80 paired vasuclar/parenchymal single-nucleus RNA sequencing samples from prefrontal cortex (PFC) tissue of 20 Alzhimer's diesase and 20 controls donors, generated through the IMI IM2PACT project (GEO accessions: GSE310554 & GSE222007), which aimed to characterise the human neurovascular unit.
+By constructing a high-resolution atlas with strong representation of both parenchymal and vascular cell types, we identified significant enrichment of AD genetic risk in pericytes, perivascular fibroblasts, and activated microglia, impllicating these cell types in amyloid-related pathways and suggesting their involvement in early AD pathobiology.
+Strikingly, we discovered a transitional endothelial-mesenchymal (EndoMT) population expressing both endothelial and mural cell markers, which we validated in both human and mouse brain.
+This population was markedly reduced in AD, pointing to impaired endhthelial plasticity as a novel axis of disease vulnerability.
+Furthermore, integrative analysis of ligand-receptor signalling revealed a dysregulation of angiopoietin-TEK pathways, highlighting perturbed vascular stabilisation signals as a potential mechanism linking vascular dysfunction to neurodegeneration.
+Together, these findings provide new insights into the neurovascular unit in AD and establish a valuable data resource for dissecting vascular contributions to neurodegeneration.
 
 # Results
 
