@@ -352,7 +352,7 @@ write.table(
 
 ## Design
 
-So I'm thinking it makes sense to do this with gene lists from the pseudobulk differential expression per celltype.
+Let's do this with gene lists from the pseudobulk differential expression per celltype.
 
 ### Choose PPI network
 

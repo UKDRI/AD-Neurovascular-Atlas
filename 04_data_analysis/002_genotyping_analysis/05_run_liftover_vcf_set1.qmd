@@ -9,8 +9,6 @@ Next, the newly created VCF files from the BAM files need to be lifted back to h
 - Needs a hg19 reference with contigs correctly named
 - use picard tools "LiftoverVcf"
 
-I might be using a different reference from Frank so the contigs seem to be different..
-
 ```{r}
 #| purl: false
 # update reference contigs
