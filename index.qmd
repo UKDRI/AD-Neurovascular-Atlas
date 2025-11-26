@@ -757,6 +757,7 @@ df$top_early_genes |>
       "./05_figures/990_shared_figures/003_final_figures/002_tables/tradeseq-degs-early.xlsx"
     )
   )
+cat("Table saved as Excel file: tradeseq-degs-early.xlsx")
 ```
 
 Significant (P \< $1\times10^{-16}$) differential genes in early pseudotime identified via tradeSeq.
@@ -774,6 +775,7 @@ df$top_end_genes |>
       "./05_figures/990_shared_figures/003_final_figures/002_tables/tradeseq-degs-late.xlsx"
     )
   )
+cat("Table saved as Excel file: tradeseq-degs-late.xlsx")
 ```
 
 Significant (P \< $1\times10^{-16}$) differential genes in late pseudotime identified via tradeSeq.
@@ -791,6 +793,7 @@ df$top_lin_genes |>
       "./05_figures/990_shared_figures/003_final_figures/002_tables/tradeseq-degs-lineage.xlsx"
     )
   )
+cat("Table saved as Excel file: tradeseq-degs-lineage.xlsx")
 ```
 
 Significant (P \< $1\times10^{-16}$) differential genes between conditions for each lineage and overall pseudotime identified via tradeSeq.
@@ -809,6 +812,7 @@ df$top_genes_condition |>
       "./05_figures/990_shared_figures/003_final_figures/002_tables/tradeseq-degs-condition.xlsx"
     )
   )
+cat("Table saved as Excel file: tradeseq-degs-condition.xlsx")
 ```
 
 Significant (P \< $1\times10^{-16}$) differential genes between lineage pseudotime identified via tradeSeq.
@@ -866,7 +870,15 @@ mast_de |>
     part = "header",
     value = as_paragraph("Average log", as_sub("2"), "(FoldChange)")
   ) |>
-  flextable::autofit()
+  exportxlsx(
+    path = here(
+      "./05_figures/990_shared_figures/003_final_figures/002_tables/mastde-sig-genes.xlsx"
+    )
+  )
+# flextable::autofit()
+```
+```{r}
+cat("Table saved as Excel file: mastde-sig-genes.xlsx")
 ```
 
 Significant (Bonferroni adjusted P \< 0.05) differential genes between AD and controls per celltype via MAST.
@@ -928,10 +940,18 @@ result_list |>
   head() |>
   as.data.frame() |>
   flextable(use_labels = FALSE) |>
-  set_header_labels(
-    p.adjust = "Adjusted P-value"
-  ) |>
-  autofit()
+  exportxlsx(
+    path = here(
+      "./05_figures/990_shared_figures/003_final_figures/002_tables/mastde-sig-genes-pathways.xlsx"
+    )
+  )
+# set_header_labels(
+#   p.adjust = "Adjusted P-value"
+# ) |>
+# autofit()
+```
+```{r}
+cat("Table saved as Excel file: mastde-sig-genes-pathways.xlsx")
 ```
 
 Significant (adjusted P \< 0.05) hypergeomtric GO pathways amongst the significantly differenetially expressed genes from MAST per celltype.
@@ -993,10 +1013,18 @@ result_list |>
   head() |>
   as.data.frame() |>
   flextable(use_labels = FALSE) |>
-  set_header_labels(
-    p.adjust = "Adjusted P-value"
-  ) |>
-  autofit()
+  exportxlsx(
+    path = here(
+      "./05_figures/990_shared_figures/003_final_figures/002_tables/mastde-sig-genes-pathways-filter.xlsx"
+    )
+  )
+# set_header_labels(
+#   p.adjust = "Adjusted P-value"
+# ) |>
+# autofit()
+```
+```{r}
+cat("Table saved as Excel file: mastde-sig-genes-pathways-filter.xlsx")
 ```
 
 Significant (adjusted P \< 0.05) hypergeomtric GO pathways amongst the significant differenetially expressed genes with a log2 foldchage \> 1 from MAST per celltype.
@@ -1019,7 +1047,14 @@ package_df |>
   as.data.frame() |>
   dplyr::group_by(source) |>
   flextable(use_labels = FALSE) |>
-  autofit()
+  exportxlsx(
+    path = here(
+      "./05_figures/990_shared_figures/003_final_figures/002_tables/r-packages.xlsx"
+    )
+  )
+```
+```{r}
+cat("Table saved as Excel file: r-packages.xlsx")
 ```
 
 R packages used
