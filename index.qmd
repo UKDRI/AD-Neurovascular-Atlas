@@ -237,40 +237,36 @@ We analysed 80 paired vasuclar/parenchymal single-nucleus RNA sequencing samples
 By constructing a high-resolution atlas with strong representation of both parenchymal and vascular cell types, we identified significant enrichment of AD genetic risk in pericytes, perivascular fibroblasts, and activated microglia, impllicating these cell types in amyloid-related pathways and suggesting their involvement in early AD pathobiology.
 Strikingly, we discovered a transitional endothelial-mesenchymal (EndoMT) population expressing both endothelial and mural cell markers, which we validated in both human and mouse brain.
 This population was markedly reduced in AD, pointing to impaired endhthelial plasticity as a novel axis of disease vulnerability.
-Furthermore, integrative analysis of ligand-receptor signalling revealed a dysregulation of angiopoietin-TEK pathways, highlighting perturbed vascular stabilisation signals as a potential mechanism linking vascular dysfunction to neurodegeneration.
+Furthermore, integrative analysis of ligand-receptor signaling revealed a dysregulation of angiopoietin-TEK pathways, highlighting perturbed vascular stabilisation signals as a potential mechanism linking vascular dysfunction to neurodegeneration.
 Together, these findings provide new insights into the neurovascular unit in AD and establish a valuable data resource for dissecting vascular contributions to neurodegeneration.
 
 # Results
 
 ## A single cell atlas of the neurovascular unit
 
-We used our new method to examine the role of the neurovascular unit in Alzheimer's Disease (AD).
-We performed single nuclei RNA sequencing on prefrontal cortex (PFC) samples from 40 individuals, divided into 20 AD cases and 20 controls (@fig-umap A).
-For each individual, we analysed two fractions: vascular and parenchymal, both obtained from the same PFC tissue.
-This resulted in a total of 80 nuclei fractions (40 vascular and 40 parenchymal).
-These samples were captured on 10X genomics chips, after which libraries were prepared and subsequently subject to sequencing on an Illumina platform.
-We obtained 474,357 nuclei which was subset to `{r} num_cells_post_qc` nuclei after quality control (QC) and three donors were also removed (See @sec-seq-qc for QC details).
-The median number of genes whose expression was detected per nucleus was `{r} median_features_post_qc` post-QC.
-Nuclei were annotated into `{r} level1_celltypes_n` main cell types which were further subdivided into `{r} level2_celltypes_n` subtypes based on published markers (@fig-umap & @suppfig-level1-markers)[@yang2022; @mathys2023].
+The single nuclei RNA sequencing dataset was obtained vai the IM2PACT consortium (https://im2pact.org)[https://im2pact.org] from prefrontal cortex (PFC) samples of 40 individuals, captured on 10x chips, divided into 20 Alzheimer's Disease (AD) cases and 20 controls (@fig-umap A) (GEO accessions: GSE310554 & GSE222007).
+For each individual, two fractions were available: vascular and parenchymal, both obtained from the same PFC tissue.
+Hence there was a total of 80 nuclei fractions (40 vascular and 40 parenchymal) with 474,357 nuclei in total.
+This was subset to `{r} scales::comma(num_cells_post_qc)` nuclei after quality control (QC) and three donors were also removed (See @sec-seq-qc for QC details).
+The median number of genes whose expression was detected per nucleus was `{r} scales::comma(median_features_post_qc)` post-QC.
+Nuclei were annotated into `{r} level1_celltypes_n` main cell types which were further subdivided into `{r} scales::comma(level2_celltypes_n)` subtypes based on published markers (@fig-umap & @suppfig-level1-markers)[@yang2022; @mathys2023].
 
-![Single nuclei atlas of the human prefrontal cortex neuro-vasculature. (A) Flow diagram of the cohort details with the median age ± IQR for males and females in cases and controls respectively. (B) A post-QC UMAP colored by fraction isolated showing the vascular nuclei are on the right. (C) The same UMAP colored by higher level cell types. (D) The same UMAP colored by cell subtypes. (E) The percentage of isolated nuclei that are vascular/parenchymal cell types from various vascular enrichment methods contrasted to the current method. (F) The percentage of isolated nuclei that are vascular/parenchymal in a typical sample preparation contrasted to our parenchymal fraction.](05_figures/990_shared_figures/003_final_figures/figure1_umaps_c_label.pdf){#fig-umap}
+![Single nuclei atlas of the human prefrontal cortex neuro-vasculature. (A) Flow diagram of the cohort details with the median age ± IQR for males and females in cases and controls respectively. (B) A post-QC UMAP colored by fraction isolated showing the vascular nuclei are on the right. (C) The same UMAP colored by higher level cell types. (D) The same UMAP colored by cell subtypes. (E) The percentage of isolated nuclei that are vascular/parenchymal cell types from various vascular enrichment data contrasted to the current data. (F) The percentage of isolated nuclei that are vascular/parenchymal in a typical sample preparation contrasted to our parenchymal fraction.](05_figures/990_shared_figures/003_final_figures/figure1_umaps_c_label.pdf){#fig-umap}
 
-Our protocol provides excellent coverage of all four major vascular cell types (endothelial, pericyte, smooth muscle cell (SMC), fibroblasts) and their neighboring parenchymal cells (astrocytes, microglia, excitatory neurons, inhibitory neurons, oligodendrocytes, oligodendrocyte precursor cells (OPC)).
+The data provides excellent coverage of all four major vascular cell types (endothelial, pericyte, smooth muscle cell (SMC), fibroblasts) and their neighboring parenchymal cells (astrocytes, microglia, excitatory neurons, inhibitory neurons, oligodendrocytes, oligodendrocyte precursor cells (OPC)).
 As expected, cell types were detected in their appropriate vascular or parenchymal fractions, with for example \>95% of endothelial cells coming from the vascular fraction and \>95% of neurons from the parenchymal fraction.
 Certain cell types were present in both fractions, including microglia and T cells.
-Thus, the isolation method simultaneously captures both parenchymal and vascular cell types that are present in the same PFC tissue enabling a detailed examination of the NVU in AD.
 The two most abundant nuclei were from oligodendrocytes captured in the parenchymal fraction and endothelial cells captured in the vascular fraction.
 Oligodendrocytes represented \~28% of the total nuclei and endothelial were \~20%.
-We contrasted the number of nuclei obtained from the vascular fractions of this study to the recent Yang et al. and Tsartsalis et al. papers via a chi-squared test and find significantly more nuclei for all cell types present in all studies, excluding fibroblasts contrasted with Yang et al. which are on par (Bonferroni adjusted P \< 0.05, @fig-umap E).
-Conversely, we obtained over ten times the mean number of neurons per sample[@yang2022].
+We contrasted the number of nuclei analysed from the vascular fractions of this study to the recent Yang et al. and Tsartsalis et al. papers via a chi-squared test and find significantly more nuclei for all cell types present in all studies, excluding fibroblasts contrasted with Yang et al. which are on par (Bonferroni adjusted P \< 0.05, @fig-umap E).
+Conversely, we identified over ten times the mean number of neurons per sample[@yang2022].
 
 ## Activated microglia, pericytes, perivascular fibroblasts and T cells are enriched for AD risk genes focused on amyloid processing and immune cell activation
 
 Having a more complete picture of the parenchymal and vascular fractions of the PFC enables a more accurate definition of gene cell-type-specificity, through which we sought to more definitively understand which cell types were associated with the genetic risk of AD.
 We employed Multi-marker Analysis of GenoMic Annotation (MAGMA) along with the latest Genome-Wide Association Study (GWAS) for AD[@bellenguez2022] testing the top 10% of genes most specifically expressed within each cell type amongst nuclei from control individuals (see @sec-method-risk).
 Amongst the 12 main cell types, our analysis identified microglia, fibroblasts, pericytes, and T-cells associated with AD genetic risk (@suppfig-risk-level1).
-While microglia have been implicated previously with AD genetic risk, the associations with pericytes and perivascular fibroblasts are novel.
-This is the first time brain vascular cell type specific expression profiles have been shown to be enriched with AD genetic risk when all major cell types of the neurovascular unit are considered.
+While microglia have been implicated previously with AD genetic risk, the associations with with other cell types are novel.
 
 Further analysis at the subtype level, implicated, in particular, activated microglia (Microglia A), pericyte-2 and perivascular fibroblast 2 (FB-2) with AD genetic risk (@fig-risk A).
 Furthermore there was significant enrichment for each of the three cell types even when conditioned on the other two cell types (@fig-risk B), indicating that the observed signals are uniquely associated with a cell type and not confounded through shared gene expression across cell types (@fig-risk C).
@@ -280,11 +276,11 @@ The enrichment of genes involved in amyloid precursor protein (APP) processing, 
 This finding aligns with the well-established role of amyloid pathology in AD.
 Additionally, for activated microglia and pericyte-2 cell types, significant GO terms related to T-cell and lymphocyte regulation were identified, suggesting an immune regulatory component in AD risk, especially given the significant risk association of T-cells in the higher level cell type analysis.
 
-![Alzheimer's disease genetic risk enrichment. (A) A heatmap denoting cell type-specific risk enrichment via MAGMA with "\*" denoting nominal significance (P \< 0.05), "\*\*" significance after Bonferroni adjustment (P \< 0.05) and "***" a higher degree of adjusted significance again (P \< 0.01). Microglia-A, Pericyte-2 and perivascular-FB-2 are significantly enriched for AD risk via MAGMA after multiple testing adjustment. (B) Cell type-specific risk for the three significant cell types conditioned on each other to determine signal independence. All remain significant even when conditioned on one another. (C) Average expression of the MAGMA significant genes in the relevant higher level cell types. Each cell type has a clear distinct expression profile for the risk genes. (D) Significantly enriched disease terms in mouse ontology. (E) Dotplot of significantly enriched GO pathways from the significant genes derived from MAGMA in significant cell types. Pathways have been reduced on semantic similarity via rrvgo (threshold = 0.9). (F/G/H) Protein-protein interaction networks for the same significant genes from MAGMA. Single genes unconnected to the main network are excluded.](05_figures/990_shared_figures/003_final_figures/figure3_risk.pdf){#fig-risk}
+![Alzheimer's disease genetic risk enrichment. (A) A heatmap denoting cell type-specific risk enrichment via MAGMA with "\*" denoting nominal significance (P \< 0.05), "\*\*" significance after Bonferroni adjustment (P \< 0.05) and "***" a higher degree of adjusted significance again (P \< 0.01). Microglia-A, Pericyte-2 and perivascular-FB-2 are significantly enriched for AD risk via MAGMA after multiple testing adjustment. (B) Cell type-specific risk for the three significant cell types conditioned on each other to determine signal independence. All remain significant even when conditioned on one another. (C) Average expression of the MAGMA significant genes in the relevant higher level cell types. Each cell type has a clear distinct expression profile for the risk genes. (D) Significantly enriched phenotypes amongst genes' 1:1 orthologues in the Mammalian Phenotype Ontology. (E) Dotplot of significantly enriched GO pathways from the significant genes derived from MAGMA in significant cell types. Pathways have been reduced on semantic similarity via rrvgo (threshold = 0.9). (F/G/H) Protein-protein interaction networks for the same significant genes from MAGMA. Single genes unconnected to the main network are excluded.](05_figures/990_shared_figures/003_final_figures/figure3_risk.pdf){#fig-risk}
 
-We found significantly more protein-protein interaction (PPI) amongst the MAGMA genes identified in each cell type than expected by chance demonstrating convergent cell type specific gene AD risk networks.
+We found significantly (P \< 0.05, @sec-method-ppi) more protein-protein interaction (PPI) amongst the MAGMA genes identified in each cell type than expected by chance demonstrating convergent cell type specific gene AD risk networks.
 Subsequent Louvain clustering of these PPI networks revealed distinct modules associated with amyloid-related processes (via further GO enrichment analysis) across all three cell types (@fig-risk F, G, H).
-This suggests a convergent risk association involving amyloid processing among activated microglia, pericytes, and perivascular fibroblasts.
+This suggests a convergent risk associated processes involving amyloid processing among activated microglia, pericytes, and perivascular fibroblasts.
 
 Finally, we used the Mouse Phenotype Ontology (MPO) to investigate the phenotypes resulting from the knock-out of these genes' 1:1 orthologs in the mouse.
 For the activated microglia risk genes, significant associations were found with the abnormal cell chemotaxis and hematoma MPO terms while pericyte-2 risk genes showed significant associations with amyloidosis and tau protein deposits (@fig-risk E).
@@ -292,132 +288,148 @@ However, no significant phenotypic associations were identified amongst the mous
 
 ## A population of Endothelial Mesenchymal Transitional Cells are detected in human prefrontal cortex whose transition appears disrupted in Alzheimer's Disease
 
-We identified a substantial vascular cell population (16021 nuclei, 10% of vascular fraction), expressing both endothelial and mural cell identity markers (@fig-endomt-prop B) which has not beeen in observed in other single cell datasets of cortical brain tissue.
-We hypothesized that this cell population, herein termed EndoMT, may be undergoing endothelial mesenchymal transition and, ultimately, differentiating into mural cells.
+We identified a substantial vascular cell population (16021 nuclei, 10% of vascular fraction), expressing both endothelial and mural cell identity markers (@fig-endomt-prop B) which has not been well-annotated in other single cell datasets of cortical brain tissue.
+We hypothesized that this cell population, herein termed endothelial-to-mesenchymal transition (EndoMT), may be undergoing endothelial mesenchymal transition and, ultimately, differentiating into mural cells.
 A recent single cell RNA-seq study of brain cavernomas and arteriovenous malformations[@bravi2016; @shoemaker2020; @wälchli2024] also reported a brain tissue EndoMT population.
 However, we did not identify a significant overlap in their markers with our population (@suppfig-endomt-paper-markers).
-Furthermore, subsequent differentiation into brain mural cells has not been previously described suggesting our brain vascular isolation method has revealed a novel brain cell-type or cell-state.
-Importantly, we find EndoMT in control donor brain indicating that the observed endothelial plasticity represents a normal physiological state.
+Furthermore, subsequent differentiation into brain mural cells has not been previously described suggesting this represents a novel brain population.
+Importantly, we find EndoMT in control donor brains indicating that this transitional cell population may represent a normal physiological state.
 
-We first compared cell-type proportions between AD and controls in vascular and parenchymal fractions independently, utilising the scProportionTest package[@Miller2021].
-For the vascular fraction, this identified a significant \~50% reduction in the proportion of endothelial-to-mesenchymal transition (EndoMT) cells in AD, with both EndoMT1 and EndoMT2 subtypes being reduced (@fig-endomt-prop A).
-We also observed in AD reduced percitye-1 subtypes whereas SMC subtypes were increased (both vascular-SMC-1 and –2) and the most increased cell type was meningeal fibroblasts (@fig-endomt-prop A).
-Relatedly, when correlating celltype proportions across donors, we find a strong negative correlation between endothelial and pericyte/SMC populations (@suppfig-vascular-population-correlations).
+Upon examining changes in cell-type proportions, we identified a significant ~50% reduction in the proportion of EndoMT cells in AD, with both EndoMT1 and EndoMT2 subtypes being reduced (@fig-endomt-prop A).
+We also observed reduced percitye-1 nuclei in AD whereas SMC nuclei were increased (both vascular-SMC-1 and –2) and the most increased cell type was meningeal fibroblasts (@fig-endomt-prop A).
+Relatedly, when correlating cell-type proportions across donors, we find a strong negative correlation between endothelial and pericyte/SMC populations (@suppfig-vascular-population-correlations).
+This further supports a concept of regulated balance between endothelial cells and mural cells, perhaps via regulation of EndoMT. 
 With respect to the parenchymal fraction, as would be expected in a neurodegenerative disorder, there was a significant reduction in excitatory neuron subtypes (Ex-Neuro-1 \~75% reduction; Ex-Neuro-5 \~50% reduction) (@suppfig-parenchymal-prop-diff).
 
 We sought to further validate the EndoMT population and to assess changes in AD by using fluorescence-activated cell sorting (FACS) to detect cells co-expressing an endothelial cell specific and a mural cell specific nuclear proteins.
 We identified ERG as selectively expressed by EC but not mural cells and Notch3 which is selectively expressed by mural cells but not EC (@fig-endomt-prop B).
 Anti-ERG and Anti-Notch3 are widely used as identity markers for endothelial cells and mural cells respectively[@shah2016; @gastfriend2024].
-Using FACS in 10 independent samples (5 AD and 5 controls), we found 15% of control and 10% of AD prefrontal cortex co-expressed ERG and NOTCH3, confirming a significant reduction of EndoMT cells in AD (@fig-endomt-prop C).
+Using 10 independent samples (5 AD and 5 controls), we found 15% of control nuclei but only 10% of AD prefrontal cortex co-expressed ERG and NOTCH3, confirming a significant reduction of EndoMT cells in AD (@fig-endomt-prop C).
 
 We complimented this validation by performing lineage-tracing using the endothelial-specific Cre mouse line CDH5-Cre coupled to the R26RtdTOMATO (R26RTOM) reporter line to test our hypothesis that EndoMT are an intermediate state between EC and mural cells.
 Lineage tracing and staining of endothelial cells with CD31 and pericytes with PDGFRB, both markers used for cell clustering, thereby confirmed that a small proportion of pericytes were arising from endothelial cells (@fig-endomt-prop D/E).
 
 ![proportional differences in Endo-MT. (A) Cell subtype proportional differences from scProportionTest. Signficant cell types are those with an FDR \< 0.05 and an absolute LFC \> 0.58. (B) A dotplot of endothelial and SMC markers, showing Endo-MT has a unique expression of both ERG and NOTCH3. (C) A boxplot showing the proportions of Endo-MT in independent AD and control samples via FACS. There is a significant (P = 0.02) difference via Wilcoxon rank-sum test. (D/E) Genetically labelled endothelial cells and pericytes in Cdh5TOM mice (red) express pericyte markers (PDGFRb, green) and endothelial markers (CD31, white). (D) Endothelial derived pericyte in the parenchyma. (E) Endothelial derived pericytes in the meninges. Insets (i) show higher magnification.](05_figures/990_shared_figures/003_final_figures/figure4_endomt_prop.pdf){#fig-endomt-prop}
 
+## Distinct transciption factors underlie endothelial to pericyte and vascular smooth muscle trajectories
+
 To understand the molecular basis of these transitions, we performed pseudotime analysis using Slingshot[@Street2018].
 This uncovered two primary lineages of EndoMT cells, each characterized by unique transitional subtypes (@fig-endomt A).
-Lineage 1 encompasses EC that progress through EndoMT-2 cells toward smooth muscle cells (SMCs), herein named lineage EndoMT-SMC, while Lineage 2 are EC transition to EndoMT-1 cells and then differentiating into pericytes, herein named EndoMT-PC (@fig-endomt B).
+Lineage 1 encompasses EC that progress through EndoMT-2 cells toward smooth muscle cells (SMCs), herein named lineage EndoMT-SMC, while Lineage 2 are EC transition to EndoMT-1 cells and then differentiating into pericytes, herein named EndoMT-PC (@fig-endomt C).
 The distribution across the trajectory was even across controls and AD, and between males and females (@suppfig-endomt-pca).
 This confirms the population captured is a novel and ubiquitous phenomenon.
+
 We next used tradeSeq to assess changes in gene expression through the trajectories in each lineage[@Van2020].
 This revealed 8 transcription factors that diverge in early pseudo-time and thus may be involved in the fate choices.
-For example, we found FOXP2 and RORA to be increased with pseudotime in lineage EndoMT-PC but not EndoMT-SMC (@suppfig-endomt-tfs A-B).
-Conversely ZBTB7C, PRDM16 and NR4A1 are increased in lineage EndoMT-SMC (@suppfig-endomt-tfs C-E).
+For example, we found *FOXP2* and *RORA* to be increased with pseudotime in lineage EndoMT-PC but not EndoMT-SMC (@suppfig-endomt-tfs A-B).
+Conversely *ZBTB7C*, *PRDM16* and *NR4A1* are increased in lineage EndoMT-SMC (@suppfig-endomt-tfs C-E).
+This was corroborated by applying switchDE to each lineage, which identified *FOXP2*/*RORA* and *ZBTB7C*/*NR4A1* to be significant genes in the EndoMT-PC/EndoMT-SMC lineages respectively[@kieran_campbell_aut_switchde_2017].
 
-![Characterization of the endothelial-mesenchymal (EndoMT) cell type. (A) PCA plot of nuclei subset to the endothelial, SMC, pericyte and EndoMT cell types. Includes the slingshot trajectories of the two EndoMT lineages, the first of which terminally differentiates to SMC and the second to pericytes. (B) Density plots of nuclei over pseudotime for each lineage. Early pseudotime is made up of endothelial cells, which then move into EndoMT-1/2 and finally to pericytes/SMCs. (C) Heatmap of transcription factor network median AUCs denoting how likely the regulons are active across cell types via Scenic. The MEMCON regulon shows a graduated decline from arterial through capillary to EndoMT. The FOXP2 regulon shows a distinct activity in the pericyte populations and EndoMT-1 (D) Log expression plots of the transcription factors from C for each condition and lineage respectively. FOXP2 and LEF1 show increased expression in the EndoMT-PC lineage in later pseudotime. ARIDB5 by contrast is increased in EndoMT-SMC](05_figures/990_shared_figures/003_final_figures/endomt_fig2.pdf){#fig-endomt}
+Using SCENIC, we next identified transcription factor networks underlying each of the vascular cell-subtypes[@aibar_scenic_2017].
+As expected of cell-type determinates, there were not differences between AD and control.
+However, *FOXP2* was notably enriched in pericyte subtypes whilst *MECOM* was strongly enriched in endothelial and EndoMT cell subtypes (@fig-endomt B). 
+Examining the change in expression of transcription factors across pseudotime highlighted *FOXP2* as progressively increasing in pericytes in the EndoMT-PC lineage but not showing any change in the EndoMT-SMC lineage (@fig-endomt D). 
+*BCL6* is also interesting since it is a transcriptional repressor and its related protein BLC6b has recently been shown to oppose endothelial cell differentiation[@liBCL6BdependentSuppressionETV22024]. 
+Hence its transitory increase may be required to initiate EndoMT.
 
-We next used tradeSeq to identify altered AD and control donor gene expression across EndoMT-SMC and EndoMT-PC trajectories, focusing only the most significant genes (p \< 1 x 10-16)[@vandenberge2020].
-This showed 410 unique DEGs, including genes altered early, late or throughout the trajectory (@supptbl-tradeseq-degs-early, @supptbl-tradeseq-degs-late, @supptbl-tradeseq-degs-lin & @supptbl-tradeseq-degs-cond).
-Notable examples include BACE2, a beta-secretase enzyme implicated in AD, is progressively downregulated in both lineages but more highly expressed in AD compared to controls in early pseudo-time (@suppfig-adriskpseudotime A).
-APOD, involved in lipid transport and neuroprotection, shows a substantial increase at the late stage in both trajectories, but is significantly reduced in AD in EndoMT-PC (@suppfig-adriskpseudotime B).
-TGF-β1, involved in regulating phagocytic clearance of Aβ by microglia, is also increased in cases for both lineages.
-138 of the 410 most significantly differentially expressed genes (including BACE2 and APOD) identified by tradeseq were overlapping with the significant DEGs identified by Model-based Analysis of Single Cell Transcriptomics (MAST) in EndoMT1 and EndoMT2[@finak2015].
-Overall, we find our data suggests that AD affects the EndoMT process, with the genes identified potentially representing key molecular drivers of vascular transformation in AD[@bhatia2018; @yeap2022].
+![Characterization of the endothelial-mesenchymal (EndoMT) cell type. (A) PCA plot of nuclei subset to the endothelial, SMC, pericyte and EndoMT cell types. Includes the slingshot trajectories of the two EndoMT lineages, the first of which terminally differentiates to SMC and the second to pericytes. (B) Heatmap of transcription factor network median AUCs denoting how likely the regulons are active across cell types via SCENIC. (C) Density plots of nuclei over pseudotime for each lineage. Early pseudotime is made up of endothelial cells, which then move into EndoMT-1/2 and finally to pericytes/SMCs. The MEMCON regulon shows a graduated decline from arterial through capillary to EndoMT. The FOXP2 regulon shows a distinct activity in the pericyte populations and EndoMT-1 (D) Log expression plots of the transcription factors from C for each condition and lineage respectively. FOXP2 and LEF1 show increased expression in the EndoMT-PC lineage in later pseudotime. ARIDB5 by contrast is increased in EndoMT-SMC](05_figures/990_shared_figures/003_final_figures/endomt_fig2.pdf){#fig-endomt}
 
-To understand whether endothelial plasticity may be affected in Alzheimer's Disease (AD) pathophysiology we performed differential gene expression between controls and AD cases focusing on vascular cell types.
-Using MAST, we found 610 significant differentially expressed genes (DEGs) in the endomt-1 population (pericyte lineage) but only 8 DEGs in the endomt-2 population (SMC lineage) (@fig-degs A/B & @supptbl-mast-degs).
-Endomt-1 DEGs were enriched for the GO terms negative regulation of endothelial cell migration (GO:0010596), protein folding (GO:0006457) and negative regulation of natural killer cell mediated cytotoxicity/immunity (GO:0045953/0002716) while there were no significantly enriched pathways for endomt-2 biological processes (@supptbl-mast-go-pathways & @supptbl-mast-go-pathways-filter).
+## Alzheimer's Disease molecular pathology preferentially affects the endothelial to pericyte lineage
+
+To understand how vascular cells and in particular EndoMT are changed in Alzheimer's Disease (AD) pathophysiology we performed differential gene expression between controls and AD cases focusing on vascular cell types. 
+Using Model-based Analysis of Single Cell Transcriptomics (MAST), we found 610 significant differentially expressed genes (DEGs) in the EndoMT-PC but only 8 DEGs in the EndoMT-SMC (@suppfig-adriskpseudotime A/B & @supptbl-mast-degs)[@finak2015]. 
+The impact of AD on endothelial cell to pericyte transition is further supported by the overlap with tradeSeq identified trajectory genes: 143 of the 410 most significantly differentially expressed genes (P \< $1 \times 10^{-16}$) identified by tradeSeq were overlapping with the significant DEGs identified by MAST in EndoMT-PC (138 genes) and EndoMT-SMC (5 genes) (@supptbl-tradeseq-degs-early, @supptbl-tradeseq-degs-late, @supptbl-tradeseq-degs-lin & @supptbl-tradeseq-degs-cond). 
+The strong effect of AD pathology on the pericyte lineage is consistent with out observation of reduced pericytes proportion and other studies that have highlighted early pericyte loss in AD[@winkler2014].
+
+EndoMT-PC DEGs were enriched for the GO terms negative regulation of endothelial cell migration (GO:0010596), protein folding (GO:0006457) and negative regulation of natural killer cell mediated cytotoxicity/immunity (GO:0045953/0002716) while there were no significantly enriched pathways for EndoMT-SMC biological processes (@supptbl-mast-go-pathways & @supptbl-mast-go-pathways-filter).
+Furthermore, several genes altered in AD have been previously implicated in AD. 
+For example, BACE2 is a beta-secratase enzyme which degrades amyloidogenic peptides and reduce plaque formation. 
+*BACE2* is progressively downregulated in both lineages but more highly expressed in AD compared to controls in early pseudotime (@suppfig-adriskpseudotime A)[@yeap2022]. 
+APOD, involved in lipid transport and neuroprotection, shows a substantial increase at the late stage in both trajectories, but is significantly reduced in AD in EndoMT-PC (@suppfig-adriskpseudotime B)[@bhatia2018]. 
+TGF-β1, involved in regulating phagocytic clearance of Aβ by microglia, is also increased in cases for both lineages. 
+These three examples highlight genes that are potentially neuroprotective mechanism in AD but given their changes in the EndoMT trajectories may be altered in vascular plasticity processes.
 
 ![Differential gene expression via MAST. (A/B) Heatmaps denoting the number of significant DEGs, with an absolute LFC \> 1 and with no LFC cut-off respectively, for each cell subtype. (C/D) Plots denoting which revigo summarised GO pathways are significantly enriched for each celltype, with an absolute LFC \> 1 and with no LFC cut-off respectively, separated in pathways up- or down-regulated.](05_figures/990_shared_figures/003_final_figures/figure_degs.pdf){#fig-degs}
 
-## Blood vessel stabilisation signalling is altered in Alzheimer's Disease
+## Blood vessel stabilisation signaling is altered in Alzheimer's Disease
 
 We next examined cell-cell interactions relevant for EndoMT by intersecting tradeSeq differential trajectory genes with significantly altered ligand-receptor (L-R pairs) from CellChat[@Jin2021].
 This identified both ANGPT2-TEK and ANGPT1-TEK ligands that destabilize and stabilize blood vessels respectively, as significantly altered ligand-receptor (LR) pairs (@suppfig-cellchat B & @fig-angpt2 D/E).
-In AD only, EndoMT1 and EndoMT2 are receivers of the vascular destablising ligand ANGPT2 from OPCs through TEK/TIE2 and ITGA5/B5.
-The role of ANGPT2 in AD is further supported by the tradeSeq with ANGPT2 significantly upregulated throughout both lineage trajectories and using MAST, significantly upregulated in several cell types, including endomt-1 and endothelial subtypes (@fig-angpt2 A/B/C).
-GATA-1 and ETS-1 have been reported as key regulators of ANGPT2, and both are also significantly upregulated in capillary EC nuclei.
+In AD only, EndoMT-PC and EndoMT-SMC are receivers of the vascular destabilizing ligand ANGPT2 from OPCs through TEK/TIE2 and ITGA5/B5.
+The role of ANGPT2 in AD is further supported by the tradeSeq with *ANGPT2* significantly upregulated throughout both lineage trajectories and using MAST, significantly upregulated in several cell types, including EndoMT-PC and endothelial subtypes (@fig-angpt2 A/B/C).
+*GATA-1* and *ETS-1* have been reported as key regulators of ANGPT2, and both are also significantly upregulated in capillary EC nuclei.
 
-Conversely, we find the stabilizing ligand ANGPT1 has the same profile of source-receiver celltypes as ANGPT2, but this is now present only in controls.
-For ANGPT1, both EndoMT1 and EndoMT2 receive from astrocytes and inhibitory neurons in AD only, whereas controls only receive from excitatory neurons.
-ANGPT1 is also significantly down regulated in astrocytes in AD via MAST.
-These results support significant alterations in endothelial plasticity and signalling in AD, with altered signalling dynamics through key genes including ANGPT2 and ANGPT1.
+Conversely, we find the stabilizing ligand ANGPT1 has the same profile of source-receiver celltypes as ANGPT2, but this interaction is now present only in controls.
+For ANGPT1, both EndoMT-PC and EndoMT-SMC receive from astrocytes and inhibitory neurons in AD only, whereas controls only receive from excitatory neurons.
+*ANGPT1* is also significantly down regulated in astrocytes in AD via MAST.
+These results propose significant alterations in endothelial plasticity and signaling in AD, with altered signaling dynamics through key genes including *ANGPT2* and *ANGPT1*.
 The opposite changes we found for ANGPT2 and ANGPT1 is consistent with their opposing functional effects on vessel stability[@wang2017].
 
 ![ANGPT2 alterations in AD. (A) Log expression of ANGPT2 over pseudotime via tradeSeq. (B) Expression of ANGPT2 in cell types with significant differential expression. (C) Average log fold changes in AD for ANGPT2 in significant cell types (adjusted pvalue < 0.05 & {.absolute log fold change > 1), coloured by -log10 adjusted pvalue via MAST. (D/E) Significant (pvalue < 0.01 & log fold change > 0.5) ANGPT2 ligand-receptor pairs from the vascular to parenchymal celltypes (D), and the  parenchymal to vascular celltype (E).](05_figures/990_shared_figures/003_final_figures/000_sup_figures/angpt2.pdf){#fig-angpt2}
 
-## Cell-cell interactions between vascular and parenchymal cells are through specific signalling pathways
-
-With respect to cell-cell interactions beyond EndoMT, we observed less interaction between neuronal subtypes in AD, both in number and strength (@suppfig-cellchat A).
-Excitatory neurons strongly communicated with other neuronal subtypes in terms of the number of interactions and the strength of interactions in controls, and this was reduced in AD.
-There is also a decrease in the number of neuronal to vascular interactions in AD although the strength of interactions is not as clearly changed.
-More strikingly, there is a decrease in communication between vascular and parenchymal cell types in AD, particularly for EndoMT-2, M-pericytes and menengial-FB to Ex-Neuro-2/6 and In-Neuro-5.
-Conversely, there is more communication between vascular cell types in AD, particularly for pericyte-2 and several perivascular-FB subtypes.
-
-
 ## Alzheimer's Disease affects genes involved in protein folding and vascular remodeling
 
-We observed significant effects on vascular, beyond just EndoMT-1, and glial cells.
-Confining to the strongest gene expression changes (average log fold change LFC \> 1, adjusted p value \< 0.05), capillary and venous EC showed the most changes (@fig-degs A) and these were also among the top four cell types with differentially expressed genes (DEGs) without an LFC cut-off (@fig-degs B).
-Most cell types exhibit few significant DEGs, but a subset have many, including quiescent (Q) and activated (A) astrocytes and Endo-MT1.
+We observed significant effects on vascular cells, beyond just EndoMT-PC, and glial cells.
+Confining to the strongest gene expression changes (average log fold change (LFC) \> 1, adjusted P value \< 0.05), capillary and venous EC showed the most changes (@fig-degs A) and these were also among the top four cell types with differentially expressed genes (DEGs) without an LFC cut-off (@fig-degs B).
+Most cell types exhibit few significant DEGs, but a subset have many, including quiescent (Q) and activated (A) astrocytes and EndoMT-PC.
 
-We examined functional enrichment among the DEGs and in the gene set with LFC \> 1 (@fig-degs C), response to chemokine, erythrocyte differentiation and cytosolic calcium release were identified across astrocytes, neurons, microglia, endothelial, pericytes and SMCs.
-Of note, ANGPT2 was one genes contributing to the erythrocyte differentiation pathway summary.
-Similarly, CSF1 was also a gene in these pathways and has been reported to reduce volume and reduce cognitive decline in mice when knocked out[@dagher2015], whereas in humans, increased CSF1 expression has been correlated with plaque burden in post-mortem tissue[@walker2017].
-Function enrichment on the broader DEGs (@fig-degs D) showed endothelial migration terms across many of the vascular cell types – proposing changes in vascular remodelling in AD[@fisher2022].
+We examined GO term enrichment among the DEGs and in the gene set with LFC \> 1, and summarised the enriched GO biological process terms using REVIGO (@fig-degs C).
+Representative REVIGO clusters included reposnse to chemokine, erythrocyte differentiation and cytosolic calcium release were identified across astrocytes, neurons, microglia, endothelial, pericytes and SMCs.
+Of note, *ANGPT2* was one genes contributing to the erythrocyte differentiation GO cluster. 
+Similarly, *CSF1* was also a gene in this cluster and has been reported to reduce volume and reduce cognitive decline in mice when knocked out[@dagher2015], whereas in humans, increased CSF1 expression has been correlated with plaque burden in post-mortem tissue[@walker2017].
+Function enrichment on the broader DEGs (@fig-degs D), again summarised with REVIGO, showed endothelial migration terms across many of the vascular cell types, suggesting changes in vascular remodelling in AD[@fisher2022].
 However, the most consistent changes across cell types both with and without an LFC cut-off, were in genes involved in protein folding, which is expected given the central role of amyloid and tau protein aggregation in AD.
+
+With respect to cell-cell interactions beyond EndoMT, we observed less interaction between neuronal subtypes in AD, both in number and strength (@suppfig-cellchat A). 
+Excitatory neurons strongly communicated with other neuronal subtypes in terms of the numbers of interactions and the strength of interactions in controls, and this was reduced in AD. 
+There is also a decrease in the number of neuronal to vascular interactions in AD although the strength of interactions is not as clearly changed. 
+These findings are unsurprising for a neurodegenerative disorder. 
+More strikingly, there is a decrease in communication between vascular and parenchymal cell types in AD, particularly for EndoMT-SMC, M-pericytes and meningeal-FB to Ex-Neuro-2/6 and In-Neuro-5. 
+Conversely, there is more communication between vascular cell types in AD, particularly for pericyte-2 and several perivascular-FB subtypes. 
+Hence the cell-cell signaling analysis in our neurovascular dataset reveals the important effects of AD on vascular signaling.
 
 # Discussion
 
-In this study, by leveraging custom-designed 3D-printed tools and optimizing the isolation workflow we developed an efficient method for the simultaneous isolation of highly pure vascular nuclei and parenchymal nuclei from human post-mortem brain tissue.
-Comparisons with previous methods demonstrate markedly higher recovery of both neurons and brain endothelial nuclei, underscoring the utility of this protocol for comprehensive neurovascular unit (NVU) analysis.
-Our approach thereby offers new opportunities for understanding complex brain disorders such as Alzheimer's disease (AD), considering the contribution of all major cell types in brain cortical tissue.
-We thereby found enrichment of AD risk genes in vascular cells such as pericytes and perivascular fibroblasts.
-The identification of these specific cell types and the enrichment of amyloid-related processes underscore the complex interplay between various cellular components in the brain and AD pathology.
+We have undertaken comprehensive neurovascular unit (NVU) analysis of the human prefrontal cortex to better understand complex effects of Alzheimer's disease (AD) on brain cortical tissue.
+We found enrichment of AD risk genes in vascular cells such as pericytes and perivascular fibroblasts.
+The identification of these specific cell types and the enrichment of amyloid-related processes underscore the interplay between various cellular components in the brain and AD pathology.
 Activated microglia, pericytes, and perivascular fibroblasts may contribute to disease mechanisms through their roles in immune response, vascular integrity, and amyloid processing, respectively.
 The independence of these signals, as shown by conditional analysis, highlights the unique contributions of each cell type.
 
-Our isolation method has also revealed an interesting transitional cell-population, EndoMT.
-Furthermore, the trajectory analysis suggests that endothelial-to-mesenchymal transition processes may be perturbed in AD.
+We identify a transitional cell-population, EndoMT, present in control and AD donors with trajectory analysis supporting trans-differentiation of endothelial cells to either pericytes of vascular smooth muscle.
 A mesenchymal stem cell-like transition has been described for endothelium, particularly in the heart where they have been proposed to underlie cardiac fibrosis[@zeisberg2007] and may also differentiate into cardiac pericytes and vascular smooth muscle.
 In this transition, endothelial cells show degradation of their vascular basement membrane, loss of cell–cell contact, and acquire a migratory phenotype.
 There is also loss of expression of specific endothelial markers including VE-Cadherin and gain expression of mesenchymal markers including alpha smooth muscle actin (α-SMA)[@medici2010].
+
 Transforming growth factor-β1 has been identified as a key inducer of EndoMT and can promote smooth muscle-like differentiation in pericytes[@verbeek1994].
 We identified several transcription factors differentially expressed across pseudotime that distinctly between the two lineages and also between early and late-stage transitioning.
 EndoMT has also been reported to drive the formation of cerebral cavernous malformations[@maddaluno2013].
-However in our study, the EndoMT populations are abundant in control donor brain and are directed into either vascular smooth muscle or pericytes.
+However in our study, the EndoMT populations are abundant in control donor brain.
 Whilst this has been described in the developing heart, our study is the first to show this in adult brain.
 This may therefore represent an important physiological process to dynamically alter and renew mural cell composition in the brain.
+
 Further functional studies will be required to characterize the determinants of brain EndoMT.
-The reduction of EndoMT populations in AD implicates vascular plasticity as an under-explored disease vulnerability in AD.
-The loss of pericytes in the blood-brain barrier has previously been described in Alzheimer's disease[@winkler2014] and our data suggests this may be a consequence of both perturbed EndoMT differentiation and overall abundance.
+
+The substantial reduction of EndoMT populations in AD implicates vascular plasticity as an under-explored disease vulnerability in AD.
+The loss of pericytes in the blood-brain barrier has previously been described in Alzheimer's disease[@winkler2014] and our data suggests this may, at least in part, be a consequence of both perturbed EndoMT differentiation and overall abundance.
 The significant reduction in the EndoMT population in AD is presumably driven by endothelial cells failing to differentiate into them, though this requires further validation.
 Evaluating whether restoration of the EndoMT population in AD rescues vascular and BBB deficits would be of particular interest, and potentially relevant to other neurodegenerative conditions.
-The transcriptional changes observed along these lineages, including dysregulation of key genes such as BACE2 and APOD, reinforce the involvement of vascular transformations in AD-related neurodegeneration.
-BACE2 can cleave APP within the Aβ domain, potentially preventing Aβ42 generation and exhibiting neuroprotective properties[@yeap2022a].
+The transcriptional changes observed along these lineages, including dysregulation of key genes such as *BACE2* and *APOD*, reinforce the involvement of vascular transformations in AD-related neurodegeneration.
 
 Our data provides insights into cell-cell communication in the NVU.
 We observed a decrease in overall cell-cell communication between vascular and parenchymal cells in AD highlighting potential disruptions in NVU integrity that warrant further exploration.
-Furthermore we identified significant alterations in specific signalling pathways, particularly dysregulated ANGPT2 and ANGPT1, with opposing profiles that align with their established roles in vascular stability.
-These signalling dynamics provide a mechanistic basis for the observed vascular alterations in AD, suggesting that disruptions in endothelial signalling contribute to NVU dysfunction and subsequent neurodegeneration.
+Furthermore we identified significant alterations in specific signaling pathways, particularly dysregulated *ANGPT2* and *ANGPT1*, with opposing profiles that align with their established roles in vascular stability.
+This is consistent with out previous vascular atlas of AD where we also found increased expression of *ANGPT2* in AD[@tsartsalis2024].
+These signaling dynamics provide a mechanistic basis for the observed vascular alterations in AD, suggesting that disruptions in endothelial signaling contribute to NVU dysfunction and subsequent neurodegeneration.
 Elevated cerebrospinal fluid (CSF) ANGPT2 levels correlate with blood-brain barrier leakiness, tau pathology, and neuronal injury in early AD[@vanhulle2024].
 Plasma ANGPT2 levels are also higher in AD patients compared to controls[@qin2015].
+Out observations of both increased endothelial *ANGPT2* and decreased EndoMT-transitioning propose a fundamental alteration in vascular remodelling within AD, perhaps driven by the vascular inflammation observed[@scholz_angiopoietin-2_2015].
+Under this hypothesis, endothelial cells are destabilized by ANGPT2 but subsequent transitioning to mural cells appears retarded resulting in loss of blood-brain barrier integrity.
 
-In conclusion, our novel protocol enables the simultaneous, high-quality isolation of vascular and parenchymal nuclei, facilitating a detailed characterization of the NVU in health and disease.
-This approach has revealed previously unappreciated vascular contributions to AD, particularly through novel cellular and molecular insights into EndoMT and its dysregulation.
+In conclusion, our data represent a detailed characterization of the NVU in health and disease.
+This has revealed previously unappreciated vascular contributions to AD, particularly through novel cellular and molecular insights into EndoMT and its dysregulation.
 These findings underscore the importance of vascular plasticity in brain health and highlight the NVU as a promising target for therapeutic strategies in neurodegenerative diseases.
-Future studies leveraging this method may yield further insights into the complex interplay of cell types within the human brain.
+Future studies in the role of EndoMT in pathology may yield further insights into the complex interplay of cell types within the human brain.
 
 ```{r}
 #| label: get celltype label abbreviations
@@ -460,7 +472,7 @@ We also thank Robert Hedley and Vasiliki Tsioligka for providing technical assis
 
 ## Author contributions
 
-Author roles were classified using the Contributor Role Taxonomy (CRediT; https://credit.niso.org/) as follows: Gabriel Mateus Bernardo Harrington: formal analysis, software, writing – original draft, writing – review & editing, visualization, data curation, conceptualization; Hannah Sleven: \[Left for HS to fill in\]; Jimena Monzón-Sandoval: writing – review & editing, software, visualization, conceptualization, supervision; Gabriel Rocha: method, investigation; Lara Robinson: method, investigation, writing – original draft; Michal Rokicki: investigation; Joanne Morgan: investigation; Ngoc-Nga Vinh: investigation; Quenten Schwarz: investigation; Caleb Webber: writing – original draft, writing – review & editing, project administration, supervision, conceptualization, funding acquisition; Zameel Cader: writing – original draft, writing – review & editing, project administration, supervision, conceptualization, funding acquisition
+Author roles were classified using the Contributor Role Taxonomy (CRediT; https://credit.niso.org/) as follows: Gabriel Mateus Bernardo Harrington: formal analysis, software, writing – original draft, writing – review & editing, visualization, data curation, conceptualization; Jimena Monzón-Sandoval: writing – review & editing, software, visualization, conceptualization, supervision; Gabriel Rocha: method, investigation; Lara Robinson: method, investigation, writing – original draft; Michal Rokicki: investigation; Joanne Morgan: investigation; Ngoc-Nga Vinh: investigation; Quenten Schwarz: investigation; Caleb Webber: writing – original draft, writing – review & editing, project administration, supervision, conceptualization, funding acquisition; Zameel Cader: writing – original draft, writing – review & editing, project administration, supervision, conceptualization, funding acquisition
 
 ## Declaration of interests
 
@@ -478,9 +490,6 @@ Caleb Webber has received research funding in unrelated projects from GSK and El
 Link to info on this here: <https://www.cell.com/star-authors-guide>
 
 And a pdf guide [here](https://www.cell.com/pb-assets/journals/research/cell/methods/Methods_Guide_Cell-1678470557763.pdf)
-
--   Plan to make the code available on GitHub and make a docker image with the R environment for all the downstream processing - The seurat object from scflow could be included in this image - This could go on ADDI as well?
--   Raw data will go on GEO I guess
 
 ## Key resoures table
 
@@ -507,7 +516,7 @@ No unique reagents were generated for this study.
 
 ### Data and code availability
 
--   All raw data are available in the GEO database under the accession number GEO:
+-   All raw data are available in the GEO database under the accession numbers GEO: GSE310554 & GSE222007
 -   The Seurat object generated from the scFlow pipeline is included in the Docker image with the R environment used for analysis here:
 -   All original code has been deposited at Zenodo and is publicly available as of the date of publication. DOIs are listed in the key resources table.
 
@@ -530,29 +539,7 @@ Sex and age were included as a covariates in pseudobulk differential gene expres
 
 ## Method details
 
-### Sample prep/neurovascular unit isolation
-
-Post-mortem fresh-frozen prefrontal cortex was obtained from the Oxford Brain Bank, and blood and meninges dissected from the surface on dry ice using a scalpel.
-The 3D printed tissue smashing apparatus are removed from the Ultralow Temperature Freezer and assembled on dry ice, and the tissue block minced until resembling a fine pink powder.
-The minced tissue is then transferred into a 50ml tube on ice, containing 4ml ice-cold Buffer A (1X PBS with 1.87 mM KCl, 0.72 mM CaCl$_2$, 0.0125 g Glucose) and defrosted for 15 minutes.
-The tissue is homogenised for 60 strokes with the 3D printed homogeniser, topped up with 10ml Buffer A and spun in a swinging bucket microcentrifuge at 500 rpm for 1 minute.
-After removing and retaining 10ml supernatant in a tube labelled '500 rpm', these homogenisation steps are repeated twice more, finally topping up with 20 ml Buffer A and spinning down along with the '500 rpm' tube at 500 rpm for 3 minutes.
-Supernatants are removed and retained - the '500 rpm' into a '1200 rpm' tube, and homogenisation tube in a 'dounce' tube - and the pellets resuspended in 4ml Buffer A. Samples are then further homogenised using a 7ml dounce (Wheaton, 357424) and loose pestle for 50 strokes on ice.
-The solution can be added to the retained supernatant from the original homogenisation tube and spun at 1200 rpm for three minutes.
-3ml supernatant from the '1200 rpm' tube can be put to one side, as this will form the parenchymal fraction.
-
-Purification of the vascular fraction begins with two multi-layer dextran gradient centrifugation steps to trap contaminants whilst allowing vascular transfer.
-Pellets from the previous 1200rpm centrifugation step are resuspended in 5.4% Dextran (VWR, A1847.0500) and layered on top of a gradient constituted of 20ml 16% and 10ml 12% Dextran solutions, before spinning at 2600 xg for 6 minutes.
-After centrifugation, myelin and debris remains in the top two thirds of the volume, and a vessel suspension resides at the base of the tube.
-All of the myelin-contaminated volume is removed to around the 10ml mark on the Falcon tube, tips changed, and pellet resuspended in an equal volume of 0.5% BSA-supplemented buffer (Merck, AM2616), before underlaying 20ml 20% Dextran with a clean pipette.
-After the remaining samples are processed, all are spun down at 4200xg for 2 minutes, and the supernatant removed.
-The resulting vessel suspension is then filtered through a 100um nylon filter to remove unwanted larger vessels and pelleted at 800xg for 8 minutes.
-Subsequent vessel capture on 40um PET filters allows depletion of residual contaminating particles, before inverting the filters and washing through captured vessels, again centrifuging at 800xg for 8 minutes.
-Purified vessels are then transferred onto 20um PET filters and washed before collagenase II (Stemcell Technologies, 07418) digestion of the basement membrane of the vasculature.
-After the enzyme and released final debris are removed with a further wash step, the 20um filter is placed into the 3D printed funnel assembly and a hand-held homogeniser is used with a 3D printed flat base pestle to grind the nuclei out of the vessels (@fig-method C).
-Nuclei after staining with DAPI are isolated using FACS.
-The parenchymal supernatant extracted previously is processed to nuclei using standard protocols and similarly FACS isolated.
-Extracted and isolated nuclei can then be used with the single-nuclei RNA-seq platform of choice (here 10x Genomics) for transcriptomic analysis.
+Data was generated and obtained via the IM2PACT consortium (https://im2pact.org)[https://im2pact.org] following the protocol described in Tsartsalis et al.2024[@tsartsalis2024].
 
 ## Endo-MT FACS Analysis
 
@@ -626,10 +613,10 @@ We adjusted the p-values using the Benjamini-Hochberg method to account for mult
 
 ### Cell-cell communication
 
-To investigate cell-cell communication we employed `CellChat` (version 2.1.2).[@CellChat] A `CellChat` object was created for cases and controls separately using the "Secreted Signalling" ligand-receptor interaction database.
+To investigate cell-cell communication we employed `CellChat` (version 2.1.2).[@CellChat] A `CellChat` object was created for cases and controls separately using the "Secreted Signaling" ligand-receptor interaction database.
 A standard `CellChat` was then followed to identify over expressed genes/ligands and contrast these in cases and controls.
 
-### Protein-protein interaction networks
+### Protein-protein interaction networks {#sec-method-ppi}
 
 We created a combined protein-protein interaction network by combining the following resources: APID[@Alonso-López2019], BIOGRID[@Oughtred2021], BIOPLEX[@Huttlin2021], CORUM[@Tsitsiridis2023], HITPREDICT[@López2015], HuRi[@Luck2020], INTACT[@Orchard2014], MINT[@Licata2012], REACTOME[@Gillespie2022] and only protein physical links from STRING[@Szklarczyk2023].
 All datasets were mapped to Ensembl Gene ID from either Entrez, Uniprot or Ensembl Protein IDs using org.Hs.eg.db.
