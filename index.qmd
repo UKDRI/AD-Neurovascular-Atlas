@@ -634,42 +634,56 @@ The counts matrix was filtered to these cells and genes expressed in fewer than 
 
 # Supplemental information titles and legends
 
-::: {#suppfig-level1-markers fig-cap="Dotplot of markers for higher level celltypes"}
+::: {#suppfig-level1-markers}
 ![](05_figures/990_shared_figures/003_final_figures/000_sup_figures/level1_dotplot.pdf)
+
+Dotplot of markers for higher level celltypes
 :::
 
 ::: {#suppfig-risk-level1}
 ![](05_figures/990_shared_figures/003_final_figures/000_sup_figures/supp_fig_1_magma_risk.pdf)
 
-A heatmap denoting cell type-specific risk enrichment via MAGMA with "*" denoting nominal significance (P \< 0.05), "**" significance after Bonferroni adjustment (P \< 0.05) and "***" a higher degree of adjusted significance again (P \< 0.01).
+A heatmap denoting cell type-specific risk enrichment via MAGMA with "\*" denoting nominal significance (P \< 0.05), "\*\*" significance after Bonferroni adjustment (P \< 0.05) and "\*\*\*" a higher degree of adjusted significance again (P \< 0.01).
 :::
 
-::: {#suppfig-endomt-paper-markers fig-cap="Expression of EndoMT markers reported in the literature in the higher level celltypes."}
+::: {#suppfig-endomt-paper-markers}
 ![](05_figures/990_shared_figures/003_final_figures/000_sup_figures/supp_fig_2_endmt_markers.pdf)
+
+Expression of EndoMT markers reported in the literature in the higher level celltypes.
 :::
 
-::: {#suppfig-vascular-population-correlations fig-cap="Correlations between higher level celltypes per donor amoungst the vascular celltypes."}
+::: {#suppfig-vascular-population-correlations}
 ![](05_figures/990_shared_figures/003_final_figures/000_sup_figures/donor-celltype-proportion-corrlations-level1.pdf)
+
+Correlations between higher level celltypes per donor amoungst the vascular celltypes.
 :::
 
-::: {#suppfig-parenchymal-prop-diff fig-cap="Proportional differences in AD via scProportionTest in the parenchymal fraction."}
+::: {#suppfig-parenchymal-prop-diff}
 ![](05_figures/990_shared_figures/003_final_figures/000_sup_figures/parenchymal_prop_scprop.pdf)
+
+Proportional differences in AD via scProportionTest in the parenchymal fraction.
 :::
 
-::: {#suppfig-endomt-pca fig-cap="PCA of endothelial/EndoMT/Pericyte/SMC cells faceted by case and sex, colored by pseudotime."}
+::: {#suppfig-endomt-pca}
 ![](05_figures/990_shared_figures/004_pseudotime/slingshot_pca_diagnosis-sex.pdf)
+
+PCA of endothelial/EndoMT/Pericyte/SMC cells faceted by case and sex, colored by pseudotime.
 :::
 
 ::: {#suppfig-endomt-tfs fig-cap="Log expression plots of transcription factors showing early pseudotime divergence across lineages for each condition and lineage respectively."}
 ![](05_figures/990_shared_figures/003_final_figures/000_sup_figures/endomt-lineage-transcription-factors.pdf)
 :::
 
-::: {#suppfig-cellchat fig-cap="Cell-cell interactions via CellChat. (A) Heatmaps showing the differential number and strength of interactions of cell types between AD and controls. Red colours denote a decrease in AD whereas blue colours denote an increase. (B) A barplot showing the mean probability of significant ligand-receptor pairs across the vascular/parenchymal cell types that show differential interactions in A. Split into L-R pairs where the parenchymal cell types are the source of the ligand with the vasculature receiving and vice versa."}
+::: {#suppfig-cellchat}
 ![](05_figures/990_shared_figures/003_final_figures/figure_cellchat.pdf)
+
+Cell-cell interactions via CellChat. (A) Heatmaps showing the differential number and strength of interactions of cell types between AD and controls. Red colours denote a decrease in AD whereas blue colours denote an increase. (B) A barplot showing the mean probability of significant ligand-receptor pairs across the vascular/parenchymal cell types that show differential interactions in A. Split into L-R pairs where the parenchymal cell types are the source of the ligand with the vasculature receiving and vice versa.
 :::
 
-::: {#suppfig-adriskpseudotime fig-cap="Log expression plots of BACE2 and APOD for each condition and lineage respectively. APOD has higher expression across later pseudotime for controls in the EndoMT-PC lineage, but no difference for cases, whereas BACE2 has higher expression in cases for both lineages in the earlier pseudotime."}
+::: {#suppfig-adriskpseudotime}
 ![](05_figures/990_shared_figures/003_final_figures/000_sup_figures/ad_risk_pseudotime.pdf)
+
+Log expression plots of BACE2 and APOD for each condition and lineage respectively. APOD has higher expression across later pseudotime for controls in the EndoMT-PC lineage, but no difference for cases, whereas BACE2 has higher expression in cases for both lineages in the earlier pseudotime.
 :::
 
 ```{r}
