@@ -1,0 +1,640 @@
+---
+title: TFLink checks
+execute:
+  eval: true
+code-fold: true
+---
+
+Interest in FOXP2, let's check which TFs have it as a target.
+
+```{r}
+source(here::here(
+  "04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"
+))
+library(slingshot)
+```
+
+```{r}
+tf_link_table <- readr::read_tsv(here(
+  "03_data/991_external_data/TFLink_Homo_sapiens_interactions_All_simpleFormat_v1.0.tsv"
+)) #|>
+head(tf_link_table)
+```
+
+
+```{r}
+# filter to FOXP2
+foxp2 <- tf_link_table |>
+  dplyr::filter(Name.Target == "FOXP2")
+
+unique(foxp2$Name.TF) |> length()
+
+readr::write_csv(
+  foxp2,
+  here(
+    "03_data/990_processed_data/008_pseudotime",
+    "foxp2_tflink_regulators.csv"
+  )
+)
+
+foxp2_targets <- tf_link_table |>
+  dplyr::filter(Name.TF == "FOXP2")
+readr::write_csv(
+  foxp2_targets,
+  here(
+    "03_data/990_processed_data/008_pseudotime",
+    "foxp2_tflink_targets.csv"
+  )
+)
+```
+
+Check the TFs in the switchDE results
+
+```{r}
+file <- here::here(
+  "03_data/990_processed_data/008_pseudotime",
+  "pericyte_switchde_results.qs"
+)
+switchde <- qs::qread(file)
+
+foxp2_switchde <- switchde |>
+  dplyr::filter(hgnc_symbol %in% unique(foxp2$Name.TF)) |>
+  dplyr::filter(pval == 0) |>
+  dplyr::arrange(desc(abs(k)))
+
+readr::write_csv(
+  foxp2_switchde,
+  here(
+    "03_data/990_processed_data/008_pseudotime",
+    "foxp2_tflink_regulators_switchde_subset.csv"
+  )
+)
+
+# Check overlap with switchde and foxp2 targets
+foxp2_targets_switchde <- switchde |>
+  dplyr::filter(hgnc_symbol %in% unique(foxp2_targets$Name.Target)) |>
+  dplyr::filter(pval == 0) |>
+  dplyr::arrange(desc(abs(k)))
+```
+
+```{r}
+library(tradeSeq)
+sce_subset <- qs::qread(here(
+  "03_data/990_processed_data/008_pseudotime",
+  "slingshot_tradeseq_3k_case_and_control.qs"
+))
+sce_slingshot <- qs::qread(here(
+  "03_data/990_processed_data/008_pseudotime",
+  "slingshot_obj.qs"
+))
+tar_load(translated_id)
+```
+
+```{r}
+# make a compound column with endomt subtypes and level 1 for others
+sce_slingshot$celltype <- if_else(
+  sce_slingshot$highlevel_manual_annotations == "EndoMT",
+  sce_slingshot$subcelltype_annotations,
+  sce_slingshot$highlevel_manual_annotations
+) |>
+  str_replace("_", "-")
+```
+
+# Tradeseq 
+
+```{r}
+# Check the knot 4 to 5 genes for TFs
+early_de <- earlyDETest(sce_subset, knots = c(4, 5))
+head(early_de)
+
+early_de_tfs <- early_de |>
+  rownames_to_column("ensembl_gene_id") |>
+  dplyr::left_join(translated_id, by = "ensembl_gene_id") |>
+  dplyr::mutate(
+    is_tf = if_else(hgnc_symbol %in% tf_link_table$Name.TF, "tf", "not_tf")
+  ) |>
+  dplyr::filter(is_tf == "tf") |>
+  dplyr::arrange(desc(waldStat)) |>
+  dplyr::distinct(hgnc_symbol, .keep_all = TRUE)
+
+head(early_de_tfs)
+dim(early_de_tfs)
+
+# Check overlap with FOXP2 targets
+tradeseq_foxp2_targets <- early_de_tfs |>
+  dplyr::filter(hgnc_symbol %in% foxp2_targets$Name.Target) |>
+  # Could also filter by switchde overlap
+  dplyr::filter(hgnc_symbol %in% foxp2_targets_switchde$hgnc_symbol) |>
+  as_tibble()
+
+# Get stats for the all genes overall across all lineages and conditions
+plot_gene_pseudotime <- function(gene, gene_symbol, waldstat, sce, counts) {
+  plot <- plotSmoothers(sce, counts, gene, curvesCols = pal_npg("nrc")(4)) +
+    scale_colour_npg(
+      labels = c(
+        "EndoMT-SMC - AD",
+        "EndoMT-SMC - Control",
+        "EndoMT-PC - AD",
+        "EndoMT-PC - Control"
+      )
+    ) +
+    ggtitle(if_else(
+      gene_symbol == "",
+      gene,
+      paste0(gene_symbol, " - Waldstat: ", waldstat)
+    )) +
+    labs(colour = "Lineage") +
+    theme(legend.position = "none")
+  return(plot)
+}
+counts <- assays(sce_subset)$counts
+
+args <- list(
+  gene = early_de_tfs$ensembl_gene_id[1:30],
+  gene_symbol = early_de_tfs$hgnc_symbol[1:30],
+  waldstat = round(early_de_tfs$waldStat[1:30], 2)
+)
+plot_progenitors <- pmap(args, plot_gene_pseudotime, sce_subset, counts)
+
+plot_progenitors[[5]] <- plot_progenitors[[5]] +
+  theme(legend.position = "right")
+
+
+plot <- plot_grid(plotlist = plot_progenitors, ncol = 5)
+plot
+
+# Save 4 plots per page (2 rows x 2 columns)
+pdf(
+  here(
+    "05_figures/990_shared_figures/004_pseudotime/01_tradeseq",
+    "differential-genes_knots4-5_tfs.pdf"
+  ),
+  width = 10,
+  height = 8
+)
+marrangeGrob(grobs = plot_progenitors, nrow = 2, ncol = 3)
+dev.off()
+```
+
+```{r}
+args <- list(
+  gene = tradeseq_foxp2_targets$ensembl_gene_id[1:50],
+  gene_symbol = tradeseq_foxp2_targets$hgnc_symbol[1:50],
+  waldstat = round(tradeseq_foxp2_targets$waldStat[1:50], 2)
+)
+plot_progenitors <- pmap(args, plot_gene_pseudotime, sce_subset, counts)
+
+plot_progenitors[[5]] <- plot_progenitors[[5]] +
+  theme(legend.position = "right")
+
+# Save 4 plots per page (2 rows x 2 columns)
+pdf(
+  here(
+    "05_figures/990_shared_figures/004_pseudotime/01_tradeseq",
+    "differential-genes_knots4-5_tfs-foxp2_targets_switchde_overlap.pdf"
+  ),
+  width = 10,
+  height = 8
+)
+marrangeGrob(grobs = plot_progenitors, nrow = 2, ncol = 3)
+dev.off()
+```
+
+```{r}
+
+args <- list(
+  gene = early_de_tfs$ensembl_gene_id[1:100],
+  gene_symbol = early_de_tfs$hgnc_symbol[1:100],
+  waldstat = round(early_de_tfs$waldStat[1:100], 2)
+)
+plot_progenitors <- pmap(args, plot_gene_pseudotime, sce_subset, counts)
+
+plot_progenitors[[5]] <- plot_progenitors[[5]] +
+  theme(legend.position = "right")
+
+pdf(
+  here(
+    "05_figures/990_shared_figures/004_pseudotime/01_tradeseq",
+    "differential-genes_knots4-5_tfs_top100.pdf"
+  ),
+  width = 10,
+  height = 8
+)
+marrangeGrob(grobs = plot_progenitors, nrow = 2, ncol = 3)
+dev.off()
+```
+
+```{r}
+# Define genes of interest
+genes_of_interest <- c("FOXP2", head(foxp2_switchde$hgnc_symbol))
+genes_of_interest <- c(genes_of_interest, "ANGPT2", "BCL6", "FOXP2", "MECOM")
+genes <- translated_id |>
+  dplyr::filter(hgnc_symbol %in% genes_of_interest)
+
+sce_tradeseq_fit <- sce_subset # The output from fitGAM
+sce_original_data <- sce_slingshot # The larger SCE with logcounts and metadata
+
+diagnosis_column <- "diagnosis" # Replace with the actual column name for Case/Control status
+apoe_status_column <- "apoe_status" # Replace with the actual column name for APOE status
+celltype <- "celltype"
+
+# --- Get the list of cells used in the tradeSeq fit ---
+cells_in_fit <- colnames(sce_tradeseq_fit)
+if (length(cells_in_fit) == 0) {
+  stop("Could not retrieve cell names from sce_tradeseq_fit.")
+}
+
+# pseudotime_column <- c("crv.pseudotime.Lineage1")
+
+# Define the genes to plot (must be present in rownames(sce_original_data))
+genes_to_plot <- genes$ensembl_gene_id
+
+# Specify the assay slot in sce_original_data containing normalized data
+norm_assay_name <- "logcounts"
+
+# --- Extract Data Components ---
+
+# 1. Cell Metadata (from sce_original_data)
+sce_orig_coldata <- data.frame(
+  diagnosis = sce_original_data$diagnosis,
+  apoe_status = sce_original_data$apoe_status,
+  CellID = colnames(sce_original_data),
+  celltype = sce_original_data$celltype
+)
+
+# Check needed metadata columns exist
+required_meta_cols <- c(diagnosis_column, apoe_status_column, "celltype")
+missing_meta_cols <- required_meta_cols[
+  !required_meta_cols %in% names(sce_orig_coldata)
+]
+if (length(missing_meta_cols) > 0) {
+  stop(paste(
+    "Metadata columns not found in colData(sce_original_data):",
+    paste(missing_meta_cols, collapse = ", ")
+  ))
+}
+
+# Subset metadata for the cells present in the tradeSeq fit
+cell_meta <- sce_orig_coldata |>
+  filter(CellID %in% cells_in_fit) |>
+  select(CellID, all_of(required_meta_cols))
+
+# Rename columns to standard names used later in the script
+cell_meta <- cell_meta |>
+  rename(
+    diagnosis = all_of(diagnosis_column),
+    apoe_status = all_of(apoe_status_column)
+  )
+
+# Add APOE4 Dose column
+cell_meta <- cell_meta |>
+  mutate(
+    APOE4_Dose = case_when(
+      apoe_status %in% c("2/3", "3/3") ~ 0,
+      apoe_status %in% c("2/4", "3/4") ~ 1,
+      apoe_status %in% c("4/4") ~ 2,
+      TRUE ~ NA_integer_ # Handle unexpected/missing values
+    ),
+    # Convert to factor for discrete colors/shapes in ggplot
+    APOE4_Dose = factor(APOE4_Dose, levels = c(0, 1, 2))
+  )
+
+# 3. Normalized Expression Data (from sce_original_data)
+if (!norm_assay_name %in% assayNames(sce_original_data)) {
+  stop(paste(
+    "Assay",
+    norm_assay_name,
+    "not found in sce_original_data. Available assays:",
+    paste(assayNames(sce_original_data), collapse = ", ")
+  ))
+}
+norm_expr_full <- assay(sce_original_data, norm_assay_name)
+
+# Filter for genes of interest (and check they exist in the original SCE)
+genes_exist <- genes_to_plot %in% rownames(norm_expr_full)
+if (!all(genes_exist)) {
+  warning(
+    "The following genes were not found in rownames(sce_original_data): ",
+    paste(genes_to_plot[!genes_exist], collapse = ", ")
+  )
+}
+genes_to_plot <- genes_to_plot[genes_exist]
+if (length(genes_to_plot) == 0) {
+  stop("None of the specified genes were found in the expression data.")
+}
+
+# Subset expression for the genes AND the cells used in the fit
+norm_expr_subset <- norm_expr_full[genes_to_plot, cells_in_fit, drop = FALSE]
+
+# 1. Pseudotime (from sce_tradeseq_fit)
+sce_fit_coldata <- as.data.frame(colData(sce_tradeseq_fit)) |>
+  rownames_to_column("CellID")
+
+# Get pseudotime
+pseudotime_df <- sce_fit_coldata |>
+  dplyr::select(CellID, crv.pseudotime.Lineage1, crv.pseudotime.Lineage2) |>
+  dplyr::filter(CellID %in% cells_in_fit) |>
+  pivot_longer(!CellID, names_to = "lineage", values_to = "Pseudotime")
+
+
+head(pseudotime_df)
+pseudotime_df |>
+  dplyr::filter(CellID == "V06_TGATGGTGTGTCACAT-1")
+
+# --- Combine all data for plotting ---
+
+# Convert expression matrix to long format
+expr_long <- as.matrix(norm_expr_subset) |> # Ensure it's a base matrix
+  t() |> # Transpose: cells x genes
+  as.data.frame() %>%
+  mutate(CellID = rownames(.)) |>
+  pivot_longer(
+    cols = -CellID,
+    names_to = "Gene",
+    values_to = "Expression"
+  ) |>
+  # Ensure Gene is factor in desired order
+  mutate(Gene = factor(Gene, levels = genes_to_plot))
+
+# Merge expression with metadata and pseudotime
+# Make sure CellIDs match between all sources
+plot_data <- expr_long |>
+  inner_join(
+    cell_meta |>
+      dplyr::select(
+        CellID,
+        diagnosis,
+        apoe_status,
+        APOE4_Dose,
+        celltype
+      ),
+    by = "CellID"
+  ) |>
+  inner_join(
+    pseudotime_df |> dplyr::select(CellID, Pseudotime, lineage),
+    by = "CellID"
+  ) |>
+  dplyr::filter(!is.na(Pseudotime) & !is.na(APOE4_Dose) & !is.na(diagnosis)) |> # Ensure no missing values
+  dplyr::left_join(genes, by = join_by(Gene == ensembl_gene_id))
+
+# Check counts per group (useful for interpreting plots!)
+print("Data counts per group for plotting:")
+print(
+  plot_data |>
+    dplyr::distinct(CellID, diagnosis, APOE4_Dose) |> # Count unique cells
+    dplyr::count(diagnosis, APOE4_Dose)
+)
+
+# --- Create the Plots (Code identical to previous example) ---
+
+# Define colors (adjust as needed)
+apoe_colors <- c("0" = "blue", "1" = "orange", "2" = "red")
+pseudotime_column <- "crv.pseudotime.Lineage1"
+
+# Create the plot using geom_smooth
+p <- plot_data |>
+  dplyr::filter(lineage == "crv.pseudotime.Lineage1") |>
+  ggplot(aes(x = Pseudotime, y = Expression, color = APOE4_Dose)) +
+  geom_smooth(
+    method = "gam",
+    formula = y ~ s(x, bs = "cs"),
+    se = FALSE,
+    linewidth = 0.8
+  ) +
+  facet_grid(hgnc_symbol ~ diagnosis, scales = "free_y") +
+  scale_color_manual(values = apoe_colors, name = "APOE4 Dose") +
+  labs(
+    title = paste("Gene Expression along", pseudotime_column),
+    x = "Pseudotime",
+    y = paste("Normalized Expression (", norm_assay_name, ")", sep = "")
+  ) +
+  theme_bw() +
+  theme(
+    strip.text.y = element_text(angle = 0, hjust = 0),
+    strip.background = element_rect(fill = "grey90"),
+    legend.position = "bottom",
+    plot.title = element_text(hjust = 0.5)
+  )
+
+# --- Display the Plot ---
+print(p)
+
+# --- (Optional) Save the Plot ---
+file <- here(
+  "05_figures/990_shared_figures/004_pseudotime/01_tradeseq/",
+  "apoe4_dose_expression_foxp2-regs.pdf"
+)
+ggsave(filename = file, plot = p, width = 8, height = 2 * length(genes_to_plot))
+```
+
+```{r}
+# Check counts per group (useful for interpreting plots!)
+print("Data counts per group for plotting:")
+print(
+  plot_data |>
+    dplyr::distinct(CellID, diagnosis, APOE4_Dose, celltype) |>
+    dplyr::count(diagnosis, APOE4_Dose, celltype)
+)
+
+
+p <- plot_data |>
+  # dplyr::filter(celltype %in% c("Pericyte", "SMC")) |>
+  dplyr::filter(diagnosis == "Control" & Expression != 0) |>
+  dplyr::filter(hgnc_symbol %in% c("ANGPT2", "BCL6", "FOXP2", "MECOM")) |>
+  ggplot(aes(x = Pseudotime, y = Expression, color = celltype)) +
+  geom_point(size = 0.1, alpha = 0.5) +
+  geom_smooth(
+    method = "gam",
+    formula = y ~ s(x, bs = "cs"),
+    se = FALSE,
+    linewidth = 0.8
+  ) +
+  facet_grid(hgnc_symbol ~ lineage, scales = "free_y") +
+  # scale_color_manual(values = apoe_colors, name = "APOE4 Dose") +
+  labs(
+    title = paste("Gene Expression along both lineages"),
+    x = "Pseudotime",
+    y <- paste("Normalized Expression (", norm_assay_name, ")", sep = "")
+  ) +
+  theme_bw() +
+  theme(
+    strip.text.y = element_text(angle = 0, hjust = 0),
+    strip.background = element_rect(fill = "grey90"),
+    legend.position = "bottom",
+    plot.title = element_text(hjust = 0.5)
+  )
+
+# --- Display the Plot ---
+print(p)
+
+# --- (Optional) Save the Plot ---
+file <- here(
+  "05_figures/990_shared_figures/004_pseudotime/01_tradeseq/",
+  "tradeseq-expression_genes-of-interest_controls.pdf"
+)
+ggsave(filename = file, plot = p, width = 8, height = 1 * length(genes_to_plot))
+```
+
+# Scenic results check
+
+```{r}
+# Get seurat object
+tar_load(sce)
+tar_load(gene_ids)
+
+assertthat::assert_that(
+  sum(rownames(sce@assays$RNA@counts) == gene_ids$ensembl) == nrow(gene_ids)
+)
+```
+
+```{r}
+# read scenic results
+scenic <- read.csv(here(
+  "03_data/990_processed_data/008_pseudotime/02_scenic_results/auc_mtx.csv"
+))
+scenic[1:3, 1:4]
+dim(scenic)
+
+# add metadata
+meta <- sce@meta.data |>
+  rownames_to_column("Cell")
+
+# check apoe distribution
+meta |>
+  dplyr::distinct(donor, .keep_all = TRUE) |>
+  dplyr::count(diagnosis, apoe_status)
+
+
+res <- scenic |>
+  dplyr::left_join(meta, by = "Cell")
+
+auc <- scenic |>
+  column_to_rownames("Cell") |>
+  as.matrix()
+auc[1:3, 1:4]
+regulons <- colnames(auc)
+assertthat::assert_that(all(rownames(auc) == res$Cell))
+```
+
+```{r}
+meta_min <- meta |>
+  dplyr::select(Cell, subcelltype_annotations, diagnosis)
+
+auc_df <- auc |>
+  as.data.frame() |>
+  rownames_to_column("Cell") |>
+  left_join(meta_min, by = "Cell")
+
+# Pivot into long format
+auc_long <- res |>
+  pivot_longer(
+    cols = all_of(colnames(auc)),
+    names_to = "Regulon",
+    values_to = "AUC"
+  )
+
+# Average AUC per regulon per cell type in controls
+mean_auc <- auc_long |>
+  dplyr::filter(diagnosis == "Control") |>
+  group_by(subcelltype_annotations, Regulon) |>
+  summarise(mean_AUC = mean(AUC), .groups = "drop")
+```
+
+```{r}
+mean_auc_diag <- auc_long |>
+  dplyr::mutate(diagnosis = if_else(diagnosis == "Case", "AD", diagnosis)) |>
+  group_by(subcelltype_annotations, diagnosis, Regulon) |>
+  summarise(mean_AUC = mean(AUC), .groups = "drop")
+
+auc_heatmap <- mean_auc_diag |>
+  dplyr::mutate(gene = sub("\\.*$", "", Regulon)) |>
+  dplyr::filter(gene %in% foxp2_switchde$hgnc_symbol) |>
+  pivot_wider(
+    names_from = c(subcelltype_annotations, diagnosis),
+    values_from = mean_AUC
+  )
+
+heatmap_mat <- as.data.frame(auc_heatmap)
+rownames(heatmap_mat) <- heatmap_mat$Regulon
+heatmap_mat <- heatmap_mat[, -1:-2] # drop Regulon column
+heatmap_mat <- as.matrix(heatmap_mat)
+
+heatmap_mat[is.na(heatmap_mat)] <- 0
+
+
+pheatmap(
+  heatmap_mat,
+  # scale = "row",
+  clustering_method = "ward.D2",
+  cluster_rows = TRUE,
+  cluster_cols = TRUE,
+  border_color = NA,
+  fontsize_row = 8
+)
+
+
+pdf(
+  here(
+    "05_figures/990_shared_figures/004_pseudotime/02_scenic/foxp2_switchde_regs.pdf"
+  ),
+  width = 7,
+  height = 10
+)
+pheatmap(
+  heatmap_mat,
+  clustering_method = "ward.D2",
+  cluster_rows = TRUE,
+  cluster_cols = TRUE,
+  border_color = NA,
+  fontsize_row = 8
+)
+dev.off()
+```
+
+```{r}
+# Define genes of interest
+genes_of_interest <- c("ANGPT2", "BCL6", "FOXP2", "MECOM")
+genes <- translated_id |>
+  dplyr::filter(hgnc_symbol %in% genes_of_interest)
+
+# --- Create the Plots (Code identical to previous example) ---
+
+# Define colors (adjust as needed)
+apoe_colors <- c("0" = "blue", "1" = "orange", "2" = "red")
+
+# Create the plot using geom_smooth
+p <- plot_data |>
+  dplyr::filter(celltype %in% c("Pericyte", "SMC")) |>
+  ggplot(aes(x = Pseudotime, y = Expression, color = celltype)) +
+  geom_smooth(
+    method = "gam",
+    formula = y ~ s(x, bs = "cs"),
+    se = FALSE,
+    linewidth = 0.8
+  ) +
+  facet_grid(hgnc_symbol ~ diagnosis, scales = "free_y") +
+  # scale_color_manual(values = apoe_colors, name = "APOE4 Dose") +
+  labs(
+    title = paste("Gene Expression along", pseudotime_column),
+    x = "Pseudotime",
+    y = paste("Normalized Expression (", norm_assay_name, ")", sep = "")
+  ) +
+  theme_bw() +
+  theme(
+    strip.text.y = element_text(angle = 0, hjust = 0),
+    strip.background = element_rect(fill = "grey90"),
+    legend.position = "bottom",
+    plot.title = element_text(hjust = 0.5)
+  )
+
+# --- Display the Plot ---
+print(p)
+
+# --- (Optional) Save the Plot ---
+file <- here(
+  "05_figures/990_shared_figures/004_pseudotime/01_tradeseq/",
+  "apoe4_dose_expression.pdf"
+)
+ggsave(filename = file, plot = p, width = 8, height = 3 * length(genes_to_plot))
+```
+
