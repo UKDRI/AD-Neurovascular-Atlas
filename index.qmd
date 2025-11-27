@@ -301,25 +301,25 @@ Lineage 1 encompasses EC that progress through EndoMT-2 cells toward smooth musc
 The distribution across the trajectory was even across controls and AD, and between males and females (@suppfig-endomt-pca).
 This confirms the population captured is a novel and ubiquitous phenomenon.
 
-We used tradeSeq to understand changes in gene expression through the trajectories in each lineage and potential candidates that may be driving the process[@Van2020].
+We used tradeSeq[@Van2020] to understand changes in gene expression through the trajectories in each lineage and potential candidates that may be driving the process.
 We focused upon transcription factors diverging in early pseudo-time and thus may be involved in the fate choices.
 We identified 8 such transcription factors, including *FOXP2* and *RORA* which were increased with pseudotime in lineage EndoMT-PC but not EndoMT-SMC (@suppfig-endomt-tfs A-B).
 Conversely *ZBTB7C*, *PRDM16* and *NR4A1* are increased in lineage EndoMT-SMC (@suppfig-endomt-tfs C-E).
 This was corroborated by applying switchDE to each lineage, which identified *FOXP2*/*RORA* and *ZBTB7C*/*NR4A1* to be significant genes in the EndoMT-PC/EndoMT-SMC lineages respectively[@kieran_campbell_aut_switchde_2017].
 
-Using SCENIC, we next identified transcription factor networks underlying each of the vascular cell-subtypes[@aibar_scenic_2017].
+Using SCENIC[@aibar_scenic_2017], we next identified transcription factor networks underlying each of the vascular cell-subtypes.
 As expected of cell-type determinates, there were not differences between AD and control.
 However, *FOXP2* was notably enriched in pericyte subtypes whilst *MECOM* was strongly enriched in endothelial and EndoMT cell subtypes (@fig-endomt C). 
 Examining the change in expression of transcription factors across pseudotime highlighted *FOXP2* as progressively increasing in pericytes in the EndoMT-PC lineage but not showing any change in the EndoMT-SMC lineage (@fig-endomt D). 
 *BCL6* is also interesting since it is a transcriptional repressor and its related protein BLC6b has recently been shown to oppose endothelial cell differentiation[@liBCL6BdependentSuppressionETV22024]. 
 Hence its transitory increase may be required to initiate EndoMT.
 
-![Characterization of the endothelial-mesenchymal (EndoMT) cell type. (A) PCA plot of nuclei subset to the endothelial, SMC, pericyte and EndoMT cell types. Includes the slingshot trajectories of the two EndoMT lineages, the first of which terminally differentiates to SMC and the second to pericytes. (B) Density plots of nuclei over pseudotime for each lineage. Early pseudotime is made up of endothelial cells, which then move into EndoMT-1/2 and finally to pericytes/SMCs. The MEMCON regulon shows a graduated decline from arterial through capillary to EndoMT. The FOXP2 regulon shows a distinct activity in the pericyte populations and EndoMT-1. (C) Heatmap of transcription factor network median AUCs denoting how likely the regulons are active across cell types via SCENIC. (D) Log expression plots of the transcription factors from C for each condition and lineage respectively. FOXP2 and LEF1 show increased expression in the EndoMT-PC lineage in later pseudotime. ARIDB5 by contrast is increased in EndoMT-SMC](05_figures/990_shared_figures/003_final_figures/endomt_fig2.pdf){#fig-endomt}
+![Characterization of the endothelial-mesenchymal (EndoMT) cell type. (A) PCA plot of nuclei subset to the endothelial, SMC, pericyte and EndoMT cell types. Includes the slingshot trajectories of the two EndoMT lineages, the first of which terminally differentiates to SMC and the second to pericytes. (B) Density plots of nuclei over pseudotime for each lineage. Early pseudotime is made up of endothelial cells, which then move into EndoMT-1/2 and finally to pericytes/SMCs. The MEMCON regulon shows a graduated decline from arterial through capillary to EndoMT. The FOXP2 regulon shows a distinct activity in the pericyte populations and EndoMT-1. (C) Heatmap of transcription factor network median AUCs denoting how likely the regulons are active across cell types via SCENIC. (D) Log expression plots of the transcription factors from C for each condition and lineage respectively. FOXP2 and LEF1 show increased expression in the EndoMT-PC lineage in later pseudotime. ARIDB5 by contrast is increased in EndoMT-SMC](05_figures/990_shared_figures/003_final_figures/endomt_fig3.pdf){#fig-endomt}
 
 ## Alzheimer's Disease molecular pathology preferentially affects the endothelial to pericyte lineage
 
 To understand how vascular cells and in particular EndoMT are changed in Alzheimer's Disease (AD) pathophysiology we performed differential gene expression between controls and AD cases focusing on vascular cell types. 
-Using Model-based Analysis of Single Cell Transcriptomics (MAST), we found 610 significant differentially expressed genes (DEGs) in the EndoMT-PC but only 8 DEGs in the EndoMT-SMC (@fig-degs A/B & @supptbl-mast-degs)[@finak2015]. 
+Using Model-based Analysis of Single Cell Transcriptomics (MAST)[@finak2015], we found 610 significant differentially expressed genes (DEGs) in the EndoMT-PC but only 8 DEGs in the EndoMT-SMC (@fig-degs A/B & @supptbl-mast-degs). 
 The impact of AD on endothelial cell to pericyte transition is further supported by the overlap with tradeSeq identified trajectory genes: 143 of the 410 most significantly differentially expressed genes (P \< $1 \times 10^{-16}$) identified by tradeSeq were overlapping with the significant DEGs identified by MAST in EndoMT-PC (138 genes) and EndoMT-SMC (5 genes) (@supptbl-tradeseq-degs-early, @supptbl-tradeseq-degs-late, @supptbl-tradeseq-degs-lin & @supptbl-tradeseq-degs-cond). 
 The strong effect of AD pathology on the pericyte lineage is consistent with our observation of reduced pericytes proportion and other studies that have highlighted early pericyte loss in AD[@winkler2014].
 
@@ -665,7 +665,7 @@ Proportional differences in AD via scProportionTest in the parenchymal fraction.
 :::
 
 ::: {#suppfig-endomt-pca}
-![](05_figures/990_shared_figures/004_pseudotime/slingshot_pca_diagnosis-sex.pdf)
+![](05_figures/990_shared_figures/004_pseudotime/slingshot_pca_diagnosis-sex.png)
 
 PCA of endothelial/EndoMT/Pericyte/SMC cells faceted by case and sex, colored by pseudotime.
 :::
@@ -821,6 +821,7 @@ Significant (P \< $1\times10^{-16}$) differential genes between lineage pseudoti
 
 ::: {#supptbl-mast-degs}
 ```{r}
+#| eval: false
 #| warning: false
 targets::tar_load(translated_id)
 mast_de <- qs::qread(here::here(
@@ -887,6 +888,7 @@ Age and sex were included as covariates.
 
 ::: {#supptbl-mast-go-pathways}
 ```{r}
+#| eval: false
 file <- here::here(
   "03_data/990_processed_data/001_snrnaseq/09_pathway_analysis"
 )
@@ -959,6 +961,7 @@ Significant (adjusted P \< 0.05) hypergeomtric GO pathways amongst the significa
 
 ::: {#supptbl-mast-go-pathways-filter}
 ```{r}
+#| eval: false
 file <- here::here(
   "03_data/990_processed_data/001_snrnaseq/09_pathway_analysis"
 )
