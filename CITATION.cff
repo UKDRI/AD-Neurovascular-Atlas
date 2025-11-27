@@ -1,0 +1,37 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: Neurovascular Atlas of Alzheimer's Disease
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Gabriel Mateus
+    family-names: Bernardo Harrington
+    email: bernardo-harrington@cardiff.ac.uk
+    affiliation: Cardiff University
+    orcid: 'https://orcid.org/0000-0001-6075-3619'
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.17737332
+    description: Zenodo v1.0.0
+repository-code: 'https://github.com/UKDRI/AD-Neurovascular-Atlas'
+abstract: >
+  This repository contains the analysis code for a
+  single-nucleus RNA sequencing study of the neurovascular
+  unit (NVU) in Alzheimer's disease (AD).
+
+  We profiled prefrontal cortex samples from AD patients and
+  age-matched controls to generate a high-resolution atlas
+  of vascular and parenchymal cell types.
+keywords:
+  - Alzheimer's Disease
+  - Single nuclei sequencing
+  - R
+  - Neurodegeneration
+  - Dementia
+license: CC-BY-4.0
+version: 1.0.0
+date-released: '2025-11-27'
