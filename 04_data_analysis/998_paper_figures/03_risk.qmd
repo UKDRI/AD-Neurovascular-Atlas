@@ -1,0 +1,796 @@
+---
+title: MAGMA genetic risk figure
+execute:
+  eval: true
+code-fold: true
+---
+
+This figure focuses on the risk scores from magma
+
+# Load packages
+
+```{r}
+source(here::here(
+  "04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"
+))
+library(magick)
+library(circlize)
+library(Cairo)
+
+tar_config_set(store = here::here("_targets"))
+```
+
+```{r}
+source("04_data_analysis/998_paper_figures/00_figures_source.R")
+```
+
+# GO pathways
+
+```{r}
+go_combined <-
+  qs::qread(
+    here::here(
+      "05_figures/990_shared_figures/003_final_figures/001_data_for_plots",
+      "go_data_sig_gene_only.qs"
+    )
+  )
+```
+
+```{r}
+celltype_abbrev_df <- readr::read_tsv(here::here(
+  "05_figures/990_shared_figures/003_final_figures/001_data_for_plots/celltype_abbreviations.tsv"
+))
+
+top_terms <- map2_dfr(
+  go_combined,
+  names(go_combined),
+  ~ .x |>
+    dplyr::filter(p.adjust < 0.05) |>
+    dplyr::mutate(
+      Ontology = toupper(Ontology),
+      celltype = .y,
+      amyloid_pathways = if_else(
+        grepl("amyloid", Description),
+        "Amyloid-related",
+        "Other pathways"
+      )
+    )
+) |>
+  dplyr::left_join(celltype_abbrev_df, by = join_by(celltype)) |>
+  dplyr::mutate(
+    celltypes_abbrev = if_else(
+      is.na(celltypes_abbrev),
+      celltype,
+      celltypes_abbrev
+    )
+  )
+
+# Calculate Gene Ratio
+top_terms$GeneRatio <- sapply(top_terms$GeneRatio, function(x) {
+  parts <- unlist(strsplit(x, "/"))
+  as.numeric(parts[1]) / as.numeric(parts[2])
+})
+
+# Remove terms that only have one gene
+top_terms <- top_terms |>
+  dplyr::filter(Count > 1)
+
+result_list_ont <- split(top_terms, top_terms$Ontology)
+simMatrix <- map2(
+  result_list_ont,
+  names(result_list_ont),
+  ~ calculateSimMatrix(
+    unique(.x$ID),
+    orgdb = "org.Hs.eg.db",
+    ont = .y,
+    method = "Rel"
+  )
+)
+
+# make sure the scores match the simMatrix
+x <- map2(
+  result_list_ont,
+  simMatrix,
+  ~ .x |>
+    dplyr::distinct(ID, .keep_all = TRUE) |>
+    dplyr::filter(ID %in% colnames(.y))
+)
+
+scores <- map(x, ~ setNames(-log(.x$p.adjust), .x$ID))
+
+# assert that the score go terms match the simmatrix rownames
+assertthat::are_equal(
+  sum(map2_dbl(
+    scores,
+    simMatrix,
+    ~ sum(names(.x) != rownames(.y))
+  )),
+  0
+)
+# Assert that there are no missing values in the scores
+assertthat::assert_that(sum(map_dbl(scores, ~ sum(is.na(.x)))) == 0)
+reducedTerms <- map2(
+  simMatrix,
+  scores,
+  ~ reduceSimMatrix(.x, .y, threshold = 0.9, orgdb = "org.Hs.eg.db")
+)
+
+# Add the rrvgo reduced terms to the initial dataframe
+top_terms_reduced <- map2(
+  reducedTerms,
+  names(reducedTerms),
+  ~ .x |>
+    dplyr::mutate(Ontology = .y)
+) |>
+  list_rbind() |>
+  dplyr::left_join(top_terms, ., by = join_by(ID == go, Ontology)) |>
+  dplyr::mutate(
+    celltypes_abbrev = str_remove(celltypes_abbrev, "-Bellenguez|-EUROPEUKBB")
+  ) |>
+  dplyr::mutate(
+    parent_median_p_adj = median(p.adjust),
+    parent_median_gene_ratio = median(GeneRatio),
+    parent_median_count = median(Count),
+    .by = c(Ontology, celltypes_abbrev, parentTerm, celltype_level)
+  ) |>
+  dplyr::select(
+    Ontology,
+    celltypes_abbrev,
+    parentTerm,
+    parent_median_gene_ratio,
+    parent_median_p_adj,
+    parent_median_count,
+    celltype_level
+  ) |>
+  dplyr::distinct() |>
+  # add a counter for terms that appear in more than 1 celltype
+  dplyr::mutate(count_overlap = n(), .by = c(Ontology, parentTerm)) |>
+  dplyr::filter(!is.na(parentTerm)) |>
+  dplyr::mutate(
+    amyloid_pathways = if_else(
+      grepl("amyloid", parentTerm),
+      "Amyloid-related",
+      "Other pathways"
+    )
+  ) |>
+  dplyr::rename(celltype = celltypes_abbrev) |>
+  dplyr::left_join(celltype_abbrev_df, by = join_by(celltype)) |>
+  dplyr::mutate(
+    celltypes_abbrev = if_else(
+      is.na(celltypes_abbrev),
+      celltype,
+      celltypes_abbrev
+    )
+  ) |>
+  dplyr::mutate(
+    celltypes_abbrev = fct_relevel(
+      celltypes_abbrev,
+      "Fibroblast",
+      "Microglia",
+      "Pericyte-1",
+      "T-cell",
+      "Microglia-A",
+      "Pericyte-2",
+      "Perivascular-FB-2"
+    )
+  ) |>
+  dplyr::mutate(
+    celltypes_abbrev = fct_recode(celltypes_abbrev, Pericyte = "Pericyte-1")
+  )
+
+table(top_terms_reduced$Ontology)
+# Function to wrap text
+wrap_text <- function(text, width = 20) {
+  str_wrap(text, width = width)
+}
+
+# Wrap the GO terms in the data
+top_terms_reduced$parentTerm <- wrap_text(top_terms_reduced$parentTerm, 60)
+
+
+go_plot_all <- top_terms |>
+  # filter to just BP for make plot easier to parse
+  dplyr::filter(Ontology == "BP") |>
+  ggplot(aes(
+    x = -log10(p.adjust),
+    y = reorder(Description, -log10(p.adjust))
+  )) +
+  geom_point(aes(size = Count, color = p.adjust)) +
+  scale_color_gradient(low = "red", high = "blue") +
+  facet_grid(celltype ~ Ontology, scales = "free_y") +
+  labs(x = "Gene Ratio", y = "") +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.position = "bottom",
+    strip.background = element_blank(),
+    strip.text = element_text(face = "bold"),
+    plot.title = element_text(size = 10)
+  )
+
+# Create dot plot
+go_plot_all <- ggplot(
+  top_terms,
+  aes(x = GeneRatio, y = reorder(Description, GeneRatio))
+) +
+  geom_point(aes(size = Count, color = p.adjust)) +
+  scale_color_gradient(low = "red", high = "blue") +
+  facet_grid(celltype ~ Ontology, scales = "free_y") +
+  labs(x = "Gene Ratio", y = "") +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.position = "bottom",
+    strip.background = element_blank(),
+    strip.text = element_text(face = "bold"),
+    plot.title = element_text(size = 10)
+  )
+go_plot_all <- top_terms |>
+  # filter to just BP for make plot easier to parse
+  dplyr::filter(Ontology == "BP") |>
+  ggplot(aes(x = GeneRatio, y = reorder(Description, GeneRatio))) +
+  geom_point(aes(size = Count, color = p.adjust)) +
+  scale_color_gradient(low = "red", high = "blue") +
+  facet_grid(
+    amyloid_pathways ~ celltypes_abbrev,
+    scales = "free_y",
+    space = "free_y"
+  ) +
+  labs(x = "Gene Ratio", y = "") +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    #legend.position = "bottom",
+    strip.background = element_blank(),
+    strip.text = element_text(face = "bold", size = 8),
+    plot.title = element_text(size = 10)
+  )
+go_plot_all <- top_terms_reduced |>
+  # filter to just BP for make plot easier to parse
+  dplyr::filter(Ontology == "BP") |>
+  dplyr::filter(
+    celltypes_abbrev %in% c("Microglia-A", "Pericyte-2", "Perivascular-FB-2")
+  ) |>
+  ggplot(aes(
+    x = parent_median_gene_ratio,
+    y = reorder(parentTerm, parent_median_gene_ratio)
+  )) +
+  geom_point(aes(size = parent_median_count, color = parent_median_p_adj)) +
+  scale_color_gradient(low = "red", high = "blue") +
+  scale_size_continuous(range = c(1, 4)) + # Adjust point size scale (min, max)
+  facet_grid(
+    amyloid_pathways ~ celltypes_abbrev,
+    scales = "free_y",
+    space = "free_y"
+  ) +
+  labs(
+    x = "Gene Ratio",
+    y = "",
+    size = "Median\ncount",
+    color = "Median\nadjusted\nP-value"
+  ) +
+  theme(
+    axis.text.x = element_text(size = 6, angle = 90, hjust = 1, vjust = 0.5),
+    #legend.position = "bottom",
+    strip.background = element_blank(),
+    strip.text.y = element_blank(),
+    panel.background = element_blank(), # Remove background
+    panel.grid.major = element_line(color = "grey80"), # Major grid lines color
+    strip.text = element_text(face = "bold", size = 5),
+    plot.title = element_text(size = 8),
+    axis.text.y = element_text(size = 6),
+    axis.title.x = element_text(size = 7),
+    legend.text = element_text(size = 6),
+    legend.key.width = unit(2, "mm"),
+    legend.title = element_text(size = 6, face = "bold")
+  ) +
+  scale_y_discrete(labels = function(x) str_wrap(x, width = 45))
+go_plot_filtered <- top_terms_reduced |>
+  # filter to just BP for make plot easier to parse
+  dplyr::filter(Ontology == "BP") |>
+  dplyr::slice_min(
+    parent_median_p_adj,
+    n = 15,
+    by = c(celltypes_abbrev, amyloid_pathways)
+  ) |>
+  ggplot(aes(
+    x = parent_median_gene_ratio,
+    y = reorder(parentTerm, parent_median_gene_ratio)
+  )) +
+  geom_point(aes(size = parent_median_count, color = parent_median_p_adj)) +
+  scale_color_gradient(low = "red", high = "blue") +
+  facet_grid(
+    amyloid_pathways ~ celltypes_abbrev + celltype_level,
+    scales = "free_y",
+    space = "free_y"
+  ) +
+  labs(
+    x = "Gene Ratio",
+    y = "",
+    size = "Median\ncount",
+    color = "Median\nadjusted\npval"
+  ) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    #legend.position = "bottom",
+    strip.background = element_blank(),
+    strip.text = element_text(face = "bold", size = 4),
+    plot.title = element_text(size = 10)
+  )
+```
+
+# MAGMA heatmap
+
+```{r}
+magma_heatmap_data <- qs::qread(here::here(
+  "05_figures/990_shared_figures/003_final_figures/magma_celltype_heatmap_data_endomt_subtypes_nominal.qs"
+))
+
+# Update col labels
+colnames(magma_heatmap_data) <- "MAGMA"
+heatmap_data <- magma_heatmap_data
+
+create_annotation_matrix <- function(pval_matrix) {
+  # Get dimensions of input matrix
+  n_rows <- nrow(pval_matrix)
+  n_cols <- ncol(pval_matrix)
+
+  # Create empty character matrix for annotations
+  annot_matrix <- matrix("", nrow = n_rows, ncol = n_cols)
+
+  # Convert log10 p-values back to regular p-values
+  regular_pvals <- 10^(-pval_matrix)
+
+  # Calculate Bonferroni adjusted p-values
+  # Convert matrix to vector, adjust, then back to matrix
+  adj_pvals <- matrix(
+    p.adjust(as.vector(regular_pvals), method = "bonferroni"),
+    nrow = n_rows,
+    ncol = n_cols
+  )
+
+  # Fill annotation matrix based on conditions
+  annot_matrix[regular_pvals < 0.05] <- "*"
+  annot_matrix[adj_pvals < 0.05] <- "**"
+  annot_matrix[adj_pvals < 0.01] <- "***"
+
+  # Preserve dimnames if they exist
+  dimnames(annot_matrix) <- dimnames(pval_matrix)
+
+  return(annot_matrix)
+}
+
+heatmap_data <- t(heatmap_data)
+colnames(heatmap_data) <- str_replace(colnames(heatmap_data), "_", "-")
+row_anno <- create_annotation_matrix(heatmap_data)
+
+# Create the heatmap
+heatmap <- Heatmap(
+  heatmap_data,
+  name = "-log10 p-value",
+  # Adjust the clustering method if necessary
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  show_row_names = TRUE,
+  show_column_names = TRUE,
+  # Use the defined color palette
+  cell_fun = function(j, i, x, y, width, height, fill) {
+    if (row_anno[i, j] != "") {
+      grid.text(row_anno[i, j], x, y, gp = gpar(col = "black", fontsize = 5))
+    }
+  },
+  row_names_gp = gpar(fontsize = 6), # Set row label text size
+  column_names_gp = gpar(fontsize = 6),
+  height = unit(3, "mm"),
+  heatmap_legend_param = list(
+    direction = "horizontal",
+    labels_gp = gpar(fontsize = 5),
+    title_gp = gpar(fontsize = 5, fontface = "bold"),
+    title_position = "leftcenter",
+    gap = unit(0.1, "mm"),
+    grid_height = unit(0.5, "mm")
+  )
+)
+cairo_pdf(
+  file = here::here(
+    "05_figures/990_shared_figures/003_final_figures",
+    "magma_heatmap.pdf"
+  ),
+  width = 7,
+  height = 2
+)
+draw(
+  heatmap,
+  heatmap_legend_side = "top",
+  ht_gap = unit(100, "mm"),
+  heatmap_row_names_gp = gpar(fontsize = 12),
+  heatmap_column_names_gp = gpar(fontsize = 12)
+)
+dev.off()
+p2 = grid.grabExpr(
+  draw(heatmap, heatmap_legend_side = "top"),
+  ht_gap = unit(100, "mm")
+)
+row_1 <- plot_grid(
+  p2,
+  go_plot_all,
+  labels = c("A", "B"),
+  rel_widths = c(1, 3),
+  label_colour = "black"
+)
+
+row_1
+```
+
+```{r}
+files <- list.files(
+  here::here("03_data/994_magma_inputs/sig_genelist/results"),
+  pattern = "*.gsa.out",
+  full.names = TRUE
+)
+
+# Read data
+parse_magma_set_data <- function(file) {
+  file_lines <- readLines(file)
+  # Get the index of the line judt before the data starts
+  data_starts_index <- grep("^# CONDITIONED_", file_lines)
+  data <- read_table(
+    file,
+    skip = data_starts_index[length(data_starts_index)],
+    show_col_types = FALSE
+  )
+  return(data)
+}
+data <- map(files, parse_magma_set_data)
+
+files_sub <- str_replace(
+  basename(files),
+  "level2_all_controls_top-ten-percent_AD_",
+  ""
+) |>
+  str_replace("_conditional", "") |>
+  # Use sub() to remove all characters after the first dot
+  sub("\\..*$", "", .)
+
+process_magma_data <-
+  function(
+    df,
+    filename,
+    celltypes_to_include = c(
+      "Perivascular-FB-KAZN2",
+      "Pericyte-2",
+      "Microglia-activated"
+    )
+  ) {
+    df <- df |>
+      dplyr::filter(VARIABLE %in% celltypes_to_include) |>
+      # Add groups and adjusted pvals to data
+      dplyr::mutate(conditioned_on = filename) |>
+      dplyr::mutate(FULL_NAME = tolower(FULL_NAME)) |>
+      dplyr::filter(FULL_NAME != conditioned_on) |>
+      dplyr::mutate(p_adj = p.adjust(P, method = "bonferroni"))
+    return(df)
+  }
+df <- map2(data, files_sub, ~ process_magma_data(.x, .y)) |>
+  list_rbind() |>
+  as_tibble()
+```
+
+# Conditional heatmap
+
+```{r}
+df$abbrev <- celltypes_abbrev[as.character(df$VARIABLE)]
+df$abbrev <- if_else(is.na(df$abbrev), df$VARIABLE, df$abbrev)
+
+df$abbrev[grepl("Ex-Neuron-L2-3-C", df$abbrev)] <- "Ex-Neuro-4"
+df$abbrev[grepl("In-Neuron-ADARB2-IL1RAPL2", df$abbrev)] <- "In-Neuro-2"
+df <- df |>
+  dplyr::filter(
+    abbrev %in% c("Perivascular-FB-2", "Pericyte-2", "Microglia-A")
+  ) |>
+  dplyr::mutate(log_p = -log10(p_adj))
+
+# Nest data on broad groups
+df_nest <- df |>
+  dplyr::group_by(conditioned_on) |>
+  tidyr::nest()
+
+get_heatmap_data <- function(df) {
+  # Prepare the data for the heatmap
+  heatmap_data <- df |>
+    dplyr::select(abbrev, log_p, conditioned_on) |>
+    pivot_wider(names_from = abbrev, values_from = log_p) |>
+    as.data.frame()
+
+  rownames(heatmap_data) <- heatmap_data$conditioned_on
+  # Remove the first column if it contains row names (cell types)
+  heatmap_data <- heatmap_data[, -1]
+  heatmap <- t(heatmap_data)
+  # Replace any NAs with 0
+  #heatmap[is.na(heatmap)] <- 0
+  return(heatmap)
+}
+heatmap_data_con <- get_heatmap_data(df)
+colnames(heatmap_data_con) <- c(
+  "Microglia-A",
+  "Pericyte-2",
+  "Perivascular-FB-2"
+)
+
+row_anno <- create_annotation_matrix(heatmap_data_con)
+
+heatmap_conditional <- Heatmap(
+  heatmap_data_con,
+  name = "-log10 \nAdjusted\nP-value",
+  row_names_side = "left",
+  #right_annotation = row_anno_conditional,
+  cell_fun = function(j, i, x, y, width, height, fill) {
+    if (row_anno[i, j] != "") {
+      grid.text(row_anno[i, j], x, y, gp = gpar(col = "black", fontsize = 10))
+    }
+  },
+  # Adjust the clustering method if necessary
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  show_row_names = TRUE,
+  show_column_names = TRUE,
+  column_names_rot = 90,
+  column_title = "Conditioned on",
+  column_title_gp = gpar(fontsize = 6),
+  column_title_side = "bottom",
+  row_names_gp = gpar(fontsize = 5), # Set row label text size
+  column_names_gp = gpar(fontsize = 5),
+  heatmap_legend_param = list(
+    direction = "horizontal",
+    labels_gp = gpar(fontsize = 5),
+    grid_height = unit(2, "mm"),
+    title_gp = gpar(fontsize = 6, fontface = "bold"),
+    title_position = "leftcenter"
+  )
+)
+heatmap_conditional
+p3 = grid.grabExpr(draw(heatmap_conditional, heatmap_legend_side = "top"))
+
+row_1 <- plot_grid(
+  p2,
+  go_plot_all,
+  labels = c("A", "B"),
+  rel_widths = c(1, 3),
+  label_colour = "black"
+)
+
+row_1
+```
+
+#### Avg risk gene expression
+
+```{r}
+avg_gene_expr <- readr::read_tsv(here::here(
+  "05_figures/990_shared_figures/003_final_figures/001_data_for_plots/risk_gene_avg_expression.tsv"
+))
+
+# Remove the gene column to create a matrix
+expression_matrix <- as.matrix(avg_gene_expr[, -1])
+
+# Optionally, you can set row names to gene names
+rownames(expression_matrix) <- avg_gene_expr$features.plot
+
+colnames(expression_matrix) <- sapply(
+  colnames(expression_matrix),
+  function(name) {
+    if (name %in% celltype_abbrev_df$celltype) {
+      return(celltype_abbrev_df$celltypes_abbrev[
+        celltype_abbrev_df$celltype == name
+      ])
+    } else {
+      return(name)
+    }
+  }
+)
+
+colnames(expression_matrix)[
+  colnames(expression_matrix) == "Pericyte-1"
+] <- "Pericyte"
+expression_matrix[1:5, 1:3]
+expression_matrix <- expression_matrix[,
+  colnames(expression_matrix) != "T-cell"
+]
+expression_matrix_t <- expression_matrix
+expression_matrix <- t(expression_matrix)
+avg_risk_gene_heatmap <- Heatmap(
+  expression_matrix,
+  name = "Expression",
+  column_names_rot = 90,
+  #column_names_centered = TRUE,
+  # Adjust the clustering method if necessary
+  cluster_rows = TRUE,
+  cluster_columns = TRUE,
+  show_row_dend = FALSE,
+  show_column_dend = FALSE,
+  row_names_gp = gpar(fontsize = 6),
+  column_names_gp = gpar(fontsize = 5),
+  heatmap_legend_param = list(
+    direction = "horizontal",
+    labels_gp = gpar(fontsize = 5),
+    grid_height = unit(0.5, "mm"),
+    title_gp = gpar(fontsize = 5, fontface = "bold"),
+    title_position = "leftcenter"
+  ),
+)
+avg_risk_gene_heatmap_t <- Heatmap(
+  expression_matrix_t,
+  name = "Expression",
+  column_names_rot = 90,
+  column_names_centered = TRUE,
+  # Adjust the clustering method if necessary
+  cluster_rows = TRUE,
+  cluster_columns = TRUE,
+  show_row_dend = FALSE,
+  show_column_dend = FALSE,
+  row_names_gp = gpar(fontsize = 6),
+  column_names_gp = gpar(fontsize = 8)
+)
+avg_risk_gene_heatmap
+avg_risk_gene_heatmap_t
+p4 = grid.grabExpr(draw(avg_risk_gene_heatmap, heatmap_legend_side = "top"))
+p4_t = grid.grabExpr(draw(avg_risk_gene_heatmap_t))
+```
+
+### Kegg AD pathway annotations
+
+Tried mapping the MAGMA risk genes to the KEGG AD pathway, but very few genes mapped...
+
+```{r}
+library(KEGGREST)
+amyloid_pathways <- keggFind("pathway", "Alzheimer")
+print(amyloid_pathways)
+pathway_genes <- keggGet("hsa05010")[[1]]$GENE
+pathway_gene_symbols <- pathway_genes[seq(1, length(pathway_genes), by = 2)] # Extract gene symbols
+head(pathway_genes)
+```
+
+### Mouse phenotypes
+
+```{r}
+mpo <- readr::read_tsv(here::here(
+  "05_figures/990_shared_figures/003_final_figures/001_data_for_plots/mpo_data.tsv"
+)) |>
+  dplyr::mutate(celltype = str_remove(celltype, "_.*")) |>
+  dplyr::left_join(celltype_abbrev_df, by = join_by(celltype)) |>
+  dplyr::mutate(
+    celltypes_abbrev = if_else(
+      is.na(celltypes_abbrev),
+      celltype,
+      celltypes_abbrev
+    )
+  )
+
+
+g1 <- ggplot(
+  data = mpo,
+  mapping = aes(
+    y = reorder(MP_name, -log10(p_value_adj)),
+    x = -log10(p_value_adj),
+    size = GenesInMPterm,
+    color = -log10(p_value_adj)
+  )
+) +
+  geom_point() +
+  scale_color_gradient2(low = "snow", mid = "blue", high = "red") +
+  facet_wrap(~celltypes_abbrev) +
+  scale_size_continuous(
+    breaks = 1:max(mpo$GenesInMPterm),
+    labels = as.character(1:max(mpo$GenesInMPterm)),
+    range = c(1, 3)
+  ) +
+  labs(
+    y = "",
+    color = "-log10\nAdjusted\nP-value",
+    size = "Genes in\nterm",
+    x = "-log10(Adjusted P-Value)"
+  ) +
+  theme(
+    strip.background = element_blank(),
+    strip.text = element_text(size = 6, face = "bold"),
+    axis.text.y = element_text(size = 6),
+    axis.text.x = element_text(size = 6, angle = 90, vjust = 0.5, hjust = 1),
+    axis.title.x = element_text(size = 6),
+    legend.text = element_text(size = 5),
+    legend.key.width = unit(3.5, 'mm'),
+    legend.key.height = unit(2, 'mm'),
+    legend.title = element_text(size = 6, face = "bold")
+  )
+p_mpo <- g1 +
+  theme(
+    legend.position = "bottom",
+    legend.box = "vertical",
+    panel.background = element_blank(),
+    panel.grid.major = element_line(color = "grey80")
+  ) +
+  scale_y_discrete(labels = function(x) str_wrap(x, width = 12))
+p_mpo
+```
+
+```{r}
+magma_sig <-
+  readr::read_tsv(here::here(
+    "03_data/994_magma_inputs/sig_celltype_sig_genes.tsv"
+  )) |>
+  janitor::clean_names() |>
+  dplyr::rename(entrezgene_id = gene) |>
+  # Exclude the top one percents
+  dplyr::filter(!percent == "top-one-percent") |>
+  # Filter to level 2
+  dplyr::filter(celltype_level == "level2") |>
+  dplyr::filter(padj < 0.05)
+```
+
+# PPI network plots
+
+```{r}
+ppi_plots <- qs::qread(here::here(
+  "05_figures/990_shared_figures/003_final_figures",
+  "001_data_for_plots/ppi_network_plots.qs"
+))
+ppi_plots <- ppi_plots[
+  names(ppi_plots) %in%
+    c(
+      "Microglia-activated_sig-magma-sig-genes_EUROPEUKBB_35k10k_all_controls_top-ten-percent_level2_control",
+      "Pericyte-2_sig-magma-sig-genes_EUROPEUKBB_35k10k_all_controls_top-ten-percent_level2_control",
+      "Perivascular-FB-2_sig-magma-sig-genes_EUROPEUKBB_35k10k_all_controls_top-ten-percent_level2_control"
+    )
+]
+```
+
+```{r}
+row_1_1 <- plot_grid(
+  p2,
+  p4,
+  labels = c("A", "C"),
+  rel_heights = c(1, 0.9),
+  label_colour = "black",
+  ncol = 1
+)
+row_1 <- plot_grid(
+  row_1_1,
+  p3,
+  labels = c("", "B"),
+  rel_widths = c(2, 0.8),
+  rel_heights = c(1, 2),
+  label_colour = "black",
+  ncol = 2
+)
+
+row_2 <- plot_grid(
+  go_plot_all,
+  p_mpo,
+  rel_widths = c(3, 1.2),
+  label_colour = "black",
+  labels = c("D", "E"),
+  ncol = 2
+)
+
+row3 <- plot_grid(
+  plotlist = ppi_plots,
+  labels = c("F", "G", "H"),
+  label_colour = "black",
+  nrow = 1
+)
+
+final_plot2 <- plot_grid(
+  row_1,
+  row_2,
+  row3,
+  ncol = 1,
+  rel_heights = c(1.4, 2.5, 1.8)
+)
+
+ggsave(
+  filename = here::here(
+    "05_figures/990_shared_figures/003_final_figures",
+    "figure3_risk.pdf"
+  ),
+  plot = final_plot2,
+  width = 7,
+  height = 9,
+  units = "in"
+)
+```
+

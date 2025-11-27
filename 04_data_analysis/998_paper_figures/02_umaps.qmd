@@ -1,0 +1,1652 @@
+---
+title: UMAP and method comparison figure
+execute:
+  eval: true
+code-fold: true
+---
+
+# Load packages
+
+```{r}
+source(here::here(
+  "04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"
+))
+library(magick)
+library(circlize)
+library(Cairo)
+library(rstatix) # For statistical tests
+library(ggpubr) # For adding significance brackets
+library(ggstatsplot)
+
+tar_config_set(store = here::here("_targets"))
+```
+
+```{r}
+source("04_data_analysis/998_paper_figures/00_figures_source.R")
+```
+
+# Load data
+
+```{r}
+# Get seurat object
+tar_load(sce)
+
+# the full cell labels are long for plots, let's make abbreviated versions
+celltypes_abbrev <-
+  c(
+    "Astrocyte-activated" = "Astro-A",
+    "Astrocyte-quiescent" = "Astro-Q",
+    "Ex-Neuron-ADARB2-ERBB4" = "Ex-Neuro-1",
+    "Ex-Neuron-CBLN2-NRGN" = "Ex-Neuro-2",
+    "Ex-Neuron-DLC1-HS3ST4" = "Ex-Neuro-3",
+    "Ex-Neuron-L2-3-CBLN2-LINC02306-CUX2" = "Ex-Neuro-4",
+    "Ex-Neuron-L3-5-RORB-PLCH1" = "Ex-Neuro-5",
+    "Ex-Neuron-L4-5-RORB-IL1RAPL2" = "Ex-Neuro-6",
+    "Ex-Neuron-L6-THEMIS-NFIA" = "Ex-Neuro-7",
+    "In-Neuron-ADARB2-GRM7" = "In-Neuro-1",
+    "In-Neuron-ADARB2-IL1RAPL2-CSCL14" = "In-Neuro-2",
+    "In-Neuron-ADARB2-LAMP5-NRG1" = "In-Neuro-3",
+    "In-Neuron-ADARB2-NRG1-RELN" = "In-Neuro-4",
+    "In-Neuron-DPP10-MEF2C" = "In-Neuro-5",
+    "In-Neuron-PRKG1-TBC1D4" = "In-Neuro-6",
+    "In-Neuron-TRHDE-RALYL" = "In-Neuro-7",
+    "Microglia-activated" = "Microglia-A",
+    "Microglia-quiescent" = "Microglia-Q",
+    "Microglia-vascular" = "Microglia-V",
+    "Pericyte" = "Pericyte-1",
+    "Perivascular Macrophage" = "Perivascular-M",
+    "Perivascular" = "Perivascular-M",
+    "Perivascular-FB" = "Perivascular-FB-1",
+    "Perivascular-FB-KAZN2" = "Perivascular-FB-2",
+    "T-cell-parenchymal-1" = "T-cell-P1",
+    "T-cell-parenchymal-2" = "T-cell-P2",
+    "T-cell-vascular" = "T-cell-V",
+    "T-cell-mixed" = "T-cell-M",
+    "Vascular-SMC" = "Vascular-SMC-1",
+    "Vascular-SMC-LINC00486" = "Vascular-SMC-2"
+  )
+
+# Create a new column with abbreviated Idents
+abbreviated_idents <- celltypes_abbrev[as.character(
+  sce$subcelltype_annotations
+)]
+abbreviated_idents <- if_else(
+  is.na(abbreviated_idents),
+  sce$subcelltype_annotations,
+  abbreviated_idents
+)
+names(abbreviated_idents) <- NULL
+sce$abbreviated_idents <- abbreviated_idents
+unique(sce$abbreviated_idents)
+Idents(sce) <- sce$abbreviated_idents
+
+celltypes_abbrev_level1 <-
+  c(
+    "mystery-cluster" = "EndoMT",
+    "Neuron_ex" = "Ex-Neuro",
+    "Neuron_in" = "In-Neuro"
+  )
+abbreviated_idents <- celltypes_abbrev_level1[as.character(
+  sce$highlevel_manual_annotations
+)]
+abbreviated_idents <- if_else(
+  is.na(abbreviated_idents),
+  sce$highlevel_manual_annotations,
+  abbreviated_idents
+)
+names(abbreviated_idents) <- NULL
+sce$abbreviated_idents_level1 <- abbreviated_idents
+unique(sce$abbreviated_idents_level1)
+```
+
+```{r}
+celltype_abbrev_df <- data.frame(celltypes_abbrev) |>
+  rownames_to_column("celltype")
+readr::write_tsv(
+  celltype_abbrev_df,
+  here::here(
+    "05_figures/990_shared_figures/003_final_figures/001_data_for_plots/celltype_abbreviations.tsv"
+  )
+)
+```
+
+```{r}
+# Get percentages of level 1 celltypes
+celltype_counts <- table(sce$highlevel_manual_annotations)
+total <- sum(celltype_counts)
+percentages <- (celltype_counts / total) * 100
+print(percentages)
+
+# Get the number of endothelial cells per sample for Yang paper
+total_endothelial_cells <- 36800
+total_neurons <- 2600
+number_of_samples <- 25
+total_endothelial_cells / number_of_samples
+total_neurons / number_of_samples
+
+# And for us - note there's one more parenchymal sample than vascular
+v_samples <- grepl("V", unique(sce$manifest)) |> sum()
+p_samples <- grepl("P", unique(sce$manifest)) |> sum()
+celltype_counts[names(celltype_counts) == "Endothelial"] / v_samples
+celltype_counts[names(celltype_counts) == "Endothelial"] /
+  v_samples +
+  celltype_counts[names(celltype_counts) == "mystery-cluster"] / v_samples
+
+celltype_counts[names(celltype_counts) == "Neuron_in"] /
+  p_samples +
+  celltype_counts[names(celltype_counts) == "Neuron_ex"] / p_samples
+
+# Get percentages of level 2 celltypes
+sce@meta.data |>
+  dplyr::filter(prep == "V") |>
+  dplyr::count(abbreviated_idents) |>
+  dplyr::mutate(percent = round(n / sum(n) * 100, digits = 2))
+celltype_counts <- table(sce$abbreviated_idents)
+total <- sum(celltype_counts)
+percentages <- (celltype_counts / total) * 100
+print(percentages |> round(digits = 2))
+```
+
+
+```{r}
+DotPlot(sce, features = c("AGBL1", "ARHGAP15", "DOCK2", "RUNX1"))
+```
+
+# Celltype propotions
+
+It'd be good to compare the number of nuclei we recover and the percentage per level 1 celltype
+
+```{r}
+# Add Yang 2022 numbers
+nuclei_counts <- tribble(
+  ~dataset              , ~celltype       , ~n_nuclei ,
+  "Yang et al., 2022"   , "Endothelial"   ,     36825 ,
+  "Mathys et al., 2019" , "Endothelial"   ,       150 ,
+  "Yang et al., 2022"   , "Pericyte"      ,     29196 ,
+  "Mathys et al., 2019" , "Pericyte"      ,       150 ,
+  "Yang et al., 2022"   , "SMC"           ,      7312 ,
+  "Mathys et al., 2019" , "SMC"           ,         0 ,
+  "Yang et al., 2022"   , "P. fibroblast" ,      2985 ,
+  "Mathys et al., 2019" , "P. fibroblast" ,         0 ,
+  "Yang et al., 2022"   , "Astrocyte"     ,     22695 ,
+  "Mathys et al., 2019" , "Astrocyte"     ,      3392 ,
+  "Yang et al., 2022"   , "Ependymal"     ,      1534 ,
+  "Mathys et al., 2019" , "Ependymal"     ,         0 ,
+  "Yang et al., 2022"   , "M. fibroblast" ,       428 ,
+  "Mathys et al., 2019" , "M. fibroblast" ,         0 ,
+  "Yang et al., 2022"   , "T-cell"        ,       351 ,
+  "Mathys et al., 2019" , "T-cell"        ,         0 ,
+  "Mathys et al., 2019" , "EndoMT"        ,         0 ,
+  "Yang et al., 2022"   , "EndoMT"        ,         0 ,
+  "Yang et al., 2022"   , "Oligo"         ,     34800 ,
+  "Yang et al., 2022"   , "OPC"           ,      3800 ,
+  "Yang et al., 2022"   , "Neuron"        ,      2900 ,
+  "Yang et al., 2022"   , "Microglia"     ,      2200 ,
+)
+
+# fibroblast subtypes in our data
+fb_subtypes <- table(sce$subcelltype_annotations) |>
+  as.data.frame() |>
+  dplyr::mutate(dataset = "Method here", .before = Var1) |>
+  dplyr::rename(celltype = Var1) |>
+  dplyr::filter(grepl("FB", celltype))
+
+# Merge p-fb subtypes
+p_fb <- fb_subtypes |>
+  dplyr::filter(!grepl("Meningeal", celltype)) |>
+  dplyr::mutate(n_nuclei = sum(Freq)) |>
+  dplyr::filter(celltype == "Perivascular-FB") |>
+  dplyr::select(!Freq)
+
+fb_subtypes_joined <- fb_subtypes |>
+  dplyr::filter(celltype == "Meningeal-FB") |>
+  dplyr::rename(n_nuclei = Freq) |>
+  rbind(p_fb)
+
+
+our_counts <- table(sce$highlevel_manual_annotations) |>
+  as.data.frame() |>
+  dplyr::mutate(dataset = "Method here", .before = Var1) |>
+  dplyr::rename(celltype = Var1, n_nuclei = Freq) |>
+  dplyr::filter(celltype != "Fibroblast") |>
+  rbind(fb_subtypes_joined)
+
+neuron_count <- our_counts |>
+  dplyr::filter(grepl("Neuron", celltype)) |>
+  dplyr::summarise(
+    dataset = dataset[1],
+    celltype = "Neuron",
+    n_nuclei = sum(n_nuclei)
+  )
+
+yang_comparison <- our_counts |>
+  dplyr::filter(!grepl("Neuron", celltype)) |>
+  rbind(neuron_count) |>
+  rbind(nuclei_counts) |>
+  dplyr::mutate(
+    celltype = case_when(
+      celltype == "Astro" ~ "Astrocyte",
+      celltype == "mystery-cluster" ~ "EndoMT",
+      celltype == "Perivascular-FB" ~ "P. fibroblast",
+      celltype == "Meningeal-FB" ~ "M. fibroblast",
+
+      .default = celltype
+    )
+  ) |>
+  dplyr::mutate(total_nuclei = sum(n_nuclei), .by = dataset) |>
+  dplyr::mutate(percent = round(n_nuclei / total_nuclei * 100, 1)) |>
+  dplyr::mutate(
+    fraction = if_else(
+      celltype %in%
+        c(
+          "Endothelial",
+          "Pericyte",
+          "SMC",
+          "EndoMT",
+          "M. fibroblast",
+          "P. fibroblast",
+          "Ependymal"
+        ),
+      "Vascular",
+      "Parenchymal"
+    )
+  )
+
+yang_comparison |>
+  ggplot(aes(x = n_nuclei, y = celltype, fill = dataset)) +
+  geom_bar(stat = "identity", position = position_dodge())
+
+
+total_nuclei <- yang_comparison |>
+  dplyr::filter(dataset != "Mathys et al., 2019") |>
+  ggplot(aes(x = n_nuclei, y = reorder(celltype, n_nuclei), fill = dataset)) +
+  # Add bars with consistent thickness
+  geom_bar(
+    stat = "identity",
+    position = position_dodge(width = 0.9),
+    width = 0.8
+  ) +
+  # Add text labels at the end of bars
+  geom_text(
+    aes(label = comma(n_nuclei)),
+    position = position_dodge(width = 0.9),
+    hjust = -0.2, # adjust this to move labels further/closer to bars
+    size = 3
+  ) +
+  # Customize theme
+  theme_minimal() +
+  theme(
+    panel.grid.minor = element_blank(),
+    axis.title.y = element_blank(),
+    legend.position = "none"
+  ) +
+  # Add labels
+  labs(x = "# of nuclei", fill = "Dataset") +
+  coord_cartesian(xlim = c(0, 120000)) +
+  facet_grid(rows = vars(fraction), scales = "free")
+
+percent_nuclei <- yang_comparison |>
+  dplyr::filter(dataset != "Mathys et al., 2019") |>
+  ggplot(aes(x = percent, y = reorder(celltype, n_nuclei), fill = dataset)) +
+  # Add bars with consistent thickness
+  geom_bar(
+    stat = "identity",
+    position = position_dodge(width = 0.9),
+    width = 0.8
+  ) +
+  # Add text labels at the end of bars
+  geom_text(
+    aes(label = comma(percent)),
+    position = position_dodge(width = 0.9),
+    hjust = -0.2,
+    size = 3
+  ) +
+  # Customize theme
+  theme_minimal() +
+  theme(
+    panel.grid.minor = element_blank(),
+    axis.title.y = element_blank(),
+    legend.position = "bottom"
+  ) +
+  # Add labels
+  labs(x = "% of nuclei", fill = "Dataset") +
+  facet_grid(rows = vars(fraction), scales = "free")
+
+total_nuclei + percent_nuclei
+
+ggsave(
+  here(
+    "05_figures/990_shared_figures/003_final_figures/nuclei_count_comparison.png"
+  ),
+  height = 8,
+  width = 10
+)
+```
+
+```{r}
+# Sum fractions
+fraction_level <- yang_comparison |>
+  dplyr::filter(dataset != "Mathys et al., 2019") |>
+  dplyr::summarise(n_nuclei = sum(n_nuclei), .by = c(dataset, fraction)) |>
+  mutate(percent = round(n_nuclei / sum(n_nuclei) * 100, 1), .by = dataset)
+total_nuclei <- fraction_level |>
+  dplyr::filter(dataset != "Mathys et al., 2019") |>
+  ggplot(aes(x = n_nuclei, y = reorder(fraction, n_nuclei), fill = dataset)) +
+  # Add bars with consistent thickness
+  geom_bar(
+    stat = "identity",
+    position = position_dodge(width = 0.9),
+    width = 0.8
+  ) +
+  # Add text labels at the end of bars
+  geom_text(
+    aes(label = comma(n_nuclei)),
+    position = position_dodge(width = 0.9),
+    hjust = -0.2, # adjust this to move labels further/closer to bars
+    size = 3
+  ) +
+  # Customize theme
+  theme_minimal() +
+  theme(
+    panel.grid.minor = element_blank(),
+    axis.title.y = element_blank(),
+    legend.position = "none"
+  ) +
+  # Add labels
+  labs(
+    x = "# of nuclei",
+    fill = "Dataset"
+  ) +
+  coord_cartesian(xlim = c(0, 250000))
+
+percent_nuclei <- fraction_level |>
+  dplyr::filter(dataset != "Mathys et al., 2019") |>
+  ggplot(aes(x = percent, y = reorder(fraction, n_nuclei), fill = dataset)) +
+  # Add bars with consistent thickness
+  geom_bar(
+    stat = "identity",
+    position = position_dodge(width = 0.9),
+    width = 0.8
+  ) +
+  # Add text labels at the end of bars
+  geom_text(
+    aes(label = comma(percent)),
+    position = position_dodge(width = 0.9),
+    hjust = -0.2, # adjust this to move labels further/closer to bars
+    size = 3
+  ) +
+  # Customize theme
+  theme_minimal() +
+  theme(
+    panel.grid.minor = element_blank(),
+    axis.title.y = element_blank(),
+    legend.position = "bottom"
+  ) +
+  # Add labels
+  labs(
+    x = "% of nuclei",
+    fill = "Dataset"
+  ) +
+  coord_cartesian(xlim = c(0, 65))
+
+total_nuclei + percent_nuclei
+
+ggsave(
+  here(
+    "05_figures/990_shared_figures/003_final_figures/nuclei_count_comparison_fraction.png"
+  ),
+  height = 8,
+  width = 10
+)
+```
+
+## Vascular fraction comparison only
+
+It might be more reasonable to just compare our vascular fraction to vascular papers
+
+```{r}
+meta <- sce@meta.data |>
+  dplyr::filter(prep == "V")
+
+our_vas_counts <- meta |>
+  dplyr::count(highlevel_manual_annotations) |>
+  dplyr::rename(celltype = highlevel_manual_annotations)
+
+fb_counts <- meta |>
+  dplyr::count(subcelltype_annotations) |>
+  dplyr::rename(celltype = subcelltype_annotations) |>
+  dplyr::filter(grepl("FB", celltype))
+
+# Merge p-fb subtypes
+p_fb <- fb_counts |>
+  dplyr::filter(!grepl("Meningeal", celltype)) |>
+  dplyr::mutate(n = sum(n)) |>
+  dplyr::filter(celltype == "Perivascular-FB")
+
+fb_subtypes_joined <- fb_counts |>
+  dplyr::filter(celltype == "Meningeal-FB") |>
+  rbind(p_fb)
+
+our_vas_counts <- our_vas_counts |>
+  dplyr::filter(celltype != "Fibroblast") |>
+  rbind(fb_subtypes_joined)
+
+neuron_count <- our_vas_counts |>
+  dplyr::filter(grepl("Neuron", celltype)) |>
+  dplyr::summarise(
+    celltype = "Neuron",
+    n = sum(n)
+  )
+
+yang_comparison_vas <- our_vas_counts |>
+  dplyr::filter(!grepl("Neuron", celltype)) |>
+  rbind(neuron_count) |>
+  dplyr::mutate(dataset = "Method here", .before = celltype) |>
+  dplyr::rename(n_nuclei = n) |>
+  rbind(nuclei_counts) |>
+  dplyr::mutate(
+    celltype = case_when(
+      celltype == "Astro" ~ "Astrocyte",
+      celltype == "mystery-cluster" ~ "EndoMT",
+      celltype == "Perivascular-FB" ~ "P. fibroblast",
+      celltype == "Meningeal-FB" ~ "M. fibroblast",
+      .default = celltype
+    )
+  ) |>
+  dplyr::mutate(total_nuclei = sum(n_nuclei), .by = dataset) |>
+  dplyr::mutate(percent = round(n_nuclei / total_nuclei * 100, 1)) |>
+  dplyr::mutate(
+    fraction = if_else(
+      celltype %in%
+        c(
+          "Endothelial",
+          "Pericyte",
+          "SMC",
+          "EndoMT",
+          "M. fibroblast",
+          "P. fibroblast",
+          "Ependymal"
+        ),
+      "Vascular",
+      "Non-Vascular"
+    )
+  )
+```
+
+## Get Tsartsalis et al data
+
+```{r}
+# Download supplementary files for Tsartsalis et al 2024
+#getGEOSuppFiles("GSM8010381")
+# Read data
+tsar <- readr::read_rds(here(
+  "03_data/991_external_data/vascular_snRNAseq_for_caleb-selected/vasc_ALL_new_celltype_for_heatmap.RDS"
+))
+table(tsar$new_celltype)
+tsar_sce <- qs::qread(here(
+  "03_data/991_external_data/vascular_snRNAseq_for_caleb-selected/GerritsSmith_seurat.qs"
+))
+table(tsar_sce$cluster_celltype)
+sum(tsar$barcode %in% tsar_sce$barcode)
+
+tsar <- tsar@meta.data |>
+  dplyr::select(barcode, new_celltype) |>
+  dplyr::left_join(tsar_sce@meta.data, y = _, by = join_by(barcode)) |>
+  dplyr::mutate(
+    celltype = if_else(
+      cluster_celltype == "Endo",
+      new_celltype,
+      cluster_celltype
+    )
+  )
+table(tsar$celltype)
+```
+
+```{r}
+yang_comparison_vas <- tsar |>
+  dplyr::count(celltype) |>
+  dplyr::mutate(total_nuclei = sum(n)) |>
+  dplyr::rename(n_nuclei = n) |>
+  dplyr::mutate(percent = round(n_nuclei / total_nuclei * 100, 1)) |>
+  dplyr::mutate(
+    fraction = if_else(
+      celltype %in% c("EC", "FB", "PC", "SMC"),
+      "Vascular",
+      "Non-Vascular"
+    ),
+    dataset = "Tsartsalis et al., 2024"
+  ) |>
+  rbind(yang_comparison_vas)
+```
+
+```{r}
+total_nuclei <- yang_comparison_vas |>
+  dplyr::filter(dataset != "Mathys et al., 2019") |>
+  ggplot(aes(x = n_nuclei, y = reorder(celltype, n_nuclei), fill = dataset)) +
+  # Add bars with consistent thickness
+  geom_bar(
+    stat = "identity",
+    position = position_dodge(width = 0.9),
+    width = 0.8
+  ) +
+  # Add text labels at the end of bars
+  geom_text(
+    aes(label = comma(n_nuclei)),
+    position = position_dodge(width = 0.9),
+    hjust = -0.2, # adjust this to move labels further/closer to bars
+    size = 3
+  ) +
+  # Customize theme
+  theme_minimal() +
+  theme(
+    panel.grid.minor = element_blank(),
+    axis.title.y = element_blank(),
+    legend.position = "none"
+  ) +
+  # Add labels
+  labs(
+    x = "# of nuclei",
+    fill = "Dataset"
+  ) +
+  coord_cartesian(xlim = c(0, 90000)) +
+  facet_grid(rows = vars(fraction), scales = "free")
+
+percent_nuclei <- yang_comparison_vas |>
+  dplyr::filter(dataset != "Mathys et al., 2019") |>
+  ggplot(aes(x = percent, y = reorder(celltype, n_nuclei), fill = dataset)) +
+  # Add bars with consistent thickness
+  geom_bar(
+    stat = "identity",
+    position = position_dodge(width = 0.9),
+    width = 0.8
+  ) +
+  # Add text labels at the end of bars
+  geom_text(
+    aes(label = comma(percent)),
+    position = position_dodge(width = 0.9),
+    hjust = -0.2, # adjust this to move labels further/closer to bars
+    size = 3
+  ) +
+  # Customize theme
+  theme_minimal() +
+  theme(
+    panel.grid.minor = element_blank(),
+    axis.title.y = element_blank(),
+    legend.position = "none"
+  ) +
+  # Add labels
+  labs(
+    x = "% of nuclei",
+    fill = "Dataset"
+  ) +
+  coord_cartesian(xlim = c(0, 55)) +
+  facet_grid(rows = vars(fraction), scales = "free")
+
+ggsave(
+  here(
+    "05_figures/990_shared_figures/003_final_figures/nuclei_count_comparison_vas.png"
+  ),
+  height = 8,
+  width = 10
+)
+```
+
+```{r}
+fraction_level <- yang_comparison_vas |>
+  dplyr::filter(dataset != "Mathys et al., 2019") |>
+  #dplyr::filter(!(dataset == "Method here" & fraction == "Parenchymal")) |>
+  dplyr::summarise(n_nuclei = sum(n_nuclei), .by = c(dataset, fraction)) |>
+  mutate(percent = round(n_nuclei / sum(n_nuclei) * 100, 1), .by = dataset)
+
+total_nuclei_frac_v <- fraction_level |>
+  dplyr::filter(dataset != "Mathys et al., 2019") |>
+  ggplot(aes(
+    x = reorder(dataset, percent * (fraction == "Non-Vascular")),
+    y = n_nuclei,
+    fill = fraction
+  )) +
+  # Add bars with consistent thickness
+  geom_bar(stat = "identity") +
+  # Add text labels at the end of bars
+  geom_text(
+    aes(label = n_nuclei),
+    color = "black",
+    size = 3,
+    fontface = "bold",
+    position = position_stack(vjust = 0.5)
+  ) +
+  # Customize theme
+  theme_minimal() +
+  theme(
+    panel.grid.minor = element_blank(),
+    axis.title.y = element_blank(),
+    legend.position = "bottom",
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  ) +
+  # Add labels
+  labs(x = "# of nuclei", fill = "Dataset") +
+  scale_y_continuous(labels = comma)
+#coord_cartesian(xlim = c(0, 240000))
+
+#reorder(abbreviated_idents, -percentage * (prep == "V"))
+
+percent_nuclei_frac_v <- fraction_level |>
+  dplyr::filter(dataset != "Mathys et al., 2019") |>
+  ggplot(aes(
+    x = reorder(dataset, percent * (fraction == "Non-Vascular")),
+    y = percent,
+    fill = fraction
+  )) +
+  # Add bars with consistent thickness
+  geom_bar(stat = "identity") +
+  # Add text labels at the end of bars
+  #geom_text(aes(label = comma(percent)), hjust = -0.2, size = 3) +
+  geom_text(
+    aes(label = paste0(percent, "%")),
+    color = "black",
+    size = 3,
+    fontface = "bold",
+    position = position_stack(vjust = 0.5)
+  ) +
+  # Customize theme
+  theme_minimal() +
+  theme(
+    panel.grid.minor = element_blank(),
+    axis.title.y = element_blank(),
+    legend.position = "bottom",
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  ) +
+
+  # Add labels
+  labs(x = "% of nuclei", fill = "Dataset")
+#coord_cartesian(xlim = c(0, 120))
+
+total_nuclei_frac_v | percent_nuclei_frac_v
+
+ggsave(
+  here(
+    "05_figures/990_shared_figures/003_final_figures/nuclei_count_comparison_vas_fraction.png"
+  ),
+  height = 5,
+  width = 6
+)
+```
+
+## Compare penchymal fraction
+
+I'll compare the parenchymal by looking at Mathys et al., 2023
+
+```{r}
+# Make a dataframe of the numbers reported in firgure 1 of Mathys 2023
+cell_type <- c(
+  "Ex. neuron",
+  "In. neuron",
+  "Oligo",
+  "OPC",
+  "Astrocyte",
+  "Immune",
+  "Vascular"
+)
+cell_counts <- c(1043230, 329699, 645142, 90502, 149558, 83889, 17974)
+percentage <- c(44.2, 14.0, 27.5, 3.8, 6.3, 3.6, 0.8)
+
+# Create the dataframe
+brain_cells_df <- data.frame(
+  dataset = "Mathys et al., 2023",
+  celltype = cell_type,
+  n_nuclei = cell_counts,
+  percentage = percentage
+)
+
+p_counts <- sce@meta.data |>
+  dplyr::filter(prep == "P") |>
+  dplyr::count(highlevel_manual_annotations) |>
+  dplyr::rename(celltype = highlevel_manual_annotations) |>
+  dplyr::mutate(
+    celltype = case_when(
+      celltype %in%
+        c(
+          "Endothelial",
+          "Pericyte",
+          "mystery-cluster",
+          "Fibroblast",
+          "SMC"
+        ) ~ "Vascular",
+      celltype %in% c("Microglia", "T-cell") ~ "Immune",
+      celltype == "Neuron_ex" ~ "Ex. neuron",
+      celltype == "Neuron_in" ~ "In. neuron",
+      celltype == "Astro" ~ "Astrocyte",
+      .default = celltype
+    )
+  ) |>
+  dplyr::mutate(n_nuclei = sum(n), .by = celltype) |>
+  dplyr::select(!n) |>
+  dplyr::distinct() |>
+  dplyr::mutate(n_total = sum(n_nuclei)) |>
+  dplyr::mutate(percentage = round(n_nuclei / n_total * 100, 1)) |>
+  dplyr::mutate(dataset = "Method here", .before = celltype) |>
+  dplyr::select(!n_total) |>
+  rbind(brain_cells_df)
+```
+
+```{r}
+total_nuclei_p <- p_counts |>
+  ggplot(aes(x = n_nuclei, y = reorder(celltype, n_nuclei), fill = dataset)) +
+  # Add bars with consistent thickness
+  geom_bar(
+    stat = "identity",
+    position = position_dodge(width = 0.9),
+    width = 0.8
+  ) +
+  # Add text labels at the end of bars
+  geom_text(
+    aes(label = comma(n_nuclei)),
+    position = position_dodge(width = 0.9),
+    hjust = -0.2, # adjust this to move labels further/closer to bars
+    size = 3
+  ) +
+  # Customize theme
+  theme_minimal() +
+  theme(
+    panel.grid.minor = element_blank(),
+    axis.title.y = element_blank(),
+    legend.position = "bottom"
+  ) +
+  # Add labels
+  labs(
+    x = "# of nuclei",
+    fill = "Dataset"
+  ) +
+  coord_cartesian(c(0, 1350000)) +
+  scale_x_continuous(labels = comma)
+
+percent_nuclei_p <- p_counts |>
+  ggplot(aes(x = percentage, y = reorder(celltype, n_nuclei), fill = dataset)) +
+  # Add bars with consistent thickness
+  geom_bar(
+    stat = "identity",
+    position = position_dodge(width = 0.9),
+    width = 0.8
+  ) +
+  # Add text labels at the end of bars
+  geom_text(
+    aes(label = comma(percentage)),
+    position = position_dodge(width = 0.9),
+    hjust = -0.2, # adjust this to move labels further/closer to bars
+    size = 3
+  ) +
+  # Customize theme
+  theme_minimal() +
+  theme(
+    panel.grid.minor = element_blank(),
+    axis.title.y = element_blank(),
+    legend.position = "bottom"
+  ) +
+  # Add labels
+  labs(
+    x = "% of nuclei",
+    fill = "Dataset"
+  ) +
+  coord_cartesian(c(0, 50))
+
+total_nuclei_p + percent_nuclei_p
+ggsave(
+  here(
+    "05_figures/990_shared_figures/003_final_figures/nuclei_count_comparison_par.png"
+  ),
+  height = 5,
+  width = 7
+)
+```
+
+```{r}
+fraction_level <- p_counts |>
+  dplyr::mutate(
+    fraction = if_else(celltype == "Vascular", "Vascular", "Parenchymal")
+  ) |>
+  dplyr::mutate(fraction = fct_relevel(fraction, "Vascular")) |>
+  dplyr::summarise(n_nuclei = sum(n_nuclei), .by = c(dataset, fraction)) |>
+  mutate(percent = round(n_nuclei / sum(n_nuclei) * 100, 1), .by = dataset)
+
+# Get the Dark2 colors to make the green shade the parenchymal one
+dark2_colors <- brewer.pal(n = 8, name = "Dark2")
+reordered_colors <- dark2_colors[c(2, 1, 3, 4, 5, 6, 7, 8)]
+mypal <- pal_npg("nrc", alpha = 0.7)(9)
+scales::show_col(mypal)
+
+total_nuclei_frac_p <- fraction_level |>
+  ggplot(aes(
+    x = reorder(dataset, percent * (fraction == "Vascular")),
+    y = n_nuclei,
+    fill = fraction
+  )) +
+  # Add bars with consistent thickness
+  geom_bar(stat = "identity") +
+  # Add text labels at the end of bars
+  geom_text(
+    aes(label = n_nuclei),
+    color = "black",
+    size = 3,
+    fontface = "bold",
+    position = position_stack(vjust = 0.5)
+  ) +
+  # Customize theme
+  theme_minimal() +
+  theme(
+    panel.grid.minor = element_blank(),
+    axis.title.y = element_blank(),
+    legend.position = "bottom",
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  ) +
+  # Add labels
+  labs(x = "# of nuclei", fill = "Dataset") +
+  scale_y_continuous(labels = comma) +
+  scale_fill_manual(values = reordered_colors)
+# coord_cartesian(xlim = c(0, 240000))
+
+# reorder(abbreviated_idents, -percentage * (prep == "V"))
+
+percent_nuclei_frac_p <- fraction_level |>
+  ggplot(aes(
+    x = reorder(dataset, percent * (fraction == "Vascular")),
+    y = percent,
+    fill = fraction
+  )) +
+  # Add bars with consistent thickness
+  geom_bar(stat = "identity") +
+  # Add text labels at the end of bars
+  # geom_text(aes(label = paste0(percent, "%")),
+  #   color = "black", size = 2, fontface = "bold",
+  #   position = position_stack(vjust = 0.5)
+  # ) +
+  # Customize theme
+  theme_minimal() +
+  theme(
+    panel.grid.minor = element_blank(),
+    axis.title.y = element_blank(),
+    legend.position = "none",
+    axis.text.x = element_text(hjust = 1, size = 7),
+    axis.text.y = element_text(size = 7)
+  ) +
+
+  # Add labels
+  labs(x = "", fill = "Dataset") +
+  scale_fill_manual(
+    values = c("Vascular" = "#4DBBD5", "Parenchymal" = "#E64B35")
+  )
+#coord_cartesian(ylim = c(0, <MAX_VALUE>))
+
+total_nuclei_frac_p | percent_nuclei_frac_p
+percent_nuclei_frac_p + coord_flip()
+ggsave(
+  here(
+    "05_figures/990_shared_figures/003_final_figures/nuclei_count_comparison_par_fraction.png"
+  ),
+  height = 5,
+  width = 6
+)
+```
+
+## Do stats on level 1 celltypes
+
+Want to show vascular celltypes are significantly more enriched and parenchyma is on par
+
+```{r}
+n_samples <- tribble(
+  ~n_sample , ~dataset                  ,
+         77 , "Tsartsalis et al., 2024" ,
+         25 , "Yang et al., 2022"       ,
+        427 , "Mathys et al., 2019"     ,
+         36 , "Method here"
+)
+
+celltype_sig_prop <- yang_comparison_vas |>
+  #dplyr::filter(fraction == "Vascular") |>
+  dplyr::mutate(
+    celltype = case_when(
+      celltype == "EC" ~ "Endothelial",
+      grepl("fibroblast", celltype) ~ "Fibroblast",
+      celltype == "FB" ~ "Fibroblast",
+      celltype == "PC" ~ "Pericyte",
+      celltype == "Astrocyte" ~ "Astro",
+      celltype == "Micro" ~ "Microglia",
+      .default = celltype
+    )
+  ) |>
+  dplyr::mutate(
+    n_nuclei = sum(n_nuclei),
+    percent = sum(percent),
+    .by = c(dataset, celltype)
+  ) |>
+  unique() |>
+  dplyr::left_join(n_samples, by = join_by(dataset))
+
+celltype_sig_prop
+
+# need the per sample counts for our data
+sample_counts <- sce@meta.data |>
+  dplyr::filter(prep == "V") |>
+  dplyr::summarise(n_nuclei = n(), .by = c(manifest, abbreviated_idents_level1))
+unique(sample_counts$manifest) |> length()
+unique(sample_counts$abbreviated_idents_level1)
+sample_counts_p <- sce@meta.data |>
+  dplyr::filter(prep == "P") |>
+  dplyr::mutate(
+    celltypes_updated = if_else(
+      grepl("In-Neuro|Ex-Neuro", abbreviated_idents_level1),
+      "Neuron",
+      abbreviated_idents_level1
+    )
+  ) |>
+  dplyr::summarise(n_nuclei = n(), .by = c(manifest, celltypes_updated))
+```
+
+```{r}
+fraction_level <- yang_comparison_vas |>
+  dplyr::filter(dataset != "Mathys et al., 2019") |>
+  #dplyr::filter(!(dataset == "Method here" & fraction == "Parenchymal")) |>
+  dplyr::summarise(n_nuclei = sum(n_nuclei), .by = c(dataset, fraction)) |>
+  mutate(percent = round(n_nuclei / sum(n_nuclei) * 100, 1), .by = dataset) |>
+  dplyr::left_join(n_samples, by = "dataset")
+
+vas_counts_per_sample <- sce@meta.data |>
+  dplyr::filter(prep == "V") |>
+  dplyr::count(highlevel_manual_annotations, manifest) |>
+  dplyr::rename(celltype = highlevel_manual_annotations) |>
+  dplyr::mutate(
+    fraction = if_else(
+      celltype %in%
+        c(
+          "Endothelial",
+          "Pericyte",
+          "SMC",
+          "mystery-cluster",
+          "Fibroblast",
+          "Ependymal"
+        ),
+      "Vascular",
+      "Non-Vascular"
+    )
+  ) |>
+  dplyr::summarise(n_nuclei = sum(n), .by = c(manifest, fraction))
+
+par_counts_per_sample <- sce@meta.data |>
+  dplyr::filter(prep == "P") |>
+  dplyr::count(highlevel_manual_annotations, manifest) |>
+  dplyr::rename(celltype = highlevel_manual_annotations) |>
+  dplyr::mutate(
+    fraction = if_else(
+      celltype %in%
+        c(
+          "Endothelial",
+          "Pericyte",
+          "SMC",
+          "mystery-cluster",
+          "Fibroblast",
+          "Ependymal"
+        ),
+      "Vascular",
+      "Parenchymal"
+    )
+  ) |>
+  dplyr::summarise(n_nuclei = sum(n), .by = c(manifest, fraction))
+
+
+plot_enrichment_comparison <- function(
+  total_data,
+  sample_data,
+  contrast = "Non-Vascular"
+) {
+  total_data <- total_data |>
+    dplyr::arrange(dataset)
+  # Get your method name
+  your_method <- "Method here"
+
+  # Calculate proportions for your samples
+  your_proportions <- sample_data |>
+    dplyr::summarise(
+      total_nuclei = sum(n_nuclei),
+      vascular_nuclei = sum(n_nuclei[fraction == "Vascular"]),
+      vascular_prop = vascular_nuclei / total_nuclei * 100,
+      .by = manifest
+    )
+
+  # Get reference proportions from other studies
+  reference_props <- total_data |>
+    dplyr::filter(dataset != your_method, fraction == "Vascular") |>
+    dplyr::select(dataset, percent)
+
+  # Perform statistical tests
+  stats_results <- reference_props |>
+    rowwise() |>
+    mutate(
+      p_value = wilcox.test(
+        your_proportions$vascular_prop,
+        mu = percent
+      )$p.value,
+      stars = case_when(
+        p_value < 0.001 ~ "***",
+        p_value < 0.01 ~ "**",
+        p_value < 0.05 ~ "*",
+        TRUE ~ "ns"
+      )
+    ) |>
+    # Make sure order is in descending percent
+    dplyr::arrange(desc(percent))
+
+  # Calculate y positions for brackets - can adjust these numbers
+  if (nrow(reference_props) != 1) {
+    stats_results$y_bracket <- seq(
+      from = 103,
+      to = 105 + 8 * (nrow(reference_props) - 1),
+      by = 8
+    )
+  } else {
+    stats_results$y_bracket <- 103
+  }
+  stats_results$y_text <- stats_results$y_bracket + 5
+
+  # Create base plot
+  p <- ggplot(
+    total_data,
+    aes(
+      x = reorder(dataset, percent * (fraction == contrast)),
+      y = percent,
+      fill = fraction
+    )
+  ) +
+    geom_bar(stat = "identity") +
+    # geom_text(aes(label = sprintf("%.1f%%", percent)),
+    #         color = "black", size = 2, fontface = "bold",
+    #         position = position_stack(vjust = 0.5)) +
+    # scale_fill_manual(values = c("Non-Vascular" = "#E69F00",
+    #                             "Vascular" = "#0072B2")) +
+    theme_minimal() +
+    theme(
+      axis.text.x = element_text(hjust = 1, size = 7),
+      axis.text.y = element_text(size = 7),
+      legend.title = element_blank(),
+      legend.text = element_text(size = 7),
+      legend.position = "top",
+      panel.grid.major.x = element_blank(),
+      axis.title = element_text(size = 8),
+      plot.title = element_text(hjust = 0.5)
+    ) +
+    labs(
+      x = "",
+      y = "Percentage of Nuclei (%)"
+    ) +
+    scale_fill_npg()
+
+  # Add brackets for each comparison
+  for (i in 1:nrow(stats_results)) {
+    ref_study <- stats_results$dataset[i]
+    x1 <- which(unique(total_data$dataset) == your_method)
+    x2 <- which(unique(total_data$dataset) == ref_study)
+    y_pos <- stats_results$y_bracket[i]
+    y_text <- stats_results$y_text[i]
+
+    p <- p +
+      # Horizontal line
+      annotate(
+        "segment",
+        x = x1,
+        xend = x2,
+        y = y_pos,
+        yend = y_pos,
+        color = "black"
+      ) +
+      # Vertical lines
+      annotate(
+        "segment",
+        x = x1,
+        xend = x1,
+        y = y_pos - 2,
+        yend = y_pos,
+        color = "black"
+      ) +
+      annotate(
+        "segment",
+        x = x2,
+        xend = x2,
+        y = y_pos - 2,
+        yend = y_pos,
+        color = "black"
+      ) +
+      # Significance stars
+      annotate(
+        "text",
+        x = mean(c(x1, x2)),
+        y = y_text,
+        label = stats_results$stars[i],
+        size = 4,
+        angle = 90
+      ) +
+      scale_y_continuous(breaks = seq(0, 100, by = 25))
+  }
+
+  return(p)
+}
+
+percent_nuclei_frac_v <- plot_enrichment_comparison(
+  fraction_level,
+  vas_counts_per_sample
+)
+print(percent_nuclei_frac_v)
+
+total_nuclei_frac_v | percent_nuclei_frac_v
+percent_nuclei_frac_v + coord_flip()
+
+ggsave(
+  here(
+    "05_figures/990_shared_figures/003_final_figures/nuclei_count_comparison_vas_fraction.png"
+  ),
+  height = 5,
+  width = 6
+)
+
+head(sample_counts)
+x <- sample_counts |>
+  dplyr::pull(n_nuclei, abbreviated_idents_level1)
+sample_counts_list <- split(x, names(x))
+
+x <- sample_counts_p |>
+  dplyr::pull(n_nuclei, celltypes_updated)
+sample_counts_list <- split(x, names(x))
+```
+
+```{r}
+# Function to create a statistical comparison plot
+plot_nuclei_comparison <- function(celltype, your_samples, literature_data) {
+  your_samples <- unlist(your_samples[celltype])
+
+  # Convert your samples to a data frame
+  your_data <- data.frame(
+    count = your_samples,
+    source = "Your Data"
+  )
+
+  # Create literature data frame with one row per sample
+  # (using mean counts for each study since we only have totals)
+  lit_data <- literature_data |>
+    dplyr::mutate(mean_count = total_nuclei / n_sample) |>
+    #dplyr::group_by(dataset) |>
+    dplyr::summarise(
+      count = rep(mean_count, n_sample[1]),
+      source = dataset,
+      .by = dataset
+    ) #|>
+  #dplyr::ungroup()
+
+  # Combine the data
+  plot_data <- bind_rows(your_data, lit_data)
+
+  # Create the plot
+  p <- ggbetweenstats(
+    data = plot_data,
+    x = source,
+    y = count,
+    type = "nonparametric", # Using nonparametric test due to potential non-normality
+    plot.type = "box",
+    pairwise.comparisons = TRUE,
+    pairwise.display = "significant",
+    centrality.plotting = TRUE,
+    bf.message = FALSE,
+    title = "Comparison of Nuclei Counts Across Studies",
+    xlab = "Data Source",
+    ylab = "Nuclei Count"
+  ) +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1),
+      plot.title = element_text(hjust = 0.5)
+    )
+
+  return(p)
+}
+
+# Alternative version using percentages if you're comparing proportions
+plot_nuclei_proportions <- function(
+  your_samples,
+  literature_data,
+  total_nuclei
+) {
+  # Convert counts to percentages
+  your_data <- data.frame(
+    percentage = (your_samples / total_nuclei) * 100,
+    source = "Your Data"
+  )
+
+  # Create literature percentage data
+  lit_data <- literature_data |>
+    mutate(
+      percentage = (total_count / n_samples / total_nuclei) * 100,
+      source = study_name
+    ) |>
+    group_by(study_name) |>
+    summarize(
+      percentage = rep(percentage, n_samples[1]),
+      source = source[1]
+    ) |>
+    ungroup()
+
+  # Combine the data
+  plot_data <- bind_rows(your_data, lit_data)
+
+  # Create the plot
+  p <- ggbetweenstats(
+    data = plot_data,
+    x = source,
+    y = percentage,
+    type = "nonparametric",
+    plot.type = "box",
+    pairwise.comparisons = TRUE,
+    pairwise.display = "significant",
+    centrality.plotting = TRUE,
+    bf.message = FALSE,
+    title = "Comparison of Nuclei Proportions Across Studies",
+    xlab = "Data Source",
+    ylab = "Percentage of Total Nuclei (%)"
+  ) +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1),
+      plot.title = element_text(hjust = 0.5)
+    )
+
+  return(p)
+}
+
+# # For raw counts
+p1 <- map(
+  names(sample_counts_list),
+  ~ plot_nuclei_comparison(.x, sample_counts_list, celltype_sig_prop)
+)
+print(p1)
+```
+
+```{r}
+#| fig-width: 7
+#| fig-height: 12
+VlnPlot(
+  sce,
+  features = c("pc_mito"),
+  ncol = 1,
+  group.by = "highlevel_manual_annotations",
+  pt.size = 0
+)
+```
+
+# UMAPs
+
+```{r}
+#| label: make umap
+Idents(sce) <- str_replace_all(Idents(sce), "_", "-")
+sce$highlevel_manual_annotations <- if_else(
+  sce$highlevel_manual_annotations == "mystery-cluster",
+  "EndoMT",
+  sce$highlevel_manual_annotations
+)
+sce$highlevel_manual_annotations <- str_replace_all(
+  sce$highlevel_manual_annotations,
+  "_",
+  "-"
+)
+unique(sce$highlevel_manual_annotations)
+
+# Define strong colors for high-level cell types
+level1_colors <- c(
+  "Pericyte" = "#E41A1C", # Strong Red
+  "SMC" = "#377EB8", # Strong Blue
+  "EndoMT" = "#4DAF4A", # Strong Green
+  "Oligo" = "#984EA3", # Strong Purple
+  "Fibroblast" = "#FF7F00", # Strong Orange
+  "Endothelial" = "#A65628", # Strong Brown
+  "T-cell" = "#F781BF", # Strong Pink
+  "Microglia" = "#666666", # Dark Gray (for better contrast)
+  "Astro" = "#FFD700", # Strong Yellow-Gold
+  "OPC" = "#1E90FF", # Vivid Blue
+  "Neuron-ex" = "#1F78B4", # Deep Blue
+  "Neuron-in" = "#33A02C" # Deep Green
+)
+
+level2_colors <- c(
+  "M-Pericyte" = "#FF6666", # Lighter red
+  "Vascular-SMC-1" = "#66B2FF", # Lighter blue
+  "EndoMT-2" = "#66FF66", # Lighter green
+  "Oligo-A" = "#C266FF", # Lighter purple
+  "Meningeal-FB" = "#FFA07A", # Soft coral
+  "Capillary" = "#FFD700", # Golden yellow
+  "T-Pericyte" = "#FF4C4C", # Stronger red
+  "Arterial" = "#FF4500", # Deep orange-red
+  "Pericyte-1" = "#FF8080", # Soft pink-red
+  "Arteriolar-SMC" = "#4682B4", # Steel blue
+  "T-cell-P1" = "#FA8072", # Salmon
+  "Pericyte-FB" = "#FF6347", # Tomato
+  "Pericyte-2" = "#FF9999", # Pinkish red
+  "Artirial-FB" = "#FFB6C1", # Light pink
+  "Venous" = "#8B0000", # Deep red
+  "Perivascular-M" = "#2F4F4F", # Dark slate gray
+  "EndoMT-1" = "#32CD32", # Lime green
+  "Microglia-Q" = "#CCCCFF", # Light lavender
+  "Vascular-SMC-2" = "#4682B4", # Blue
+  "Perivascular-FB-2" = "#B0C4DE", # Light steel blue
+  "Astro-Q" = "#FFD700", # Gold
+  "OPC-B" = "#ADD8E6", # Light blue
+  "Perivascular-FB-1" = "#87CEFA", # Sky blue
+  "T-cell-M" = "#DC143C", # Crimson
+  "Oligo-B" = "#DDA0DD", # Plum
+  "Microglia-V" = "#FF69B4", # Hot pink
+  "In-Neuro-7" = "#8A2BE2", # Blue violet
+  "Ex-Neuro-4" = "#4169E1", # Royal blue
+  "In-Neuro-1" = "#20B2AA", # Light sea green
+  "T-cell-V" = "#E9967A", # Dark salmon
+  "Astro-A" = "#DAA520", # Goldenrod
+  "In-Neuro-4" = "#556B2F", # Dark olive green
+  "Ex-Neuro-6" = "#6A5ACD", # Slate blue
+  "In-Neuro-6" = "#008080", # Teal
+  "In-Neuro-3" = "#ADFF2F", # Green yellow
+  "Microglia-A" = "#FF1493", # Deep pink
+  "In-Neuro-2" = "#32CD32", # Lime green
+  "Ex-Neuro-7" = "#9370DB", # Medium purple
+  "Ex-Neuro-5" = "#BA55D3", # Medium orchid
+  "Ex-Neuro-3" = "#8B008B", # Dark magenta
+  "OPC-A" = "#9400D3", # Dark violet
+  "In-Neuro-5" = "#3CB371", # Medium sea green
+  "Ex-Neuro-1" = "#00FA9A", # Medium spring green
+  "Ex-Neuro-2" = "#FF4500", # Orange red
+  "T-cell-P2" = "#FF8C00" # Dark orange
+)
+
+vascular_markers <- list(
+  endothelial = c("CLDN5", "PECAM1", "VWF", "CDH5", "TIE1", "FLT1", "ICAM2"),
+  pericyte = c("PDGFRB", "RGS5", "CSPG4", "ABCC9"),
+  smc = c("ACTA2", "MYH11", "TAGLN", "TPM2", "LMOD1", "MYL9")
+)
+
+endo <- FeaturePlot(sce, features = vascular_markers$endothelial)
+smc <- FeaturePlot(sce, features = vascular_markers$smc)
+pericyte <- FeaturePlot(sce, features = vascular_markers$pericyte)
+
+ggsave(
+  here(
+    "05_figures/990_shared_figures/003_final_figures/000_sup_figures/endothelail_marker_umap.pdf"
+  ),
+  plot = endo,
+  width = 10,
+  height = 8
+)
+ggsave(
+  here(
+    "05_figures/990_shared_figures/003_final_figures/000_sup_figures/smc_marker_umap.pdf"
+  ),
+  plot = smc,
+  width = 10,
+  height = 8
+)
+ggsave(
+  here(
+    "05_figures/990_shared_figures/003_final_figures/000_sup_figures/pericyte_marker_umap.pdf"
+  ),
+  plot = pericyte,
+  width = 10,
+  height = 8
+)
+
+# Plot Level 1 cell types
+umap_level1 <- DimPlot(
+  sce,
+  reduction = "umap",
+  group.by = "highlevel_manual_annotations",
+  label.size = 3,
+  cols = level1_colors, #repel = TRUE,
+  label = TRUE,
+  pt.size = 1
+) +
+  #scale_color_manual(values = level1_colors) +
+  NoAxes() +
+  NoGrid() +
+  NoLegend() +
+  theme(
+    plot.margin = unit(c(1, 1, 1, 1), "cm"),
+  ) +
+  labs(title = NULL)
+
+# Plot Subtypes
+umap <- DimPlot(
+  sce,
+  reduction = "umap",
+  repel = TRUE,
+  label = TRUE,
+  cols = level2_colors,
+  raster = TRUE,
+  pt.size = 1,
+  label.size = 3
+) +
+  NoLegend() +
+  NoAxes() +
+  NoGrid() #+
+#ggrastr::rasterise(dpi = 300) # Rasterizes only points
+
+umap_vascular_parenchymal <- DimPlot(
+  sce,
+  reduction = "umap",
+  group.by = "prep",
+  raster = TRUE,
+  pt.size = 1
+) +
+  NoAxes() +
+  NoGrid() +
+  scale_colour_npg() +
+  #scale_fill_custom() +
+  labs(title = NULL)
+
+ggsave(
+  here("05_figures/990_shared_figures/003_final_figures/overall_umap.png"),
+  plot = umap,
+  width = 10,
+  height = 8,
+  dpi = 300
+)
+ggsave(
+  here("05_figures/990_shared_figures/003_final_figures/umap_fractions.png"),
+  plot = umap_vascular_parenchymal,
+  width = 10,
+  height = 8,
+  dpi = 300
+)
+```
+
+# Assemble method comparison plots
+
+```{r}
+#| eval: true
+
+# Need to make the parenchymal plot shorter
+p_plot <- plot_grid(
+  NULL,
+  percent_nuclei_frac_p +
+    theme(legend.position = "none") +
+    coord_flip() +
+    labs(y = "Percentage of Nuclei (%)") +
+    theme(axis.title = element_text(size = 8)),
+  NULL,
+  ncol = 3,
+  rel_widths = c(1, 6.5, 1),
+  labels = c("F", "", ""),
+  label_colour = "black"
+)
+v_plot <- plot_grid(
+  NULL,
+  percent_nuclei_frac_v +
+    theme(legend.position = "none") +
+    coord_flip() +
+    labs(y = ""),
+  NULL,
+  ncol = 3,
+  rel_widths = c(1, 18.5, 1),
+  labels = c("", "", ""),
+  label_colour = "black"
+)
+
+row_2 <- plot_grid(
+  v_plot,
+  p_plot,
+  rel_heights = c(1.2, 1),
+  labels = c("E", ""),
+  label_colour = "black",
+  nrow = 2
+)
+
+# extract the legend from one of the plots
+legend <- get_legend(
+  # create some space to the left of the legend
+  percent_nuclei_frac_p +
+    theme(
+      legend.position = "bottom",
+      legend.box.margin = margin(0, 0, 0, 4),
+      legend.text = element_text(size = 8),
+      legend.key.size = unit(4, "mm")
+    ) +
+    labs(fill = "")
+)
+
+row_2_l <- plot_grid(
+  NULL,
+  legend,
+  row_2,
+  rel_heights = c(0.05, 0.1, 2),
+  ncol = 1,
+  labels = c("", ""),
+  label_colour = "black"
+)
+row_2_l
+```
+
+```{r}
+flow_diagram <- image_read(here::here(
+  "05_figures/990_shared_figures",
+  "003_final_figures/cohort_flow_diagram.svg"
+))
+
+img1_gg <- ggdraw() + draw_image(flow_diagram)
+```
+# Asemble Figure
+
+```{r}
+#| eval: false
+# Combine ggplot objects
+row_1 <- plot_grid(
+  umap_vascular_parenchymal + theme(aspect.ratio = 1),
+  umap_level1 + theme(aspect.ratio = 1),
+  nrow = 1,
+  labels = c("A", "B"),
+  label_colour = "black"
+)
+row_1 <- plot_grid(
+  umap_vascular_parenchymal + theme(aspect.ratio = 1),
+  umap_level1 + theme(aspect.ratio = 1),
+  labels = c("A", "B"),
+  label_colour = "black"
+)
+
+row_2 <- plot_grid(
+  umap,
+  row_2_l,
+  labels = c("C", ""),
+  label_colour = "black",
+  rel_widths = c(2, 1)
+)
+# Combine everything
+final_plot <- plot_grid(
+  row_1,
+  row_2,
+  ncol = 1,
+  labels = c("", ""),
+  label_colour = "black"
+)
+
+ggsave(
+  file = here::here(
+    "05_figures/990_shared_figures/003_final_figures",
+    "figure1_umaps.png"
+  ),
+  plot = final_plot,
+  width = 7,
+  height = 9,
+  units = "in",
+  dpi = 300
+)
+cairo_pdf(
+  file = here::here(
+    "05_figures/990_shared_figures/003_final_figures",
+    "figure1_umaps.pdf"
+  ),
+  width = 7,
+  height = 9
+)
+print(final_plot)
+dev.off()
+```
+
+```{r}
+# Combine ggplot objects
+row_1_umaps <- plot_grid(
+  img1_gg,
+  umap_vascular_parenchymal +
+    theme(aspect.ratio = 1, plot.margin = unit(c(0, 0, 0, 0), "cm")),
+  nrow = 2,
+  labels = c("A", "B"),
+  label_colour = "black"
+)
+row_1_method_plots <- plot_grid(
+  row_2_l,
+  umap_level1 + theme(plot.margin = unit(c(0, 0, 0, 0), "cm")),
+  ncol = 1,
+  labels = c("", "C"),
+  label_colour = "black",
+  rel_heights = c(0.6, 1),
+  label_y = c(1, 0.8)
+)
+row_1 <- plot_grid(
+  row_1_umaps,
+  row_1_method_plots,
+  nrow = 1,
+  labels = c("", ""),
+  label_colour = "black",
+  rel_widths = c(0.8, 1)
+)
+#row_1 <- plot_grid(row_1_umaps, umap_level1 + theme(aspect.ratio = 1), nrow = 1,
+#  labels = c("", "C"), label_colour = "black")
+
+#row_2 <- plot_grid(umap, row_2_l, labels = c("D", ""), label_colour = "black", rel_widths = c(2, 1))
+# Combine everything
+final_plot <- plot_grid(
+  row_1,
+  umap + theme(plot.margin = unit(c(0, 0, 0, 0), "cm")),
+  ncol = 1,
+  labels = c("", "D"),
+  label_colour = "black",
+  rel_heights = c(1, 1.1)
+)
+
+ggsave(
+  file = here::here(
+    "05_figures/990_shared_figures/003_final_figures",
+    "figure1_umaps.png"
+  ),
+  plot = final_plot,
+  width = 7,
+  height = 9,
+  units = "in",
+  dpi = 300
+)
+cairo_pdf(
+  file = here::here(
+    "05_figures/990_shared_figures/003_final_figures",
+    "figure1_umaps_c_label.pdf"
+  ),
+  width = 7,
+  height = 9
+)
+print(final_plot)
+dev.off()
+```

@@ -1,0 +1,1449 @@
+---
+title: Differentially expressed genes
+execute:
+  eval: true
+code-fold: true
+---
+
+## Load packages
+
+```{r}
+source(here::here(
+  "04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"
+))
+library(magick)
+library(circlize)
+library(Cairo)
+tar_config_set(store = here::here("_targets"))
+```
+
+```{r}
+source("04_data_analysis/998_paper_figures/00_figures_source.R")
+```
+
+# Load data
+
+
+```{r}
+tar_load(translated_id)
+```
+
+```{r}
+# Get seurat object
+tar_load(sce)
+
+# the full cell labels are long for plots, let's make abbreviated versions
+celltypes_abbrev <-
+  c(
+    "Astrocyte-activated" = "Astro-A",
+    "Astrocyte-quiescent" = "Astro-Q",
+    "Ex-Neuron-ADARB2-ERBB4" = "Ex-Neuro-1",
+    "Ex-Neuron-CBLN2-NRGN" = "Ex-Neuro-2",
+    "Ex-Neuron-DLC1-HS3ST4" = "Ex-Neuro-3",
+    "Ex-Neuron-L2-3-CBLN2-LINC02306-CUX2" = "Ex-Neuro-4",
+    "Ex-Neuron-L3-5-RORB-PLCH1" = "Ex-Neuro-5",
+    "Ex-Neuron-L4-5-RORB-IL1RAPL2" = "Ex-Neuro-6",
+    "Ex-Neuron-L6-THEMIS-NFIA" = "Ex-Neuro-7",
+    "In-Neuron-ADARB2-GRM7" = "In-Neuro-1",
+    "In-Neuron-ADARB2-IL1RAPL2-CSCL14" = "In-Neuro-2",
+    "In-Neuron-ADARB2-LAMP5-NRG1" = "In-Neuro-3",
+    "In-Neuron-ADARB2-NRG1-RELN" = "In-Neuro-4",
+    "In-Neuron-DPP10-MEF2C" = "In-Neuro-5",
+    "In-Neuron-PRKG1-TBC1D4" = "In-Neuro-6",
+    "In-Neuron-TRHDE-RALYL" = "In-Neuro-7",
+    "Microglia-activated" = "Microglia-A",
+    "Microglia-quiescent" = "Microglia-Q",
+    "Microglia-vascular" = "Microglia-V",
+    "Pericyte" = "Pericyte-1",
+    "Perivascular Macrophage" = "Perivascular-M",
+    "Perivascular" = "Perivascular-M",
+    "Perivascular-FB" = "Perivascular-FB-1",
+    "Perivascular-FB-KAZN2" = "Perivascular-FB-2",
+    "T-cell-parenchymal-1" = "T-cell-P1",
+    "T-cell-parenchymal-2" = "T-cell-P2",
+    "T-cell-vascular" = "T-cell-V",
+    "T-cell-mixed" = "T-cell-M",
+    "Vascular-SMC" = "Vascular-SMC-1",
+    "Vascular-SMC-LINC00486" = "Vascular-SMC-2"
+  )
+
+# Create a new column with abbreviated Idents
+abbreviated_idents <- celltypes_abbrev[as.character(
+  sce$subcelltype_annotations
+)]
+abbreviated_idents <- if_else(
+  is.na(abbreviated_idents),
+  sce$subcelltype_annotations,
+  abbreviated_idents
+)
+names(abbreviated_idents) <- NULL
+sce$abbreviated_idents <- abbreviated_idents
+unique(sce$abbreviated_idents)
+Idents(sce) <- sce$abbreviated_idents
+
+celltypes_abbrev_level1 <-
+  c(
+    "mystery-cluster" = "EndoMT",
+    "Neuron_ex" = "Ex-Neuro",
+    "Neuron_in" = "In-Neuro"
+  )
+abbreviated_idents <- celltypes_abbrev_level1[as.character(
+  sce$highlevel_manual_annotations
+)]
+abbreviated_idents <- if_else(
+  is.na(abbreviated_idents),
+  sce$highlevel_manual_annotations,
+  abbreviated_idents
+)
+names(abbreviated_idents) <- NULL
+sce$abbreviated_idents_level1 <- abbreviated_idents
+unique(sce$abbreviated_idents_level1)
+```
+
+```{r}
+celltype_abbrev_df <- readr::read_tsv(here::here(
+  "05_figures/990_shared_figures/003_final_figures/001_data_for_plots/celltype_abbreviations.tsv"
+))
+
+tar_load(translated_id)
+
+avg_gene_expr <- readr::read_tsv(here::here(
+  "05_figures/990_shared_figures/003_final_figures/001_data_for_plots/risk_gene_avg_expression.tsv"
+))
+```
+
+# Figure 3 - DEGs
+
+- need to start with barplot of number of up and downregulated genes.
+
+```{r}
+res_sig <- readr::read_csv(here::here(
+  "03_data/990_processed_data/001_snrnaseq/08_pseudobulk/pseudobulk_ad-vs-control_deseq2_subtype-annotated_no-apoe.csv"
+)) |>
+  na.omit() |>
+  dplyr::filter(
+    padj < 0.05 & !celltype %in% c("ambiguous", "low-feature-cells")
+  ) |>
+  dplyr::left_join(celltype_abbrev_df, by = join_by(celltype)) |>
+  dplyr::mutate(
+    celltypes_abbrev = if_else(
+      is.na(celltypes_abbrev),
+      celltype,
+      celltypes_abbrev
+    )
+  )
+# Add nuclei numbers
+x <- table(sce$abbreviated_idents) |>
+  as.data.frame() |>
+  dplyr::rename(celltypes_abbrev = Var1, nuclei_n = Freq) |>
+  dplyr::left_join(res_sig)
+res_sig_filtered_celltypes <- res_sig |>
+  dplyr::group_by(celltypes_abbrev) |>
+  dplyr::mutate(count = n()) |>
+  dplyr::filter(count > 30) |>
+  dplyr::ungroup()
+```
+
+```{r}
+mast_de <- qs::qread(here::here(
+  "03_data/990_processed_data/001_snrnaseq/13_mast_de/level2/mast_de_results_list.qs"
+)) |>
+  map(rownames_to_column, var = "ensembl") |>
+  list_rbind() |>
+  dplyr::left_join(translated_id, by = join_by(ensembl == ensembl_gene_id)) |>
+  dplyr::group_by(celltype) |>
+  dplyr::distinct(ensembl, .keep_all = TRUE) |>
+  dplyr::ungroup() |>
+  dplyr::left_join(celltype_abbrev_df, by = join_by(celltype)) |>
+  dplyr::mutate(
+    celltypes_abbrev = if_else(
+      is.na(celltypes_abbrev),
+      celltype,
+      celltypes_abbrev
+    ),
+    deg_direction = if_else(avg_log2FC > 0, "Up", "Down")
+  ) |>
+  dplyr::rename(gene = hgnc_symbol)
+
+res_sig <- mast_de |>
+  dplyr::filter(p_val_adj < 0.05 & abs(avg_log2FC) > 1)
+
+table(res_sig$celltypes_abbrev)
+
+res_sig_filtered_celltypes <- res_sig |>
+  dplyr::group_by(celltypes_abbrev) |>
+  dplyr::mutate(count = n()) |>
+  dplyr::filter(count > 10) |>
+  dplyr::ungroup()
+table(res_sig_filtered_celltypes$celltypes_abbrev)
+
+x <- table(sce$abbreviated_idents) |>
+  as.data.frame() |>
+  dplyr::rename(celltypes_abbrev = Var1, nuclei_n = Freq) |>
+  dplyr::left_join(res_sig)
+```
+
+# Check sig risk genes in DEGs
+
+```{r}
+risk_deg_overlap <- res_sig |>
+  dplyr::filter(gene %in% avg_gene_expr$features.plot)
+table(risk_deg_overlap$celltypes_abbrev, risk_deg_overlap$deg_direction)
+#readr::write_tsv(risk_deg_overlap, here("risk_deg_overlap.tsv"))
+```
+
+## DEGs count barplot
+
+```{r}
+# Function to wrap text
+wrap_text <- function(text, width = 20) {
+  str_wrap(text, width = width)
+}
+
+ylab_title <- wrap_text(
+  "Number of significant differential expressed genes with average log2 foldchange of > 1",
+  45
+)
+ylab <- expression(paste(
+  "Number of significant differential expressed genes ",
+  "with average ",
+  log[2],
+  " foldchange of > 1",
+  sep = " "
+))
+ylab <- paste(
+  "Number of significant differential expressed genes\nwith average log2 foldchange of > 1",
+  sep = " "
+)
+deg_count_plot <- res_sig |>
+  dplyr::group_by(celltypes_abbrev, deg_direction) |>
+  dplyr::summarise(count = n()) |>
+  ggplot(aes(x = reorder(celltypes_abbrev, count), fill = deg_direction)) +
+  geom_bar(aes(y = count), stat = "identity", position = position_dodge()) +
+  theme_minimal() +
+  labs(x = "", y = ylab_title, fill = "Regulation") +
+  theme(
+    axis.title.y = element_text(size = 7),
+    axis.text.x = element_text(size = 6, angle = 90, hjust = 1, vjust = 0.5),
+    legend.text = element_text(size = 5),
+    legend.key.width = unit(6, 'mm'),
+    legend.key.height = unit(4, 'mm'),
+    legend.title = element_text(size = 6),
+    legend.margin = margin(t = -8, unit = "mm"), # Move legend closer (reduce top margin)
+    legend.position = "bottom"
+  )
+deg_count_plot
+```
+
+```{r}
+# Prepare data for heatmap
+heatmap_data <- res_sig |>
+  dplyr::group_by(celltypes_abbrev, deg_direction) |>
+  dplyr::summarise(count = n(), .groups = "drop") |>
+  tidyr::pivot_wider(
+    names_from = deg_direction,
+    values_from = count,
+    values_fill = list(count = 0)
+  )
+
+# Convert to matrix
+heatmap_matrix <- as.matrix(heatmap_data[, -1]) # Exclude celltype column
+rownames(heatmap_matrix) <- heatmap_data$celltypes_abbrev
+
+# Order by total DEG count
+celltype_order <- rowSums(heatmap_matrix) |> order(decreasing = TRUE)
+heatmap_matrix <- heatmap_matrix[celltype_order, ]
+
+# Rotate if needed
+#heatmap_matrix <- t(heatmap_matrix)
+
+# Define heatmap colors
+#heatmap_colors <- colorRamp2(c(min(heatmap_matrix), max(heatmap_matrix)), c("white", "red"))
+```
+
+Make a heatmap annotation denoting if a celltype if from the vascular or parenchymal fraction.
+
+```{r}
+vascular <- c(
+  'Arterial',
+  'Arteriolar-SMC',
+  'Artirial-FB',
+  'Capillary',
+  'EndoMT-1',
+  'EndoMT-2',
+  'M-Pericyte',
+  'Meningeal-FB',
+  'Microglia-V',
+  'Pericyte-1',
+  'Pericyte-2',
+  'Pericyte-FB',
+  'Perivascular-FB-1',
+  'Perivascular-FB-2',
+  'Perivascular-M',
+  'T-cell-M',
+  'T-cell-V',
+  'T-Pericyte',
+  'Vascular-SMC-1',
+  'Vascular-SMC-2',
+  'Venous'
+) |>
+  sort()
+parencyhmal <- c(
+  'Astro-A',
+  'Astro-Q',
+  'Ex-Neuro-1',
+  'Ex-Neuro-2',
+  'Ex-Neuro-3',
+  'Ex-Neuro-4',
+  'Ex-Neuro-5',
+  'Ex-Neuro-6',
+  'Ex-Neuro-7',
+  'In-Neuro-1',
+  'In-Neuro-2',
+  'In-Neuro-3',
+  'In-Neuro-4',
+  'In-Neuro-5',
+  'In-Neuro-6',
+  'In-Neuro-7',
+  'Microglia-A',
+  'Microglia-Q',
+  'Oligo-A',
+  'Oligo-B',
+  'OPC-A',
+  'OPC-B',
+  'T-cell-P1'
+) |>
+  sort()
+names(vascular) <- rep("Vascular", length(vascular))
+names(parencyhmal) <- rep("Parenchymal", length(parencyhmal))
+cell_groups <- c(vascular, parencyhmal)
+```
+
+Make the same heatmap without the logFC filter
+
+```{r}
+heatmap_data <- mast_de |>
+  dplyr::filter(p_val_adj < 0.05) |>
+  dplyr::group_by(celltypes_abbrev, deg_direction) |>
+  dplyr::summarise(count = n(), .groups = "drop") |>
+  tidyr::pivot_wider(
+    names_from = deg_direction,
+    values_from = count,
+    values_fill = list(count = 0)
+  )
+
+# Convert to matrix
+heatmap_matrix_all <- as.matrix(heatmap_data[, -1]) # Exclude celltype column
+rownames(heatmap_matrix_all) <- heatmap_data$celltypes_abbrev
+
+# Order by total DEG count
+celltype_order <- rowSums(heatmap_matrix_all) |> order(decreasing = TRUE)
+heatmap_matrix_all <- heatmap_matrix_all[celltype_order, ]
+
+heatmap_matrix_all[
+  !(rownames(heatmap_matrix_all) %in% rownames(heatmap_matrix)),
+]
+
+# Get the order of indices
+order_indices <- match(rownames(heatmap_matrix), cell_groups)
+
+# Reorder the vector
+reordered_vector <- cell_groups[order_indices]
+
+# Flip names and values
+cell_test <- names(reordered_vector)
+names(cell_test) <- reordered_vector
+
+# Create the row annotation object
+row_ha <- rowAnnotation(
+  Compartment = cell_test,
+  col = list(
+    Compartment = c(
+      "Parenchymal" = "#E64B35",
+      "Vascular" = "#4DBBD5"
+    )
+  ),
+  show_annotation_name = FALSE,
+  #annotation_name_side = "top",
+  annotation_width = unit(0.1, "mm"),
+  width = unit(1, "mm"),
+  simple_anno_size = unit(1, "mm"),
+  annotation_legend_param = list(
+    labels_gp = gpar(fontsize = 6),
+    title_gp = gpar(fontsize = 7),
+    labels = c("P", "V"),
+    direction = "vertical",
+    title_position = "leftcenter-rot",
+    #title_position = "leftcenter",
+    #gap = unit(0.1, "mm"),
+    grid_width = unit(1, "mm"),
+    grid_height = unit(10, "mm")
+  )
+)
+
+# Get the order of indices
+order_indices <- match(rownames(heatmap_matrix_all), cell_groups)
+
+# Reorder the vector
+reordered_vector <- cell_groups[order_indices]
+
+# Flip names and values
+cell_test <- names(reordered_vector)
+names(cell_test) <- reordered_vector
+
+# Create the row annotation object
+row_ha_all <- HeatmapAnnotation(
+  Compartment = cell_test,
+  which = "row",
+  col = list(
+    Compartment = c(
+      "Parenchymal" = "#E64B35",
+      "Vascular" = "#4DBBD5"
+    )
+  ),
+  show_annotation_name = FALSE,
+  #annotation_name_side = "top",
+  annotation_width = unit(0.1, "mm"),
+  width = unit(0.5, "mm"),
+  simple_anno_size = unit(1, "mm"),
+  annotation_legend_param = list(
+    labels_gp = gpar(fontsize = 5),
+    title_gp = gpar(fontsize = 6),
+    labels = c("P", "V"),
+    direction = "vertical",
+    title_position = "leftcenter-rot",
+    #title_position = "leftcenter",
+    #gap = unit(0.1, "mm"),
+    grid_width = unit(1, "mm"),
+    grid_height = unit(10, "mm")
+  )
+)
+
+# Create heatmap
+deg_count_hmap <- Heatmap(
+  heatmap_matrix,
+  name = "Significant DEGs - average log2 foldchange > 1",
+  #col = heatmap_colors,
+  cluster_rows = FALSE,
+  width = unit(6.5, "mm"),
+  cluster_columns = FALSE,
+  row_names_gp = gpar(fontsize = 7),
+  column_names_gp = gpar(fontsize = 7),
+  row_names_side = "left",
+  column_names_rot = 90,
+  column_names_centered = TRUE,
+  row_names_centered = FALSE,
+  right_annotation = row_ha,
+  #column_title = "Cell Types",
+  #row_title = "Direction of Differential Expression",
+  cell_fun = function(j, i, x, y, width, height, fill) {
+    grid.text(
+      sprintf("%.0f", heatmap_matrix[i, j]),
+      x,
+      y,
+      gp = gpar(fontsize = 6)
+    )
+  },
+  heatmap_legend_param = list(
+    labels_gp = gpar(fontsize = 5),
+    title_gp = gpar(fontsize = 6),
+    title_position = "leftcenter-rot",
+    direction = "vertical",
+    legend_width = unit(2, "mm"),
+    row_gap = unit(14, "cm"),
+    title_gap = unit(500, "mm"),
+    #gap = unit(0.1, "mm"),
+    grid_width = unit(1, "mm"),
+    grid_height = unit(1, "mm")
+  )
+)
+draw(
+  deg_count_hmap,
+  heatmap_legend_side = "right",
+  align_heatmap_legend = "heatmap_center",
+  show_annotation_legend = FALSE,
+  show_heatmap_legend = FALSE,
+  gap = unit(1, "mm")
+)
+#ht_gap = unit(100, "mm"))
+p5 <- grid.grabExpr(draw(
+  deg_count_hmap,
+  heatmap_legend_side = "right",
+  align_heatmap_legend = "heatmap_center",
+  show_heatmap_legend = FALSE,
+  gap = unit(0.6, "mm")
+))
+deg_count_hmap_all <- Heatmap(
+  heatmap_matrix_all,
+  name = "Significant DEGs",
+  #col = heatmap_colors,
+  cluster_rows = FALSE,
+  width = unit(10, "mm"),
+  cluster_columns = FALSE,
+  row_names_gp = gpar(fontsize = 7),
+  column_names_gp = gpar(fontsize = 7),
+  row_names_side = "left",
+  column_names_rot = 90,
+  column_names_centered = FALSE,
+  row_names_centered = FALSE,
+  #column_title = "Cell Types",
+  #row_title = "Direction of Differential Expression",
+  cell_fun = function(j, i, x, y, width, height, fill) {
+    grid.text(
+      sprintf("%.0f", heatmap_matrix_all[i, j]),
+      x,
+      y,
+      gp = gpar(fontsize = 6)
+    )
+  },
+  heatmap_legend_param = list(
+    labels_gp = gpar(fontsize = 5),
+    title_gp = gpar(fontsize = 6),
+    labels = c("0", "1K", "2K", "3K"),
+    direction = "vertical",
+    legend_width = unit(9, "mm"),
+    title_position = "leftcenter-rot",
+    title_gap = unit(0.1, "mm"),
+    gap = unit(0, "mm"),
+    grid_width = unit(1, "mm"),
+    legend_height = unit(20, "mm"),
+    grid_height = unit(1, "mm")
+  )
+)
+draw(
+  deg_count_hmap_all + row_ha_all,
+  heatmap_legend_side = "right",
+  align_heatmap_legend = "heatmap_center",
+  gap = unit(0.6, "mm"),
+  #ht_gap = unit(0.5, "mm"),
+  legend_border = unit(10, "cm")
+)
+p6 <- grid.grabExpr(draw(
+  deg_count_hmap_all + row_ha_all,
+  heatmap_legend_side = "right",
+  align_heatmap_legend = "heatmap_center",
+  gap = unit(0.6, "mm")
+))
+```
+
+
+# GO summary
+
+## Hypergeometric GO
+
+```{r}
+file <- here::here(
+  "03_data/990_processed_data/001_snrnaseq/09_pathway_analysis/go-hypergeometic_subtypes_no-apoe_deg_direction.qs"
+)
+
+# add change based on logfc filter
+filter_logfc <- TRUE
+file <- here::here(
+  "03_data/990_processed_data/001_snrnaseq/09_pathway_analysis"
+)
+
+if (filter_logfc) {
+  file <- here::here(
+    file,
+    "go-hypergeometic_subtypes_deg_direction_mast_level2_logfc_filter.qs"
+  )
+} else {
+  file <- here::here(
+    file,
+    "go-hypergeometic_subtypes_deg_direction_mast_level2.qs"
+  )
+}
+result_list <- qs::qread(file)
+
+result_list <- map2(
+  result_list,
+  names(result_list),
+  ~ tibble::as_tibble(.x) |> dplyr::mutate(celltype = .y)
+) |>
+  list_rbind()
+
+result_list |>
+  dplyr::filter(grepl("amyloid", Description))
+
+
+# Remove terms that only have one gene
+result_list <- result_list |>
+  dplyr::filter(Count > 1)
+
+if (filter_logfc) {
+  file <- here::here(
+    "03_data/999_data_for_publication/deg_similarity_matrix_filtered.qs"
+  )
+  file_score <- here::here(
+    "03_data/999_data_for_publication/deg_similarity_matrix_filtered_scores.qs"
+  )
+} else {
+  file <- here::here(
+    "03_data/999_data_for_publication/deg_similarity_matrix.qs"
+  )
+  file_score <- here::here(
+    "03_data/999_data_for_publication/deg_similarity_matrix_scores.qs"
+  )
+}
+
+result_list_ont <- split(result_list, result_list$ONTOLOGY)
+
+if (!file.exists(file)) {
+  simMatrix <- map2(
+    result_list_ont,
+    names(result_list_ont),
+    ~ calculateSimMatrix(
+      unique(.x$ID),
+      orgdb = "org.Hs.eg.db",
+      ont = .y,
+      method = "Rel"
+    )
+  )
+  # make sure the scores match the simMatrix
+  x <- map2(
+    result_list_ont,
+    simMatrix,
+    ~ .x |>
+      dplyr::distinct(ID, .keep_all = TRUE) |>
+      dplyr::filter(ID %in% colnames(.y))
+  )
+
+  scores <- map(x, ~ setNames(-log(.x$p.adjust), .x$ID))
+
+  # assert that the score go terms match the simmatrix rownames
+  assertthat::are_equal(
+    sum(map2_dbl(
+      scores,
+      simMatrix,
+      ~ sum(names(.x) != rownames(.y))
+    )),
+    0
+  )
+  # Assert that there are no missing values in the scores
+  assertthat::assert_that(sum(map_dbl(scores, ~ sum(is.na(.x)))) == 0)
+  qs::qsave(simMatrix, file)
+  qs::qsave(scores, file_score)
+}
+
+# Read the sim matrix
+simMatrix <- qs::qread(file)
+scores <- qs::qread(file_score)
+```
+
+```{r}
+reducedTerms <- map2(
+  simMatrix,
+  scores,
+  ~ reduceSimMatrix(.x, .y, threshold = 0.9, orgdb = "org.Hs.eg.db")
+)
+reducedTerms$BP[1:5, 1:10]
+```
+
+```{r}
+# Add the rrvgo reduced terms to the initial dataframe
+result_list_reduced <- map2(reducedTerms, names(reducedTerms), ~ .x |>
+       dplyr::mutate(ONTOLOGY = .y)) |>
+  list_rbind() |>
+  dplyr::left_join(result_list, ., by = join_by(ID == go, ONTOLOGY)) |>
+  dplyr::mutate(deg_direction = if_else(grepl("_Down", celltype), "Down", "Up"),
+                celltype = str_remove(celltype, "_Down|_Up")) |>
+  dplyr::left_join(celltype_abbrev_df, by = join_by(celltype)) |>
+  dplyr::mutate(celltypes_abbrev = if_else(is.na(celltypes_abbrev), celltype, celltypes_abbrev))
+
+# Get genes from pathways of interest
+erythro_genes <- result_list_reduced |>
+  dplyr::filter(parentTerm == "positive regulation of erythrocyte differentiation") |>
+  dplyr::pull(geneID) |>
+  strsplit("/") |>
+  unlist() |>
+  unique()
+protein_refold <- result_list_reduced |>
+  dplyr::filter(parentTerm == "protein refolding") |>
+  dplyr::pull(geneID) |>
+  strsplit("/") |>
+  unlist() |>
+  unique()
+# All genes overlap...
+sum(!protein_refold %in% erythro_genes)
+
+go_genes <- data.frame(summarised_pathway = "positive regulation of erythrocyte differentiation",
+  genes = erythro_genes, celltypes = "ex-neuro-6_oligo-b_arterial_capillary") |>
+    rbind(data.frame(summarised_pathway = "protein refolding", genes = protein_refold,
+      celltypes = "ex-neuro-6_oligo-b_arterial_venous"))
+#readr::write_csv(go_genes, here("go_pathway_genes.csv"))
+
+result_list_reduced <- result_list_reduced |>
+  dplyr::select(ONTOLOGY, celltypes_abbrev, parentTerm, deg_direction) |>
+  dplyr::distinct() |>
+  # add a counter for terms that appear in more than 1 celltype
+  dplyr::mutate(count_overlap = n(), .by = c(ONTOLOGY, deg_direction, parentTerm)) |>
+  dplyr::filter(!is.na(parentTerm))
+
+result_list_reduced <- result_list_reduced |>
+  dplyr::mutate(group = factor(case_when(
+    grepl("endothelial", parentTerm) ~ "Endothelial",
+    grepl("immune|cytokine|virus|viral", parentTerm) ~ "Immune",
+    grepl("protein", parentTerm) ~ "Protein",
+    .default = "Other terms"
+  ), levels = c("Endothelial", "Immune", "Protein", "Other terms")), fraction = if_else(celltypes_abbrev %in% c("Arterial", "Arteriolar-SMC", "Capillary", "EndoMT-1",
+  "M-Pericyte", "Pericyte-1", "Pericyte-2", "Perivascular-FB-1", "T-Pericyte", "Vascular-SMC-1",
+  "Venous", "T-cell-V"), "Vascular", "Parenchymal"))
+
+# Wrap the GO terms in the data
+result_list_reduced$parentTerm <- wrap_text(result_list_reduced$parentTerm, 24)
+
+# Save difference versions
+file_base <- "03_data/999_data_for_publication"
+if(filter_logfc) {
+  qs::qsave(result_list_reduced, here::here(file_base, "deg_reduced_terms_filtered.qs"))
+} else {
+  qs::qsave(result_list_reduced, here::here(file_base, "deg_reduced_terms.qs"))
+}
+
+# Read in both versions
+result_list_reduced <- qs::qread(here::here(file_base, "deg_reduced_terms.qs"))
+result_list_reduced_filtered <- qs::qread(here::here(file_base, "deg_reduced_terms_filtered.qs"))
+```
+
+```{r}
+hyper_go_plot_all <- result_list_reduced |>
+  ggplot(aes(
+    x = celltypes_abbrev,
+    y = reorder(parentTerm, count_overlap, sum),
+    fill = deg_direction
+  )) +
+  geom_tile() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 6),
+    axis.text.y = element_text(size = 6)
+  ) +
+  facet_grid(rows = vars(ONTOLOGY)) +
+  labs(x = "", y = "")
+
+hyper_go_plot_bp <- result_list_reduced |>
+  dplyr::filter(ONTOLOGY == "BP") |>
+  ggplot(aes(
+    x = celltypes_abbrev,
+    y = reorder(parentTerm, count_overlap, sum),
+    fill = deg_direction
+  )) +
+  geom_tile() +
+  theme(
+    axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, size = 7),
+    axis.text.y = element_text(size = 6),
+    strip.background = element_blank(),
+    #strip.text = element_text(face = "bold", size = 6),
+    panel.grid.major = element_line(color = "gray80", linewidth = 0.5),
+    plot.title = element_text(size = 10)
+  ) +
+  labs(x = "", y = "", fill = "Expression") +
+  facet_grid(group ~ fraction, scales = "free", space = "free")
+
+result_list_reduced_filtered$parentTerm <- wrap_text(
+  result_list_reduced_filtered$parentTerm,
+  28
+)
+hyper_go_plot_bp_filtered <- result_list_reduced_filtered |>
+  dplyr::filter(ONTOLOGY == "BP") |>
+  ggplot(aes(
+    x = celltypes_abbrev,
+    y = reorder(parentTerm, count_overlap, sum),
+    fill = deg_direction
+  )) +
+  geom_tile() +
+  theme(
+    axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, size = 7),
+    axis.text.y = element_text(size = 6),
+    strip.background = element_blank(),
+    #strip.text = element_text(face = "bold", size = 6),
+    panel.grid.major = element_line(color = "gray80", linewidth = 0.5),
+    plot.title = element_text(size = 10)
+  ) +
+  labs(x = "", y = "", fill = "Expression") +
+  facet_grid(cols = vars(fraction), scales = "free", space = "free")
+
+hyper_go_plot_all
+hyper_go_plot_bp
+hyper_go_plot_bp_filtered
+
+ggsave(
+  here::here(
+    "05_figures/990_shared_figures/003_final_figures/03_fig_deg/hyper_go_terms_all.png"
+  ),
+  hyper_go_plot_all,
+  height = 45,
+  width = 12
+)
+
+ggsave(
+  here::here(
+    "05_figures/990_shared_figures/003_final_figures/03_fig_deg/hyper_go_terms_bp.png"
+  ),
+  hyper_go_plot_bp,
+  height = 8,
+  width = 6
+)
+```
+
+## GSEA results
+
+```{r}
+#| eval: false
+file <-
+  here::here(
+    "03_data/990_processed_data/001_snrnaseq/09_pathway_analysis/gene-set-enrichment_go_subtypes_no-apoe.qs"
+  )
+result_list <- qs::qread(file)
+
+# Remove any NULL entries
+result_list <- result_list[!sapply(result_list, is.null)]
+# Assert that there are no nulls in list
+assertthat::see_if(sum(map_lgl(result_list, is.null)) == 0)
+# remove any with no pathways found
+gse <- result_list |>
+  purrr::keep(~ nrow(.) > 0)
+
+gse <- gse[!grepl("ambiguous_|low-feature-cells", names(gse))]
+
+amyloid_hits <- map2(
+  gse,
+  names(gse),
+  ~ .x@result |>
+    dplyr::mutate(celltype = .y)
+) |>
+  list_rbind() |>
+  dplyr::filter(grepl("amyloid", Description))
+table(amyloid_hits$celltype)
+# treeplots
+gse <- map(gse, pairwise_termsim)
+
+go_data <- lapply(names(gse), function(celltype) {
+  res <- gse[[celltype]]
+  if (!is.null(res)) {
+    data.frame(
+      celltype = celltype,
+      ID = res$ID,
+      Description = res$Description,
+      p.adjust = res$p.adjust,
+      enrichmentScore = res$enrichmentScore,
+      Count = res$setSize
+    )
+  } else {
+    NULL
+  }
+}) |>
+  bind_rows() |>
+  dplyr::mutate(
+    ontology = case_when(
+      grepl("_BP", celltype) ~ "BP",
+      grepl("_CC", celltype) ~ "CC",
+      grepl("_MF", celltype) ~ "MF",
+      .default = NA
+    )
+  )
+
+# Get the GO IDs for revigo
+go_data_ids <- go_data |>
+  dplyr::group_by(ontology) |>
+  tidyr::nest()
+go_data_ids <- map(go_data_ids$data, dplyr::pull, ID) |>
+  set_names(go_data_ids$ontology)
+```
+
+### Heatmap of shared DEGs
+
+```{r}
+# Create a wide format dataframe to count overlaps
+wide_df <- res_sig |>
+  dplyr::select(gene, celltypes_abbrev, deg_direction) |>
+  dplyr::mutate(value = 1) |>
+  unique() |>
+  pivot_wider(
+    names_from = celltypes_abbrev,
+    values_from = value,
+    values_fill = 0
+  )
+
+# Convert the wide format dataframe to a matrix
+gene_matrix <- as.matrix(wide_df[, -c(1, 2)])
+
+# Calculate the overlap matrix using matrix multiplication
+overlap_matrix <- t(gene_matrix) %*% gene_matrix
+
+# Set the row and column names of the overlap matrix
+rownames(overlap_matrix) <- colnames(gene_matrix)
+colnames(overlap_matrix) <- colnames(gene_matrix)
+
+# Plot the heatmap
+pheatmap(
+  overlap_matrix,
+  cluster_rows = TRUE,
+  cluster_cols = TRUE,
+  display_numbers = TRUE,
+  main = "Overlap of DEGs Across Cell Types",
+  color = colorRampPalette(c("white", "blue"))(50)
+)
+```
+
+```{r}
+# List of all cell types
+all_celltypes <- unique(res_sig$celltype)
+
+# Filter the dataframe for upregulated and downregulated genes
+up_df <- res_sig |> dplyr::filter(deg_direction == "Up")
+down_df <- res_sig |> dplyr::filter(deg_direction == "Down")
+
+# Create a dataframe with all combinations of genes and celltypes, setting missing values to 0
+all_genes <- unique(c(up_df$gene, down_df$gene))
+
+# Create wide format dataframes for upregulated and downregulated genes
+wide_up_df <- up_df |>
+  dplyr::select(gene, celltype) |>
+  dplyr::distinct() |>
+  dplyr::mutate(value = 1) |>
+  complete(
+    gene = all_genes,
+    celltype = all_celltypes,
+    fill = list(value = 0)
+  ) |>
+  pivot_wider(
+    names_from = celltype,
+    values_from = value,
+    values_fill = list(value = 0)
+  )
+
+wide_down_df <- down_df |>
+  dplyr::select(gene, celltype) |>
+  dplyr::distinct() |>
+  dplyr::mutate(value = 1) |>
+  complete(
+    gene = all_genes,
+    celltype = all_celltypes,
+    fill = list(value = 0)
+  ) |>
+  pivot_wider(
+    names_from = celltype,
+    values_from = value,
+    values_fill = list(value = 0)
+  )
+
+# Convert the wide format dataframes to matrices
+gene_matrix_up <- as.matrix(wide_up_df[, -1])
+gene_matrix_down <- as.matrix(wide_down_df[, -1])
+
+# Calculate the overlap matrices using matrix multiplication
+overlap_matrix_up <- t(gene_matrix_up) %*% gene_matrix_up
+overlap_matrix_down <- t(gene_matrix_down) %*% gene_matrix_down
+
+# Set the row and column names of the overlap matrices
+rownames(overlap_matrix_up) <- colnames(gene_matrix_up)
+colnames(overlap_matrix_up) <- colnames(gene_matrix_up)
+
+rownames(overlap_matrix_down) <- colnames(gene_matrix_down)
+colnames(overlap_matrix_down) <- colnames(gene_matrix_down)
+
+# Apply log transformation to normalize the data
+log_transform <- function(matrix) {
+  log1p(matrix) # log1p is log(1 + x), which handles zero values
+}
+
+overlap_matrix_up_log <- log_transform(overlap_matrix_up)
+overlap_matrix_down_log <- log_transform(overlap_matrix_down)
+require(circlize)
+# Define custom color functions for the heatmaps
+col_fun_up <- colorRamp2(c(0, max(overlap_matrix_up_log)), c("white", "red"))
+col_fun_down <- colorRamp2(
+  c(0, max(overlap_matrix_down_log)),
+  c("white", "blue")
+)
+
+# Create the heatmaps
+ht_up <- Heatmap(
+  overlap_matrix_up_log,
+  name = "Upregulated",
+  col = col_fun_up,
+  show_row_names = TRUE,
+  show_column_names = TRUE
+)
+ht_down <- Heatmap(
+  overlap_matrix_down_log,
+  name = "Downregulated",
+  col = col_fun_down,
+  show_row_names = TRUE,
+  show_column_names = TRUE
+)
+
+# Combine the heatmaps into a single plot
+draw(ht_up + ht_down, heatmap_legend_side = "right")
+```
+
+## Jaccard similarity index
+
+```{r}
+library(vegan)
+compute_jaccard_similarity <-
+  function(df, deg_filter = NULL, col_title = "All DEGs") {
+    if (!is.null(deg_filter)) {
+      df <- df |>
+        dplyr::filter(deg_direction == deg_filter)
+    }
+
+    # Create a binary matrix of genes vs cell types
+    binary_matrix <- df |>
+      dplyr::select(gene, celltypes_abbrev) |>
+      dplyr::distinct() |>
+      dplyr::mutate(present = 1) |>
+      pivot_wider(
+        names_from = celltypes_abbrev,
+        values_from = present,
+        values_fill = list(present = 0)
+      )
+
+    # Transpose the matrix to have cell types as rows
+    binary_matrix_t <- as.data.frame(t(binary_matrix[-1]))
+    colnames(binary_matrix_t) <- binary_matrix$gene
+
+    # Calculate Jaccard similarity matrix
+    jaccard_matrix <- vegdist(binary_matrix_t, method = "jaccard")
+
+    # Perform hierarchical clustering
+    hc <- hclust(jaccard_matrix, method = "average")
+
+    # Convert distance matrix to similarity matrix for heatmap
+    similarity_matrix <- 1 - as.matrix(jaccard_matrix)
+
+    format_cell_values <- function(x) {
+      if (x >= 0.15) {
+        return(sprintf("%.2f", x))
+      } else {
+        return("")
+      }
+    }
+    # Set colour to make it more obvious which cells have a similarity of 0.2 or more
+    col_fun <- colorRamp2(c(0, 0.15, 1), c("white", "blue", "red"))
+
+    # Create the heatmap
+    jaccard_all_hmap <- Heatmap(
+      similarity_matrix,
+      name = "Jaccard\nSimilarity",
+      col = col_fun,
+      column_title = col_title,
+      column_title_gp = gpar(fontsize = 8),
+      cell_fun = function(j, i, x, y, width, height, fill) {
+        grid.rect(x, y, width, height, gp = gpar(col = "grey", fill = NA))
+        value <- similarity_matrix[i, j]
+        if (value >= 0.40 & value != 1) {
+          #grid.text(sprintf("%.2f", value),
+          grid.text("*", x, y, gp = gpar(col = "black", fontsize = 10))
+        }
+      },
+      show_row_dend = FALSE,
+      show_column_dend = FALSE,
+      row_names_gp = gpar(fontsize = 6),
+      column_names_gp = gpar(fontsize = 6),
+      column_names_centered = TRUE,
+      heatmap_legend_param = list(
+        #direction = "horizontal",
+        labels_gp = gpar(fontsize = 6),
+        #grid_height = unit(0.5, "mm"),
+        #title_position = "leftcenter"),
+        title_gp = gpar(fontsize = 6)
+      )
+    )
+
+    return(jaccard_all_hmap)
+  }
+
+# Count unique genes per celltype
+celltype_gene_count <- res_sig |>
+  summarise(unique_gene_count = n_distinct(gene), .by = celltypes_abbrev) |>
+  dplyr::filter(unique_gene_count >= 30)
+
+# Filter original dataframe to keep only these celltypes
+res_sig_sub <- res_sig |>
+  dplyr::filter(celltypes_abbrev %in% celltype_gene_count$celltypes_abbrev)
+jaccard_all_hmap <- compute_jaccard_similarity(res_sig_sub)
+jaccard_all_hmap
+
+jaccard_up_hmap <- compute_jaccard_similarity(
+  res_sig_sub,
+  deg_filter = "Up",
+  "Up DEGs"
+)
+jaccard_down_hmap <- compute_jaccard_similarity(
+  res_sig_sub,
+  deg_filter = "Down",
+  "Down DEGs"
+)
+
+# Save plots
+png(
+  here::here(
+    "05_figures/990_shared_figures/003_final_figures",
+    "jaccard_heatmap_all_degs.png"
+  ),
+  width = 4000,
+  height = 4000,
+  res = 300
+)
+jaccard_all_hmap
+dev.off()
+png(
+  here::here(
+    "05_figures/990_shared_figures/003_final_figures",
+    "jaccard_heatmap_up_degs.png"
+  ),
+  width = 4000,
+  height = 4000,
+  res = 300
+)
+jaccard_up_hmap
+dev.off()
+png(
+  here::here(
+    "05_figures/990_shared_figures/003_final_figures",
+    "jaccard_heatmap_down_degs.png"
+  ),
+  width = 4000,
+  height = 4000,
+  res = 300
+)
+jaccard_down_hmap
+dev.off()
+
+jaccard_up_hmap <- compute_jaccard_similarity(
+  res_sig_sub,
+  deg_filter = "Up",
+  "Up DEGs"
+)
+jaccard_down_hmap <- compute_jaccard_similarity(
+  res_sig_sub,
+  deg_filter = "Down",
+  "Down DEGs"
+)
+```
+
+```{r}
+# Create a binary matrix of genes vs cell types
+binary_matrix <- res_sig |>
+  dplyr::select(gene, celltypes_abbrev) |>
+  dplyr::distinct() |>
+  dplyr::mutate(present = 1) |>
+  pivot_wider(
+    names_from = celltypes_abbrev,
+    values_from = present,
+    values_fill = list(present = 0)
+  )
+
+# Transpose the matrix to have cell types as rows
+binary_matrix_t <- as.data.frame(t(binary_matrix[-1]))
+colnames(binary_matrix_t) <- binary_matrix$gene
+
+# Calculate Jaccard similarity matrix
+jaccard_matrix <- vegdist(binary_matrix_t, method = "jaccard")
+
+# Perform hierarchical clustering
+hc <- hclust(jaccard_matrix, method = "average")
+
+# Convert distance matrix to similarity matrix for heatmap
+similarity_matrix <- 1 - as.matrix(jaccard_matrix)
+
+# Set colour to make it more obvious which cells have a similarity of 0.2 or more
+col_fun <- colorRamp2(c(0, 0.2, 1), c("white", "blue", "red"))
+Heatmap(similarity_matrix, col = col_fun)
+```
+
+## Overlapping gene plot
+
+There're some blocks of overlaping genes from the Jaccard plots, I'll try looking at those, maybe do an update plots for the two main blocks of celltypes
+
+```{r}
+blocks <- list(
+  "block1" = c(
+    "EndoMT",
+    "T-Pericyte",
+    "M-Pericyte",
+    "Pericyte-1",
+    "Pericyte-2",
+    "Arteriolar-SMC"
+  ),
+  "block2" = c("Oligo-A", "Oligo-B", "Astro-A", "Astro-Q")
+)
+
+get_overlapping_genes <- function(celltype_subset, dataframe) {
+  df <- dataframe |>
+    dplyr::filter(celltypes_abbrev %in% celltype_subset) |>
+    dplyr::group_by(deg_direction) |>
+    tidyr::nest()
+
+  # Prepare data for UpSet plot
+  genes <- map(
+    df$data,
+    ~ .x |>
+      mutate(present = 1) |>
+      dplyr::select(!c(baseMean:celltype)) |>
+      pivot_wider(
+        names_from = celltypes_abbrev,
+        values_from = present,
+        values_fill = 0
+      )
+  ) |>
+    set_names(df$deg_direction)
+
+  return(genes)
+
+  # # Create lists of genes for each cell type
+  # gene_celltype_list <- map(df$data, ~ split(.x$gene, .x$celltype)) |>
+  #   set_names(df$deg_direction)
+  #
+  # # Convert lists to binary matrices
+  # matrix <- map(gene_celltype_list, UpSetR::fromList)
+}
+
+upset_matrix <- map(blocks, get_overlapping_genes, res_sig)
+
+plots <- map(
+  upset_matrix,
+  ~ {
+    # Create UpSet plots
+    # Upregulated genes UpSet plot
+    upset_up <- upset(.x$Up, colnames(.x$Up)[-1], name = "Upregulated Genes")
+    upset_down <- upset(
+      .x$Down,
+      colnames(.x$Down)[-1],
+      name = "Downregulated Genes"
+    )
+    return(list("up" = upset_up, "down" = upset_down))
+  }
+)
+
+plots <- map(plots, ~ .x$up | .x$down)
+
+plots$block1
+ggsave(
+  here(
+    "05_figures/990_shared_figures/003_final_figures/overlapping_degs_jaccard_block1.png"
+  ),
+  height = 10,
+  width = 22
+)
+plots$block2
+ggsave(
+  here(
+    "05_figures/990_shared_figures/003_final_figures/overlapping_degs_jaccard_block2.png"
+  ),
+  height = 10,
+  width = 22
+)
+```
+
+### GOs of overlaps
+
+```{r}
+get_gene_celltype_presence <- function(celltype_subset, dataframe) {
+  # Group by gene and summarize cell types into a single column
+  gene_celltypes <- dataframe |>
+    dplyr::filter(celltypes_abbrev %in% celltype_subset) |>
+    summarize(
+      celltypes = paste(unique(celltype), collapse = ", "),
+      .by = c(deg_direction, gene)
+    )
+  return(gene_celltypes)
+}
+celltype_gene_overlap <- map(blocks, get_gene_celltype_presence, res_sig)
+
+# get the genes for each group
+genes <- map(
+  celltype_gene_overlap,
+  ~ {
+    df <- .x |>
+      dplyr::group_by(deg_direction, celltypes) |>
+      tidyr::nest()
+    genes <- map(
+      df$data,
+      ~ .x |>
+        dplyr::pull(gene)
+    ) |>
+      set_names(paste0(df$deg_direction, "_", df$celltypes))
+  }
+)
+genes <- purrr::list_flatten(genes)
+```
+
+```{r}
+plan("multisession", workers = parallel::detectCores() - 1)
+go_results_bp <- future_map(
+  genes,
+  ~ enrichGO(gene = .x, OrgDb = "org.Hs.eg.db", keyType = "SYMBOL", ont = "BP"),
+  .options = furrr_options(seed = 123)
+)
+names(go_results_bp) <- paste0(names(go_results_bp), "_bp")
+go_results_cc <- future_map(
+  genes,
+  ~ enrichGO(gene = .x, OrgDb = "org.Hs.eg.db", keyType = "SYMBOL", ont = "CC"),
+  .options = furrr_options(seed = 123)
+)
+names(go_results_cc) <- paste0(names(go_results_cc), "_cc")
+go_results_mf <- future_map(
+  genes,
+  ~ enrichGO(gene = .x, OrgDb = "org.Hs.eg.db", keyType = "SYMBOL", ont = "MF"),
+  .options = furrr_options(seed = 123)
+)
+names(go_results_mf) <- paste0(names(go_results_mf), "_mf")
+go_results <- c(go_results_bp, go_results_cc, go_results_mf)
+rm(go_results_bp, go_results_cc, go_results_mf)
+```
+
+```{r}
+# exclude cases where no pathways were found
+go_results_filtered <- go_results |>
+  purrr::keep(~ !is.null(.)) |>
+  purrr::keep(~ nrow(.) > 0)
+
+go_results_filtered <- map(
+  go_results_filtered,
+  ~ .x |>
+    # remove instance of just one gene or fewer
+    dplyr::filter(Count > 1)
+) |>
+  purrr::keep(~ nrow(.) > 0)
+
+# treeplots
+go_results_filtered <- map(go_results_filtered, pairwise_termsim)
+
+# Define a safe version of your treeplot function that returns NULL on error
+safe_treeplot <- possibly(treeplot, otherwise = NULL)
+plan("multisession", workers = parallel::detectCores() - 1)
+treeplots <- future_map(go_results_filtered, safe_treeplot)
+# Remove any NULL entries
+treeplots <- treeplots[!sapply(treeplots, is.null)]
+# Assert that there are no nulls in list
+assertthat::see_if(sum(map_lgl(treeplots, is.null)) == 0)
+# Replace those with no treeplot with dotplots
+no_treeplot <- names(go_results_filtered)[
+  !names(go_results_filtered) %in%
+    names(treeplots)
+]
+dotplots <- map(go_results_filtered[no_treeplot], dotplot)
+assertthat::see_if(sum(map_lgl(dotplots, is.null)) == 0)
+treeplots <- c(treeplots, dotplots)
+
+treeplots <- map2(treeplots, names(treeplots), ~ .x + ggtitle(.y))
+
+# Define the function to subset a single string up to the last underscore
+subset_until_last_underscore <- function(input_string) {
+  # Find the position of the last underscore
+  last_underscore_position <- str_locate_all(input_string, "_")[[1]][, 1] |>
+    max()
+
+  # Subset the string up to the last underscore
+  if (!is.na(last_underscore_position)) {
+    return(str_sub(input_string, 1, last_underscore_position - 1))
+  } else {
+    return(input_string)
+  }
+}
+
+# Apply the function to each element of the vector
+celltypes <- sapply(names(treeplots), subset_until_last_underscore) |>
+  unique()
+
+
+merge_plots <- function(celltype, dotplot_list) {
+  # subset to relevant plots
+  plots <- dotplot_list[grepl(celltype, names(dotplot_list))]
+  # Merge plots
+  #plot <- plots[[1]] + plots[[2]] + plots[[3]]
+  plot <- purrr::reduce(plots, `+`)
+}
+
+plots <- map(celltypes, merge_plots, treeplots) |> set_names(celltypes)
+
+plots$`block1_Up_Pericyte-2, T-Pericyte`
+
+# Save plots
+map2(
+  plots,
+  names(plots),
+  ~ ggsave(
+    here::here(
+      "05_figures/990_shared_figures/002_pseudobulk/pathways/jaccard_overlapping",
+      paste0(.y, ".png")
+    ),
+    plot = .x,
+    width = 32,
+    height = 10
+  )
+)
+```
+
+
+# Assemble Figure
+
+```{r}
+p2 = grid.grabExpr(draw(jaccard_up_hmap))
+p3 = grid.grabExpr(draw(jaccard_down_hmap))
+row_2 <- plot_grid(p2, p3, labels = c("B", "C"), label_colour = "black")
+
+final_plot3 <- plot_grid(
+  p5,
+  p2,
+  p3,
+  ncol = 1,
+  rel_heights = c(2, 1, 1),
+  rel_widths = c(1, 1, 2),
+  labels = c("A", "B", "C"),
+  label_colour = "black"
+)
+
+deg_heatmaps <- plot_grid(
+  p5,
+  p6,
+  labels = c("A", "B"),
+  label_colour = "black",
+  rel_widths = c(1, 1.4)
+)
+final_plot3 <- plot_grid(
+  deg_heatmaps,
+  hyper_go_plot_bp_filtered +
+    theme(legend.position = "none"),
+  ncol = 1,
+  rel_heights = c(1, 1.2),
+  labels = c("", "C"),
+  label_colour = "black"
+)
+
+hyper_go_plot_bp <- hyper_go_plot_bp +
+  theme(
+    legend.key.size = unit(0.3, "cm"), # Smaller legend symbols
+    legend.key.spacing = unit(0.3, "cm"),
+    legend.text = element_text(size = 8),
+    legend.title = element_text(size = 9),
+    legend.spacing.y = unit(5.9, 'cm'),
+    #legend.justification.top =
+    legend.position = "bottom"
+  )
+
+final_plot3 <- plot_grid(
+  final_plot3,
+  hyper_go_plot_bp,
+  rel_widths = c(1, 1.3),
+  labels = c("", "D"),
+  label_colour = "black"
+)
+
+# TODO: try and change font to fix ggsave/base pdf function
+# ggsave(filename = here::here("05_figures/990_shared_figures/003_final_figures",
+#                              "figure3.pdf"), plot = final_plot3,
+#        width = 7, height = 9, units = "in")
+cairo_pdf(
+  file = here::here(
+    "05_figures/990_shared_figures/003_final_figures",
+    "figure_degs.pdf"
+  ),
+  width = 7,
+  height = 9
+)
+print(final_plot3)
+dev.off()
+```

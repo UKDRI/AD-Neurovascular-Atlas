@@ -1,0 +1,46 @@
+---
+title: Method and cohort figure
+execute:
+  eval: true
+code-fold: true
+---
+
+## Load packages
+
+```{r}
+source(here::here("04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"))
+library(magick)
+library(circlize)
+library(Cairo)
+library(ggtext)
+```
+
+```{r}
+source("04_data_analysis/998_paper_figures/00_figures_source.R")
+```
+
+
+```{r}
+# Read external images
+img1 <- image_read(here::here("05_figures/990_shared_figures/003_final_figures",
+                              "detailed_vascular_prep.png"))
+# maybe not super high quality image?
+img1 <- image_read(here::here("05_figures/990_shared_figures/003_final_figures",
+                              "vascular_prep_labelled.png"))
+
+flow_diagram <- image_read(here::here("05_figures/990_shared_figures",
+  "003_final_figures/cohort_flow_diagram.svg"))
+
+# Add external images
+img1_gg <- ggdraw() + draw_image(img1)
+img2_gg <- ggdraw() + draw_image(flow_diagram)
+
+final_plot <- plot_grid(img1_gg, img2_gg, ncol = 1, labels = c("", "D"),
+  label_colour = "black")
+final_plot
+# Save the final compound figure
+cairo_pdf(file = here::here("05_figures/990_shared_figures/003_final_figures",
+ "figure1.pdf"), width = 7, height = 9)
+print(img1_gg)
+dev.off()
+```

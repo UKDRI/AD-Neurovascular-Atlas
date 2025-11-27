@@ -1,0 +1,461 @@
+---
+title: ANGPT2
+execute:
+  eval: true
+code-fold: true
+---
+
+ANGPT2 is a nice gene in this data, has interesting results across pseudotime/tradeseq, cellchat and differential gene expression.
+
+Let's try making a figure to highlight this
+
+```{r}
+source(here::here(
+  "04_data_analysis/990_code_libraries",
+  "02_library-calls-for-renv.R"
+))
+library(tradeSeq)
+tar_load(translated_id)
+source("04_data_analysis/998_paper_figures/00_figures_source.R")
+```
+
+# tradeSeq
+
+```{r}
+sce_subset <- qs::qread(here(
+  "03_data/990_processed_data/008_pseudotime",
+  "slingshot_tradeseq_3k_case_and_control.qs"
+))
+
+counts <- assays(sce_subset)$counts
+
+# Get stats for the all genes overall across all lineages and conditions
+plot_gene_pseudotime <- function(gene, gene_symbol, sce, counts) {
+  plot <- plotSmoothers(sce, counts, gene, curvesCols = pal_npg("nrc")(4)) +
+    scale_colour_npg(
+      labels = c(
+        "EndoMT-SMC - AD",
+        "EndoMT-SMC - Control",
+        "EndoMT-PC - AD",
+        "EndoMT-PC - Control"
+      )
+    ) +
+    ggtitle(if_else(gene_symbol == "", gene, gene_symbol)) +
+    labs(colour = "Lineage") +
+    theme(legend.position = "none")
+  return(plot)
+}
+
+genes <- translated_id |> dplyr::filter(hgnc_symbol %in% c("ANGPT2"))
+
+tradeseq <- plot_gene_pseudotime(
+  genes$ensembl_gene_id,
+  genes$hgnc_symbol,
+  sce_subset,
+  counts
+) +
+  theme(
+    legend.position = "bottom",
+    legend.text = element_text(size = 6),
+    legend.title = element_text(size = 7, hjust = 0.5)
+  ) +
+  guides(color = guide_legend(nrow = 2, title.position = "top"))
+```
+
+# DEG
+
+```{r}
+celltype_abbrev_df <- readr::read_tsv(here::here(
+  "05_figures/990_shared_figures",
+  "003_final_figures/001_data_for_plots/celltype_abbreviations.tsv"
+))
+
+mast_de <- qs::qread(here::here(
+  "03_data/990_processed_data/001_snrnaseq/13_mast_de",
+  "level2/mast_de_results_list.qs"
+)) |>
+  map(rownames_to_column, var = "ensembl") |>
+  list_rbind() |>
+  dplyr::left_join(translated_id, by = join_by(ensembl == ensembl_gene_id)) |>
+  dplyr::group_by(celltype) |>
+  dplyr::distinct(ensembl, .keep_all = TRUE) |>
+  dplyr::ungroup() |>
+  dplyr::left_join(celltype_abbrev_df, by = join_by(celltype)) |>
+  dplyr::mutate(
+    celltypes_abbrev = if_else(
+      is.na(celltypes_abbrev),
+      celltype,
+      celltypes_abbrev
+    ),
+    deg_direction = if_else(avg_log2FC > 0, "Up", "Down")
+  ) |>
+  dplyr::rename(gene = hgnc_symbol)
+
+res_sig <- mast_de |>
+  dplyr::filter(p_val_adj < 0.05 & abs(avg_log2FC) > 1)
+
+table(res_sig$celltypes_abbrev)
+
+res_sig <- res_sig |> dplyr::filter(gene == "ANGPT2")
+```
+
+```{r}
+# --- Create the Bar Plot ---
+bar_plot <- ggplot(
+  res_sig,
+  aes(
+    x = fct_reorder(celltypes_abbrev, avg_log2FC),
+    y = avg_log2FC,
+    fill = -log10(p_val_adj)
+  )
+) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(
+    x = "",
+    y = "Average log2 Fold Change of ANGPT2\n(AD vs. Controls)",
+    fill = "-log10(Adjusted pval)"
+  ) +
+  theme(
+    axis.text.x = element_text(angle = 90, hjust = -0.2, vjust = 0.5), # Rotate x-axis labels for readability
+    legend.position = "bottom",
+    legend.key.width = unit(3.5, "mm"),
+    legend.key.height = unit(2, "mm"),
+    plot.title = element_text(hjust = 0.5) # Center plot title
+  ) +
+  guides(fill = guide_legend(title.position = "top", nrow = 2)) +
+  scale_colour_npg()
+```
+
+This is a little boring, let's try a violin plot of the expression in the relevant celltypes
+
+```{r}
+# Get seurat object
+tar_load(sce)
+
+# the full cell labels are long for plots, let's make abbreviated versions
+celltypes_abbrev <-
+  c(
+    "Astrocyte-activated" = "Astro-A",
+    "Astrocyte-quiescent" = "Astro-Q",
+    "Ex-Neuron-ADARB2-ERBB4" = "Ex-Neuro-1",
+    "Ex-Neuron-CBLN2-NRGN" = "Ex-Neuro-2",
+    "Ex-Neuron-DLC1-HS3ST4" = "Ex-Neuro-3",
+    "Ex-Neuron-L2-3-CBLN2-LINC02306-CUX2" = "Ex-Neuro-4",
+    "Ex-Neuron-L3-5-RORB-PLCH1" = "Ex-Neuro-5",
+    "Ex-Neuron-L4-5-RORB-IL1RAPL2" = "Ex-Neuro-6",
+    "Ex-Neuron-L6-THEMIS-NFIA" = "Ex-Neuro-7",
+    "In-Neuron-ADARB2-GRM7" = "In-Neuro-1",
+    "In-Neuron-ADARB2-IL1RAPL2-CSCL14" = "In-Neuro-2",
+    "In-Neuron-ADARB2-LAMP5-NRG1" = "In-Neuro-3",
+    "In-Neuron-ADARB2-NRG1-RELN" = "In-Neuro-4",
+    "In-Neuron-DPP10-MEF2C" = "In-Neuro-5",
+    "In-Neuron-PRKG1-TBC1D4" = "In-Neuro-6",
+    "In-Neuron-TRHDE-RALYL" = "In-Neuro-7",
+    "Microglia-activated" = "Microglia-A",
+    "Microglia-quiescent" = "Microglia-Q",
+    "Microglia-vascular" = "Microglia-V",
+    "Pericyte" = "Pericyte-1",
+    "Perivascular Macrophage" = "Perivascular-M",
+    "Perivascular" = "Perivascular-M",
+    "Perivascular-FB" = "Perivascular-FB-1",
+    "Perivascular-FB-KAZN2" = "Perivascular-FB-2",
+    "T-cell-parenchymal-1" = "T-cell-P1",
+    "T-cell-parenchymal-2" = "T-cell-P2",
+    "T-cell-vascular" = "T-cell-V",
+    "T-cell-mixed" = "T-cell-M",
+    "Vascular-SMC" = "Vascular-SMC-1",
+    "Vascular-SMC-LINC00486" = "Vascular-SMC-2"
+  )
+
+# Create a new column with abbreviated Idents
+abbreviated_idents <- celltypes_abbrev[as.character(
+  sce$subcelltype_annotations
+)]
+abbreviated_idents <- if_else(
+  is.na(abbreviated_idents),
+  sce$subcelltype_annotations,
+  abbreviated_idents
+)
+names(abbreviated_idents) <- NULL
+sce$abbreviated_idents <- abbreviated_idents
+sce$abbreviated_idents <- str_replace_all(sce$abbreviated_idents, "_", "-")
+unique(sce$abbreviated_idents)
+Idents(sce) <- sce$abbreviated_idents
+
+celltypes_abbrev_level1 <-
+  c(
+    "mystery-cluster" = "EndoMT",
+    "Neuron_ex" = "Ex-Neuro",
+    "Neuron_in" = "In-Neuro"
+  )
+abbreviated_idents <- celltypes_abbrev_level1[as.character(
+  sce$highlevel_manual_annotations
+)]
+abbreviated_idents <- if_else(
+  is.na(abbreviated_idents),
+  sce$highlevel_manual_annotations,
+  abbreviated_idents
+)
+names(abbreviated_idents) <- NULL
+sce$abbreviated_idents_level1 <- abbreviated_idents
+unique(sce$abbreviated_idents_level1)
+rm(celltypes_abbrev)
+```
+
+```{r}
+violin_plot <- VlnPlot(
+  object = sce,
+  idents = unique(res_sig$celltypes_abbrev),
+  features = "ANGPT2",
+  split.by = "diagnosis",
+  pt.size = 0.0,
+  alpha = 0.1
+)
+# RidgePlot(object = sce, idents = unique(res_sig$celltypes_abbrev), features =
+#   "ANGPT2")
+v_plot <- violin_plot +
+  theme(
+    plot.title = element_text(size = 8),
+    legend.position = "bottom",
+    legend.text = element_text(size = 7),
+    axis.text = element_text(size = 7),
+    axis.title = element_text(size = 7)
+  ) +
+  labs(x = "")
+
+# Get expression data for ANGPT2
+expr_vals <- FetchData(
+  sce,
+  vars = c("ANGPT2", "abbreviated_idents", "diagnosis")
+)
+head(expr_vals)
+
+# Get max expression per celltype to use as bracket position
+max_expr <- expr_vals |>
+  summarise(max_val = max(ANGPT2, na.rm = TRUE), .by = "abbreviated_idents") |>
+  mutate(y.position = max_val + 0.2) # small offset for spacing
+head(max_expr)
+unique(max_expr$abbreviated_idents)
+
+# Join with the DEG table
+bracket_df <- res_sig |>
+  left_join(
+    max_expr,
+    by = join_by("celltypes_abbrev" == "abbreviated_idents")
+  ) |>
+  mutate(
+    group1 = paste0(celltypes_abbrev, "_Control"),
+    group2 = paste0(celltypes_abbrev, "_AD"),
+    padj = round(p_val_adj, 4)
+  ) # |>
+# dplyr::select(group1, group2, y.position, p.adj = p_val_adj)
+
+violin_plot +
+  stat_pvalue_manual(
+    bracket_df,
+    label = "padj",
+    y.position = "y.position",
+    xmin = "",
+    xmax = "group2",
+    tip.length = 0.01,
+    inherit.aes = FALSE
+  )
+```
+
+# cellchat
+
+```{r}
+cellchat1 <- qs::qread(here(
+  "05_figures/990_shared_figures",
+  "003_final_figures/001_data_for_plots",
+  "cellchat-angpt2_vascular-parenchymal_ggplot.qs"
+))
+cellchat2 <- qs::qread(here(
+  "05_figures/990_shared_figures",
+  "003_final_figures/001_data_for_plots",
+  "cellchat-angpt2_parenchymal-vascular_ggplot.qs"
+))
+cellchat3 <- qs::qread(here(
+  "05_figures/990_shared_figures",
+  "003_final_figures/001_data_for_plots",
+  "cellchat-angpt2_vascular-vascular_ggplot.qs"
+))
+
+df <- cellchat1$data
+values <- c(1, 2, 3)
+names(values) <- c("p > 0.05", "0.01 < p < 0.05", "p < 0.01")
+dot.size.max = max(df$pval)
+dot.size.min = min(df$pval)
+
+angle.x = 90
+angle = c(0, 45, 90)
+hjust = c(0, 1, 1)
+vjust = c(0, 1, 0.5)
+vjust.x = vjust[angle == angle.x]
+hjust.x = hjust[angle == angle.x]
+
+angpt2_v <- df |>
+  dplyr::mutate(
+    condition = ifelse(grepl("(case)", source.target), "AD", "Control"),
+    source_target = str_remove_all(source.target, " \\((case|control)\\)$")
+  ) |>
+  ggplot(aes(
+    x = source_target,
+    y = interaction_name_2,
+    colour = prob
+  )) +
+  geom_point() +
+  labs(x = "", y = "") +
+  facet_wrap(~condition, scales = "free_x") +
+  theme(
+    plot.title = element_text(size = 6.5, hjust = 0.5, face = "plain"),
+    axis.text = element_text(size = 6.0),
+    legend.position = "none",
+    strip.background = element_blank(),
+    axis.text.y = element_text(size = 5, hjust = hjust.x),
+    axis.text.x = element_text(angle = 90, hjust = hjust.x, vjust = vjust.x)
+  ) +
+  scale_radius(
+    range = c(dot.size.min, dot.size.max),
+    breaks = sort(unique(df$pval)),
+    labels = names(values)[
+      values %in%
+        sort(unique(df$pval))
+    ],
+    name = "p-value"
+  ) +
+  ggtitle("Up - regulated signaling in Cases | Vascular -> Parenchyma") +
+  scale_colour_viridis_c(option = "plasma") # or "magma", "cividis", etc.
+
+
+angpt2_p <- cellchat2$data |>
+  dplyr::mutate(
+    condition = ifelse(grepl("(case)", source.target), "AD", "Control"),
+    source_target = str_remove_all(source.target, " \\((case|control)\\)$")
+  ) |>
+  ggplot(aes(
+    x = source_target,
+    y = interaction_name_2,
+    colour = prob,
+    size = pval
+  )) +
+  geom_point() +
+  labs(x = "", y = "") +
+  facet_wrap(~condition, scales = "free_x") +
+  theme(
+    plot.title = element_text(size = 6.5, hjust = 0.5, face = "plain"),
+    axis.text = element_text(size = 6.0),
+    legend.position = "none",
+    strip.background = element_blank(),
+    axis.text.y = element_text(size = 5, hjust = 0.8),
+    axis.text.x = element_text(angle = 90, hjust = 0.9, vjust = 0.5)
+  ) +
+  scale_radius(
+    range = c(dot.size.min, dot.size.max),
+    breaks = sort(unique(df$pval)),
+    labels = names(values)[
+      values %in%
+        sort(unique(df$pval))
+    ],
+    name = "p-value"
+  ) +
+  ggtitle("Up - regulated signaling in Cases | Parenchyma -> Vascular") +
+  scale_colour_viridis_c(option = "plasma") # or "magma", "cividis", etc.
+
+angpt2_v_v <- cellchat3$data |>
+  dplyr::mutate(
+    condition = ifelse(grepl("(case)", source.target), "AD", "Control"),
+    source_target = str_remove_all(source.target, " \\((case|control)\\)$")
+  ) |>
+  ggplot(aes(
+    x = source_target,
+    y = interaction_name_2,
+    colour = prob,
+    size = pval
+  )) +
+  geom_point() +
+  labs(x = "", y = "") +
+  facet_grid(~condition, scales = "free_x", space = "free_x") +
+  theme(
+    plot.title = element_text(size = 6.5, hjust = 0.5, face = "plain"),
+    axis.text = element_text(size = 6.0),
+    legend.position = "none",
+    strip.background = element_blank(),
+    axis.text.y = element_text(size = 5, hjust = 0.8),
+    axis.text.x = element_text(angle = 90, hjust = 0.9, vjust = 0.5)
+  ) +
+  scale_radius(
+    range = c(dot.size.min, dot.size.max),
+    breaks = sort(unique(df$pval)),
+    labels = names(values)[
+      values %in%
+        sort(unique(df$pval))
+    ],
+    name = "p-value"
+  ) +
+  scale_y_discrete(labels = function(x) str_wrap(x, width = 15)) +
+  ggtitle("Up - regulated signaling in Cases | Vascular -> Vascular") +
+  scale_colour_viridis_c(option = "plasma") # or "magma", "cividis", etc.
+
+legend <- get_legend(
+  angpt2_p +
+    # guides(color = guide_legend(nrow = 1)) +
+    theme(legend.position = "bottom") +
+    scale_size_continuous(
+      name = "p-value",
+      breaks = c(3),
+      labels = c("p < 0.1")
+    ) +
+    guides(color = guide_colourbar(barwidth = 10, barheight = 0.5))
+)
+
+angpt2_left <- plot_grid(
+  angpt2_v,
+  angpt2_p,
+  ncol = 1,
+  labels = c("D", "E"),
+  label_colour = "black"
+)
+
+angpt2 <- plot_grid(
+  angpt2_left,
+  angpt2_v_v,
+  ncol = 2,
+  labels = c("", "F"),
+  label_colour = "black"
+)
+angpt2_plot <- plot_grid(angpt2, legend, ncol = 1, rel_heights = c(1, 0.2))
+```
+
+# Assemble figure
+
+```{r}
+row_1 <- plot_grid(
+  tradeseq,
+  v_plot,
+  bar_plot,
+  nrow = 1,
+  labels = c("A", "B", "C"),
+  label_colour = "black",
+  rel_widths = c(1, 0.6, 0.4)
+)
+row_2 <- plot_grid(
+  cellchat1 + theme(legend.position = "none"),
+  cellchat2,
+  labels = c("D", "E"),
+  label_colour = "black"
+)
+final_plot <- plot_grid(row_1, angpt2_plot, nrow = 2, rel_heights = c(0.8, 1))
+
+ggsave(
+  filename = here::here(
+    "05_figures/990_shared_figures/003_final_figures",
+    "000_sup_figures/angpt2.pdf"
+  ),
+  plot = final_plot,
+  device = cairo_pdf,
+  width = 7,
+  height = 9,
+  units = "in"
+)
+```

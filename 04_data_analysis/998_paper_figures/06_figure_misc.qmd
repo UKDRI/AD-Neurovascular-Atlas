@@ -15,17 +15,17 @@ Width guidance:
 
 - For 2-column formats (such as research articles and reviews), the sizes are 85 mm (1 column), 114 mm (1.5 columns), and 174 mm (full width of the page)
 
-- TODO - look at the correlation of the MAGMA risk genes per celltype, see if there's unique co-expression. Then try by sample for a given celltype and see if there's variation (presumably by amyloid burden?). Maybe check braak stage.
-
 # Load packages
 
 ```{r}
-source(here::here("04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"))
+source(here::here(
+  "04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"
+))
 library(magick)
 library(circlize)
 library(Cairo)
-library(rstatix)  # For statistical tests
-library(ggpubr)   # For adding significance brackets
+library(rstatix) # For statistical tests
+library(ggpubr) # For adding significance brackets
 
 tar_config_set(store = here::here("_targets"))
 ```
@@ -33,8 +33,10 @@ tar_config_set(store = here::here("_targets"))
 
 ```{r}
 #| eval: false
-knitr::purl("04_data_analysis/998_paper_figures/04_figures.qmd",
-"temp-dotplot.R")
+knitr::purl(
+  "04_data_analysis/998_paper_figures/04_figures.qmd",
+  "temp-dotplot.R"
+)
 ```
 
 ```{r}
@@ -83,8 +85,14 @@ celltypes_abbrev <-
   )
 
 # Create a new column with abbreviated Idents
-abbreviated_idents <- celltypes_abbrev[as.character(sce$subcelltype_annotations)]
-abbreviated_idents <- if_else(is.na(abbreviated_idents), sce$subcelltype_annotations, abbreviated_idents)
+abbreviated_idents <- celltypes_abbrev[as.character(
+  sce$subcelltype_annotations
+)]
+abbreviated_idents <- if_else(
+  is.na(abbreviated_idents),
+  sce$subcelltype_annotations,
+  abbreviated_idents
+)
 names(abbreviated_idents) <- NULL
 sce$abbreviated_idents <- abbreviated_idents
 unique(sce$abbreviated_idents)
@@ -96,16 +104,28 @@ celltypes_abbrev_level1 <-
     "Neuron_ex" = "Ex-Neuro",
     "Neuron_in" = "In-Neuro"
   )
-abbreviated_idents <- celltypes_abbrev_level1[as.character(sce$highlevel_manual_annotations)]
-abbreviated_idents <- if_else(is.na(abbreviated_idents), sce$highlevel_manual_annotations, abbreviated_idents)
+abbreviated_idents <- celltypes_abbrev_level1[as.character(
+  sce$highlevel_manual_annotations
+)]
+abbreviated_idents <- if_else(
+  is.na(abbreviated_idents),
+  sce$highlevel_manual_annotations,
+  abbreviated_idents
+)
 names(abbreviated_idents) <- NULL
 sce$abbreviated_idents_level1 <- abbreviated_idents
 unique(sce$abbreviated_idents_level1)
 ```
 
 ```{r}
-celltype_abbrev_df <- data.frame(celltypes_abbrev) |> rownames_to_column("celltype")
-readr::write_tsv(celltype_abbrev_df, here::here("05_figures/990_shared_figures/003_final_figures/001_data_for_plots/celltype_abbreviations.tsv"))
+celltype_abbrev_df <- data.frame(celltypes_abbrev) |>
+  rownames_to_column("celltype")
+readr::write_tsv(
+  celltype_abbrev_df,
+  here::here(
+    "05_figures/990_shared_figures/003_final_figures/001_data_for_plots/celltype_abbreviations.tsv"
+  )
+)
 ```
 
 ## EndoMT proportions by APOE
@@ -136,14 +156,22 @@ cell_props <- cell_counts %>%
   mutate(proportion = count / total)
 
 # Plot
-ggplot(cell_props, aes(x = apoe_status, y = proportion, fill = abbreviated_idents)) +
-  geom_boxplot(outlier.shape = NA, position = position_dodge(width=0.75)) +
-  geom_jitter(position = position_jitterdodge(jitter.width = 0.2, dodge.width = 0.75), size = 1.5) +
-  facet_wrap(~ diagnosis) +
+ggplot(
+  cell_props,
+  aes(x = apoe_status, y = proportion, fill = abbreviated_idents)
+) +
+  geom_boxplot(outlier.shape = NA, position = position_dodge(width = 0.75)) +
+  geom_jitter(
+    position = position_jitterdodge(jitter.width = 0.2, dodge.width = 0.75),
+    size = 1.5
+  ) +
+  facet_wrap(~diagnosis) +
   labs(x = "APOE Status", y = "Proportion of EndoMT cells") +
   theme_classic()
-file <- here("05_figures/990_shared_figures/004_pseudotime/01_tradeseq/",
-             "endomt_proportion_by_apoe.pdf")
+file <- here(
+  "05_figures/990_shared_figures/004_pseudotime/01_tradeseq/",
+  "endomt_proportion_by_apoe.pdf"
+)
 ggsave(filename = file, width = 7, height = 7)
 ```
 
@@ -165,11 +193,13 @@ total_neurons / number_of_samples
 v_samples <- grepl("V", unique(sce$manifest)) |> sum()
 p_samples <- grepl("P", unique(sce$manifest)) |> sum()
 celltype_counts[names(celltype_counts) == "Endothelial"] / v_samples
-celltype_counts[names(celltype_counts) == "Endothelial"] / v_samples +
-celltype_counts[names(celltype_counts) == "mystery-cluster"] / v_samples
+celltype_counts[names(celltype_counts) == "Endothelial"] /
+  v_samples +
+  celltype_counts[names(celltype_counts) == "mystery-cluster"] / v_samples
 
-celltype_counts[names(celltype_counts) == "Neuron_in"] / p_samples +
-celltype_counts[names(celltype_counts) == "Neuron_ex"] / p_samples
+celltype_counts[names(celltype_counts) == "Neuron_in"] /
+  p_samples +
+  celltype_counts[names(celltype_counts) == "Neuron_ex"] / p_samples
 
 # Get percentages of level 2 celltypes
 sce@meta.data |>
@@ -184,10 +214,7 @@ print(percentages |> round(digits = 2))
 
 
 ```{r}
-DotPlot(sce, features = c("AGBL1",
-                          "ARHGAP15",
-                          "DOCK2",
-                          "RUNX1"))
+DotPlot(sce, features = c("AGBL1", "ARHGAP15", "DOCK2", "RUNX1"))
 ```
 
 ### Endo-MT markers from paper
@@ -195,21 +222,48 @@ DotPlot(sce, features = c("AGBL1",
 Let's check the markers for Endo-MT reported in [this paper](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10073145/)
 
 ```{r}
-endomt_markers <- c("ACTA2", "FN1", "PECAM1", "LUM", "RAMP2", "IFI27", "TM4SF1", "GNG11", "TIMP3", "IGFBP7", "ID3", "CTGF")
+endomt_markers <- c(
+  "ACTA2",
+  "FN1",
+  "PECAM1",
+  "LUM",
+  "RAMP2",
+  "IFI27",
+  "TM4SF1",
+  "GNG11",
+  "TIMP3",
+  "IGFBP7",
+  "ID3",
+  "CTGF"
+)
 DotPlot(sce, features = endomt_markers)
 ```
 
 ```{r}
 #| fig-width: 7
 #| fig-height: 12
-VlnPlot(sce, features = c("pc_mito"), ncol = 1, group.by = "highlevel_manual_annotations", pt.size = 0)
+VlnPlot(
+  sce,
+  features = c("pc_mito"),
+  ncol = 1,
+  group.by = "highlevel_manual_annotations",
+  pt.size = 0
+)
 ```
 
 
 ```{r}
 Idents(sce) <- str_replace_all(Idents(sce), "_", "-")
-sce$highlevel_manual_annotations <- if_else(sce$highlevel_manual_annotations == "mystery-cluster", "EndoMT", sce$highlevel_manual_annotations)
-sce$highlevel_manual_annotations <- str_replace_all(sce$highlevel_manual_annotations, "_", "-")
+sce$highlevel_manual_annotations <- if_else(
+  sce$highlevel_manual_annotations == "mystery-cluster",
+  "EndoMT",
+  sce$highlevel_manual_annotations
+)
+sce$highlevel_manual_annotations <- str_replace_all(
+  sce$highlevel_manual_annotations,
+  "_",
+  "-"
+)
 unique(sce$highlevel_manual_annotations)
 ```
 
@@ -223,47 +277,54 @@ endomt_percent <- sce@meta.data |>
   dplyr::mutate(percent = n / sum(n) * 100, .by = donor) |>
   dplyr::filter(highlevel_manual_annotations == "EndoMT")
 
-readr::write_csv(endomt_percent,
-                 here::here("03_data/999_data_for_publication",
-                            "endomt_level1_percent.csv"))
+readr::write_csv(
+  endomt_percent,
+  here::here("03_data/999_data_for_publication", "endomt_level1_percent.csv")
+)
 ```
 
 ```{r}
 endomt_nuclei_num <- sce@meta.data |>
   dplyr::filter(abbreviated_idents %in% c("EndoMT_1", "EndoMT_2")) |>
   dplyr::count(donor, abbreviated_idents, diagnosis)
-readr::write_csv(endomt_nuclei_num,
-                 here::here("03_data/999_data_for_publication",
-                            "endomt_nuclei_num.csv"))
+readr::write_csv(
+  endomt_nuclei_num,
+  here::here("03_data/999_data_for_publication", "endomt_nuclei_num.csv")
+)
 ```
 
 ### Dotplot of top markers
 
 ```{r}
 sce$abbreviated_idents <- str_replace_all(sce$abbreviated_idents, "_", "-")
-assertthat::assert_that(sum(!(
-  unique(Idents(sce)) %in% unique(sce$abbreviated_idents)
-)) == 0)
-file <- here::here("05_figures/990_shared_figures/003_final_figures",
-                   "001_data_for_plots")
+assertthat::assert_that(
+  sum(!(unique(Idents(sce)) %in% unique(sce$abbreviated_idents))) == 0
+)
+file <- here::here(
+  "05_figures/990_shared_figures/003_final_figures",
+  "001_data_for_plots"
+)
 file_level2 <- here::here(file, "top_abbrev_ident_markers.tsv")
 file_level1 <- here::here(file, "top_level1_markers.tsv")
 
 # Find markers for each cell type
-if(!file.exists(file_level2) | !file.exists(file_level1)) {
-
+if (!file.exists(file_level2) | !file.exists(file_level1)) {
   plan("multisession", workers = 8)
-  markers <- FindAllMarkers(sce,
-                            only.pos = TRUE,  # Only positive markers
-                            min.pct = 0.25,   # Gene detected in at least 25% of cells
-                            logfc.threshold = 0.5)  # Minimum log fold change
+  markers <- FindAllMarkers(
+    sce,
+    only.pos = TRUE, # Only positive markers
+    min.pct = 0.25, # Gene detected in at least 25% of cells
+    logfc.threshold = 0.5
+  ) # Minimum log fold change
   readr::write_tsv(markers, file_level2)
 
   Idents(sce) <- sce$highlevel_manual_annotations
-  markers_level1 <- FindAllMarkers(sce,
-                            only.pos = TRUE,  # Only positive markers
-                            min.pct = 0.25,   # Gene detected in at least 25% of cells
-                            logfc.threshold = 0.5)  # Minimum log fold change
+  markers_level1 <- FindAllMarkers(
+    sce,
+    only.pos = TRUE, # Only positive markers
+    min.pct = 0.25, # Gene detected in at least 25% of cells
+    logfc.threshold = 0.5
+  ) # Minimum log fold change
   readr::write_tsv(markers_level1, file_level1)
 } else {
   markers <- readr::read_tsv(file_level2)
@@ -286,18 +347,33 @@ top_markers_level1 <- markers_level1 |>
 
 
 # Optional: Create a heatmap of top markers
-level2_dotplot <- DotPlot(sce,
-          features = unique(top_markers$hgnc_symbol)) +
+level2_dotplot <- DotPlot(sce, features = unique(top_markers$hgnc_symbol)) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
   labs(x = "", y = "")
-level1_dotplot <- DotPlot(sce,
-          features = unique(top_markers_level1$hgnc_symbol),
-group.by = "highlevel_manual_annotations") +
+level1_dotplot <- DotPlot(
+  sce,
+  features = unique(top_markers_level1$hgnc_symbol),
+  group.by = "highlevel_manual_annotations"
+) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
 level1_dotplot <- level1_dotplot +
-  labs(x = "", y ="")
-ggsave(here("05_figures/990_shared_figures/003_final_figures/000_sup_figures/level1_dotplot.pdf"), plot = level1_dotplot, width = 7, height = 7)
-ggsave(here("05_figures/990_shared_figures/003_final_figures/000_sup_figures/level2_dotplot.pdf"), plot = level2_dotplot, width = 15, height = 9)
+  labs(x = "", y = "")
+ggsave(
+  here(
+    "05_figures/990_shared_figures/003_final_figures/000_sup_figures/level1_dotplot.pdf"
+  ),
+  plot = level1_dotplot,
+  width = 7,
+  height = 7
+)
+ggsave(
+  here(
+    "05_figures/990_shared_figures/003_final_figures/000_sup_figures/level2_dotplot.pdf"
+  ),
+  plot = level2_dotplot,
+  width = 15,
+  height = 9
+)
 ```
 
 ## Bar plot of cell proportions
@@ -306,13 +382,20 @@ ggsave(here("05_figures/990_shared_figures/003_final_figures/000_sup_figures/lev
 # Get metadata
 meta_data <- sce@meta.data
 
-readr::write_tsv(meta_data, here::here("03_data/999_data_for_publication/nuclei_meta_data.tsv"))
+readr::write_tsv(
+  meta_data,
+  here::here("03_data/999_data_for_publication/nuclei_meta_data.tsv")
+)
 
 meta_data |>
   dplyr::select(manifest, age, sex, diagnosis) |>
   unique() |>
-  dplyr::summarise(people = n(), median_age = median(age), iqr_age = IQR(age),
-                   .by = c(diagnosis, sex))
+  dplyr::summarise(
+    people = n(),
+    median_age = median(age),
+    iqr_age = IQR(age),
+    .by = c(diagnosis, sex)
+  )
 
 # Calculate the percentage of cells in each fraction per cell type
 percentages <- meta_data %>%
@@ -325,12 +408,17 @@ percentages <- meta_data %>%
 head(percentages)
 
 # Create the bar plot
-bar_plot <- ggplot(percentages, aes(x = reorder(abbreviated_idents, -percentage * (prep == "V")), y = percentage, fill = prep)) +
+bar_plot <- ggplot(
+  percentages,
+  aes(
+    x = reorder(abbreviated_idents, -percentage * (prep == "V")),
+    y = percentage,
+    fill = prep
+  )
+) +
   geom_bar(stat = "identity") +
- # geom_bar(stat = "identity", position = "dodge") +
-  labs(x = "",
-       y = "Percentage",
-       fill = "Fraction") +
+  # geom_bar(stat = "identity", position = "dodge") +
+  labs(x = "", y = "Percentage", fill = "Fraction") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 #  scale_fill_custom()
 
@@ -338,8 +426,19 @@ bar_plot <- ggplot(percentages, aes(x = reorder(abbreviated_idents, -percentage 
 print(bar_plot)
 
 # Save the plot
-ggsave(here("05_figures/990_shared_figures/003_final_figures/bar_plot_P_vs_V.png"), plot = bar_plot, width = 6, height = 4, dpi = 300)
-ggsave(here("05_figures/990_shared_figures/003_final_figures/bar_plot_P_vs_V.svg"), plot = bar_plot, width = 6, height = 4)
+ggsave(
+  here("05_figures/990_shared_figures/003_final_figures/bar_plot_P_vs_V.png"),
+  plot = bar_plot,
+  width = 6,
+  height = 4,
+  dpi = 300
+)
+ggsave(
+  here("05_figures/990_shared_figures/003_final_figures/bar_plot_P_vs_V.svg"),
+  plot = bar_plot,
+  width = 6,
+  height = 4
+)
 ```
 
 ## Boxplot of number of nuclie per donor
@@ -352,52 +451,73 @@ num_nuclei <- meta_data |>
 
 num_nuclei |>
   ggplot(aes(x = abbreviated_idents, y = num_nuclei, fill = diagnosis)) +
-  geom_boxplot(outlier.shape = NA) +  # Hide outliers to avoid overlap with jittered points
+  geom_boxplot(outlier.shape = NA) + # Hide outliers to avoid overlap with jittered points
   geom_jitter(position = position_jitter(width = 0.2), alpha = 0.6) +
   #scale_fill_brewer(palette = "Set3") +  # Choose a color palette
-  labs(x = NULL,
-       y = "Number of Nuclei")
+  labs(x = NULL, y = "Number of Nuclei")
 
 num_nuclei |>
   ggplot(aes(x = abbreviated_idents, y = num_nuclei, fill = diagnosis)) +
   #geom_violin(trim = FALSE, alpha = 0.5, position = position_nudge(x = 0.2)) +
-  geom_boxplot(width = 0.1, position = position_nudge(x = 0.2), outlier.shape = NA) +
-  geom_jitter(position = position_jitter(width = 0.1), alpha = 0.6, size = 0.3) +
-  coord_flip() +  # Flip coordinates to make it a half violin plot
-  labs(x = NULL,
-       y = "Number of Nuclei")
+  geom_boxplot(
+    width = 0.1,
+    position = position_nudge(x = 0.2),
+    outlier.shape = NA
+  ) +
+  geom_jitter(
+    position = position_jitter(width = 0.1),
+    alpha = 0.6,
+    size = 0.3
+  ) +
+  coord_flip() + # Flip coordinates to make it a half violin plot
+  labs(x = NULL, y = "Number of Nuclei")
 num_nuclei |>
   ggplot(aes(x = abbreviated_idents, y = num_nuclei, fill = diagnosis)) +
   #geom_violin(trim = FALSE, alpha = 0.5, position = position_nudge(x = 0.2)) +
   geom_boxplot(outlier.shape = NA, alpha = 0.6) +
-  geom_jitter(position = position_jitter(width = 0.1), alpha = 0.8, size = 0.3) +
-  coord_flip() +  # Flip coordinates to make it a half violin plot
-  labs(x = NULL,
-       y = "Number of Nuclei")
+  geom_jitter(
+    position = position_jitter(width = 0.1),
+    alpha = 0.8,
+    size = 0.3
+  ) +
+  coord_flip() + # Flip coordinates to make it a half violin plot
+  labs(x = NULL, y = "Number of Nuclei")
 boxplot <- num_nuclei |>
   ggplot(aes(x = abbreviated_idents, y = num_nuclei, fill = diagnosis)) +
   #geom_violin(trim = FALSE, alpha = 0.5, position = position_nudge(x = 0.2)) +
   geom_boxplot(outlier.shape = NA, alpha = 0.6) +
-  geom_jitter(position = position_jitter(width = 0.1), alpha = 0.8, size = 0.3) +
+  geom_jitter(
+    position = position_jitter(width = 0.1),
+    alpha = 0.8,
+    size = 0.3
+  ) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(x = NULL,
-       y = "Number of Nuclei")
+  labs(x = NULL, y = "Number of Nuclei")
 ```
 
 ### Cohort visualisation
 
 ```{r}
 cohort <- sce@meta.data |>
-  dplyr::select(donor, diagnosis, sex:age, Ethnicity, diagnosis_details,
-                apoe_status) |>
+  dplyr::select(
+    donor,
+    diagnosis,
+    sex:age,
+    Ethnicity,
+    diagnosis_details,
+    apoe_status
+  ) |>
   dplyr::distinct() |>
   as_tibble()
 
 cohort |>
   dplyr::count(sex, diagnosis)
 cohort |>
-  summarise(median_age = median(age), iqr_age = IQR(age),
-  .by = c(diagnosis, sex))
+  summarise(
+    median_age = median(age),
+    iqr_age = IQR(age),
+    .by = c(diagnosis, sex)
+  )
 
 sce@meta.data |>
   dplyr::select(donor, diagnosis, sex, prep) |>
@@ -416,9 +536,17 @@ age_plot <- ggplot(cohort, aes(x = sex, y = age, fill = diagnosis)) +
   theme_minimal() +
   labs(x = "", y = "Age", fill = "")
 age_plot
-ggsave(filename = here::here("05_figures/990_shared_figures/003_final_figures",
-                             "000_sup_figures/cohort_boxplot.png"), plot = age_plot,
-       width = 8, height = 8, units = "in", dpi = 300)
+ggsave(
+  filename = here::here(
+    "05_figures/990_shared_figures/003_final_figures",
+    "000_sup_figures/cohort_boxplot.png"
+  ),
+  plot = age_plot,
+  width = 8,
+  height = 8,
+  units = "in",
+  dpi = 300
+)
 ```
 
 ## Figure 4 - cellchat
@@ -427,24 +555,47 @@ ggsave(filename = here::here("05_figures/990_shared_figures/003_final_figures",
 # differential number of interactions
 # Note that red colours denote increased signalling in the second dataset compared to the first, and blue the inverse.
 # In our case cases are the first group and controls the second.
-img1 <- image_read_svg(here::here("05_figures/990_shared_figures/cellchat/differential_heatmap.svg"))
+img1 <- image_read_svg(here::here(
+  "05_figures/990_shared_figures/cellchat/differential_heatmap.svg"
+))
 img1_gg <- ggdraw() + draw_image(img1)
 # relative information flow
-img2 <- image_read_svg(here::here("05_figures/990_shared_figures/cellchat/differential_information_flow_stacked.svg"))
+img2 <- image_read_svg(here::here(
+  "05_figures/990_shared_figures/cellchat/differential_information_flow_stacked.svg"
+))
 img2_gg <- ggdraw() + draw_image(img2)
 # Overall signalling
-img3 <- image_read_svg(here::here("05_figures/990_shared_figures/cellchat/differential_heatmap_overall.svg"))
+img3 <- image_read_svg(here::here(
+  "05_figures/990_shared_figures/cellchat/differential_heatmap_overall.svg"
+))
 img3_gg <- ggdraw() + draw_image(img3)
 # example bubble plot
-img4 <- image_read(here::here("05_figures/990_shared_figures/cellchat",
-                              "003_differential_bubble_plots",
-                              "EndoMT-1_differential_signalling.png"))
+img4 <- image_read(here::here(
+  "05_figures/990_shared_figures/cellchat",
+  "003_differential_bubble_plots",
+  "EndoMT-1_differential_signalling.png"
+))
 img4_gg <- ggdraw() + draw_image(img4)
 
 # Combine everything
-final_plot <- plot_grid(img1_gg, img4_gg, img3_gg, ncol = 1, labels = c("A", "B", "C"), label_colour = "black")
+final_plot <- plot_grid(
+  img1_gg,
+  img4_gg,
+  img3_gg,
+  ncol = 1,
+  labels = c("A", "B", "C"),
+  label_colour = "black"
+)
 final_plot
 
-ggsave(filename = here::here("05_figures/990_shared_figures/003_final_figures/figure4.png"), plot = final_plot,
-       width = 12, height = 16, units = "in", dpi = 300)
+ggsave(
+  filename = here::here(
+    "05_figures/990_shared_figures/003_final_figures/figure4.png"
+  ),
+  plot = final_plot,
+  width = 12,
+  height = 16,
+  units = "in",
+  dpi = 300
+)
 ```

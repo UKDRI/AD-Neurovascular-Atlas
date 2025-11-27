@@ -1,0 +1,245 @@
+---
+title: Celltype proportion correlations
+subtitle: Supp figure 4
+execute:
+  eval: true
+code-fold: true
+---
+
+```{r}
+here::i_am("04_data_analysis/001_snrnaseq_analysis/16_pathway_analysis.qmd")
+```
+
+We noticed a negatvie correlation in endothelial and percitye proportions, a nice support for the papers, let's try doing this for subtypes and including fibroblasts
+
+# Load packages
+
+```{r}
+source(here::here("04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"))
+Sys.setenv(TAR_PROJECT = here::here())
+tar_config_set(store = here::here("_targets"))
+library(SeuratWrappers)
+library(GGally)
+```
+
+```{r}
+# Get seurat object
+tar_load(sce)
+tar_load(gene_ids)
+tar_load(translated_id)
+
+assertthat::assert_that(sum(rownames(sce@assays$RNA@counts) ==
+                              gene_ids$ensembl) == nrow(gene_ids))
+```
+
+# Subset to celltypes
+
+```{r}
+# Subset to EndoMT
+rownames(sce@assays$RNA@data) <- gene_ids$ensembl
+sce <- subset(sce, highlevel_manual_annotations %in% c("SMC", "Pericyte", "mystery-cluster", "Endothelial", "Fibroblast"))
+# remove unneded cells
+sce <- subset(sce, subcelltype_annotations %in% c("Oligo-A", "Astrocyte-activated"), invert = TRUE)
+```
+
+```{r}
+# the full cell labels are long for plots, let's make abbreviated versions
+celltypes_abbrev <-
+  c(
+    "Astrocyte-activated" = "Astro-A",
+    "Astrocyte-quiescent" = "Astro-Q",
+    "Ex-Neuron-ADARB2-ERBB4" = "Ex-Neuro-1",
+    "Ex-Neuron-CBLN2-NRGN" = "Ex-Neuro-2",
+    "Ex-Neuron-DLC1-HS3ST4" = "Ex-Neuro-3",
+    "Ex-Neuron-L2-3-CBLN2-LINC02306-CUX2" = "Ex-Neuro-4",
+    "Ex-Neuron-L3-5-RORB-PLCH1" = "Ex-Neuro-5",
+    "Ex-Neuron-L4-5-RORB-IL1RAPL2" = "Ex-Neuro-6",
+    "Ex-Neuron-L6-THEMIS-NFIA" = "Ex-Neuro-7",
+    "In-Neuron-ADARB2-GRM7" = "In-Neuro-1",
+    "In-Neuron-ADARB2-IL1RAPL2-CSCL14" = "In-Neuro-2",
+    "In-Neuron-ADARB2-LAMP5-NRG1" = "In-Neuro-3",
+    "In-Neuron-ADARB2-NRG1-RELN" = "In-Neuro-4",
+    "In-Neuron-DPP10-MEF2C" = "In-Neuro-5",
+    "In-Neuron-PRKG1-TBC1D4" = "In-Neuro-6",
+    "In-Neuron-TRHDE-RALYL" = "In-Neuro-7",
+    "Microglia-activated" = "Microglia-A",
+    "Microglia-quiescent" = "Microglia-Q",
+    "Microglia-vascular" = "Microglia-V",
+    "Pericyte" = "Pericyte-1",
+    "Perivascular Macrophage" = "Perivascular-M",
+    "Perivascular" = "Perivascular-M",
+    "Perivascular-FB" = "Perivascular-FB-1",
+    "Perivascular-FB-KAZN2" = "Perivascular-FB-2",
+    "T-cell-parenchymal-1" = "T-cell-P1",
+    "T-cell-parenchymal-2" = "T-cell-P2",
+    "T-cell-vascular" = "T-cell-V",
+    "T-cell-mixed" = "T-cell-M",
+    "Vascular-SMC" = "Vascular-SMC-1",
+    "Vascular-SMC-LINC00486" = "Vascular-SMC-2"
+  )
+
+# Create a new column with abbreviated Idents
+abbreviated_idents <- celltypes_abbrev[as.character(sce$subcelltype_annotations)]
+abbreviated_idents <- if_else(is.na(abbreviated_idents), sce$subcelltype_annotations, abbreviated_idents)
+names(abbreviated_idents) <- NULL
+sce$abbreviated_idents <- abbreviated_idents
+unique(sce$abbreviated_idents)
+Idents(sce) <- sce$abbreviated_idents
+
+celltypes_abbrev_level1 <-
+  c(
+    "mystery-cluster" = "EndoMT",
+    "Neuron_ex" = "Ex-Neuro",
+    "Neuron_in" = "In-Neuro"
+  )
+abbreviated_idents <- celltypes_abbrev_level1[as.character(sce$highlevel_manual_annotations)]
+abbreviated_idents <- if_else(is.na(abbreviated_idents), sce$highlevel_manual_annotations, abbreviated_idents)
+names(abbreviated_idents) <- NULL
+sce$abbreviated_idents_level1 <- abbreviated_idents
+unique(sce$abbreviated_idents_level1)
+```
+
+# Level 1 celltypes
+
+```{r}
+metadata <- data.frame(
+  donor = sce$donor,
+  celltype = sce$abbreviated_idents_level1,
+  diagnosis = sce$diagnosis
+)
+
+percent_overall <- metadata |>
+  dplyr::count(donor, celltype, diagnosis) |>
+  dplyr::mutate(percent = n / sum(n) * 100, .by = donor)
+
+
+wide_df <- percent_overall |>
+  select(donor, celltype, percent, diagnosis) |>
+  pivot_wider(names_from = celltype, values_from = percent, values_fill = 0)
+
+# Move diagnosis column to rownames for annotation
+rownames(wide_df) <- wide_df$donor
+diagnosis_annotation <- wide_df |>
+  select(donor, diagnosis) |>
+  column_to_rownames("donor")
+
+# Remove non-numeric columns before correlation
+wide_numeric <- wide_df |> select(-donor, -diagnosis)
+
+# Custom function for scatterplots with regression lines
+scatter_with_fit <- function(data, mapping, ...) {
+  ggplot(data, mapping) +
+    geom_point(alpha = 0.5, size = 1.0) + # Scatter points
+    geom_smooth(method = "lm", color = "black", linetype = "dashed", se = FALSE) # Regression line
+}
+
+# Generate the pair plot
+p <- ggpairs(
+  wide_numeric,
+  lower = list(continuous = scatter_with_fit), # Apply scatter_with_fit to lower panel
+  diag = list(continuous = wrap("densityDiag")), # Keep density plots on diagonal
+  upper = list(continuous = wrap("cor", size = 6)) # Correlation coefficients in upper panel
+) +
+  theme_minimal(base_size = 14)
+
+p
+
+ggsave(
+  here::here(
+    "05_figures/990_shared_figures/003_final_figures",
+    "000_sup_figures", "donor-celltype-proportion-corrlations-level1.pdf"
+  ),
+  height = 7, width = 7)
+```
+
+
+```{r}
+library(GGally)
+library(ggplot2)
+
+# Custom function for scatterplots with regression lines
+scatter_with_fit_highlight <- function(data, mapping, ...){
+  x_var <- deparse(mapping$x)  # Extract x variable name
+  y_var <- deparse(mapping$y)  # Extract y variable name
+
+  # Check if it's the Pericyte-Endothelial comparison
+  highlight <- (x_var == "Pericyte" & y_var == "Endothelial") | (x_var == "Endothelial" & y_var == "Pericyte")
+
+  ggplot(data, mapping) +
+    geom_point(alpha = 0.5, size = 1.5, color = ifelse(highlight, "red", "black")) +
+    geom_smooth(method = "lm", color = ifelse(highlight, "red", "black"), linetype = "dashed", se = FALSE)
+}
+
+# Custom function for colored correlation coefficients
+cor_highlight <- function(data, mapping, ...){
+  x_var <- deparse(mapping$x)
+  y_var <- deparse(mapping$y)
+
+  highlight <- (x_var == "Pericyte" & y_var == "Endothelial") | (x_var == "Endothelial" & y_var == "Pericyte")
+
+  ggally_cor(data, mapping, size = 6, color = ifelse(highlight, "red", "black"), ...)
+}
+
+# Generate the ggpairs plot
+ggpairs(
+  wide_numeric,
+  lower = list(continuous = scatter_with_fit_highlight),  # Custom scatter function
+  diag = list(continuous = wrap("densityDiag")),  # Keep density plots on diagonal
+  upper = list(continuous = cor_highlight)  # Custom correlation function
+) +
+  ggtitle("Endothelial and Mural Celltype Proportions") +
+  theme_minimal(base_size = 14)
+
+```
+
+# Level 2 celltypes
+
+```{r}
+metadata <- data.frame(
+  donor = sce$donor,
+  celltype = sce$abbreviated_idents,
+  diagnosis = sce$diagnosis
+)
+
+percent_overall <- metadata |>
+  dplyr::count(donor, celltype, diagnosis) |>
+  dplyr::mutate(percent = n / sum(n) * 100, .by = donor)
+
+
+wide_df <- percent_overall |>
+  select(donor, celltype, percent, diagnosis) |>
+  pivot_wider(names_from = celltype, values_from = percent, values_fill = 0)
+
+# Move diagnosis column to rownames for annotation
+rownames(wide_df) <- wide_df$donor
+diagnosis_annotation <- wide_df |>
+  select(donor, diagnosis) |>
+  column_to_rownames("donor")
+
+# Remove non-numeric columns before correlation
+wide_numeric <- wide_df |> select(-donor, -diagnosis)
+
+scatter_with_fit <- function(data, mapping, ...) {
+  ggplot(data, mapping) +
+    geom_point(alpha = 0.5, size = 1.0) + # Scatter points
+    geom_smooth(method = "lm", color = "black", linetype = "dashed", se = FALSE) # Regression line
+}
+
+# Generate the pair plot
+p <- ggpairs(
+  wide_numeric,
+  lower = list(continuous = scatter_with_fit), # Apply scatter_with_fit to lower panel
+  diag = list(continuous = wrap("densityDiag")), # Keep density plots on diagonal
+  upper = list(continuous = wrap("cor", size = 6)) # Correlation coefficients in upper panel
+) +
+  #ggtitle("Endothelial and Mural Celltype Proportions") +
+  theme_minimal(base_size = 14)
+
+p
+
+ggsave(
+  here::here(
+    "05_figures/990_shared_figures/003_final_figures",
+    "000_sup_figures", "donor-celltype-proportion-corrlations-level2.pdf"
+  ), plot = p, height = 22, width = 22)
+```
