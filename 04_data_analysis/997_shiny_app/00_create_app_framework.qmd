@@ -1,0 +1,102 @@
+---
+title: Generate Shiny app framework
+execute:
+  eval: true
+code-fold: true
+---
+
+The [ShinyCell2](https://github.com/the-ouyang-lab/ShinyCell2) is a framework for generating Shiny apps for single seq data.
+Since it already includes some nice optimisations for dealling this large seq data I'll use it as a basis.
+
+```{r}
+library(Seurat)
+library(ShinyCell2)
+library(here)
+
+sce <- qs::qread(here(
+  "03_data/999_data_for_publication/processed_seurat_obj.qs"
+))
+head(sce@meta.data)
+unique(sce$donor)
+skimr::skim(sce@meta.data)
+
+scConf <- createConfig(
+  sce,
+  meta.to.include = c(
+    "donor",
+    "apoe_status",
+    "abbreviated_idents_level1",
+    "abbreviated_idents",
+    "diagnosis",
+    "prep",
+    "sex",
+    "batch",
+    "nCount_RNA",
+    "nFeature_RNA"
+  )
+)
+```
+
+The config effectively determins the aesthecis of the app.
+
+```{r}
+# Rename some metadata
+scConf = modMetaName(
+  scConf,
+  meta.to.mod = c(
+    "abbreviated_idents_level1",
+    "abbreviated_idents",
+    "diagnosis",
+    "prep"
+  ),
+  new.name = c("celltype_l1", "celltype_l2", "case_control", "fraction")
+)
+showLegend(scConf)
+```
+
+To customise the colour schemes you can use the following:
+
+```{r}
+#| eval: false
+# Modify colours and labels
+scConf = modColours(
+  scConf,
+  meta.to.mod = "donor",
+  new.colours = brewer.pal(8, "Pastel1")
+)
+scConf = modLabels(
+  scConf,
+  meta.to.mod = "time",
+  new.labels = c("Day0", "Day3", "Day7")
+)
+showLegend(scConf)
+```
+
+```{r}
+# Set default plot data
+scConf = modDefault(scConf, "celltype_l1", "celltype_l2")
+#showOrder(scConf)
+```
+
+I'll set the following code eval to false as it takes quite a while to run and would overwrite my modifications to the base app
+
+```{r}
+#| eval: false
+makeShinyFiles(
+  sce,
+  scConf,
+  shiny.prefix = "sc1",
+  dimred.to.use = c("umap", "pca"),
+  default.gene1 = "ANGPT2",
+  default.gene2 = "FOXP2",
+  shiny.dir = "shinyApp/"
+)
+
+makeShinyCodes(
+  shiny.title = "AD Vascular-Parenchymal Paired-seq",
+  shiny.prefix = "sc1",
+  shiny.dir = "shinyApp/"
+)
+```
+
+
