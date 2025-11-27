@@ -1,23 +1,103 @@
-# Project overview
+# Neurovascular Atlas of Alzheimer's Disease
 
-This project is using single-nuclear RNA sequencing data to investigate the blood brain barrier in Alzheimer's disease.
+[![License: CC BY 4.0](https://img.shields.io/badge/License-CC_BY_4.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
 
-It employs a novel method to physically separate the vasculature from the parenchymal tissue from human post-mortem prefrontal cortex samples.
+## Overview
 
-There are 20 cases and 20 controls each with a parenchyma and vascular fraction sequenced for a total of 80 samples via 10X.
+This repository contains the analysis code for a single-nucleus RNA sequencing study of the neurovascular unit (NVU) in Alzheimer's disease (AD).
+We profiled prefrontal cortex samples from AD patients and age-matched controls to generate a high-resolution atlas of vascular and parenchymal cell types.
 
-Data can be found on GEO [here]()
+**Associated manuscript:** *In preparation*
 
 ## Processing of data
 
-FastQC/MultiQC were run to assess sequencing quality.
-Subsequently standard processing was done with [cellranger](https://www.10xgenomics.com/support/software/cell-ranger/latest), using an updated reference with Ensembl version 109 and Gencode version 43.
+In brief: standard processing was done with [cellranger](https://www.10xgenomics.com/support/software/cell-ranger/latest), using an updated reference with Ensembl version 109 and Gencode version 43.
 The output of this was run through [scFlow](https://github.com/combiz/nf-core-scflow/tree/dev-nf) with standard parameters which was then read into R via the [Seurat](https://satijalab.org/seurat/) package.
 
 Looking at the read counts and number of features output from scFlow revealed that 3 of the donors, and the vascular fraction from a fourth donor, were of poor quality and so they were excluded from downstream analysis.
-PCA was performed and 35 dimensions were used to find nearest-neighbors and a resolution of 0.6 was used to find clusters via Seurat.
-UMAP was computed with the same 35 dimensions.
-Cluster markers were found using genes with at least 20% of cells in a cluster expressing them, and a minimum log foldchange of 0.5, again via Seurat.
 
-Differences in celltype proportions between cases and controls were examined with the [speckle](https://github.com/phipsonlab/speckle) R package.
-It leverages biological replication to obtain measures of variability of cell type proportion estimates and uses empirical Bayes to stabilize variance estimates by borrowing information across cell types.
+## Data Availability
+
+The raw sequencing data (10X Chromium single-nucleus RNA-seq) and processed count matrices are available from GEO, accessions GSE310554 & GSE222007.
+Note that GSE310554 contains the processed data of all samples from both datasets except for those donors mentioned above, and is a Seurat object.
+
+## Computational environment
+
+There's a few options if you want to replicate the R environment used for this analysis.
+
+### Option 1: Using Docker (Recommended)
+
+The easiest way to reproduce our analysis environment is using Docker.
+
+#### Download Pre-built Image
+
+Download the Docker image from Zenodo: [Link to tar.gz]
+
+```bash
+# Load the image
+docker load < ad-neurovascular-atlas-docker-v1.0.0.tar.gz
+
+# Verify it loaded
+docker images | grep ad-neurovascular-atlas
+```
+
+#### Build the Docker image yourself
+
+If you're unable to download the pre-built image for any reason you can build it yourself, no need to do both though!
+
+```bash
+# Clone this repository
+git clone https://github.com/UKDRI/AD-Neurovascular-Atlas.git
+cd ad-neurovascular-atlas
+
+# Build the Docker image (takes ~30-60 minutes)
+bash build-docker.sh
+
+# Or build manually
+docker build -t ad-neurovascular-atlas:1.0.0 .
+```
+
+#### Run the Docker container
+
+Having got the Docker image ready you can either enter it as an interactive R session
+
+```bash
+# Interactive R session
+docker run -it \
+  -v  $ (pwd):/home/ad-bbb \
+  ad-neurovascular-atlas:1.0.0 R
+```
+
+Or use it via [RStudio](https://posit.co/downloads/) like so
+
+```bash
+# Use RStudio Server (optional)
+# Use RStudio Server (optional)
+docker run -d \
+  -p 8787:8787 \
+  -e PASSWORD=yourpassword \
+  -v $(pwd):/home/ad-bbb \
+  ad-neurovascular-atlas:1.0.0
+
+# Then open browser to http://localhost:8787
+# Username: rstudio, Password: yourpassword
+```
+
+### Option 2: Using renv (Local Installation)
+
+If you prefer to install packages locally:
+
+```bash
+# Clone repository
+git clone https://github.com/UKDRI/AD-Neurovascular-Atlas.git
+cd ad-neurovascular-atlas
+
+# Install renv if you don't have it
+R -e "install.packages('renv')"
+
+# Restore the R environment (this will take a while)
+R -e "renv::restore()"
+```
+
+Note: You'll need to install system dependencies manually.
+See Dockerfile for the required system libraries.
