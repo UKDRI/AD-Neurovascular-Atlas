@@ -14,7 +14,9 @@ here::i_am("04_data_analysis/007_magma/22_pathway_analysis.qmd")
 # Load packages
 
 ```{r}
-source(here::here("04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"))
+source(here::here(
+  "04_data_analysis/990_code_libraries/02_library-calls-for-renv.R"
+))
 ```
 
 # Read in data
@@ -26,7 +28,9 @@ Note that each celltype was adjusted separately and via Bonferroni.
 ```{r}
 #| eval: true
 # read data of sig magma genes from sig celltypes for AD all controls
-res <- readr::read_tsv(here::here("03_data/994_magma_inputs/results/sig_celltype_sig_genes.tsv")) |>
+res <- readr::read_tsv(here::here(
+  "03_data/994_magma_inputs/results/sig_celltype_sig_genes.tsv"
+)) |>
   dplyr::rename(celltype = SetName)
 #res <- readr::read_tsv(here::here("03_data/994_magma_inputs/sig_genelist", "all_sig_magma_set_genes.tsv")) |>
 #  dplyr::rename(celltype = SetName)
@@ -36,40 +40,61 @@ res <- readr::read_tsv(here::here("03_data/994_magma_inputs/results/sig_celltype
 
 ```{r}
 # filter to sig genes
-res_sig <- dplyr::filter(res,
-                         padj < 0.05 &
-                           input_gene_list == "all_controls" &
-                           percent == "top-ten-percent") |>
-  dplyr::mutate(celltype = if_else(
-    celltype == "Pericyte" &
-      celltype_level == "level2",
-    "Pericyte-1",
-    celltype
-  )) |>
-  dplyr::mutate(celltype = if_else(
-    celltype == "Perivascular",
-    "Perivascular-M",
-    celltype
-  )) |>
+res_sig <- dplyr::filter(
+  res,
+  padj < 0.05 &
+    input_gene_list == "all_controls" &
+    percent == "top-ten-percent"
+) |>
+  dplyr::mutate(
+    celltype = if_else(
+      celltype == "Pericyte" &
+        celltype_level == "level2",
+      "Pericyte-1",
+      celltype
+    )
+  ) |>
+  dplyr::mutate(
+    celltype = if_else(
+      celltype == "Perivascular",
+      "Perivascular-M",
+      celltype
+    )
+  ) |>
   # remove gwas background not of interest
   dplyr::filter(grepl("EUROPEUKBB_35k10k", gwas_background)) |>
-  dplyr::mutate(gwas_background = str_replace_all(gwas_background, 
-                                                  "top-ten-percent", "case"),
-                case_control = if_else(grepl("_Case_", group), 
-                                       "case", "control"))
+  dplyr::mutate(
+    gwas_background = str_replace_all(
+      gwas_background,
+      "top-ten-percent",
+      "case"
+    ),
+    case_control = if_else(grepl("_Case_", group), "case", "control")
+  )
 
 res_sig_level2 <- res_sig |>
-  dplyr::filter(celltype_level == "level2" & 
-                  gwas_background == "EUROPEUKBB_35k10k")
-readr::write_csv(res_sig_level2, "03_data/994_magma_inputs/sig_genelist/magma_level2_controls_sig_genes.csv")
+  dplyr::filter(
+    celltype_level == "level2" &
+      gwas_background == "EUROPEUKBB_35k10k"
+  )
+readr::write_csv(
+  res_sig_level2,
+  "03_data/994_magma_inputs/sig_genelist/magma_level2_controls_sig_genes.csv"
+)
 
 # get gene names per celltype
 genes_df <- res_sig |>
   dplyr::group_by(celltype, gwas_background, celltype_level) |>
   dplyr::summarise(list_of_columns = list(hgnc_symbol))
-genes <- genes_df |> 
+genes <- genes_df |>
   dplyr::pull(list_of_columns)
-names(genes) <- paste0(genes_df$celltype, "-", genes_df$gwas_background, "-", genes_df$celltype_level)
+names(genes) <- paste0(
+  genes_df$celltype,
+  "-",
+  genes_df$gwas_background,
+  "-",
+  genes_df$celltype_level
+)
 ```
 
 Let's check overlap between the case and control genes
@@ -83,23 +108,35 @@ df <- res_sig |>
   mutate(celltype_combined = paste(celltype, celltype_level, sep = "_"))
 
 table(df$celltype, df$case_control)
-  
+
 df <- df |>
-  dplyr::mutate(unique_genes_per_celltype = case_when(
-    !duplicated(hgnc_symbol) & case_control == "case" ~ "case_only",
-    !duplicated(hgnc_symbol) & case_control == "control" ~ "control_only",
-    duplicated(hgnc_symbol) ~ "both",
-    .default = NA), .by = celltype_combined) |>
-  dplyr::mutate(unique_genes_overall = case_when(
-    !duplicated(hgnc_symbol) & case_control == "case" ~ "case_only",
-    !duplicated(hgnc_symbol) & case_control == "control" ~ "control_only",
-    duplicated(hgnc_symbol) ~ "both",
-    .default = NA))
+  dplyr::mutate(
+    unique_genes_per_celltype = case_when(
+      !duplicated(hgnc_symbol) & case_control == "case" ~ "case_only",
+      !duplicated(hgnc_symbol) & case_control == "control" ~ "control_only",
+      duplicated(hgnc_symbol) ~ "both",
+      .default = NA
+    ),
+    .by = celltype_combined
+  ) |>
+  dplyr::mutate(
+    unique_genes_overall = case_when(
+      !duplicated(hgnc_symbol) & case_control == "case" ~ "case_only",
+      !duplicated(hgnc_symbol) & case_control == "control" ~ "control_only",
+      duplicated(hgnc_symbol) ~ "both",
+      .default = NA
+    )
+  )
 
 table(df$celltype_combined, df$unique_genes_per_celltype)
 table(df$unique_genes_overall)
 
-readr::write_tsv(df, here("03_data/999_data_for_publication/case_risk/risk_genes_case_vs_control.tsv"))
+readr::write_tsv(
+  df,
+  here(
+    "03_data/999_data_for_publication/case_risk/risk_genes_case_vs_control.tsv"
+  )
+)
 
 table(df$celltype, df$unique_genes_per_celltype)
 
@@ -110,7 +147,11 @@ binary_matrix <- res_sig |>
   dplyr::select(!celltype:celltype_level) |>
   dplyr::distinct() |>
   dplyr::mutate(presence = 1) |>
-  pivot_wider(names_from = case_control, values_from = presence, values_fill = list(presence = 0))
+  pivot_wider(
+    names_from = case_control,
+    values_from = presence,
+    values_fill = list(presence = 0)
+  )
 
 # Prepare data for UpSet plot
 upset_data <- binary_matrix |>
@@ -140,7 +181,11 @@ filtered_df <- df |>
 # Step 2: Create a binary matrix indicating presence of genes in case/control groups for each celltype_combined
 binary_matrix <- filtered_df |>
   mutate(presence = 1) |>
-  pivot_wider(names_from = case_control, values_from = presence, values_fill = list(presence = 0))
+  pivot_wider(
+    names_from = case_control,
+    values_from = presence,
+    values_fill = list(presence = 0)
+  )
 
 # Step 3: Prepare data for UpSet plot
 upset_data <- binary_matrix |>
@@ -156,14 +201,20 @@ ggsave(here("03_data/999_data_for_publication/case_risk/upset_microglia-a.png"))
 # Hypergeometric enrichment
 
 ```{r}
-go_results_bp <- map(genes, ~ enrichGO(gene = .x, OrgDb = "org.Hs.eg.db", 
-                                    keyType = "SYMBOL", ont = "BP"))
+go_results_bp <- map(
+  genes,
+  ~ enrichGO(gene = .x, OrgDb = "org.Hs.eg.db", keyType = "SYMBOL", ont = "BP")
+)
 names(go_results_bp) <- paste0(names(go_results_bp), "_bp")
-go_results_cc <- map(genes, ~ enrichGO(gene = .x, OrgDb = "org.Hs.eg.db", 
-                                    keyType = "SYMBOL", ont = "CC"))
+go_results_cc <- map(
+  genes,
+  ~ enrichGO(gene = .x, OrgDb = "org.Hs.eg.db", keyType = "SYMBOL", ont = "CC")
+)
 names(go_results_cc) <- paste0(names(go_results_cc), "_cc")
-go_results_mf <- map(genes, ~ enrichGO(gene = .x, OrgDb = "org.Hs.eg.db", 
-                                    keyType = "SYMBOL", ont = "MF"))
+go_results_mf <- map(
+  genes,
+  ~ enrichGO(gene = .x, OrgDb = "org.Hs.eg.db", keyType = "SYMBOL", ont = "MF")
+)
 names(go_results_mf) <- paste0(names(go_results_mf), "_mf")
 go_results <- c(go_results_bp, go_results_cc, go_results_mf)
 rm(go_results_bp, go_results_cc, go_results_mf)
@@ -183,24 +234,27 @@ safe_treeplot <- possibly(treeplot, otherwise = NULL)
 
 plan("multisession", workers = parallel::detectCores() - 1)
 treeplots <- future_map(go_results_filtered, safe_treeplot)
-# Remove any NULL entries                                 
-treeplots <- treeplots[!sapply(treeplots, is.null)]      
-# Assert that there are no nulls in list                
+# Remove any NULL entries
+treeplots <- treeplots[!sapply(treeplots, is.null)]
+# Assert that there are no nulls in list
 assertthat::see_if(sum(map_lgl(treeplots, is.null)) == 0)
-# Replace those with no treeplot with dotplots          
-no_treeplot <- names(go_results_filtered)[!names(go_results_filtered) %in% 
-                                            names(treeplots)]
-dotplots <- map(go_results_filtered[no_treeplot], dotplot)                         
-assertthat::see_if(sum(map_lgl(dotplots, is.null)) == 0)                  
-treeplots <- c(treeplots, dotplots)                                      
+# Replace those with no treeplot with dotplots
+no_treeplot <- names(go_results_filtered)[
+  !names(go_results_filtered) %in%
+    names(treeplots)
+]
+dotplots <- map(go_results_filtered[no_treeplot], dotplot)
+assertthat::see_if(sum(map_lgl(dotplots, is.null)) == 0)
+treeplots <- c(treeplots, dotplots)
 
 treeplots <- map2(treeplots, names(treeplots), ~ .x + ggtitle(.y))
 
 # Define the function to subset a single string up to the last underscore
 subset_until_last_underscore <- function(input_string) {
   # Find the position of the last underscore
-  last_underscore_position <- str_locate_all(input_string, "_")[[1]][, 1] |> max()
-  
+  last_underscore_position <- str_locate_all(input_string, "_")[[1]][, 1] |>
+    max()
+
   # Subset the string up to the last underscore
   if (!is.na(last_underscore_position)) {
     return(str_sub(input_string, 1, last_underscore_position - 1))
@@ -226,7 +280,19 @@ plots <- map(celltypes, merge_plots, treeplots) |> set_names(celltypes)
 plots
 
 # Save plots
-map2(plots, names(plots), ~ ggsave(here::here("05_figures/990_shared_figures/001_magma/magma_pathways", paste0(.y, "_sig_genes_only", ".png")), plot = .x, width = 32, height = 10))
+map2(
+  plots,
+  names(plots),
+  ~ ggsave(
+    here::here(
+      "05_figures/990_shared_figures/001_magma/magma_pathways",
+      paste0(.y, "_sig_genes_only", ".png")
+    ),
+    plot = .x,
+    width = 32,
+    height = 10
+  )
+)
 
 dotplots <-
   map2(
@@ -238,109 +304,54 @@ dotplots <-
 
 plots <- map(celltypes, merge_plots, dotplots) |> set_names(celltypes)
 
-map2(plots, names(plots), ~ ggsave(here::here("05_figures/990_shared_figures/001_magma/magma_pathways", paste0(.y, "_sig_genes_only-dotplots", ".png")), plot = .x, width = 26, height = 12))
+map2(
+  plots,
+  names(plots),
+  ~ ggsave(
+    here::here(
+      "05_figures/990_shared_figures/001_magma/magma_pathways",
+      paste0(.y, "_sig_genes_only-dotplots", ".png")
+    ),
+    plot = .x,
+    width = 26,
+    height = 12
+  )
+)
 ```
 
 ```{r}
 celltypes <- sub("_.*", "", names(go_results_filtered)) |> unique()
 
 merged_go_plot <- function(celltype, go_results_list) {
-  
   # Subset to celltype
   gos <- go_results_list[grepl(celltype, names(go_results_list))]
-  
+
   # Extract results and add ontology information
-  combined_df <- do.call(rbind, lapply(names(gos), function(name) {
-    df <- as.data.frame(gos[[name]]@result)
-    df$Ontology <- gsub(".*_(.*)", "\\1", name)  # Extract ontology from name
-    # get the celltype level from name
-    df$celltype_level <- str_extract(name, "(?<=-)[^-]*$") |>
-      str_sub(end = -4)
-    
-    return(df)
-  }))
+  combined_df <- do.call(
+    rbind,
+    lapply(names(gos), function(name) {
+      df <- as.data.frame(gos[[name]]@result)
+      df$Ontology <- gsub(".*_(.*)", "\\1", name) # Extract ontology from name
+      # get the celltype level from name
+      df$celltype_level <- str_extract(name, "(?<=-)[^-]*$") |>
+        str_sub(end = -4)
+
+      return(df)
+    })
+  )
   return(combined_df)
 }
 
 go_combined <- map(celltypes, merged_go_plot, go_results_filtered) |>
   set_names(celltypes)
 # Save
-qs::qsave(go_combined, here::here("05_figures/990_shared_figures/003_final_figures/001_data_for_plots/go_data_sig_gene_only.qs"))
+qs::qsave(
+  go_combined,
+  here::here(
+    "05_figures/990_shared_figures/003_final_figures/001_data_for_plots/go_data_sig_gene_only.qs"
+  )
+)
 ```
-
-## Save for IPA
-
-Caleb mentioned it can be useful to see what IPA pulls out in terms of pathways and such, but I need to save the data in a csv first
-
-```{r}
-#| eval: false
-# save data for IPA
-# Define a function to save each subset as a CSV file
-save_celltype_df <- function(cell_type, df, file_name_root) {
-  # Subset the dataframe for the current cell type
-  celltype_df <- df |> dplyr::filter(celltype == cell_type) |>
-    # Select relevant columns
-    dplyr::select(gene, log2FoldChange, padj) |>
-    # Help IPA figure the columns out
-    rename(pvalue_adjust = padj)
-  
-  # Create a filename based on the cell type
-  filename <- paste0(file_name_root, "_", cell_type, ".csv")
-  
-  # Save the subset dataframe to a CSV file
-  readr::write_csv(celltype_df, filename)
-}
-
-# Use map to iterate over each unique cell type and save a file
-  map(unique(res$celltype),
-      ~ save_celltype_df(
-        .x,
-        res,
-        here::here(
-          "03_data/990_processed_data/001_snrnaseq/08_pseudobulk/01_ipa_data/magma_sig_genes"
-        )
-      ))
-```
-
-So apparently IPA is too stupid to handle more than 20 observations.
-I love it when extremely expensive closed-source software barely usable garbage!
-
-```{r}
-#| eval: false
-# Step 1: Prepare the data
-# Get a list of all unique cell types
-all_celltypes <- unique(res$celltype)
-# remove unneeded ones
-all_celltypes <- all_celltypes[!all_celltypes %in% c("low-feature-cells", "ambiguous")]
-
-# Split the list of cell types into two groups of 20
-celltypes_group1 <- all_celltypes[1:20]
-celltypes_group2 <- all_celltypes[21:40]
-
-res |> 
-  dplyr::filter(celltype %in% celltypes_group1) |>
-  dplyr::select(gene, log2FoldChange, pvalue, padj, celltype) |>
-  pivot_wider(names_from = celltype, values_from = c(log2FoldChange, pvalue, padj)) |>
-  readr::write_csv(here::here("03_data/990_processed_data/001_snrnaseq/08_pseudobulk/01_ipa_data/pseudobulk_ad-vs-control_deseq2_subtype-annotated_wide_group1.csv"))
-res |> 
-  dplyr::filter(celltype %in% celltypes_group2) |>
-  dplyr::select(gene, log2FoldChange, pvalue, padj, celltype) |>
-  pivot_wider(names_from = celltype, values_from = c(log2FoldChange, pvalue, padj)) |>
-  readr::write_csv(here::here("03_data/990_processed_data/001_snrnaseq/08_pseudobulk/01_ipa_data/pseudobulk_ad-vs-control_deseq2_subtype-annotated_wide_group2.csv"))
-```
-
-
-```{r}
-#| eval: false
-# Copy the gene names straight to the clipboard
-# Note this only works on MacOS, Windows/Linux would need adapted versions
-write.table(unique(res_sig$gene) |> paste0(collapse = ","), pipe("pbcopy"), sep = "")
-```
-
-
-
-<!-- There are a quite a lot of unique pairwise comparisons when looking at 2 factors (fraction and disease status in this case), and the cross groups can probably be dropped for now to prioritise the most interesting comparisons. -->
-<!-- In this case, I'd think the most interesting comparisons are within the same fraction across disease status, and across fractions within the same disease state. -->
 
 # Gene set enrichment analysis (GSEA)
 
@@ -349,20 +360,30 @@ write.table(unique(res_sig$gene) |> paste0(collapse = ","), pipe("pbcopy"), sep 
 ```{r}
 # nest data by celltype
 gsea_df <- res |>
-  dplyr::filter(input_gene_list == "all_controls" &
-                percent == "top-ten-percent") |>
-  dplyr::mutate(celltype = if_else(
-    celltype == "Pericyte" &
-      celltype_level == "level2",
-    "Pericyte-1",
-    celltype
-  )) |>
+  dplyr::filter(
+    input_gene_list == "all_controls" &
+      percent == "top-ten-percent"
+  ) |>
+  dplyr::mutate(
+    celltype = if_else(
+      celltype == "Pericyte" &
+        celltype_level == "level2",
+      "Pericyte-1",
+      celltype
+    )
+  ) |>
   # remove gwas background not of interest
   dplyr::filter(grepl("EUROPEUKBB_35k10k", gwas_background)) |>
-  dplyr::mutate(gwas_background = str_replace_all(gwas_background, "top-ten-percent", "case")) |>
+  dplyr::mutate(
+    gwas_background = str_replace_all(
+      gwas_background,
+      "top-ten-percent",
+      "case"
+    )
+  ) |>
   # group by celltype
   dplyr::group_by(celltype, gwas_background, celltype_level) |>
-  tidyr::nest() 
+  tidyr::nest()
 ```
 
 
@@ -370,7 +391,7 @@ gsea_df <- res |>
 #| message: false
 #| warning: false
 # Function: Adjacency matrix to list -------------------------
-matrix_to_list <- function(pws){
+matrix_to_list <- function(pws) {
   pws.l <- list()
   for (pw in colnames(pws)) {
     pws.l[[pw]] <- rownames(pws)[as.logical(pws[, pw])]
@@ -383,11 +404,11 @@ prepare_gmt <- function(gmt_file, genes_in_data, savefile = FALSE) {
   # for debug
   #file <- gmt_files[1]
   #genes_in_data <- df$gene_symbol
-  
+
   # Read in gmt file
   gmt <- gmtPathways(gmt_file)
   hidden <- unique(unlist(gmt))
-  
+
   # Convert gmt file to a matrix with the genes as rows and for each go annotation (columns) the values are 0 or 1
   mat <- matrix(
     NA,
@@ -398,7 +419,7 @@ prepare_gmt <- function(gmt_file, genes_in_data, savefile = FALSE) {
   for (i in 1:dim(mat)[2]) {
     mat[, i] <- as.numeric(hidden %in% gmt[[i]])
   }
-  
+
   #Subset to the genes that are present in our data to avoid bias
   hidden1 <- intersect(genes_in_data, hidden)
   mat <-
@@ -406,27 +427,34 @@ prepare_gmt <- function(gmt_file, genes_in_data, savefile = FALSE) {
   # And get the list again
   final_list <-
     matrix_to_list(mat) # for this we use the function we previously defined
-  
+
   if (savefile) {
-    saveRDS(final_list, file = paste0(
-      gsub('.gmt', '', gmt_file),
-      '_subset_',
-      format(Sys.time(), '%d%m'),
-      '.RData'
-    ))
+    saveRDS(
+      final_list,
+      file = paste0(
+        gsub('.gmt', '', gmt_file),
+        '_subset_',
+        format(Sys.time(), '%d%m'),
+        '.RData'
+      )
+    )
   }
-  
+
   print('Wohoo! .gmt conversion successfull!:)')
   return(final_list)
 }
 
-# Get all the genes in dataset and assign them to my_genes 
+# Get all the genes in dataset and assign them to my_genes
 my_genes <- res$hgnc_symbol
 
 # Download gene sets .gmt files
 #https://www.gsea-msigdb.org/gsea/msigdb/human/collections.jsp
 # I've downloaded several background sets to try
-gmt_files <- list.files(here::here("03_data/991_external_data"), pattern = "\\.gmt$", full.names = TRUE)
+gmt_files <- list.files(
+  here::here("03_data/991_external_data"),
+  pattern = "\\.gmt$",
+  full.names = TRUE
+)
 
 gmt <- map(gmt_files, ~ prepare_gmt(.x, my_genes))
 ```
@@ -437,15 +465,15 @@ gmt <- map(gmt_files, ~ prepare_gmt(.x, my_genes))
 
 # This is the per celltype version - not using fgsea at the moment so I'll skip
 # this for now
-# Get all the genes in your dataset and assign them to my_genes 
+# Get all the genes in your dataset and assign them to my_genes
 my_genes <- map(gsea_df$data, ~ .x$gene) |>
   purrr::set_names(gsea_df$celltype)
 
 gmt <- map(gmt_files, function(gmt) {
   map(my_genes, function(genes) {
     prepare_gmt(gmt, genes)
-  }
-)})
+  })
+})
 ```
 
 Get the gene rankings
@@ -460,13 +488,13 @@ sort_rankings <- function(log2fc, pvals, gene_names, group, plot = FALSE) {
   # genes as names
   names(rankings) <- gene_names
   head(rankings)
-  
+
   # sort genes by ranking
   rankings <- sort(rankings, decreasing = TRUE)
   if (plot) {
     plot(rankings, main = group)
   }
-  
+
   # Some genes have such low p values that the signed pval is +- inf, we need to
   # change it to the maximum * constant to avoid problems with fgsea
   max_ranking <- max(rankings[is.finite(rankings)])
@@ -478,10 +506,9 @@ sort_rankings <- function(log2fc, pvals, gene_names, group, plot = FALSE) {
     replace(rankings, rankings < min_ranking, min_ranking * 10)
   rankings <-
     sort(rankings, decreasing = TRUE) # sort genes by ranking
-  
+
   return(rankings)
 }
-
 ```
 
 ```{r}
@@ -490,39 +517,55 @@ sort_rankings <- function(log2fc, pvals, gene_names, group, plot = FALSE) {
 
 # Again for more complex contrasts
 rankings <-
-  map2(gsea_df$data, gsea_df$celltype_contrast, ~ (sort_rankings(.x$log2FoldChange,
-                                                        .x$pvalue,
-                                                        .x$gene,
-                                                        .y))) |>
+  map2(
+    gsea_df$data,
+    gsea_df$celltype_contrast,
+    ~ (sort_rankings(.x$log2FoldChange, .x$pvalue, .x$gene, .y))
+  ) |>
   purrr::set_names(gsea_df$celltype_contrast)
 ```
 
 ```{r}
 rankings <-
-  map2(gsea_df$data, gsea_df$celltype, ~ (sort_rankings(.x$ZSTAT,
-                                                        .x$P,
-                                                        .x$hgnc_symbol,
-                                                        .y))) |>
-  purrr::set_names(paste0(gsea_df$celltype, "-", gsea_df$gwas_background, "-", gsea_df$celltype_level))
+  map2(
+    gsea_df$data,
+    gsea_df$celltype,
+    ~ (sort_rankings(.x$ZSTAT, .x$P, .x$hgnc_symbol, .y))
+  ) |>
+  purrr::set_names(paste0(
+    gsea_df$celltype,
+    "-",
+    gsea_df$gwas_background,
+    "-",
+    gsea_df$celltype_level
+  ))
 ```
 
 
 
 ```{r}
-ggplot(data.frame(
-  gene_symbol = names(rankings$`Microglia-activated-case_EUROPEUKBB_35k10k-level2`)[1:50],
-  ranks = rankings$`Microglia-activated-case_EUROPEUKBB_35k10k-level2`[1:50]
-),
-aes(gene_symbol, ranks)) +
+ggplot(
+  data.frame(
+    gene_symbol = names(
+      rankings$`Microglia-activated-case_EUROPEUKBB_35k10k-level2`
+    )[1:50],
+    ranks = rankings$`Microglia-activated-case_EUROPEUKBB_35k10k-level2`[1:50]
+  ),
+  aes(gene_symbol, ranks)
+) +
   geom_point() +
   theme_classic() +
-  theme(axis.text.x = element_text(
-    angle = 90,
-    vjust = 0.5,
-    hjust = 1
-  )) +
-  ggtitle("Microglia-activated top 50 ranked genes",
-          subtitle = "MAGMA sig genes")
+  theme(
+    axis.text.x = element_text(
+      angle = 90,
+      vjust = 0.5,
+      hjust = 1
+    )
+  ) +
+  ggtitle(
+    "Microglia-activated top 50 ranked genes",
+    subtitle = "MAGMA sig genes"
+  )
 ```
 
 ## Run GSEA
@@ -552,13 +595,18 @@ gsea_res <- map(gmt, function(pathway) {
 
 
 ```{r}
-# get log2 FC as a vector with the respective gene names, sorted in decreasing 
+# get log2 FC as a vector with the respective gene names, sorted in decreasing
 # order
 named_vectors <- res_sig |>
   dplyr::group_by(celltype, gwas_background, celltype_level) |>
   tidyr::nest() |>
-  dplyr::mutate(gene_list = map(data, ~setNames(.x$ZSTAT, .x$hgnc_symbol) |>
-                                  sort(decreasing = TRUE)))
+  dplyr::mutate(
+    gene_list = map(
+      data,
+      ~ setNames(.x$ZSTAT, .x$hgnc_symbol) |>
+        sort(decreasing = TRUE)
+    )
+  )
 ```
 
 ## Gene Ontology
@@ -582,8 +630,9 @@ if (!file.exists(result_file)) {
         OrgDb = "org.Hs.eg.db",
         ont = "BP",
         keyType = "SYMBOL"
-      ), .options = furrr_options(seed = 123)
-    ) 
+      ),
+      .options = furrr_options(seed = 123)
+    )
   gse_cc <-
     future_map(
       rankings,
@@ -592,8 +641,9 @@ if (!file.exists(result_file)) {
         OrgDb = "org.Hs.eg.db",
         ont = "CC",
         keyType = "SYMBOL"
-      ), .options = furrr_options(seed = 123)
-    ) 
+      ),
+      .options = furrr_options(seed = 123)
+    )
   gse_mf <-
     future_map(
       rankings,
@@ -602,15 +652,16 @@ if (!file.exists(result_file)) {
         OrgDb = "org.Hs.eg.db",
         ont = "MF",
         keyType = "SYMBOL"
-      ), .options = furrr_options(seed = 123)
-    ) 
-  
+      ),
+      .options = furrr_options(seed = 123)
+    )
+
   names(gse_bp) <- paste0(names(gse_bp), "_BP")
   names(gse_mf) <- paste0(names(gse_mf), "_MF")
   names(gse_cc) <- paste0(names(gse_cc), "_CC")
   gse <- c(gse_bp, gse_mf, gse_cc)
   rm(gse_bp, gse_mf, gse_cc)
-  
+
   # Save the resulting object
   readr::write_rds(gse, result_file)
 } else {
@@ -664,15 +715,16 @@ dotplots <-
   map2(
     insulin_pathways,
     names(insulin_pathways),
-    ~ dotplot(.x, showCategory = 10, split = ".sign") + facet_grid(. ~ .sign) +
+    ~ dotplot(.x, showCategory = 10, split = ".sign") +
+      facet_grid(. ~ .sign) +
       ggtitle(.y)
   )
 
 # Specify the filename for the PDF
-if(include_apoe) {
-pdf_file <- here::here("insulin_celltype_dotplots_apoe.pdf")
+if (include_apoe) {
+  pdf_file <- here::here("insulin_celltype_dotplots_apoe.pdf")
 } else {
-pdf_file <- here::here("insulin_celltype_dotplots_no-apoe.pdf")
+  pdf_file <- here::here("insulin_celltype_dotplots_no-apoe.pdf")
 }
 # Open the PDF device
 pdf(pdf_file)
@@ -683,10 +735,16 @@ dev.off()
 insulin_genes <- res_sig |>
   dplyr::filter(celltype %in% celltypes_with_insulin)
 insulin_genes |> dplyr::filter(celltype == "Capillary") |> dim()
-if(include_apoe) {
-readr::write_csv(insulin_genes, here::here("insulin_celltypes_sig_genes_apoe.csv"))
+if (include_apoe) {
+  readr::write_csv(
+    insulin_genes,
+    here::here("insulin_celltypes_sig_genes_apoe.csv")
+  )
 } else {
-readr::write_csv(insulin_genes, here::here("insulin_celltypes_sig_genes_no-apoe.csv"))
+  readr::write_csv(
+    insulin_genes,
+    here::here("insulin_celltypes_sig_genes_no-apoe.csv")
+  )
 }
 ```
 
@@ -697,7 +755,8 @@ dotplots <-
   map2(
     gse,
     names(gse),
-    ~ dotplot(.x, showCategory = 10, split = ".sign") + facet_grid(. ~ .sign) +
+    ~ dotplot(.x, showCategory = 10, split = ".sign") +
+      facet_grid(. ~ .sign) +
       ggtitle(.y)
   )
 
@@ -716,7 +775,18 @@ plots <- map(celltypes, merge_plots, dotplots) |> set_names(celltypes)
 plots
 
 # Save plots
-map2(plots, names(plots), ~ ggsave(here::here("05_figures/990_shared_figures/001_magma/magma_pathways", paste0(.y, ".png")), plot = .x, width = 18))
+map2(
+  plots,
+  names(plots),
+  ~ ggsave(
+    here::here(
+      "05_figures/990_shared_figures/001_magma/magma_pathways",
+      paste0(.y, ".png")
+    ),
+    plot = .x,
+    width = 18
+  )
+)
 ```
 
 ```{r}
@@ -728,22 +798,36 @@ safe_treeplot <- possibly(treeplot, otherwise = NULL)
 
 plan("multisession", workers = parallel::detectCores() - 1)
 treeplots <- future_map(gse_tree, safe_treeplot)
-# Remove any NULL entries                                 
-treeplots <- treeplots[!sapply(treeplots, is.null)]      
-# Assert that there are no nulls in list                
+# Remove any NULL entries
+treeplots <- treeplots[!sapply(treeplots, is.null)]
+# Assert that there are no nulls in list
 assertthat::see_if(sum(map_lgl(treeplots, is.null)) == 0)
-# Replace those with no treeplot with dotplots          
-no_treeplot <- names(gse_tree)[!names(gse_tree) %in% 
-                                            names(treeplots)]
-dotplots <- map(gse_tree[no_treeplot], dotplot)                         
-assertthat::see_if(sum(map_lgl(dotplots, is.null)) == 0)                  
-treeplots <- c(treeplots, dotplots)                                      
+# Replace those with no treeplot with dotplots
+no_treeplot <- names(gse_tree)[
+  !names(gse_tree) %in%
+    names(treeplots)
+]
+dotplots <- map(gse_tree[no_treeplot], dotplot)
+assertthat::see_if(sum(map_lgl(dotplots, is.null)) == 0)
+treeplots <- c(treeplots, dotplots)
 
 treeplots <- map2(treeplots, names(treeplots), ~ .x + ggtitle(.y))
 
 plots <- map(celltypes, merge_plots, treeplots) |> set_names(celltypes)
 
-map2(plots, names(plots), ~ ggsave(here::here("05_figures/990_shared_figures/001_magma/magma_pathways", paste0("gsea_treeplots_", .y, ".png")), plot = .x, width = 32, height = 10))
+map2(
+  plots,
+  names(plots),
+  ~ ggsave(
+    here::here(
+      "05_figures/990_shared_figures/001_magma/magma_pathways",
+      paste0("gsea_treeplots_", .y, ".png")
+    ),
+    plot = .x,
+    width = 32,
+    height = 10
+  )
+)
 ```
 
 
@@ -751,24 +835,30 @@ map2(plots, names(plots), ~ ggsave(here::here("05_figures/990_shared_figures/001
 ```{r}
 #| eval: false
 #| include: false
-map2(gse,
-     names(gse),
-     ~ emapplot(.x, showCategory = 10) +
-                  ggtitle(.y))
+map2(
+  gse,
+  names(gse),
+  ~ emapplot(.x, showCategory = 10) +
+    ggtitle(.y)
+)
 ```
 
 ```{r}
-map2(gse,
-     names(gse),
-     ~ ridgeplot(.x) +
-       labs(x = "enrichment distribution") +
-                  ggtitle(.y))
+map2(
+  gse,
+  names(gse),
+  ~ ridgeplot(.x) +
+    labs(x = "enrichment distribution") +
+    ggtitle(.y)
+)
 ```
 
 Note, one can change which pathway is plotted here by setting the title and `geneSetID` accordingly
 
 ```{r}
-map2(gse,
-     names(gse),
-     ~ gseaplot(.x, by = "all", title = .x$Description[1], geneSetID = 1))
+map2(
+  gse,
+  names(gse),
+  ~ gseaplot(.x, by = "all", title = .x$Description[1], geneSetID = 1)
+)
 ```
