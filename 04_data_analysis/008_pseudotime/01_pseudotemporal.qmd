@@ -29,6 +29,9 @@ library(switchde)
 library(tradeSeq)
 # tidy species gene data for GSEA
 library(msigdbr)
+library(ggrastr)
+library(ggcorrplot)
+library(circlize)
 ```
 
 ```{r}
@@ -701,6 +704,14 @@ ggsave(
   here(
     "05_figures/990_shared_figures/004_pseudotime",
     "slingshot_pca_diagnosis-sex.pdf"
+  ),
+  width = 7,
+  height = 8
+)
+ggsave(
+  here(
+    "05_figures/990_shared_figures/004_pseudotime",
+    "slingshot_pca_diagnosis-sex.png"
   ),
   width = 7,
   height = 8
@@ -1573,13 +1584,9 @@ genes_of_interest <- c("BCL6", "FOXP2", "MECOM")
 genes <- translated_id |>
   dplyr::filter(hgnc_symbol %in% genes_of_interest)
 
-# --- User Input ---
-
-# *** Important: Assign your objects here ***
 sce_tradeseq_fit <- sce_subset # The output from fitGAM
 sce_original_data <- sce_slingshot # The larger SCE with logcounts and metadata
 
-# *** Important: Specify column names in your *sce_original_data* colData ***
 diagnosis_column <- "diagnosis" # Replace with the actual column name for Case/Control status
 apoe_status_column <- "apoe_status" # Replace with the actual column name for APOE status
 
@@ -1902,6 +1909,132 @@ pdf(
 marrangeGrob(grobs = plots, nrow = 2, ncol = 2)
 dev.off()
 ```
+
+### EGF pathways
+
+EGF identified as a very interesting growth factor that can induce a proportion of endothelial cells to spontaneously differentiate to pericytes in culter.
+
+```{r}
+# Get all human pathways
+pathways <- msigdbr(species = "Homo sapiens")
+
+# Search for EGF-related pathways
+egf_pathways <- pathways[grepl("EGF", pathways$gs_name, ignore.case = TRUE), ]
+
+# View available pathway names
+unique(egf_pathways$gs_name)
+length(unique(egf_pathways$gene_symbol))
+# check angpt2 out of curiosity
+egf_pathways |> filter(gene_symbol == "ANGPT2") |> select(gs_name)
+
+# Get genes from a specific pathway (example)
+egf_genes <- pathways[pathways$gs_name == "REACTOME_SIGNALING_BY_EGFR", ] |>
+  distinct(gene_symbol, .keep_all = TRUE) |>
+  filter(ensembl_gene %in% rownames(sce_subset))
+egfr_genes <- pathways[pathways$gs_name == "EGFR_TARGET_GENES", ] |>
+  distinct(gene_symbol, .keep_all = TRUE) |>
+  filter(ensembl_gene %in% rownames(sce_subset))
+
+
+plots <- map2(
+  egf_genes$ensembl_gene,
+  egf_genes$gene_symbol,
+  plot_gene_pseudotime,
+  sce_subset,
+  counts
+)
+
+plots[[4]] <- plots[[4]] +
+  theme(legend.position = "right")
+
+pdf(
+  here::here(
+    "05_figures/990_shared_figures/004_pseudotime",
+    "01_tradeseq",
+    "egfr_reactome_signalling.pdf"
+  ),
+  height = 8,
+  width = 14,
+)
+marrangeGrob(grobs = plots, nrow = 2, ncol = 2)
+dev.off()
+
+plots <- map2(
+  egfr_genes$ensembl_gene,
+  egfr_genes$gene_symbol,
+  plot_gene_pseudotime,
+  sce_subset,
+  counts
+)
+
+plots[[4]] <- plots[[4]] +
+  theme(legend.position = "right")
+
+pdf(
+  here::here(
+    "05_figures/990_shared_figures/004_pseudotime",
+    "01_tradeseq",
+    "egfr_target_genes.pdf"
+  ),
+  height = 8,
+  width = 14,
+)
+marrangeGrob(grobs = plots, nrow = 2, ncol = 2)
+dev.off()
+```
+
+Harriet also identified some genes of interest related to EGF
+
+```{r}
+genes <- c(
+  "EGF",
+  "ERBB2",
+  "ERBB3",
+  "ERBB4",
+  "NRG1",
+  "NRG2",
+  "NRG3",
+  "NRG4",
+  "AREG",
+  "NTRK1",
+  "NTRK2",
+  "NTRK3",
+  "TGFA",
+  "IGF1",
+  "IGF1R",
+  "EGFR",
+  "GRB2"
+)
+
+egf_genes <- translated_id |>
+  filter(hgnc_symbol %in% genes) |>
+  filter(ensembl_gene_id %in% rownames(sce_subset))
+
+plots <- map2(
+  egf_genes$ensembl_gene_id,
+  egf_genes$hgnc_symbol,
+  plot_gene_pseudotime,
+  sce_subset,
+  counts
+)
+
+plots[[4]] <- plots[[4]] +
+  theme(legend.position = "right")
+
+pdf(
+  here::here(
+    "05_figures/990_shared_figures/004_pseudotime",
+    "01_tradeseq",
+    "egf_harriet_genes.pdf"
+  ),
+  height = 8,
+  width = 14,
+)
+marrangeGrob(grobs = plots, nrow = 2, ncol = 2)
+dev.off()
+```
+
+
 
 
 ```{r}
@@ -2229,13 +2362,17 @@ plot_endomt <- plot_grid(
   rel_heights = c(1.1, 1, 1.1)
 )
 plot_endomt
+# If getting error with fonts when saving plot
+# library(extrafont)
+# font_import()  # Import system fonts
+# loadfonts(device = "pdf")  # Register for PDF device
 ggsave(
   here::here(
     "05_figures/990_shared_figures/003_final_figures",
-    "endomt_fig2.pdf"
+    "endomt_fig3.pdf"
   ),
   plot_endomt,
-  device = cairo_pdf,
+  # device = cairo_pdf,
   width = 7,
   height = 9,
   units = "in"
