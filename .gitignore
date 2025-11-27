@@ -44,4 +44,13 @@ vignettes/*.pdf
 /dropbox-folder-from-frank/
 /_freeze/
 
+temp/
+
 03_data/
+*.qs
+*.tsv
+*.xlsx
+*.rds
+04_data_analysis/992_scripts_from_frank/
+04_data_analysis/993_scripts_from_ata/
+04_data_analysis/994_scripts_from_emeka/
