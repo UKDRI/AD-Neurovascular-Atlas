@@ -77,12 +77,32 @@ if (mast_level != "level1") {
 
 mast_de |>
   dplyr::filter(p_val_adj < 0.05) |>
-  readr::write_tsv("mast_sig_degs.tsv")
+  readr::write_tsv(here(
+    "03_data/990_processed_data/001_snrnaseq/13_mast_de",
+    mast_level,
+    "mast_sig_degs.tsv"
+  ))
 mast_de |>
   dplyr::filter(p_val_adj < 0.05) |>
   dplyr::summarise(n_sig_degs = n(), .by = celltype) |>
-  readr::write_tsv("mast_sig_deg_numbers.tsv")
+  readr::write_tsv(here(
+    "03_data/990_processed_data/001_snrnaseq/13_mast_de",
+    mast_level,
+    "mast_sig_deg_numbers.tsv"
+  ))
 ```
+
+```{r}
+mast_de |>
+  filter(hgnc_symbol == "EGF") |>
+  readr::write_tsv(here(
+    "03_data/990_processed_data/001_snrnaseq/13_mast_de",
+    mast_level,
+    "mast_egf.tsv"
+  ))
+```
+
+
 
 # Data prep
 

@@ -26,26 +26,26 @@ First let's sort the manifest for our samples.
 
 Here's how I generated it:
 
-```{r}
+```{bash}
 
 ## Project root variables defined in the following
 source 00_hpc_variables.sh
 
 # list the cellranger count output directories
-find $PROJECT_ROOT"03_data/990_processed_data/001_snrnaseq/04_cellranger_count/" -maxdepth 2 -mindepth 2 -type d > scflow_manifest.txt
+find $PROJECT_ROOT"03_data/990_processed_data/001_snrnaseq/04_cellranger_count/" -maxdepth 2 -mindepth 2 -type d >scflow_manifest.txt
 
 # use the last directory in the path as the sample id
-awk -F'/' '{print $NF "\t" $0}' scflow_manifest.txt > scflow_manifest2.txt
+awk -F'/' '{print $NF "\t" $0}' scflow_manifest.txt >scflow_manifest2.txt
 
 # append "outs/filtered_gene_bc_matrices" to file paths
-sed "s|$|/outs/filtered_feature_bc_matrix|" scflow_manifest2.txt > scflow_manifest3.txt
+sed "s|$|/outs/filtered_feature_bc_matrix|" scflow_manifest2.txt >scflow_manifest3.txt
 
 # remove the undetermined sample and P_39
-grep -v "Undetermined" scflow_manifest3.txt > scflow_manifest4.txt
-grep -v "P_39" scflow_manifest4.txt > scflow_manifest5.txt
+grep -v "Undetermined" scflow_manifest3.txt >scflow_manifest4.txt
+grep -v "P_39" scflow_manifest4.txt >scflow_manifest5.txt
 
 # add the table headers
-awk -v line="key\tfilepath" 'BEGIN{print line}{print}' scflow_manifest5.txt > scflow_manifest.tsv
+awk -v line="key\tfilepath" 'BEGIN{print line}{print}' scflow_manifest5.txt >scflow_manifest.tsv
 
 # clean up
 rm scflow_manifest.txt scflow_manifest2.txt scflow_manifest3.txt scflow_manifest4.txt scflow_manifest5.txt
