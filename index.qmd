@@ -468,10 +468,6 @@ Caleb Webber has received research funding in unrelated projects from GSK and El
 
 # STAR Methods
 
-Link to info on this here: <https://www.cell.com/star-authors-guide>
-
-And a pdf guide [here](https://www.cell.com/pb-assets/journals/research/cell/methods/Methods_Guide_Cell-1678470557763.pdf)
-
 ## Key resoures table
 
 ```{r}
@@ -498,8 +494,8 @@ No unique reagents were generated for this study.
 ### Data and code availability
 
 -   All raw data are available in the GEO database under the accession numbers GEO: GSE310554 & GSE222007
--   The Seurat object generated from the scFlow pipeline is included in the Docker image with the R environment used for analysis here:
--   All original code has been deposited at Zenodo and is publicly available as of the date of publication. DOIs are listed in the key resources table.
+-   The Seurat object generated from the scFlow pipeline is included in the Docker image with the R environment used for analysis here: [https://hub.docker.com/r/multitude5286/ad-bbb-analysis](https://hub.docker.com/r/multitude5286/ad-bbb-analysis)
+-   All original code has been deposited at Zenodo with DOI [10.5281/zenodo.17737332](https://doi.org/10.5281/zenodo.17737331) and is publicly available at [https://github.com/UKDRI/AD-Neurovascular-Atlas](https://github.com/UKDRI/AD-Neurovascular-Atlas).
 
 ## Experimental model and study participant details
 
