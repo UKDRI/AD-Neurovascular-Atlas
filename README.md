@@ -44,25 +44,22 @@ Having got the Docker image ready you can either enter it as an interactive R se
 
 ```bash
 # Interactive R session
-docker run -it \
-  -v  $ (pwd):/home/ad-bbb \
-  ad-neurovascular-atlas:1.0.0 R
+docker run --rm -ti ad-bbb-analysis R
 ```
 
 Or use it via [RStudio](https://posit.co/downloads/) like so
 
 ```bash
 # Use RStudio Server (optional)
-# Use RStudio Server (optional)
-docker run -d \
-  -p 8787:8787 \
+docker run --rm -ti \
+  -e USER=rstudio \
   -e PASSWORD=yourpassword \
-  -v $(pwd):/home/ad-bbb \
-  ad-neurovascular-atlas:1.0.0
-
-# Then open browser to http://localhost:8787
-# Username: rstudio, Password: yourpassword
+  -p 8787:8787 \
+  ad-bbb-analysis \
+  /init
 ```
+
+Having run this you can visit [http://localhost:8787/](http://localhost:8787/) and use username: `rstudio`, password: `yourpassword`
 
 #### Build the Docker image yourself
 
