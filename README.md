@@ -29,32 +29,13 @@ There's a few options if you want to replicate the R environment used for this a
 
 The easiest way to reproduce our analysis environment is using Docker.
 
-#### Download Pre-built Image
+#### Pull from Docker Hub
 
-Download the Docker image from Zenodo: [Link to tar.gz]
-
-```bash
-# Load the image
-docker load < ad-neurovascular-atlas-docker-v1.0.0.tar.gz
-
-# Verify it loaded
-docker images | grep ad-neurovascular-atlas
-```
-
-#### Build the Docker image yourself
-
-If you're unable to download the pre-built image for any reason you can build it yourself, no need to do both though!
+The image is on Docker Hub [here](https://hub.docker.com/r/multitude5286/ad-bbb-analysis)
 
 ```bash
-# Clone this repository
-git clone https://github.com/UKDRI/AD-Neurovascular-Atlas.git
-cd ad-neurovascular-atlas
-
-# Build the Docker image (takes ~30-60 minutes)
-bash build-docker.sh
-
-# Or build manually
-docker build -t ad-neurovascular-atlas:1.0.0 .
+# Pull the image from Docker Hub
+docker pull multitude5286/ad-bbb-analysis
 ```
 
 #### Run the Docker container
@@ -81,6 +62,22 @@ docker run -d \
 
 # Then open browser to http://localhost:8787
 # Username: rstudio, Password: yourpassword
+```
+
+#### Build the Docker image yourself
+
+Alternatively you can build it yourself with the Dockerfile in this repo
+
+```bash
+# Clone this repository
+git clone https://github.com/UKDRI/AD-Neurovascular-Atlas.git
+cd ad-neurovascular-atlas
+
+# Build the Docker image (takes ~30-60 minutes)
+bash build-docker.sh
+
+# Or build manually
+docker build -t ad-neurovascular-atlas:1.0.0 .
 ```
 
 ### Option 2: Using renv (Local Installation)
