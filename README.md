@@ -74,7 +74,7 @@ cd ad-neurovascular-atlas
 bash build-docker.sh
 
 # Or build manually
-docker build -t ad-neurovascular-atlas:1.0.0 .
+docker build -t ad-bbb-analysis:1.0.0 .
 ```
 
 ### Option 2: Using renv (Local Installation)
